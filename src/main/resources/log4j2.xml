@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <RollingRandomAccessFile name="DEFAULT-APPENDER" fileName="/data/home/admin/global/log/global-default.log" filePattern="/data/home/admin/global/log/global-default.log.%d{yyyy-MM-dd}.%i.gz" append="true">
+            <PatternLayout pattern="%d [%t] %-5p %c{1} - %m%n"/>
+            <!-- 设置策略 -->
+            <Policies>
+                <!-- 基于时间的触发策略。该策略主要是完成周期性的log文件封存工作。有两个参数：
+                    interval，integer型，指定两次封存动作之间的时间间隔。单位:以日志的命名精度来确定单位，
+                        比如yyyy-MM-dd-HH 单位为小时，yyyy-MM-dd-HH-mm 单位为分钟
+                    modulate，boolean型，说明是否对封存时间进行调制。若modulate=true，
+                        则封存时间将以0点为边界进行偏移计算。比如，modulate=true，interval=4hours，
+                        那么假设上次封存日志的时间为03:00，则下次封存日志的时间为04:00，
+                        之后的封存时间依次为08:00，12:00，16:00
+                 -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="1 GB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="/data/home/admin/global/log" maxDepth="1">
+                    <IfFileName glob="global-default.log.*"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="BIZ-APPENDER" fileName="/data/home/admin/global/log/global-biz.log" filePattern="/data/home/admin/global/log/global-biz.log.%d{yyyy-MM-dd}.%i.gz" append="true">
+            <PatternLayout pattern="%d [%t] %-5p %c{1} - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="1 GB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="/data/home/admin/global/log" maxDepth="1">
+                    <IfFileName glob="global-biz.log.*"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="MONITOR-APPENDER" fileName="/data/home/admin/global/log/global-monitor.log" filePattern="/data/home/admin/global/log/global-monitor.log.%d{yyyy-MM-dd}.%i.gz" append="true">
+            <PatternLayout pattern="%d [%t] %-5p %c{1} - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="1 GB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="/data/home/admin/global/log" maxDepth="1">
+                    <IfFileName glob="global-monitor.log.*"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="ERROR-APPENDER" fileName="/data/home/admin/global/log/common-error.log" filePattern="/data/home/admin/global/log/common-error.log.%d{yyyy-MM-dd}.%i.gz" append="true">
+            <PatternLayout pattern="%d [%t] %-5p %c{1} - %m%n"/>
+            <ThresholdFilter level="error"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="1 GB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="/data/home/admin/global/log" maxDepth="1">
+                    <IfFileName glob="common-error.log.*"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="MANAGE-APPENDER" fileName="/data/home/admin/global/log/global-manage.log" filePattern="/data/home/admin/global/log/global-manage.log.%d{yyyy-MM-dd}.%i.gz" append="true">
+            <PatternLayout pattern="%d [%t] %-5p %c{1} - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="1 GB" />
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="/data/home/admin/global/log" maxDepth="1">
+                    <IfFileName glob="global-manage.log.*"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+    </Appenders>
+
+    <Loggers>
+        <asyncLogger name="PL-Monitor-info" level="info" additivity="false">
+            <AppenderRef ref="MONITOR-APPENDER"/>
+        </asyncLogger>
+
+        <asyncLogger name="App-Manage-Logger" level="info" additivity="false">
+            <AppenderRef ref="MANAGE-APPENDER"/>
+            <AppenderRef ref="BIZ-APPENDER"/>
+            <AppenderRef ref="ERROR-APPENDER"/>
+        </asyncLogger>
+
+        <asyncLogger name="cn.primeledger.pl.slave" level="info" additivity="false">
+            <AppenderRef ref="BIZ-APPENDER"/>
+            <AppenderRef ref="ERROR-APPENDER"/>
+        </asyncLogger>
+
+        <asyncRoot level="info">
+            <AppenderRef ref="DEFAULT-APPENDER"/>
+            <AppenderRef ref="ERROR-APPENDER"/>
+        </asyncRoot>
+    </Loggers>
+</Configuration>
