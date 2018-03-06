@@ -1,28 +1,37 @@
 package cn.primeledger.cas.global.p2p.message;
 
-import cn.primeledger.cas.global.p2p.Peer;
+import cn.primeledger.cas.global.utils.ProtoBufUtil;
+import lombok.Data;
 
 /**
  * @author yuanjiantao
  * @date Created in 2/27/2018
  */
+@Data
 public class HelloMessage extends BaseMessage {
 
-    private Peer peer;
-    private long timestamp;
+    private HelloWraper helloWraper;
+
+    public HelloMessage(byte[] encoded) {
+
+        super(encoded);
+        this.helloWraper = ProtoBufUtil.deserialize(encoded);
+        this.cmd = MessageType.HELLO.getCode();
+    }
+
+    public HelloMessage(HelloWraper helloWraper) {
+        this.helloWraper = helloWraper;
+        this.encoded = ProtoBufUtil.serialize(helloWraper);
+        this.cmd = MessageType.HELLO.getCode();
+    }
 
     @Override
     public byte[] getEncoded() {
-        return new byte[0];
+        return this.encoded;
     }
 
     @Override
     public Class<?> getAnswerMessage() {
-        return null;
-    }
-
-    @Override
-    public String toString() {
-        return null;
+        return HelloAckMessage.class;
     }
 }

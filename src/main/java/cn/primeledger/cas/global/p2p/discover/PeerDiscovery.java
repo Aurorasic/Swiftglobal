@@ -19,8 +19,4 @@ public interface PeerDiscovery {
      */
     List<Peer> getPeers() throws PeerDiscoveryException;
 
-    /**
-     * Shutdown discovery in progress.
-     */
-    void shutdown();
 }

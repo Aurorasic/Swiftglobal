@@ -4,6 +4,7 @@ import cn.primeledger.cas.global.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,17 +29,30 @@ public class TransactionIndex extends BaseSerializer {
      */
     private short txIndex;
 
-    /**
+     /**
      * outs spending info in this transaction. key: the out index, value: the spending transaction hash
-     * if one out have not been spent, there is no key in the map.
+     * if one out have not been isSpent, there is no key in the map.
      */
     private Map<Short, String> outsSpend;
 
-    public boolean spent(short outIndex) {
+    public TransactionIndex(String blockHash, String txHash, short txIndex) {
+        this.blockHash = blockHash;
+        this.txHash = txHash;
+        this.txIndex = txIndex;
+    }
+
+    public boolean isSpent(short outIndex) {
 
         if (outsSpend != null && outsSpend.containsKey(outIndex)) {
             return true;
         }
         return false;
+    }
+
+    public void addSpend(short outIndex, String spendTxHash) {
+        if (outsSpend == null) {
+            outsSpend = new HashMap<>(8);
+        }
+        outsSpend.put(outIndex, spendTxHash);
     }
 }

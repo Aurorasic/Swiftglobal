@@ -1,9 +1,14 @@
 package cn.primeledger.cas.global.p2p;
 
+import cn.primeledger.cas.global.p2p.message.HelloAckWraper;
+import cn.primeledger.cas.global.p2p.message.HelloWraper;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-import com.google.common.primitives.Longs;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -14,10 +19,20 @@ import java.util.Arrays;
  *
  * @author zhao xiaogang
  */
-public class Peer {
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class Peer implements Serializable {
+
     private InetSocketAddress address;
 
     private int version;
+
+    private boolean isDelegate;
+
+    public Peer() {
+    }
 
     public Peer(InetSocketAddress address) {
         this.address = address;
@@ -29,6 +44,11 @@ public class Peer {
 
     public Peer(String ip, int port) {
         this(new InetSocketAddress(ip, port));
+    }
+
+    public Peer(String ip, int port, int version) {
+        this(new InetSocketAddress(ip, port));
+        this.version = version;
     }
 
     public Peer(byte[] address, byte[] data) {
@@ -51,15 +71,6 @@ public class Peer {
         return address.getPort();
     }
 
-    public InetSocketAddress getAddress() {
-        return address;
-    }
-
-    @Override
-    public int hashCode() {
-        return address.hashCode();
-    }
-
     @Override
     public boolean equals(Object o) {
         return o instanceof Peer && address.equals(((Peer) o).getAddress());
@@ -68,5 +79,13 @@ public class Peer {
     @Override
     public String toString() {
         return getIp() + ":" + getPort();
+    }
+
+    public static Peer getFromHelloWrapper(HelloWraper helloWraper) {
+        return new Peer(helloWraper.getIp(), helloWraper.getPort());
+    }
+
+    public static Peer getFromHelloAckWrapper(HelloAckWraper helloWraper) {
+        return new Peer(helloWraper.getIp(), helloWraper.getPort());
     }
 }

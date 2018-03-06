@@ -1,36 +1,29 @@
 package cn.primeledger.cas.global.p2p.message;
 
-import lombok.NoArgsConstructor;
-import org.spongycastle.util.encoders.Hex;
+import com.google.common.primitives.Longs;
 
 /**
- * 
- *
  * @author yuanjiantao
- * @date  2/26/2018
+ * @date 2/26/2018
  */
-@NoArgsConstructor
 public class PingMessage extends BaseMessage {
 
-    private final static byte[] PAYLOAD = Hex.decode("C0");
+    private long timestamp;
+
+    public PingMessage() {
+        this.timestamp = System.currentTimeMillis();
+        this.encoded = Longs.toByteArray(timestamp);
+        this.cmd = MessageType.PING.getCode();
+    }
 
     @Override
     public byte[] getEncoded() {
-        return PAYLOAD;
+        return encoded;
     }
 
     @Override
     public Class<?> getAnswerMessage() {
         return PongMessage.class;
-    }
-
-    @Override
-    public String toString() {
-        return null;
-    }
-
-    public PingMessage(byte[] encoded) {
-        super(encoded);
     }
 
 }

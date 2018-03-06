@@ -11,13 +11,13 @@ import lombok.Setter;
 @Setter
 public class MessageWrapper {
 
-    private final BaseMessage msg;
+    private final BaseMessage baseMessage;
     private long lastTimestamp = 0;
     private long retryTimes = 0;
     private boolean answered = false;
 
-    public MessageWrapper(BaseMessage msg) {
-        this.msg = msg;
+    public MessageWrapper(BaseMessage baseMessage) {
+        this.baseMessage = baseMessage;
         saveTime();
     }
 

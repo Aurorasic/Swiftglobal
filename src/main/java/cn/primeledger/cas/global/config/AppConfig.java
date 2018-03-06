@@ -31,6 +31,15 @@ public class AppConfig {
     @Value("${data.blockchain.file}")
     private String blockChainDataFile;
 
+    @Value("${peer.pubKey}")
+    private String pubKey;
+
+    @Value("${registry.center.ip}")
+    private String registryCenterIp;
+
+    @Value("${peer.priKey}")
+    private String priKey;
+
     public String getValue(String key) {
         return environment.getProperty(key);
     }

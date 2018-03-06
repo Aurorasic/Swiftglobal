@@ -1,5 +1,6 @@
 package cn.primeledger.cas.global.p2p.channel;
 
+import cn.primeledger.cas.global.config.Network;
 import cn.primeledger.cas.global.p2p.NetworkMgr;
 import cn.primeledger.cas.global.p2p.Peer;
 import cn.primeledger.cas.global.p2p.handler.Frame2MessageHandler;
@@ -23,11 +24,13 @@ public class ChannelInitializer extends io.netty.channel.ChannelInitializer<NioS
 
     private NetworkMgr networkMgr;
     private ChannelMgr channelMgr;
+    private Network networkConfig;
     private Peer peerNode;
 
     public ChannelInitializer(NetworkMgr networkMgr, Peer peerNode) {
+        this.channelMgr = networkMgr.getNetwork().context().getBean(ChannelMgr.class);
+        this.networkConfig = networkMgr.getNetwork();
         this.networkMgr = networkMgr;
-        this.channelMgr = networkMgr.getChannelMgr();
         this.peerNode = peerNode;
     }
 
@@ -37,14 +40,14 @@ public class ChannelInitializer extends io.netty.channel.ChannelInitializer<NioS
 
     @Override
     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-
         /**
-         * If at the inbound state, the ChannelInitializer should work for a p2p server. So the address of local channel
-         * will use the remoteAddress from {@link NioSocketChannel}.Otherwise, which will use the local address.
+         * If the channel of the local peers is in the inbound state, the Channel Initializer will work for the
+         * server mode. So the address of local channel will use the remote Address from {@link NioSocketChannel}.
+         * Otherwise, it will get from {@link cn.primeledger.cas.global.p2p.discover.PeerDiscovery} .
          */
         InetSocketAddress socketAddress = isInbound() ? nioSocketChannel.remoteAddress() : peerNode.getAddress();
-
-        Channel channel = new Channel(socketAddress, isInbound());
+        boolean isDelegate = isInbound() ? false : peerNode.isDelegate();
+        Channel channel = new Channel(networkConfig, socketAddress, isInbound(), isDelegate);
         channelMgr.add(channel);
 
         initChannelConfig(nioSocketChannel, channel);
@@ -55,7 +58,7 @@ public class ChannelInitializer extends io.netty.channel.ChannelInitializer<NioS
 
         pipe.addLast("frameHandler", new FrameHandler());
         pipe.addLast("frame2messageHandler", new Frame2MessageHandler());
-        pipe.addLast("messageHandler", new MessageHandler(channel, networkMgr));
+        pipe.addLast("messageHandler", new MessageHandler(channel, networkConfig));
 
         nioChannel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(BUFF_SIZE));
         nioChannel.config().setOption(ChannelOption.SO_RCVBUF, BUFF_SIZE);

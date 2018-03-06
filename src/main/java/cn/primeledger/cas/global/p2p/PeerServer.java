@@ -9,8 +9,9 @@ import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,32 +21,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author zhao xiaogang
  */
+
+@Component
+@Slf4j
 public class PeerServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(PeerServer.class);
-
-    private final ThreadFactory factory;
+    private ThreadFactory factory;
 
     private Channel serverChannel;
-    private NetworkMgr networkMgr;
-    private Network network;
 
     private NioEventLoopGroup bossGroup;
     private NioEventLoopGroup workerGroup;
 
-    public PeerServer(NetworkMgr networkMgr) {
-        this.networkMgr = networkMgr;
-        this.network = networkMgr.getNetwork();
-
-        this.factory = new ThreadFactory() {
-            AtomicInteger atomicInteger = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "P2P-SERVER-" + atomicInteger.getAndIncrement());
-            }
-        };
-    }
+    @Autowired
+    private NetworkMgr networkMgr;
 
     /**
      * Start the p2p server.
@@ -54,6 +43,15 @@ public class PeerServer {
         if (isActive()) {
             return;
         }
+        Network network = networkMgr.getNetwork();
+        this.factory = new ThreadFactory() {
+            AtomicInteger atomicInteger = new AtomicInteger(1);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "P2P-SERVER-" + atomicInteger.getAndIncrement());
+            }
+        };
 
         ChannelInitializer initializer = new ChannelInitializer(networkMgr, null);
 
@@ -67,15 +65,26 @@ public class PeerServer {
             b.channel(NioServerSocketChannel.class);
 
             b.option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, DefaultMessageSizeEstimator.DEFAULT);
-            b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, networkMgr.getNetwork().p2pConnectionTimeout());
+            b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, network.p2pConnectionTimeout());
+            b.childOption(ChannelOption.SO_KEEPALIVE, true);
 
             b.handler(new LoggingHandler());
             b.childHandler(initializer);
 
-            logger.info("Starting peer server");
-            serverChannel = b.bind("localhost", network.p2pServerListeningPort()).sync().channel();
+            LOGGER.info("Starting peer server");
+            serverChannel = b.bind(network.p2pServerListeningPort()).addListener(channelFuture -> {
+                if (channelFuture.isSuccess()) {
+                    LOGGER.info("Successfully bind local port : {}", network.p2pServerListeningPort());
+                }
+
+                if (channelFuture.cause() != null) {
+                    LOGGER.error("Failed to bind port : {}. Exception : {}",
+                            network.p2pServerListeningPort(),
+                            channelFuture.cause().getMessage());
+                }
+            }).sync().channel();
         } catch (Exception e) {
-            logger.error("Failed to start peer server", e);
+            LOGGER.error("Failed to start peer server", e);
         }
     }
 
@@ -92,9 +101,9 @@ public class PeerServer {
 
                 serverChannel = null;
             } catch (Exception e) {
-                logger.error("Failed to close the channel", e);
+                LOGGER.error("Failed to close the channel", e);
             }
-            logger.info("PeerServer shut down");
+            LOGGER.info("PeerServer shut down");
         }
     }
 
@@ -104,5 +113,4 @@ public class PeerServer {
     public boolean isActive() {
         return serverChannel != null;
     }
-
 }

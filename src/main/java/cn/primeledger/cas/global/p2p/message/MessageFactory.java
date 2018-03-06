@@ -1,10 +1,8 @@
 package cn.primeledger.cas.global.p2p.message;
 
 /**
- * 
- *
  * @author yuanjiantao
- * @date  2/26/2018
+ * @date 2/26/2018
  */
 public class MessageFactory {
 
@@ -18,10 +16,25 @@ public class MessageFactory {
         try {
             switch (c) {
                 case PING:
-                    return new PingMessage(encoded);
+                    return new PingMessage();
                 case PONG:
                     return new PongMessage(encoded);
-
+                case HELLO:
+                    return new HelloMessage(encoded);
+                case HELLO_ACK:
+                    return new HelloAckMessage(encoded);
+                case PEERS:
+                    return new PeersMessage(encoded);
+                case GET_PEERS:
+                    return new GetPeersMessage();
+                case BIZ_MSG:
+                    return new BizMessage(encoded);
+                case REGISTER:
+                    return new RegisterMessage(encoded);
+                case REGISTERVERIFY:
+                    return new RegisterVerifyMessage(encoded);
+                case REGISTERVERIFYACK:
+                    return new RegisterVerifyAckMessage(encoded);
                 default:
                     throw new Exception();
             }

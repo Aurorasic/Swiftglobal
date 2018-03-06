@@ -2,14 +2,20 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT-APPENDER" target="SYSTEM_OUT">
-            <PatternLayout pattern="%highlight{[%t] %d{HH:mm:ss.SSS} %-5level %logger{36}.%M() @%L => %msg%n}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=black, DEBUG=green bold, TRACE=blue}"/>
+            <PatternLayout
+                    pattern="[%t] %d{HH:mm:ss.SSS} %highlight{%-5level} %cyan{%logger{36}.%M()} @%L => %highlight{%msg%n}"/>
         </Console>
     </Appenders>
 
     <Loggers>
-        <Root level="info">
+        <asyncRoot level="info" includeLocation="true">
             <AppenderRef ref="STDOUT-APPENDER"/>
-        </Root>
+        </asyncRoot>
 
+        <!--<logger name="cn.primeledger.cas.global" level="debug" additivity="false">-->
+            <!--<appender-ref ref="STDOUT-APPENDER"/>-->
+        <!--</logger>-->
     </Loggers>
+
+
 </Configuration>

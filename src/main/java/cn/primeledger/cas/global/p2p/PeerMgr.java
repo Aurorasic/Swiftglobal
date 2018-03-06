@@ -1,14 +1,16 @@
 package cn.primeledger.cas.global.p2p;
 
-import cn.primeledger.cas.global.config.Network;
 import cn.primeledger.cas.global.p2p.channel.ChannelMgr;
-import cn.primeledger.cas.global.p2p.discover.DnsDiscovery;
+import cn.primeledger.cas.global.p2p.discover.MessageDiscover;
 import cn.primeledger.cas.global.p2p.discover.PeerConnector;
-import cn.primeledger.cas.global.p2p.store.PeerDatabase;
 import cn.primeledger.cas.global.p2p.store.PeerStoreTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Deque;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,13 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author zhao xiaogang
  */
-public class PeerMgr {
-    private static final Logger logger = LoggerFactory.getLogger(PeerMgr.class);
 
+@Component
+@Slf4j
+public class PeerMgr implements InitializingBean {
     private final static int MAX_QUEUE_SIZE = 100;
 
     private final static int DISCOVER_DELAY = 2;
-    private final static int DISCOVER_PERIOD = 200;
+    private final static int DISCOVER_PERIOD = 5;
 
     private final static int CONNECTOR_DELAY = 150;
     private final static int CONNECTOR_PERIOD = 400;
@@ -33,38 +36,26 @@ public class PeerMgr {
     private final static int PEERSTORE_DELAY = 60;
     private final static int PEERSTORE_PERIOD = 200;
 
+    private final static int MESSAGE_DELAY = 15;
+    private final static int MESSAGE_PERIOD = 60;
+
     private volatile boolean isRunning;
     private volatile boolean isChannelInit;
 
     private Deque<Peer> peersDeque;
     private ScheduledExecutorService executorService;
 
+    @Autowired
     private NetworkMgr networkMgr;
+
+    @Autowired
     public ChannelMgr channelMgr;
-    public Network network;
-    public PeerClient p2PClient;
 
 
-    private ScheduledFuture discoverFuture;
+    //private ScheduledFuture discoverFuture;
     private ScheduledFuture connectorFuture;
     private ScheduledFuture peerStoreFuture;
-
-    public PeerMgr(NetworkMgr networkMgr) {
-        this.networkMgr = networkMgr;
-        this.network = networkMgr.getNetwork();
-        this.channelMgr = networkMgr.getChannelMgr();
-        this.p2PClient = networkMgr.getP2PClient();
-
-        this.peersDeque = new ConcurrentLinkedDeque<>();
-        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-            AtomicInteger atomicInteger = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "P2P-MGR-" + atomicInteger.getAndIncrement());
-            }
-        });
-    }
+    private ScheduledFuture messageFuture;
 
     /**
      * add peer node to the peers queue
@@ -72,8 +63,10 @@ public class PeerMgr {
     public void addPeer(Peer peer) {
         peersDeque.addFirst(peer);
         while (peersDeque.size() > MAX_QUEUE_SIZE) {
-            peersDeque.remove();
+            peersDeque.removeLast();
         }
+
+        //LOGGER.info("Peers queue size: {}, {}", peersDeque, peersDeque.size());
     }
 
     /**
@@ -107,11 +100,6 @@ public class PeerMgr {
     public void onChannelActive(boolean channelActive) {
         if (!isChannelInit) {
             isChannelInit = true;
-
-            //Persist peers to database
-            if (network.peerPersistEnabled()) {
-
-            }
         }
     }
 
@@ -120,12 +108,6 @@ public class PeerMgr {
      */
     public synchronized void start() {
         if (!isRunning) {
-            discoverFuture = executorService.scheduleAtFixedRate(
-                    new DnsDiscovery(this),
-                    DISCOVER_DELAY,
-                    DISCOVER_PERIOD,
-                    TimeUnit.SECONDS);
-
             connectorFuture = executorService.scheduleAtFixedRate(
                     new PeerConnector(networkMgr),
                     CONNECTOR_DELAY,
@@ -138,9 +120,17 @@ public class PeerMgr {
                     PEERSTORE_PERIOD,
                     TimeUnit.SECONDS);
 
+            messageFuture = executorService.scheduleAtFixedRate(
+                    new MessageDiscover(channelMgr),
+                    MESSAGE_DELAY,
+                    MESSAGE_PERIOD,
+                    TimeUnit.SECONDS);
+
             isRunning = true;
-            logger.info("The peer manager started");
+            LOGGER.info("The peer manager started");
         }
+
+        addPeer(new Peer("192.168.193.13", networkMgr.getNetwork().p2pServerListeningPort()));
     }
 
     /**
@@ -148,14 +138,37 @@ public class PeerMgr {
      */
     public synchronized void shutdown() {
         if (isRunning) {
-            discoverFuture.cancel(false);
+            //discoverFuture.cancel(false);
             connectorFuture.cancel(true);
             peerStoreFuture.cancel(false);
+            messageFuture.cancel(true);
 
             isRunning = false;
 
-            logger.info("The peer manager stopped");
+            LOGGER.info("The peer manager shut down");
         }
+    }
+
+    public void add(Collection<Peer> collection) {
+        CollectionUtils.forAllDo(collection, o -> addPeer((Peer) o));
+    }
+
+    public void addPeers(Collection<String> addressList) {
+        CollectionUtils.forAllDo(addressList, o -> addPeer(new Peer((String) o,
+                networkMgr.getNetwork().p2pServerListeningPort())));
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.peersDeque = new ConcurrentLinkedDeque<>();
+        this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            AtomicInteger atomicInteger = new AtomicInteger(1);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "P2P-MGR-" + atomicInteger.getAndIncrement());
+            }
+        });
     }
 }
 

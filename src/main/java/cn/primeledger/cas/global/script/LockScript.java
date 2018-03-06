@@ -1,6 +1,8 @@
 package cn.primeledger.cas.global.script;
 
+import cn.primeledger.cas.global.entity.BaseSerializer;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
@@ -12,7 +14,8 @@ import org.apache.commons.lang.StringUtils;
  **/
 @Getter
 @Setter
-public class LockScript {
+@NoArgsConstructor
+public class LockScript extends BaseSerializer {
     /**
      * lock script type such as P2PKH or P2SH
      */

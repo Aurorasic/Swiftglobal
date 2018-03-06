@@ -72,7 +72,7 @@ public class MessageQueue {
 
         if (requestQueue.peek() != null) {
             MessageWrapper messageWrapper = requestQueue.peek();
-            BaseMessage waitingMessage = messageWrapper.getMsg();
+            BaseMessage waitingMessage = messageWrapper.getBaseMessage();
 
             if (waitingMessage instanceof PingMessage) {
                 hasPing = false;
@@ -104,7 +104,7 @@ public class MessageQueue {
         if (messageWrapper != null && messageWrapper.getRetryTimes() == 0) {
             // TODO: retry logic || hasToRetry()){
 
-            BaseMessage msg = messageWrapper.getMsg();
+            BaseMessage msg = messageWrapper.getBaseMessage();
 
             ctx.writeAndFlush(msg).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
@@ -120,5 +120,20 @@ public class MessageQueue {
             timerTask.cancel(false);
         }
     }
+
+    public MessageWrapper receive(BaseMessage baseMessage) {
+        if (requestQueue.peek() != null) {
+            MessageWrapper messageWrapper = requestQueue.peek();
+            BaseMessage msg = messageWrapper.getBaseMessage();
+
+            if (msg.getAnswerMessage() != null && baseMessage.getClass() == msg.getAnswerMessage()) {
+                messageWrapper.setAnswered(true);
+                return messageWrapper;
+            }
+        }
+
+        return null;
+    }
+
 
 }

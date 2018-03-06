@@ -1,6 +1,7 @@
 package cn.primeledger.cas.global.p2p.discover;
 
 import cn.primeledger.cas.global.config.Network;
+import lombok.extern.slf4j.Slf4j;
 import org.bitlet.weupnp.GatewayDevice;
 import org.bitlet.weupnp.GatewayDiscover;
 import org.slf4j.Logger;
@@ -17,8 +18,9 @@ import java.util.Map;
  *
  * @author zhao xiaogang
  */
+
+@Slf4j
 public class UpnpDiscovery implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(UpnpDiscovery.class);
     private static final String PROTOCOL = "TCP";
 
     private Network network;
@@ -38,13 +40,13 @@ public class UpnpDiscovery implements Runnable {
             Map<InetAddress, GatewayDevice> devices = discover.discover();
 
             if (devices.entrySet().size() == 0) {
-                logger.info("Not found a upnp gateway device");
+                LOGGER.info("Not found a upnp gateway device");
                 return;
             }
 
             for (Map.Entry<InetAddress, GatewayDevice> entry : devices.entrySet()) {
                 GatewayDevice gw = entry.getValue();
-                logger.info("Found a upnp gateway device: local addr = {}, external addr = {}",
+                LOGGER.info("Found a upnp gateway device: local addr = {}, external addr = {}",
                         gw.getLocalAddress().getHostAddress(), gw.getExternalIPAddress());
 
                 int listenPort = network.p2pServerListeningPort();
@@ -53,7 +55,7 @@ public class UpnpDiscovery implements Runnable {
                         PROTOCOL, "Add mapping for P2P network");
             }
         } catch (IOException | SAXException | ParserConfigurationException e) {
-            logger.info("Failed to add upnp port mapping", e);
+            LOGGER.info("Failed to add upnp port mapping", e);
         }
     }
 }

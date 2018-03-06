@@ -1,6 +1,8 @@
 package cn.primeledger.cas.global.script;
 
+import cn.primeledger.cas.global.entity.BaseSerializer;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -16,7 +18,8 @@ import java.util.List;
  **/
 @Getter
 @Setter
-public class UnLockScript {
+@NoArgsConstructor
+public class UnLockScript extends BaseSerializer {
     /**
      * max num of public key
      */

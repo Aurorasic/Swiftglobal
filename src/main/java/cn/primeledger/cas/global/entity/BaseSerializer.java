@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 /**
  * @author baizhengwen
- * @date Created in 2018/2/24
+ * @date 2018/2/24
  */
 public class BaseSerializer implements Serializable {
 
@@ -16,7 +16,7 @@ public class BaseSerializer implements Serializable {
     @Override
     public String toString() {
         try {
-            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE, true);
         } catch (Exception e) {
             // ignore
             return super.toString();

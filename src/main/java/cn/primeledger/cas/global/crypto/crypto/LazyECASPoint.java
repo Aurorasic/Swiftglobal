@@ -49,7 +49,7 @@ public class LazyECASPoint {
 
     public boolean isCompressed() {
         if (bits != null) {
-            return bits[0] == 2 || bits[0] == 3;
+            return bits[0] == 0x02 || bits[0] == 0x03;
         } else {
             return get().isCompressed();
         }

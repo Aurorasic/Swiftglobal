@@ -4,13 +4,14 @@ import cn.primeledger.cas.global.crypto.crypto.*;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
 import cn.primeledger.cas.global.exception.AddressFormatException;
 import cn.primeledger.cas.global.exception.ECKeyCrypterException;
-import cn.primeledger.cas.global.exception.ParamIsNullException;
+import cn.primeledger.cas.global.exception.ParamsErrorException;
 import cn.primeledger.cas.global.utils.Base58;
 import cn.primeledger.cas.global.utils.CryptoUtils;
 import cn.primeledger.cas.global.utils.Sha256Hash;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -53,6 +55,12 @@ public class ECKey {
      * The parameters of the secp256k1 curve that ECKey uses.
      */
     private static final String COMMON_CURVE = "secp256k1";
+
+    private static final byte ADDRESS_HEADER_TEST = 0x00;
+
+    private static final byte ADDRESS_HEADER_NORMAL = 0x01;
+
+    private static final byte ADDRESS_HEADER_MULTISIG = 0x05;
 
     /**
      * Elliptic curve parameter set.
@@ -107,9 +115,11 @@ public class ECKey {
 
     public ECKey(SecureRandom secureRandom) {
         if (null == secureRandom) {
-            throw new ParamIsNullException("secureRandom is null");
+            throw new ParamsErrorException("secureRandom is null");
         }
         this.keyPair = new KeyPair();
+
+
         ECKeyPairGenerator generator = new ECKeyPairGenerator();
         ECKeyGenerationParameters keygenParams = new ECKeyGenerationParameters(CURVE, secureRandom);
         generator.init(keygenParams);
@@ -122,44 +132,16 @@ public class ECKey {
 
         this.keyPair.setPriKey(getPrivateKeyAsHex());
         this.keyPair.setPubKey(getPublicKeyAsHex());
-        this.keyPair.setPubKeyHash(getPublicKeyHash());
-        this.keyPair.setAddress(toBase58Address());
-    }
-
-    /**
-     * @param seed
-     */
-    public ECKey(String seed) {
-        if (null == seed || "".equals(seed)) {
-            throw new ParamIsNullException("secureRandom is null");
-        }
-        SecureRandom random = new SecureRandom(CryptoUtils.HEX.decode(seed));
-        this.keyPair = new KeyPair();
-        ECKeyPairGenerator generator = new ECKeyPairGenerator();
-        ECKeyGenerationParameters keygenParams = new ECKeyGenerationParameters(CURVE, random);
-        generator.init(keygenParams);
-        AsymmetricCipherKeyPair keypair = generator.generateKeyPair();
-        ECPrivateKeyParameters privParams = (ECPrivateKeyParameters) keypair.getPrivate();
-        ECPublicKeyParameters pubParams = (ECPublicKeyParameters) keypair.getPublic();
-        this.priv = privParams.getD();
-        this.pub = new LazyECASPoint(CURVE.getCurve(), pubParams.getQ().getEncoded(true));
-        this.creationTimeSeconds = CryptoUtils.currentTimeSeconds();
-
-        this.keyPair.setPriKey(getPrivateKeyAsHex());
-        this.keyPair.setPubKey(getPublicKeyAsHex());
-        this.keyPair.setPubKeyHash(getPublicKeyHash());
-        this.keyPair.setAddress(toBase58Address());
     }
 
     public ECKey(KeyPair keyPair, boolean compressed) {
         if (null == keyPair) {
-            throw new ParamIsNullException("params is null");
+            throw new ParamsErrorException("params is null");
         }
-
+        this.keyPair = new KeyPair();
         if (keyPair.getPriKey() == null && keyPair.getPubKey() == null) {
             throw new IllegalArgumentException("KeyPair requires at least private or public key");
         }
-        this.keyPair = new KeyPair();
         this.priv = new BigInteger(1, CryptoUtils.HEX.decode(keyPair.getPriKey()));
         if (keyPair.getPubKey() == null) {
             // Derive public from private.
@@ -169,11 +151,8 @@ public class ECKey {
         } else {
             this.pub = new LazyECASPoint(CURVE.getCurve(), CryptoUtils.HEX.decode(keyPair.getPubKey()));
         }
-
         this.keyPair.setPriKey(getPrivateKeyAsHex());
         this.keyPair.setPubKey(getPublicKeyAsHex());
-        this.keyPair.setPubKeyHash(getPublicKeyHash());
-        this.keyPair.setAddress(toBase58Address());
     }
 
     private ECKey(@Nullable BigInteger priv, ECPoint pub) {
@@ -182,7 +161,7 @@ public class ECKey {
 
     private ECKey(@Nullable BigInteger priv, LazyECASPoint pub) {
         if (null == pub) {
-            throw new ParamIsNullException("LazyECASPoint is null");
+            throw new ParamsErrorException("LazyECASPoint is null");
         }
         this.keyPair = new KeyPair();
         if (priv != null) {
@@ -192,10 +171,6 @@ public class ECKey {
         }
         this.priv = priv;
         this.pub = checkNotNull(pub);
-
-        this.keyPair.setPubKey(getPublicKeyAsHex());
-        this.keyPair.setPubKeyHash(getPublicKeyHash());
-        this.keyPair.setAddress(toBase58Address());
     }
 
     /**
@@ -220,17 +195,31 @@ public class ECKey {
     }
 
     public static ECKey fromPrivateKey(KeyPair key) {
-        if (null == key) {
+        if (null == key || null == key.getPriKey()) {
             return null;
         }
         return fromPrivateKey(CryptoUtils.HEX.decode(key.getPriKey()));
     }
 
+    public static ECKey fromPrivateKey(String priKey) {
+        if (null == priKey) {
+            return null;
+        }
+        return fromPrivateKey(CryptoUtils.HEX.decode(priKey));
+    }
+
     public static ECKey fromPublicKeyOnly(KeyPair key) {
-        if (null == key) {
+        if (null == key || null == key.getPubKey()) {
             return null;
         }
         return fromPublicKeyOnly(CryptoUtils.HEX.decode(key.getPubKey()));
+    }
+
+    public static ECKey fromPublicKeyOnly(String pubKey) {
+        if (null == pubKey) {
+            return null;
+        }
+        return fromPublicKeyOnly(CryptoUtils.HEX.decode(pubKey));
     }
 
     public static class MissingPrivateKeyException extends RuntimeException {
@@ -246,7 +235,7 @@ public class ECKey {
      * @return
      */
     public static boolean checkPublicKey(KeyPair key) {
-        if (null == key) {
+        if (null == key || null == key.getPubKey()) {
             return false;
         }
         try {
@@ -260,21 +249,9 @@ public class ECKey {
     /**
      * Verify that the address is in base58 encoding format.
      *
-     * @param key
+     * @param address
      * @return
      */
-    public static boolean checkBase58Addr(KeyPair key) {
-        if (null == key || null == key.getAddress()) {
-            return false;
-        }
-        try {
-            Base58.decodeChecked(key.getAddress());
-        } catch (AddressFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
     public static boolean checkBase58Addr(String address) {
         if (null == address) {
             return false;
@@ -290,41 +267,17 @@ public class ECKey {
     /**
      * Verify that the public key and address match.
      *
-     * @param key
+     * @param pubKey
+     * @param addr
      * @return
      * @throws SignatureException
      */
-    public static boolean checkPubKeyAndAddr(KeyPair key) {
-        if (null == key) {
+    public static boolean checkPubKeyAndAddr(String pubKey, String addr) {
+        if (null == pubKey || null == addr) {
             return false;
         }
-        if (key.getPubKey() == null && key.getAddress() == null) {
-            return false;
-        }
-        try {
-            String pubKey = pubKey2Base58Address(key);
-            return pubKey.equals(key.getAddress());
-        } catch (SignatureException e) {
-            return false;
-        }
-
-    }
-
-    public static boolean checkPubKeyAndAddr(String key, String addr) {
-        if (key == null && addr == null) {
-            return false;
-        }
-        KeyPair pair = new KeyPair();
-        pair.setPubKey(key);
-        pair.setAddress(addr);
-
-        try {
-            String pubKey = pubKey2Base58Address(pair);
-            return pubKey.equals(addr);
-        } catch (SignatureException e) {
-            return false;
-        }
-
+        String address = pubKey2Base58Address(pubKey);
+        return addr.equals(address);
     }
 
     /**
@@ -338,21 +291,26 @@ public class ECKey {
         if (null == key) {
             return false;
         }
-        if (key.getPubKey() == null && key.getPriKey() == null) {
+        if (null == key.getPubKey() || null == key.getPriKey()) {
             return false;
         }
 
         ECKey newKey = ECKey.fromPrivateKey(key);
-        return key.getPubKey().equals(newKey.getKeyPair().getPubKey());
+        if (null == newKey) {
+            return false;
+        }
+        return key.getPubKey().equals(newKey.getPublicKeyAsHex());
     }
 
     public static boolean checkPriKeyAndPubKey(String priKey, String pubKey) {
-        if (pubKey == null && priKey == null) {
+        if (null == pubKey || null == priKey) {
             return false;
         }
-        KeyPair key = new KeyPair(priKey, pubKey);
-        ECKey newKey = ECKey.fromPrivateKey(key);
-        return key.getPubKey().equals(newKey.getKeyPair().getPubKey());
+        ECKey newKey = ECKey.fromPrivateKey(priKey);
+        if (null == newKey) {
+            return false;
+        }
+        return pubKey.equals(newKey.getPublicKeyAsHex());
     }
 
     /**
@@ -360,21 +318,37 @@ public class ECKey {
      *
      * @param key
      * @return
-     * @throws SignatureException
      */
-    public static String pubKey2Base58Address(KeyPair key) throws SignatureException {
-        if (null == key) {
+    public static String pubKey2Base58Address(KeyPair key){
+        if (null == key || null == key.getPubKey()) {
             return null;
         }
-        if (key.getPubKey() == null) {
-            return null;
-        }
-
         byte[] hash160 = CryptoUtils.sha256hash160(CryptoUtils.HEX.decode(key.getPubKey()));
-
+        if (null == hash160) {
+            return null;
+        }
         Preconditions.checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
         byte[] addressBytes = new byte[1 + hash160.length + 4];
-        addressBytes[0] = (byte) 0;
+        //address version ADDRESS_HEADER_NORMAL
+        addressBytes[0] = (byte) ADDRESS_HEADER_TEST;
+        System.arraycopy(hash160, 0, addressBytes, 1, hash160.length);
+        byte[] checksum = Sha256Hash.hashTwice(addressBytes, 0, hash160.length + 1);
+        System.arraycopy(checksum, 0, addressBytes, hash160.length + 1, 4);
+        return Base58.encode(addressBytes);
+    }
+
+    public static String pubKey2Base58Address(String pubKey){
+        if (null == pubKey) {
+            return null;
+        }
+        byte[] hash160 = CryptoUtils.sha256hash160(CryptoUtils.HEX.decode(pubKey));
+        if (null == hash160) {
+            return null;
+        }
+        Preconditions.checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
+        byte[] addressBytes = new byte[1 + hash160.length + 4];
+        //address version ADDRESS_HEADER_NORMAL
+        addressBytes[0] = (byte) ADDRESS_HEADER_TEST;
         System.arraycopy(hash160, 0, addressBytes, 1, hash160.length);
         byte[] checksum = Sha256Hash.hashTwice(addressBytes, 0, hash160.length + 1);
         System.arraycopy(checksum, 0, addressBytes, hash160.length + 1, 4);
@@ -388,7 +362,7 @@ public class ECKey {
      * @return
      */
     public static boolean isPublicKeyCanonical(KeyPair key) {
-        if (null == key) {
+        if (null == key || null == key.getPubKey()) {
             return false;
         }
         byte[] pubkey = CryptoUtils.HEX.decode(key.getPubKey());
@@ -405,6 +379,31 @@ public class ECKey {
         // Compressed pubkey
         if (pubkey[0] == 0x02 || pubkey[0] == 0x03) {
             if (pubkey.length != 33) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isPublicKeyCanonical(String pubKey) {
+        if (null == pubKey) {
+            return false;
+        }
+        byte[] key = CryptoUtils.HEX.decode(pubKey);
+        if (key.length < 33) {
+            return false;
+        }
+        // Uncompressed pubkey
+        if (key[0] == 0x04) {
+            if (key.length != 65) {
+                return false;
+            }
+            return true;
+        }
+        // Compressed pubkey
+        if (key[0] == 0x02 || key[0] == 0x03) {
+            if (key.length != 33) {
                 return false;
             }
             return true;
@@ -568,6 +567,52 @@ public class ECKey {
             }
         }
         return verify(data, ECASSignature.decodeFromDER(signature), pub);
+    }
+
+    public static String createMultiSigByBase58(int sigNum, List<String> pubKeyLists) {
+        if (CollectionUtils.isEmpty(pubKeyLists) || 0 >= sigNum) {
+            throw new ParamsErrorException("params is error");
+        }
+        if (sigNum > pubKeyLists.size()) {
+            throw new ParamsErrorException("sigNum cannot large pubKeyLists.size()");
+        }
+        if (sigNum > 255) {
+            throw new ParamsErrorException("sigNum is too large than 255");
+        }
+        int length = pubKeyLists.size();
+        byte[] array = new byte[1 + (length * 33)];
+        array[0] = (byte) sigNum;
+        for (int i = 0; i < pubKeyLists.size(); i++) {
+            byte[] pubKeyByte = CryptoUtils.HEX.decode(pubKeyLists.get(i));
+            System.arraycopy(pubKeyByte, 0, array, (i * 33) + 1, pubKeyByte.length);
+        }
+
+        byte[] hash160 = CryptoUtils.sha256hash160(array);
+        byte[] bytes = hash160;
+
+        Preconditions.checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
+        byte[] addressBytes = new byte[1 + bytes.length + 4];
+
+        //multisig address header byte
+        addressBytes[0] = ADDRESS_HEADER_MULTISIG;
+        System.arraycopy(bytes, 0, addressBytes, 1, bytes.length);
+        byte[] checksum = Sha256Hash.hashTwice(addressBytes, 0, bytes.length + 1);
+        System.arraycopy(checksum, 0, addressBytes, bytes.length + 1, 4);
+        return Base58.encode(addressBytes);
+    }
+
+    public static String signMessage(String message, String priKey) {
+        if (null == message || null == priKey) {
+            String error = "params is null";
+            throw new ParamsErrorException(error);
+        }
+        ECKey eckey = ECKey.fromPrivateKey(priKey);
+        if (null == eckey) {
+            return null;
+        }
+        byte[] data = CryptoUtils.formatMessageForSigning(message, Charset.forName("UTF-8"), null);
+        Sha256Hash hash = Sha256Hash.twiceOf(data);
+        return eckey.signMessage(hash, null);
     }
 
     private static boolean verify(byte[] data, ECASSignature signature, byte[] pub) {
@@ -773,7 +818,7 @@ public class ECKey {
     }
 
     public boolean verify(byte[] hash, byte[] signature) {
-        return ECKey.verify(hash, signature, CryptoUtils.HEX.decode(this.getKeyPair().getPubKey()));
+        return ECKey.verify(hash, signature, getPublicKey());
     }
 
     /**
@@ -788,30 +833,10 @@ public class ECKey {
         return this.priv;
     }
 
-    /**
-     * Returns the private key to the byte[] format for the user.
-     *
-     * @return
-     */
-    public byte[] getPrivateKeyBytes() {
-        return CryptoUtils.bigIntegerToBytes(getPrivateKeyByBigInteger(), 32);
-    }
-
-    public byte[] getPublicKey() {
-        return pub.getEncoded();
-    }
-
-    public byte[] getPublicKeyHash() {
-        if (this.keyPair.getPubKeyHash() == null) {
-            this.keyPair.setPubKeyHash(CryptoUtils.sha256hash160(this.pub.getEncoded()));
-        }
-        return this.keyPair.getPubKeyHash();
-    }
-
     public String signMessage(String message) {
         if (message == null) {
             String error = "params is null";
-            throw new ParamIsNullException(error);
+            throw new ParamsErrorException(error);
         }
         byte[] data = CryptoUtils.formatMessageForSigning(message, Charset.forName("UTF-8"), null);
         Sha256Hash hash = Sha256Hash.twiceOf(data);
@@ -822,10 +847,27 @@ public class ECKey {
         return this.pub.isCompressed();
     }
 
+    /**
+     * Returns the private key to the byte[] format for the user.
+     *
+     * @return
+     */
+    private byte[] getPrivateKeyBytes() {
+        return CryptoUtils.bigIntegerToBytes(getPrivateKeyByBigInteger(), 32);
+    }
+
+    private byte[] getPublicKey() {
+        return pub.getEncoded();
+    }
+
+    private byte[] getPublicKeyHash() {
+        return CryptoUtils.sha256hash160(this.pub.getEncoded());
+    }
+
     private String signMessage(Sha256Hash messageHash, @Nullable KeyParameter aesKey) {
         if (null == messageHash) {
             String error = "params is null";
-            throw new ParamIsNullException(error);
+            throw new ParamsErrorException(error);
         }
         ECASSignature sig = sign(messageHash, aesKey);
         int recId = -1;
@@ -880,13 +922,15 @@ public class ECKey {
         return CryptoUtils.HEX.encode(getPrivateKeyBytes());
     }
 
-    private String toBase58Address() {
+    public String toBase58Address() {
         byte[] hash160 = getPublicKeyHash();
         byte[] bytes = hash160;
 
         Preconditions.checkArgument(hash160.length == 20, "Addresses are 160-bit hashes, so you must provide 20 bytes");
         byte[] addressBytes = new byte[1 + bytes.length + 4];
-        addressBytes[0] = (byte) 0;
+        //address version ADDRESS_HEADER_NORMAL
+        addressBytes[0] = ADDRESS_HEADER_TEST;
+        //addressBytes[0] = ADDRESS_HEADER_NORMAL;
         System.arraycopy(bytes, 0, addressBytes, 1, bytes.length);
         byte[] checksum = Sha256Hash.hashTwice(addressBytes, 0, bytes.length + 1);
         System.arraycopy(checksum, 0, addressBytes, bytes.length + 1, 4);
@@ -922,4 +966,5 @@ public class ECKey {
     public KeyPair getKeyPair() {
         return keyPair;
     }
+
 }

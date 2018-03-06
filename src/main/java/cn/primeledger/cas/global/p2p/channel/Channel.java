@@ -1,5 +1,6 @@
 package cn.primeledger.cas.global.p2p.channel;
 
+import cn.primeledger.cas.global.config.Network;
 import cn.primeledger.cas.global.p2p.Peer;
 import cn.primeledger.cas.global.p2p.message.MessageQueue;
 
@@ -21,19 +22,24 @@ public class Channel {
 
     private InetSocketAddress peerAddress;
     private MessageQueue messageQueue;
+    private Network networkConfig;
+    private Peer peerNode;
+    private boolean isDelegate;
 
-    public Channel(InetSocketAddress peerAddress, boolean isInbound) {
+    public Channel(Network network, InetSocketAddress peerAddress, boolean isInbound, boolean isDelegate ) {
         this.id = ATOMIC_LONG.getAndIncrement();
+        this.messageQueue = new MessageQueue();
         this.peerAddress = peerAddress;
         this.isInbound = isInbound;
-        this.messageQueue = new MessageQueue();
+        this.networkConfig = network;
+        this.isDelegate = isDelegate;
     }
 
     /**
      * Get the remote peer's address.
      */
     public InetSocketAddress getPeerAddress() {
-        return peerAddress;
+        return new InetSocketAddress(peerAddress.getAddress(), networkConfig.p2pServerListeningPort());
     }
 
     /**
@@ -41,6 +47,10 @@ public class Channel {
      */
     public int getPeerPort() {
         return peerAddress.getPort();
+    }
+
+    public String getPeerIp() {
+        return peerAddress.getAddress().getHostAddress();
     }
 
     /**
@@ -53,8 +63,9 @@ public class Channel {
     /**
      * Set the channel's state to be true.
      */
-    public void onActive() {
+    public void onActive( Peer peer) {
         isActive = true;
+        peerNode = peer;
     }
 
     /**
@@ -82,7 +93,7 @@ public class Channel {
      * Get the channel's remote peer.
      */
     public Peer getPeerNode() {
-        return new Peer(peerAddress);
+        return peerNode;
     }
 
     /**
@@ -92,4 +103,7 @@ public class Channel {
         return messageQueue;
     }
 
+    public boolean isDelegate() {
+        return isDelegate;
+    }
 }

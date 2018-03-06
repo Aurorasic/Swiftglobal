@@ -26,8 +26,12 @@ public class PeerStoreTask implements Runnable{
     private void save() {
         Deque<Peer> peers = peerMgr.getPeers();
         PeerDatabase db = PeerDatabase.getInstance();
+        byte[] addressBytes;
+
         for (Peer peer :peers) {
-            db.getPeerMap().map.put(peer.getAddress().getAddress().getAddress(), peer.toBytes());
+            addressBytes = peer.getAddress().getAddress().getAddress();
+            db.getPeerMap().map.put(addressBytes, peer.toBytes());
         }
+        db.close();
     }
 }

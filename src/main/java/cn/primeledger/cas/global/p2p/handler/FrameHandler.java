@@ -6,17 +6,19 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 /**
- * frame <--> byte and snappy compress
+ * frame <--> byte
  *
  * @author yuanjiantao
  * @since 2/24/2018
  **/
-
+@Slf4j
 public class FrameHandler extends ByteToMessageCodec<FrameHandler.Frame> {
+    private static final int BASIC_SIZE = 16;
 
     public Channel channel;
 
@@ -26,31 +28,55 @@ public class FrameHandler extends ByteToMessageCodec<FrameHandler.Frame> {
     private final static int MAX_SIZE = 16 * 1024 * 1024;
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Frame frame, ByteBuf byteBuf) throws Exception {
-
+    protected void encode(ChannelHandlerContext ctx, Frame frame, ByteBuf byteBuf) throws Exception {
         if (frame.size > MAX_SIZE) {
+            LOGGER.error("");
             return;
         }
-        writeFrame(frame, byteBuf);
 
+        LOGGER.info("Frame size: {}", frame.getSize());
+        ByteBuf tempBuf = byteBuf.alloc().buffer(BASIC_SIZE + frame.getSize());
+
+        tempBuf.writeInt(frame.cmd);
+        tempBuf.writeInt(frame.size);
+        tempBuf.writeInt(frame.totalFrameSize);
+        tempBuf.writeInt(frame.contextId);
+        tempBuf.writeBytes(frame.payload);
+
+        ctx.write(tempBuf);
     }
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception {
+        if (in.readableBytes() < BASIC_SIZE) {
+            return;
+        }
 
-        Frame frame = readFrame(byteBuf);
-        list.add(frame);
+        int readerIndex = in.readerIndex();
+        int type = in.readInt();
+        int size = in.readInt();
+        int totalFrameSize = in.readInt();
+        int contextId = in.readInt();
+
+        LOGGER.info("ByteBuf size : {}", size);
+
+        if (in.readableBytes() < size) {
+            in.readerIndex(readerIndex);
+        } else {
+            byte[] payload = new byte[size];
+            in.readBytes(payload);
+            list.add(new Frame(type, totalFrameSize, contextId, payload));
+        }
     }
 
 
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Frame {
-
         int cmd;
         int size;
-        int totalFrameSize = -1;
-        int contextId = -1;
+        int totalFrameSize = 0;
+        int contextId = 0;
         byte[] payload;
 
         public Frame(int cmd, byte[] payload) {
@@ -78,23 +104,9 @@ public class FrameHandler extends ByteToMessageCodec<FrameHandler.Frame> {
             return contextId >= 0;
         }
 
-    }
+        public int getSize() {
+            return size;
+        }
 
-    public void writeFrame(Frame frame, ByteBuf byteBuf) {
-        byteBuf.writeInt(frame.cmd);
-        byteBuf.writeInt(frame.size);
-        byteBuf.writeInt(frame.totalFrameSize);
-        byteBuf.writeInt(frame.contextId);
-        byteBuf.writeBytes(frame.payload);
-    }
-
-    public Frame readFrame(ByteBuf byteBuf) {
-        int type = byteBuf.readInt();
-        int size = byteBuf.readInt();
-        int totalFrameSize = byteBuf.readInt();
-        int contextId = byteBuf.readInt();
-        byte[] payload = new byte[size];
-        byteBuf.readBytes(payload);
-        return new Frame(type, totalFrameSize, contextId, payload);
     }
 }

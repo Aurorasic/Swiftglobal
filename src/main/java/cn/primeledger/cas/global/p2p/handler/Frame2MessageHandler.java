@@ -2,6 +2,7 @@ package cn.primeledger.cas.global.p2p.handler;
 
 import cn.primeledger.cas.global.p2p.message.BaseMessage;
 import cn.primeledger.cas.global.p2p.message.MessageFactory;
+import cn.primeledger.cas.global.p2p.message.MessageType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class Frame2MessageHandler extends MessageToMessageCodec<Frame, BaseMessa
     private int maxFramePayloadSize = NO_FRAMING;
     AtomicInteger contextIdCounter = new AtomicInteger(1);
     Map<Integer, Pair<? extends List<Frame>, AtomicInteger>> cacheFrames = new LRUMap<>(16);
-    private MessageFactory messageFactory;
+    private MessageFactory messageFactory = new MessageFactory();
 
 
     @Override
@@ -92,6 +93,7 @@ public class Frame2MessageHandler extends MessageToMessageCodec<Frame, BaseMessa
         Frame head = frames.get(0);
 
         int cmd = head.cmd;
+        LOGGER.info("decodeMessage cmd : {}", MessageType.of(cmd).name());
         int packetSize = head.totalFrameSize;
         byte[] data = new byte[packetSize];
         int pos = 0;

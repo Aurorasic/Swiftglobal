@@ -1,27 +1,35 @@
 package cn.primeledger.cas.global.config;
 
+import cn.primeledger.cas.global.bean.HTreeMapDelegate;
 import cn.primeledger.cas.global.blockchain.Block;
 import cn.primeledger.cas.global.blockchain.BlockIndex;
 import cn.primeledger.cas.global.blockchain.transaction.TransactionIndex;
+import cn.primeledger.cas.global.blockchain.transaction.UTXO;
+import cn.primeledger.cas.global.crypto.ECKey;
+import cn.primeledger.cas.global.crypto.model.KeyPair;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * data source config
  *
  * @author baizhengwen
- * @date Created in 2018/2/24
+ * @date 2018/2/24
  */
 @Configuration
 public class DataSourceConfig {
+
+    @Autowired
+    private KeyPair peerKeyPair;
 
     @Bean
     public DB memoryDB() {
@@ -38,21 +46,38 @@ public class DataSourceConfig {
     }
 
     @Bean
-    public HTreeMap<String, Block> blockData(DB blockChainDB) {
+    public ConcurrentMap<String, Block> blockData(DB blockChainDB) {
         //block table data
-        return (HTreeMap<String, Block>) blockChainDB.hashMap("block").createOrOpen();
+        HTreeMap<String, Block> map = (HTreeMap<String, Block>) blockChainDB.hashMap("block").createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
     }
 
     @Bean
-    public HTreeMap<String, BlockIndex> blockIndexData(DB blockChainDB) {
+    public ConcurrentMap<Long, BlockIndex> blockIndexData(DB blockChainDB) {
         //block index table data
-        return (HTreeMap<String, BlockIndex>) blockChainDB.hashMap("blockIndex").createOrOpen();
+        HTreeMap<Long, BlockIndex> map = (HTreeMap<Long, BlockIndex>) blockChainDB.hashMap("blockIndex").createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
     }
 
     @Bean
-    public HTreeMap<String, TransactionIndex> transactionIndexData(DB blockChainDB) {
+    public ConcurrentMap<String, TransactionIndex> transactionIndexData(DB blockChainDB) {
         //transaction index table data
-        return (HTreeMap<String, TransactionIndex>) blockChainDB.hashMap("transactionIndex").createOrOpen();
+        HTreeMap<String, TransactionIndex> map = (HTreeMap<String, TransactionIndex>) blockChainDB.hashMap("transactionIndex").createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
     }
 
+    @Bean
+    public ConcurrentMap<String, UTXO> utxoData(DB blockChainDB) {
+        //transaction utxo table data
+        HTreeMap<String, UTXO> map = (HTreeMap<String, UTXO>) blockChainDB.hashMap("utxo").createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
+    }
+
+    @Bean
+    public ConcurrentMap<String, UTXO> myUTXOData(DB blockChainDB) {
+        //transaction utxo table data
+        String address = ECKey.pubKey2Base58Address(peerKeyPair.getPubKey());
+        HTreeMap<String, UTXO> map = (HTreeMap<String, UTXO>) blockChainDB.hashMap(address).createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
+    }
 }

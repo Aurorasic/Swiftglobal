@@ -1,6 +1,8 @@
 package cn.primeledger.cas.global.p2p.message;
 
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * @author yuanjiantao
@@ -39,13 +41,15 @@ public abstract class BaseMessage {
      */
     public abstract Class<?> getAnswerMessage();
 
-    /**
-     * toString
-     *
-     * @return
-     */
     @Override
-    public abstract String toString();
+    public String toString() {
+        try {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        } catch (Exception e) {
+            // ignore
+            return super.toString();
+        }
+    }
 
     public int getCmd() {
         return cmd;

@@ -2,10 +2,7 @@ package cn.primeledger.cas.global.blockchain.transaction;
 
 import cn.primeledger.cas.global.entity.BaseSerializer;
 import com.google.common.base.Objects;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.math.BigDecimal;
+import lombok.Data;
 
 /**
  * For checking a spending transaction that it can spend an out put without spending on the most long chain.
@@ -13,8 +10,7 @@ import java.math.BigDecimal;
  * @author yuguojia
  * @create 2018-02-23
  **/
-@Setter
-@Getter
+@Data
 public class UTXO extends BaseSerializer {
 
     /**
@@ -30,33 +26,30 @@ public class UTXO extends BaseSerializer {
     /**
      * the index of output in the tx
      */
-    private int index;
+    private short index;
 
-    /**
-     * CAS amount
-     */
-    private BigDecimal amount;
+    private BaseOutput output;
 
-    /**
-     * There is not only cas coin, a different currency is a different token
-     */
-    private String currency;
+    private String address;
 
-    public UTXO(String hash,
-                short type,
-                int index,
-                BigDecimal amount,
-                String currency) {
-        this.hash = hash;
-        this.type = type;
-        this.index = index;
-        this.amount = amount;
-        this.currency = currency;
+
+    public UTXO() {
     }
 
-    @Override
-    public String toString() {
-        return String.format("utxo of : %s(%s:%d)", amount, hash, index);
+    public UTXO(InputOutputTx tx, short outIndex, BaseOutput output) {
+        this.hash = tx.getHash();
+        this.type = tx.getType();
+        this.index = outIndex;
+        this.output = output;
+        this.address = output.getLockScript().getAddress();
+    }
+
+    public String getKey() {
+        return buildKey(hash, index);
+    }
+
+    public static String buildKey(String hash, short index) {
+        return hash + "_" + index;
     }
 
     @Override

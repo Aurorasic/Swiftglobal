@@ -1,5 +1,6 @@
 package cn.primeledger.cas.global.p2p.store;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.slf4j.Logger;
@@ -14,9 +15,9 @@ import java.nio.file.Paths;
  *
  * @author zhao xiaogang
  */
-public class PeerDatabase {
 
-    private static final Logger logger = LoggerFactory.getLogger(PeerDatabase.class);
+@Slf4j
+public class PeerDatabase {
 
     private static final String DIRECTOR = "/mapdb/peer";
     private static final String DATA_DIR = "/mapdb/peer/data";
@@ -28,12 +29,15 @@ public class PeerDatabase {
         return instance;
     }
 
+    /**
+     * Constructor for the peer database.
+     * */
     public PeerDatabase() {
         try {
             Files.createDirectories(Paths.get(DIRECTOR));
         } catch (IOException e) {
             if (e != null) {
-                logger.error("Create db error: {}", e.getMessage());
+                LOGGER.error("Create db error: {}", e.getMessage());
             }
         }
 
@@ -51,6 +55,7 @@ public class PeerDatabase {
 
     public void close() {
         if (peerDB != null) {
+            peerDB.commit();
             peerDB.close();
             peerDB = null;
         }

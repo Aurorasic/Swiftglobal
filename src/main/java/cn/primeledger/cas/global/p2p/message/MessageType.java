@@ -20,8 +20,39 @@ public enum MessageType {
     /**
      * HelloMessage
      */
-    HELLO(3);
+    HELLO(3),
 
+    HELLO_ACK(4),
+
+    /**
+     * get nodes
+     */
+    GET_PEERS(5),
+
+    /**
+     * nodes
+     */
+    PEERS(6),
+
+    /**
+     * Business message
+     */
+    BIZ_MSG(7),
+
+    /**
+     * register center register
+     */
+    REGISTER(8),
+
+    /**
+     * register center verify
+     */
+    REGISTERVERIFY(9),
+
+    /**
+     * register center verify ack
+     */
+    REGISTERVERIFYACK(10);
 
     private static final MessageType[] MAP = new MessageType[256];
 

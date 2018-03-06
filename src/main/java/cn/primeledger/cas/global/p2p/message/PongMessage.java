@@ -1,6 +1,6 @@
 package cn.primeledger.cas.global.p2p.message;
 
-import org.spongycastle.util.encoders.Hex;
+import com.google.common.primitives.Longs;
 
 /**
  * @author yuanjiantao
@@ -8,12 +8,12 @@ import org.spongycastle.util.encoders.Hex;
  **/
 public class PongMessage extends BaseMessage {
 
-    private final static byte[] PAYLOAD = Hex.decode("C0");
-    // TODO: 2/25/2018 改变payload 为时间戳，并压缩
+    private long timestamp;
 
-    @Override
-    public byte[] getEncoded() {
-        return PAYLOAD;
+    public PongMessage(byte[] encoded) {
+        this.encoded = encoded;
+        this.timestamp = Longs.fromByteArray(encoded);
+        this.cmd = MessageType.PONG.getCode();
     }
 
     @Override
@@ -22,12 +22,8 @@ public class PongMessage extends BaseMessage {
     }
 
     @Override
-    public String toString() {
-        return null;
-    }
-
-    public PongMessage(byte[] encoded){
-        super(encoded);
+    public byte[] getEncoded() {
+        return encoded;
     }
 
 

@@ -41,24 +41,29 @@ public enum TransactionTypeEnum {
     JOIN_MINE((short) 5),
 
     /**
-     * transaction created by system for updating normal miner address
+     * transaction updated by miner for updating normal miner address
      */
     UPDATE_MINE((short) 6),
 
     /**
-     * transaction created by system for updating system miner address
+     * transaction updated by system for updating system miner address
      */
     UPDATE_SYS_MINE((short) 7),
 
     /**
-     * transaction created by system for stopping mining
+     * transaction updated by miner for stopping mining
      */
     STOP_MINE((short) 8),
 
     /**
-     * transaction created by system for recovering mining
+     * transaction updated by miner for recovering mining
      */
-    RECOVER_MINE((short) 9);
+    RECOVER_MINE((short) 9),
+
+    /**
+     * prepare mine coinbase
+     */
+    COINBASE_PREPARED_MINE((short) 10);
 
     /**
      * the enum type of transaction
@@ -77,6 +82,14 @@ public enum TransactionTypeEnum {
             if (type == typeEnum.getType()) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    public static boolean isSystem(short type) {
+        if (type == JOIN_MINE.getType() ||
+                type == UPDATE_SYS_MINE.getType()) {
+            return true;
         }
         return false;
     }
