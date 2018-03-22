@@ -103,6 +103,19 @@ public class BlockIndex extends BaseSerializer {
         return -1;
     }
 
+    public boolean setBestHash(String blockHash) {
+        if (StringUtils.isEmpty(blockHash) || CollectionUtils.isEmpty(blockHashs)) {
+            return false;
+        }
+        for (int i = 0; i < blockHashs.size(); i++) {
+            if (StringUtils.equals(blockHashs.get(i), blockHash)) {
+                setBestIndex(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean switchToBestChain(String blockHash) {
         int index = getIndex(blockHash);
         if (index < 0) {

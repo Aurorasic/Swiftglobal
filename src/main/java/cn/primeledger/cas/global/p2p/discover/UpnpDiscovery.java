@@ -1,11 +1,9 @@
 package cn.primeledger.cas.global.p2p.discover;
 
-import cn.primeledger.cas.global.config.Network;
+import cn.primeledger.cas.global.config.AppConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.bitlet.weupnp.GatewayDevice;
 import org.bitlet.weupnp.GatewayDiscover;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,10 +21,10 @@ import java.util.Map;
 public class UpnpDiscovery implements Runnable {
     private static final String PROTOCOL = "TCP";
 
-    private Network network;
+    private AppConfig appConfig;
 
-    public UpnpDiscovery(Network network) {
-        this.network = network;
+    public UpnpDiscovery(AppConfig appConfig) {
+        this.appConfig = appConfig;
     }
 
     @Override
@@ -49,7 +47,7 @@ public class UpnpDiscovery implements Runnable {
                 LOGGER.info("Found a upnp gateway device: local addr = {}, external addr = {}",
                         gw.getLocalAddress().getHostAddress(), gw.getExternalIPAddress());
 
-                int listenPort = network.p2pServerListeningPort();
+                int listenPort = appConfig.getSocketServerPort();
                 gw.deletePortMapping(listenPort, PROTOCOL);
                 gw.addPortMapping(listenPort, listenPort, gw.getLocalAddress().getHostAddress(),
                         PROTOCOL, "Add mapping for P2P network");

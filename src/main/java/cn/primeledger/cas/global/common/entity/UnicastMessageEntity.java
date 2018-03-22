@@ -8,5 +8,5 @@ import lombok.Data;
  */
 @Data
 public class UnicastMessageEntity extends StringMessageEntity {
-    private String sourceId;
+
 }

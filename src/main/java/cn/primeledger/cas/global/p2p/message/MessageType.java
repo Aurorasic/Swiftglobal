@@ -42,17 +42,25 @@ public enum MessageType {
     /**
      * register center register
      */
-    REGISTER(8),
+    REG(8),
 
     /**
      * register center verify
      */
-    REGISTERVERIFY(9),
+    REG_ACK(9),
 
     /**
      * register center verify ack
      */
-    REGISTERVERIFYACK(10);
+    REG_RESEND(10),
+
+    INIT_PEERS(11),
+
+    INIT_PEERS_ACK(12),
+
+    GET_ADDRESS(13),
+
+    GET_ADDRESS_ACK(14);
 
     private static final MessageType[] MAP = new MessageType[256];
 

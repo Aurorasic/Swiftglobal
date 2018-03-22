@@ -63,7 +63,11 @@ public enum TransactionTypeEnum {
     /**
      * prepare mine coinbase
      */
-    COINBASE_PREPARED_MINE((short) 10);
+    COINBASE_PREPARED_MINE((short) 10),
+    /**
+     * transaction mining machine management operation
+     */
+    OPERATED_MINE((short) 11);
 
     /**
      * the enum type of transaction

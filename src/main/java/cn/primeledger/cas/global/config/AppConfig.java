@@ -37,8 +37,32 @@ public class AppConfig {
     @Value("${registry.center.ip}")
     private String registryCenterIp;
 
+    @Value("${registry.center.port}")
+    private int registryCenterPort;
+
     @Value("${peer.priKey}")
     private String priKey;
+
+    @Value("${server.port}")
+    private int httpServerPort;
+
+    @Value("${p2p.maxOutboundConnections}")
+    private int maxOutboundConnections;
+
+    @Value("${p2p.maxInboundConnections}")
+    private int maxInboundConnections;
+
+    @Value("${p2p.serverListeningPort}")
+    private int socketServerPort;
+
+    @Value("${p2p.connectionTimeout}")
+    private int connectionTimeout;
+
+    @Value("${p2p.networkType}")
+    private byte networkType;
+
+    @Value("${p2p.clientPublicIp}")
+    private String clientPublicIp;
 
     public String getValue(String key) {
         return environment.getProperty(key);

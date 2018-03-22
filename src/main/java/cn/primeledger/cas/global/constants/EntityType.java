@@ -2,7 +2,6 @@ package cn.primeledger.cas.global.constants;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * message type enum
@@ -14,31 +13,32 @@ import org.apache.commons.lang.StringUtils;
 @AllArgsConstructor
 public enum EntityType {
 
-    // base messages
-    PINT((short) 0, (short) 1, null),
+    // ================ type 0-99: p2p related =========================
+    PINT((short) 0),
 
-    // business messages
-    TRANSACTION_BROADCAST((short) 100, (short) 1, "transferTxHandler"),
+    // ================ type 200-299: block related ====================
+    BLOCK_BROADCAST((short) 200),
+    INVENTORY((short) 201),
+    MAXHEIGHT((short) 202),
 
-    BLOCK_BROADCAST((short) 200, (short) 1, "blockHandler"),
+    // ================ type 300-399: transaction related ==============
+    TRANSACTION_TRANSFER_BROADCAST((short) 300),
 
-    SIGN_BLOCK((short) 201, (short) 1, "collectSignHandler");
+    TRANSACTION_MINER_MANAGE_BROADCAST((short) 301),
 
-    private short type;
-    private short version;
-    private String handlerName;
+    // ================ type 400-499: consensus related ================
+    SIGN_BLOCK((short) 400),
 
-    public String getCode() {
-        return type + "_" + version;
-    }
+    BLOCK_COLLECT_SIGN((short) 401),
 
-    public static EntityType getTypeAndVersion(short type, short version) {
-        return getByCode(type + "_" + version);
-    }
+    BLOCK_CREATE_SIGN((short) 402);
 
-    public static EntityType getByCode(String code) {
+    private short code;
+
+
+    public static EntityType getByCode(short code) {
         for (EntityType item : values()) {
-            if (StringUtils.equals(code, item.getCode())) {
+            if (code == item.getCode()) {
                 return item;
             }
         }

@@ -1,13 +1,11 @@
 package cn.primeledger.cas.global.p2p.listener;
 
 import cn.primeledger.cas.global.common.event.BroadcastEvent;
-import cn.primeledger.cas.global.common.event.CollectSignEvent;
 import cn.primeledger.cas.global.common.event.UnicastEvent;
 import cn.primeledger.cas.global.common.listener.IEventBusListener;
 import cn.primeledger.cas.global.p2p.channel.Channel;
 import cn.primeledger.cas.global.p2p.channel.ChannelMgr;
 import cn.primeledger.cas.global.p2p.message.BizMessage;
-import cn.primeledger.cas.global.p2p.message.BizWapper;
 import com.google.common.eventbus.Subscribe;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +25,20 @@ public class SendMessageListener implements IEventBusListener {
     @Autowired
     private ChannelMgr channelMgr;
 
+//    @Autowired
+//    private PeerMgr peerMgr;
+
+//    @Autowired
+//    private AppConfig appConfig;
+//    private List<String> addressList;
+//    private long nonce;
+
+//    private Cache<Long, CachedEvent> cache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE)
+//            .build();
+
     @Subscribe
     public void process(BroadcastEvent event) {
         LOGGER.info("Accepted broadcast event, type:[{}]", event.getEntity().getType());
-        channelMgr.putMessageCached(event.getEntity().getData());
 
         List<Channel> channelList = channelMgr.getActiveChannels();
         String[] excludeSourceIds = event.getEntity().getExcludeSourceIds();
@@ -44,6 +52,7 @@ public class SendMessageListener implements IEventBusListener {
                     processEvent(channel, event.getEntity().getType(),
                             event.getEntity().getVersion(),
                             event.getEntity().getData());
+                    channelMgr.putMessageCached(event.getEntity().getData(), cid);
                 }
             }
         } else {
@@ -51,6 +60,8 @@ public class SendMessageListener implements IEventBusListener {
                 processEvent(channel, event.getEntity().getType(),
                         event.getEntity().getVersion(),
                         event.getEntity().getData());
+
+                channelMgr.putMessageCached(event.getEntity().getData(), String.valueOf(channel.getId()));
             }
         }
     }
@@ -58,34 +69,126 @@ public class SendMessageListener implements IEventBusListener {
     @Subscribe
     public void process(UnicastEvent event) {
         LOGGER.info("Accepted unique event, type:[{}]", event.getEntity().getType());
-        channelMgr.putMessageCached(event.getEntity().getData());
+        channelMgr.putMessageCached(event.getEntity().getData(), event.getEntity().getSourceId());
 
-        Long id = Long.parseLong(event.getEntity().getSourceId());
-        Channel channel = channelMgr.getChannelById(id);
+        String peerAddress = event.getEntity().getSourceId();
+        Channel channel = channelMgr.getChannelByPeerId(peerAddress);
+
+        if (channel == null) {
+            LOGGER.warn("Channel not found");
+            return;
+        }
+
         processEvent(channel, event.getEntity().getType(),
                 event.getEntity().getVersion(),
                 event.getEntity().getData());
     }
 
-    @Subscribe
-    public void process(CollectSignEvent event) {
-        List<Channel> channelList = channelMgr.getActiveChannels();
-        for (Channel channel : channelList) {
-            if (channel.isDelegate()) {
-                processEvent(channel, event.getEntity().getType(),
-                        event.getEntity().getVersion(),
-                        event.getEntity().getData());
-            }
-        }
-    }
+//    @Subscribe
+//    public void process(CollectSignEvent event) {
+//        String[] addressArr = event.getEntity().getIncludeSourceIds();
+//        if (addressArr == null || addressArr.length == 0) {
+//            return;
+//        }
+//
+//        List<String> addressList = Arrays.asList(addressArr);
+//        List<String> existAddressList = new LinkedList<>();
+//        channelMgr.getActiveChannels().stream().forEach(channel -> {
+//            if (addressList.contains(channel.getId())) {
+//                existAddressList.add(channel.getId());
+//
+//                processEvent(channel, event.getEntity().getType(),
+//                        event.getEntity().getVersion(),
+//                        event.getEntity().getData());
+//            }
+//        });
+//
+//        List<String> connAddressList = addressList.stream()
+//                .filter(addr -> !existAddressList.contains(addr))
+//                .collect(Collectors.toList());
+//
+//        if (existAddressList.size() < addressList.size()) {
+//            Peer registryPeer = new Peer();
+//            registryPeer.setIp(appConfig.getRegistryCenterIp());
+//            registryPeer.setHttpServerPort(appConfig.getRegistryCenterPort());
+//            peerMgr.addPeer(registryPeer);//connect registry
+//        }
+//
+//        this.addressList = connAddressList;
+//        this.nonce = event.getEntity().getHeight();
+//        CachedEvent cachedEvent = new CachedEvent();
+//        cachedEvent.setAddressList(connAddressList);
+//        cachedEvent.setEvent(event);
+//        cache.put(event.getEntity().getHeight(), cachedEvent);
+//    }
+
+//    @Subscribe
+//    public void sendGetAddressMsg(SendGetAddressEvent addressEvent) {
+//        Channel channel = channelMgr.getChannelById(addressEvent.getId());
+//        if (channel == null) {
+//            LOGGER.warn("Channel not found");
+//            return;
+//        }
+//
+//        if (CollectionUtils.isEmpty(addressList)) {
+//            LOGGER.warn("addressList is null");
+//            return;
+//        }
+//
+//
+////        CachedEvent cachedEvent = cache.getIfPresent(addressEvent.getNonce());
+////        if (cachedEvent == null) {
+////            LOGGER.error("Cached event is null");
+////            return;
+////        }
+//
+//        GetAddressMessage.Wrapper wrapper = new GetAddressMessage.Wrapper();
+//        wrapper.setAddressList(addressList);
+//        wrapper.setNonce(this.nonce);
+//
+//        GetAddressMessage message = new GetAddressMessage(wrapper);
+//        channel.getMessageQueue().sendMessage(message);//get address list from registry
+//
+//        LOGGER.info("get address list from registry ");
+//    }
+
+//    @Subscribe
+//    public void sendGetSignMsg(SendGetSignEvent signEvent) {
+//        Channel channel = channelMgr.getChannelById(signEvent.getId());
+//        if (channel == null) {
+//            LOGGER.warn("Channel not found");
+//            return;
+//        }
+//
+//        CachedEvent cachedEvent = cache.getIfPresent(signEvent.getNonce());
+//        if (cachedEvent == null) {
+//            LOGGER.error("Cached event is null");
+//            return;
+//        }
+//
+//        CollectSignEvent event = cachedEvent.getEvent();
+//        processEvent(channel, event.getEntity().getType(),
+//                event.getEntity().getVersion(),
+//                event.getEntity().getData());
+//    }
 
     private void processEvent(Channel channel, short type, short version, String data) {
-        BizWapper bizWapper = new BizWapper();
-        bizWapper.setType(type);
-        bizWapper.setVersion(version);
-        bizWapper.setData(data);
+        BizMessage.Wrapper wrapper = new BizMessage.Wrapper();
+        wrapper.setType(type);
+        wrapper.setVersion(version);
+        wrapper.setData(data);
 
-        BizMessage bizMessage = new BizMessage(bizWapper);
-        channel.getMessageQueue().sendMessage(bizMessage);
+        BizMessage bizMessage = new BizMessage(wrapper);
+        channel.sendMessage(bizMessage);
     }
+
+//    public CachedEvent getCachedEvent(Long nonce) {
+//        return cache.getIfPresent(nonce);
+//    }
+//
+//    @Data
+//    public static class CachedEvent {
+//        private List<String> addressList;
+//        private CollectSignEvent event;
+//    }
 }

@@ -15,9 +15,11 @@ public class MessageWrapper {
     private long lastTimestamp = 0;
     private long retryTimes = 0;
     private boolean answered = false;
+    private boolean closeAfterSend;
 
     public MessageWrapper(BaseMessage baseMessage) {
         this.baseMessage = baseMessage;
+        this.closeAfterSend = baseMessage.closeAfterSend();
         saveTime();
     }
 

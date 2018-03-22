@@ -1,5 +1,7 @@
 package cn.primeledger.cas.global.p2p.message;
 
+import cn.primeledger.cas.global.p2p.exception.MessageDecodeException;
+
 /**
  * @author yuanjiantao
  * @date 2/26/2018
@@ -15,10 +17,6 @@ public class MessageFactory {
 
         try {
             switch (c) {
-                case PING:
-                    return new PingMessage();
-                case PONG:
-                    return new PongMessage(encoded);
                 case HELLO:
                     return new HelloMessage(encoded);
                 case HELLO_ACK:
@@ -29,17 +27,11 @@ public class MessageFactory {
                     return new GetPeersMessage();
                 case BIZ_MSG:
                     return new BizMessage(encoded);
-                case REGISTER:
-                    return new RegisterMessage(encoded);
-                case REGISTERVERIFY:
-                    return new RegisterVerifyMessage(encoded);
-                case REGISTERVERIFYACK:
-                    return new RegisterVerifyAckMessage(encoded);
                 default:
-                    throw new Exception();
+                    throw new MessageDecodeException("The message not support");
             }
         } catch (Exception e) {
-            throw new Exception("Failed to decode message", e);
+            throw new MessageDecodeException("Failed to decode message");
         }
     }
 }

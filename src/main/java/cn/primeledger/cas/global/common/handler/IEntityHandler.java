@@ -1,15 +1,19 @@
 package cn.primeledger.cas.global.common.handler;
 
+import cn.primeledger.cas.global.constants.EntityType;
+
 /**
  * @author baizhengwen
  * @date 2018/2/28
  */
 public interface IEntityHandler<T> {
 
-    T parse(String data);
+    EntityType getType();
 
-    String format(T data);
+    void process(T data, short version, String sourceId);
 
-    void process(String data);
-
+    /**
+     * when the message queue has no data, this api should be called
+     */
+    void queueElementConsumeOver();
 }

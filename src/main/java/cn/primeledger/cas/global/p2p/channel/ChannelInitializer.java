@@ -1,64 +1,52 @@
 package cn.primeledger.cas.global.p2p.channel;
 
-import cn.primeledger.cas.global.config.Network;
-import cn.primeledger.cas.global.p2p.NetworkMgr;
-import cn.primeledger.cas.global.p2p.Peer;
-import cn.primeledger.cas.global.p2p.handler.Frame2MessageHandler;
-import cn.primeledger.cas.global.p2p.handler.FrameHandler;
-import cn.primeledger.cas.global.p2p.handler.MessageHandler;
+import cn.primeledger.cas.global.p2p.handler.ClientInboundHandler;
+import cn.primeledger.cas.global.p2p.handler.FrameCodecHandler;
+import cn.primeledger.cas.global.p2p.handler.MessageCodecHandler;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
-import java.net.InetSocketAddress;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
 /**
  * Initialize the channel configuration.
  *
  * @author zhao xiaogang
  */
+@ChannelHandler.Sharable
+@Component
 public class ChannelInitializer extends io.netty.channel.ChannelInitializer<NioSocketChannel> {
     private final static int MAX_CONNECTION = 100;
     private final static int BUFF_SIZE = 256 * 1024;
 
-    private NetworkMgr networkMgr;
+    @Autowired
     private ChannelMgr channelMgr;
-    private Network networkConfig;
-    private Peer peerNode;
+    @Autowired
+    private ApplicationContext context;
 
-    public ChannelInitializer(NetworkMgr networkMgr, Peer peerNode) {
-        this.channelMgr = networkMgr.getNetwork().context().getBean(ChannelMgr.class);
-        this.networkConfig = networkMgr.getNetwork();
-        this.networkMgr = networkMgr;
-        this.peerNode = peerNode;
-    }
 
-    public boolean isInbound() {
-        return this.peerNode == null;
-    }
+//    public ChannelInitializer(ApplicationContext context) {
+//        this.channelMgr = context.getBean(ChannelMgr.class);
+//        this.context = context;
+//    }
 
     @Override
     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-        /**
-         * If the channel of the local peers is in the inbound state, the Channel Initializer will work for the
-         * server mode. So the address of local channel will use the remote Address from {@link NioSocketChannel}.
-         * Otherwise, it will get from {@link cn.primeledger.cas.global.p2p.discover.PeerDiscovery} .
-         */
-        InetSocketAddress socketAddress = isInbound() ? nioSocketChannel.remoteAddress() : peerNode.getAddress();
-        boolean isDelegate = isInbound() ? false : peerNode.isDelegate();
-        Channel channel = new Channel(networkConfig, socketAddress, isInbound(), isDelegate);
+        Channel channel = new Channel(nioSocketChannel.id().toString(), false);
         channelMgr.add(channel);
-
         initChannelConfig(nioSocketChannel, channel);
     }
 
     private void initChannelConfig(NioSocketChannel nioChannel, Channel channel) {
         final ChannelPipeline pipe = nioChannel.pipeline();
 
-        pipe.addLast("frameHandler", new FrameHandler());
-        pipe.addLast("frame2messageHandler", new Frame2MessageHandler());
-        pipe.addLast("messageHandler", new MessageHandler(channel, networkConfig));
+        pipe.addLast("frameHandler", new FrameCodecHandler());
+        pipe.addLast("frame2messageHandler", new MessageCodecHandler());
+        pipe.addLast("messageHandler", new ClientInboundHandler(context, channel));
 
         nioChannel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(BUFF_SIZE));
         nioChannel.config().setOption(ChannelOption.SO_RCVBUF, BUFF_SIZE);
@@ -68,5 +56,4 @@ public class ChannelInitializer extends io.netty.channel.ChannelInitializer<NioS
             channelMgr.remove(channel);
         });
     }
-
 }

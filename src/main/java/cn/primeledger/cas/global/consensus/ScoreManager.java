@@ -22,7 +22,7 @@ public class ScoreManager {
      * when current block height is [401-500], it stores the score of  [1-300]
      * and so on
      */
-    private Map<String, Integer> dposBaseMinerSoreMap = new ConcurrentHashMap<>(256);
+    private Map<String, Integer> dposMinerSoreMap = new ConcurrentHashMap<>(256);
 
     private Map<String, Integer> tmpMinerSoreMap = new ConcurrentHashMap<>(256);
 
@@ -33,7 +33,7 @@ public class ScoreManager {
     private Map<String, Integer> allMinerSoreMap = new ConcurrentHashMap<>(256);
 
     public Integer findDposScore(String address) {
-        return dposBaseMinerSoreMap.get(address);
+        return dposMinerSoreMap.get(address);
     }
 
     public void freshDposScoreMap() {
@@ -42,7 +42,7 @@ public class ScoreManager {
             tmpMinerSoreMap.putAll(allMinerSoreMap);
         }
         newBaseMinerSoreMap.putAll(tmpMinerSoreMap);
-        dposBaseMinerSoreMap = newBaseMinerSoreMap;
+        dposMinerSoreMap = newBaseMinerSoreMap;
 
         tmpMinerSoreMap.clear();
         tmpMinerSoreMap.putAll(allMinerSoreMap);

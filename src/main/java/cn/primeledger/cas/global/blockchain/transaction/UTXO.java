@@ -19,26 +19,19 @@ public class UTXO extends BaseSerializer {
     private String hash;
 
     /**
-     * the transaction type
-     */
-    private short type;
-
-    /**
-     * the index of output in the tx
+     * the index of output in the tx bebin with 0
      */
     private short index;
 
-    private BaseOutput output;
+    private TransactionOutput output;
 
     private String address;
-
 
     public UTXO() {
     }
 
-    public UTXO(InputOutputTx tx, short outIndex, BaseOutput output) {
+    public UTXO(Transaction tx, short outIndex, TransactionOutput output) {
         this.hash = tx.getHash();
-        this.type = tx.getType();
         this.index = outIndex;
         this.output = output;
         this.address = output.getLockScript().getAddress();
@@ -67,5 +60,24 @@ public class UTXO extends BaseSerializer {
         }
         UTXO other = (UTXO) obj;
         return getIndex() == other.getIndex() && getHash().equals(other.getHash());
+    }
+
+    public boolean isCASCurrency() {
+        return output.isCASCurrency();
+    }
+
+    public boolean isMinerCurrency() {
+        return output.isMinerCurrency();
+    }
+
+    public boolean hasMinerStake() {
+        return output.hasMinerStake();
+    }
+
+    public boolean isCommunityManagerCurrency() {
+        return output.isCommunityManagerCurrency();
+    }
+    public boolean isIssueTokenCurrency(){
+        return output.isIssueTokenCurrency();
     }
 }

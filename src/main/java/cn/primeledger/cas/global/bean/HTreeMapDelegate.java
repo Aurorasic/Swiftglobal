@@ -1,6 +1,7 @@
 package cn.primeledger.cas.global.bean;
 
 import com.google.common.base.Preconditions;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
@@ -18,6 +19,7 @@ import java.util.function.Function;
  * @author baizhengwen
  * @date 2018/3/1
  */
+@Slf4j
 public class HTreeMapDelegate<K, V> implements ConcurrentMap<K, V> {
 
     private DB db;
@@ -52,6 +54,9 @@ public class HTreeMapDelegate<K, V> implements ConcurrentMap<K, V> {
 
     @Override
     public V get(Object key) {
+        if (key == null) {
+            return null;
+        }
         return map.get(key);
     }
 
@@ -155,6 +160,7 @@ public class HTreeMapDelegate<K, V> implements ConcurrentMap<K, V> {
             db.commit();
         } catch (Exception e) {
             db.rollback();
+            LOGGER.error(e.getMessage(), e);
         }
         return call;
     }
@@ -165,6 +171,7 @@ public class HTreeMapDelegate<K, V> implements ConcurrentMap<K, V> {
             db.commit();
         } catch (Exception e) {
             db.rollback();
+            LOGGER.error(e.getMessage(), e);
         }
     }
 }

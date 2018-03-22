@@ -1,86 +1,84 @@
 package cn.primeledger.cas.global.consensus;
 
+import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.blockchain.Block;
-import cn.primeledger.cas.global.blockchain.BlockIndex;
-import cn.primeledger.cas.global.blockchain.PubKeyAndSignaturePair;
-import cn.primeledger.cas.global.blockchain.transaction.BaseTx;
+import cn.primeledger.cas.global.blockchain.BlockService;
+import cn.primeledger.cas.global.blockchain.BlockWitness;
+import cn.primeledger.cas.global.blockchain.transaction.Transaction;
+import cn.primeledger.cas.global.blockchain.transaction.TransactionService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
 
 /**
  * @author yuguojia
  * @date 2018/03/02
  **/
+@Component
 public class MinerScoreStrategy {
     public static int INIT_SCORE = 1000;
+    public static int FRESH_SCORE_BLOCK_NUM = 5 * NodeSelector.BATCHBLOCKNUM;
 
-    public static int PLUS_SCORE_PACKAGED_SYS_TX_BEST = 50;
+    //    public static int PLUS_SCORE_PACKAGED_SYS_TX_BEST = 50;
     public static int PLUS_SCORE_SIG_PACKAGED_BEST = 20;
 
     public static int MINUS_SCORE_PACKAGED_BEST = -200;
     public static int MINUS_SCORE_PACKAGED_ERROR = -600;
     public static int MINUS_SCORE_SIG_PACKAGED_ERROR = -100;
-    public static int MINUS_SCORE_SKIPPED_PACKAGED = -400;
+    public static int MINUS_SCORE_SKIPPED_PACKAGED_BEST = -400;
     public static int MINUS_SCORE_SIG_SAME_HEIGHT_BLOCK = -1000;
 
-    @Autowired
     private static ScoreManager scoreManager;
-
-    @Resource(name = "blockData")
-    private static ConcurrentMap<String, Block> blockMap;
-
-    @Resource(name = "blockIndexData")
-    private static ConcurrentMap<Long, BlockIndex> blockIndexMap;
+    private static BlockService blockService;
+    private static TransactionService transactionService;
+    private static NodeManager nodeManager;
 
     private static void freshDposScoreMap(Block newBlock) {
-        if (newBlock.isHundredFirstBlock()) {
+        boolean needToFreshDposScore = newBlock.getHeight() <= Application.PRE_BLOCK_COUNT &&
+                newBlock.isDPosEndHeight();
+
+        if (newBlock.isPowerHeight(FRESH_SCORE_BLOCK_NUM) || needToFreshDposScore) {
             scoreManager.freshDposScoreMap();
         }
     }
 
-    public static void refreshMinersScore(Block newBlock, boolean isBest) {
-        PubKeyAndSignaturePair minerPKSig = newBlock.getMinerPKSig();
-        List<PubKeyAndSignaturePair> otherPKSigs = newBlock.getOtherPKSigs();
-        if (!isBest) {
-            //minus miner score
-            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_ERROR);
-            //minus signers score
-            otherPKSigs.forEach(currentBlockOtherPKSig -> {
-                plusScore(currentBlockOtherPKSig.getAddress(), MINUS_SCORE_SIG_PACKAGED_ERROR);
-            });
+    private static void handlePreMiningScoreMap(Block newBlock) {
+        if (newBlock.getHeight() <= Application.PRE_BLOCK_COUNT) {
+            scoreManager.freshDposScoreMap();
+        }
+    }
 
-        } else {
-            freshDposScoreMap(newBlock);
-            //minus miner score
-            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
-            //plus signers score
-            otherPKSigs.forEach(otherPKSig -> {
-                plusScore(otherPKSig.getAddress(), PLUS_SCORE_SIG_PACKAGED_BEST);
-            });
+    public static void refreshMinersScore(Block bestBlock) {
+        if (bestBlock == null) {
+            return;
+        }
+        BlockWitness minerPKSig = bestBlock.getMinerFirstPKSig();
+        List<BlockWitness> otherPKSigs = bestBlock.getBlockWitnesses();
+        //minus miner score
+        plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+        //plus signers score
+        otherPKSigs.forEach(otherPKSig -> {
+            plusScore(otherPKSig.getAddress(), PLUS_SCORE_SIG_PACKAGED_BEST);
+        });
 
-            //plus miner score for system transactions
-            List<BaseTx> sysTransactions = newBlock.getSysTransactions();
-            int plusScore = PLUS_SCORE_PACKAGED_SYS_TX_BEST * sysTransactions.size();
-            plusScore(minerPKSig.getAddress(), plusScore);
+        //handle joined miner and removed miner
+        List<Transaction> transactions = bestBlock.getTransactions();
+        for (Transaction tx : transactions) {
+            Set<String> removedMiners = transactionService.removedMiners(tx);
+            for (String removedMiner : removedMiners) {
+                scoreManager.remove(removedMiner);
+            }
+            Set<String> addedMiners = transactionService.addedMiners(tx);
+            for (String addedMiner : addedMiners) {
+                scoreManager.putIfAbsent(addedMiner, INIT_SCORE);
+            }
         }
 
         //minus signers score for their same height signatures
-        BlockIndex blockIndex = blockIndexMap.get(newBlock.getHeight());
-        ArrayList<String> blockHashs = blockIndex.getBlockHashs();
-        List<Block> sameHeightOtherBlocks = new LinkedList<>();
-        blockHashs.forEach(blockHash -> {
-            Block otherBlock = blockMap.get(blockHash);
-            if (otherBlock != null &&
-                    !StringUtils.equals(otherBlock.getHash(), newBlock.getHash())) {
-                sameHeightOtherBlocks.add(otherBlock);
-            }
-        });
+        List<Block> sameHeightOtherBlocks = blockService.getBlocksByHeightExclude(bestBlock.getHeight(), bestBlock.getHash());
         otherPKSigs.forEach(currentBlockOtherPKSig -> {
             //one signer signed same height blocks
             sameHeightOtherBlocks.forEach(sameHeightOtherBlock -> {
@@ -89,6 +87,53 @@ public class MinerScoreStrategy {
                 }
             });
         });
+        freshDposScoreMap(bestBlock);
+    }
+
+    public static void refreshMinersScore(Block newBlock, boolean isBest) {
+        BlockWitness minerPKSig = newBlock.getMinerFirstPKSig();
+        List<BlockWitness> otherPKSigs = newBlock.getBlockWitnesses();
+        if (!isBest) {
+            //minus miner score
+//            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_ERROR);
+            //minus signers score
+//            otherPKSigs.forEach(currentBlockOtherPKSig -> {
+//                plusScore(currentBlockOtherPKSig.getAddress(), MINUS_SCORE_SIG_PACKAGED_ERROR);
+//            });
+
+        } else {
+            //minus miner score
+            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+            //plus signers score
+            otherPKSigs.forEach(otherPKSig -> {
+                plusScore(otherPKSig.getAddress(), PLUS_SCORE_SIG_PACKAGED_BEST);
+            });
+
+            //handle joined miner and removed miner
+            List<Transaction> transactions = newBlock.getTransactions();
+            for (Transaction tx : transactions) {
+                Set<String> removedMiners = transactionService.removedMiners(tx);
+                for (String removedMiner : removedMiners) {
+                    scoreManager.remove(removedMiner);
+                }
+                Set<String> addedMiners = transactionService.addedMiners(tx);
+                for (String addedMiner : addedMiners) {
+                    scoreManager.putIfAbsent(addedMiner, INIT_SCORE);
+                }
+            }
+        }
+
+        //minus signers score for their same height signatures
+        List<Block> sameHeightOtherBlocks = blockService.getBlocksByHeightExclude(newBlock.getHeight(), newBlock.getHash());
+        otherPKSigs.forEach(currentBlockOtherPKSig -> {
+            //one signer signed same height blocks
+            sameHeightOtherBlocks.forEach(sameHeightOtherBlock -> {
+                if (sameHeightOtherBlock.isContainOtherPK(currentBlockOtherPKSig.getPubKey())) {
+                    plusScore(currentBlockOtherPKSig.getAddress(), MINUS_SCORE_SIG_SAME_HEIGHT_BLOCK);
+                }
+            });
+        });
+        freshDposScoreMap(newBlock);
     }
 
     /**
@@ -98,30 +143,36 @@ public class MinerScoreStrategy {
      * @param newBestBlock
      */
     public static void changeScore(Block oldBestBlock, Block newBestBlock) {
-        // reduce old best block miner score
-        PubKeyAndSignaturePair oldBestMinerPKSig = oldBestBlock.getMinerPKSig();
-        List<PubKeyAndSignaturePair> oldBestOtherPKSigs = oldBestBlock.getOtherPKSigs();
+        // 1.1 rollback :reduce old best block miner score
+        BlockWitness oldBestMinerPKSig = oldBestBlock.getMinerFirstPKSig();
+        List<BlockWitness> oldBestOtherPKSigs = oldBestBlock.getBlockWitnesses();
         plusScore(oldBestMinerPKSig.getAddress(),
                 MINUS_SCORE_PACKAGED_BEST * -1 + MINUS_SCORE_PACKAGED_ERROR);
         oldBestOtherPKSigs.forEach(otherPKSig -> {
             plusScore(otherPKSig.getAddress(),
                     PLUS_SCORE_SIG_PACKAGED_BEST * -1 + MINUS_SCORE_SIG_PACKAGED_ERROR);
         });
-        //reduce miner score for system transaction
-        List<BaseTx> sysTransactions = oldBestBlock.getSysTransactions();
-        int plusScore = PLUS_SCORE_PACKAGED_SYS_TX_BEST * sysTransactions.size();
-        plusScore(oldBestMinerPKSig.getAddress(), plusScore * -1);
-
-        //add miner new best block score
-        PubKeyAndSignaturePair newBestMinerPKSig = newBestBlock.getMinerPKSig();
-        List<PubKeyAndSignaturePair> newBestOtherPKSigs = newBestBlock.getOtherPKSigs();
+        //1.2 add miner new best block score
+        BlockWitness newBestMinerPKSig = newBestBlock.getMinerFirstPKSig();
+        List<BlockWitness> newBestOtherPKSigs = newBestBlock.getBlockWitnesses();
         plusScore(newBestMinerPKSig.getAddress(),
                 MINUS_SCORE_PACKAGED_ERROR * -1 + MINUS_SCORE_PACKAGED_BEST);
-        //minus signers score
+
+        //2.1 rollback :reduce signers score for old best system transaction
+        oldBestOtherPKSigs.forEach(pair -> {
+            plusScore(pair.getAddress(),
+                    PLUS_SCORE_SIG_PACKAGED_BEST * -1 + MINUS_SCORE_SIG_PACKAGED_ERROR);
+        });
+        //2.2 plus signers score for new best chain
         newBestOtherPKSigs.forEach(pair -> {
             plusScore(pair.getAddress(),
                     MINUS_SCORE_SIG_PACKAGED_ERROR * -1 + PLUS_SCORE_SIG_PACKAGED_BEST);
         });
+
+        //3.1 rollback :add miner score for skipped old best blocking
+//        handleSkippedMinerScore(oldBestBlock, true);
+        //3.2 minus miner score for skipped blocking of new best chain
+//        handleSkippedMinerScore(newBestBlock, false);
     }
 
     private static void plusScore(String address, int plusScore) {
@@ -132,4 +183,37 @@ public class MinerScoreStrategy {
             scoreManager.put(address, score);
         }// else it is empty address, do not handle
     }
+
+//    private static void handleSkippedMinerScore(Block block, boolean rollBack) {
+//        if (StringUtils.isEmpty(block.getPrevBlockHash())) {
+//            return;
+//        }
+//        List<String> skippedAddressList = nodeManager.getUnPackNode(
+//                blockService.getBlock(block.getPrevBlockHash()), block);
+//        int ratio = rollBack ? -1 : 1;
+//        for (String skippedAddress : skippedAddressList) {
+//            plusScore(skippedAddress, MINUS_SCORE_SKIPPED_PACKAGED_BEST * ratio);
+//        }
+//    }
+
+    @Autowired(required = true)
+    public void setScoreManager(ScoreManager scoreManager) {
+        MinerScoreStrategy.scoreManager = scoreManager;
+    }
+
+    @Autowired(required = true)
+    public void setBlockService(BlockService blockService) {
+        MinerScoreStrategy.blockService = blockService;
+    }
+
+    @Autowired(required = true)
+    public void setTransactionService(TransactionService transactionService) {
+        MinerScoreStrategy.transactionService = transactionService;
+    }
+
+    @Autowired(required = true)
+    public void setBlockService(NodeManager nodeManager) {
+        MinerScoreStrategy.nodeManager = nodeManager;
+    }
+
 }

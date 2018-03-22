@@ -7,6 +7,7 @@ import cn.primeledger.cas.global.blockchain.transaction.TransactionIndex;
 import cn.primeledger.cas.global.blockchain.transaction.UTXO;
 import cn.primeledger.cas.global.crypto.ECKey;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
+import cn.primeledger.cas.global.p2p.Peer;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -78,6 +79,20 @@ public class DataSourceConfig {
         //transaction utxo table data
         String address = ECKey.pubKey2Base58Address(peerKeyPair.getPubKey());
         HTreeMap<String, UTXO> map = (HTreeMap<String, UTXO>) blockChainDB.hashMap(address).createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
+    }
+
+    @Bean
+    public ConcurrentMap<Long, Block> witnessedBlock(DB blockChainDB) {
+        //block index table data
+        HTreeMap<Long, Block> map = (HTreeMap<Long, Block>) blockChainDB.hashMap("witnessedBlock").createOrOpen();
+        return new HTreeMapDelegate<>(blockChainDB, map);
+    }
+
+    @Bean
+    public ConcurrentMap<String, Peer> peerMap(DB blockChainDB) {
+        //block index table data
+        HTreeMap<String, Peer> map = (HTreeMap<String, Peer>) blockChainDB.hashMap("peer").createOrOpen();
         return new HTreeMapDelegate<>(blockChainDB, map);
     }
 }

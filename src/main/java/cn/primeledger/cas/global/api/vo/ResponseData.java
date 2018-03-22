@@ -1,0 +1,46 @@
+package cn.primeledger.cas.global.api.vo;
+
+import cn.primeledger.cas.global.constants.RespCodeEnum;
+import lombok.Data;
+
+/**
+ * @author baizhengwen
+ * @date 2018/3/16
+ */
+@Data
+public class ResponseData<T> {
+    private String respCode;
+    private String respMsg;
+    private T data;
+
+    public static <R> ResponseData<R> failure(RespCodeEnum respCodeEnum) {
+        return new ResponseData<>(respCodeEnum);
+    }
+
+    public static <R> ResponseData<R> failure(String respCode, String respMsg) {
+        return new ResponseData<>(respCode, respMsg);
+    }
+
+    public static <R> ResponseData<R> success(R data) {
+        ResponseData<R> responseData = new ResponseData<>(RespCodeEnum.SUCCESS);
+        responseData.setData(data);
+        return responseData;
+    }
+
+    public ResponseData(RespCodeEnum respCodeEnum) {
+        this(respCodeEnum.getCode(), respCodeEnum.getDesc());
+    }
+
+    public ResponseData(RespCodeEnum respCodeEnum, String respMsg) {
+        this(respCodeEnum.getCode(), respMsg);
+    }
+
+    public ResponseData(String respCode, String respMsg) {
+        this.respCode = respCode;
+        this.respMsg = respMsg;
+    }
+
+    public RespCodeEnum respCodeEnum() {
+        return RespCodeEnum.getByCode(respCode);
+    }
+}

@@ -1,10 +1,16 @@
 package cn.primeledger.cas.global.crypto;
 
+import cn.primeledger.cas.global.blockchain.transaction.SystemCurrencyEnum;
 import cn.primeledger.cas.global.utils.Sha256Hash;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertTrue;
 
@@ -16,21 +22,42 @@ public class ECKeyTest {
     public static final String signature = "H7xgxcZN44LODIu6FkW0/uHUgBUOlt18gO4UkM8eoT0tdvPeM9SiIRov0MqtdrRWKqvauwi6KTITanITXytzilo=";
     public static final String addr = "1EhGXxcJQFrNMix2L7sKbmBSV7jZriCgMg";
 
+    @Test
+    public void testList() {
+//        ECKey ecKey = ECKey.fromPrivateKey(prieky);
+//        System.out.println(ecKey.getKeyPair().getPubKey());
+        Set<String> sets = Sets.newConcurrentHashSet();
+        List<String> list = Lists.newArrayList();
+        Map<String,String> map = Maps.newConcurrentMap();
+
+        int i = 0;
+        while (i < 10) {
+            sets.add("address " + i + " " + new ECKey().toBase58Address());
+            i++;
+        }
+        Iterator it = sets.iterator();
+        while (it.hasNext()) {
+            System.out.println(it.next());
+        }
+    }
+
     /**
      * 生成需要测试的信息
      */
     @Test
+
     public void createData() {
         ECKey ecKey = new ECKey();
         String data = "asdasdasd";
-        System.out.println("ecKey.getPublicKeyAsHex() = " + ecKey.getKeyPair().getPubKey());
         System.out.println("ecKey.getPrivateKeyAsHex() = " + ecKey.getKeyPair().getPriKey());
+        System.out.println("ecKey.getPublicKeyAsHex() = " + ecKey.getKeyPair().getPubKey());
+
         String sign = ecKey.signMessage(data);
         System.out.println("ecKey.signMessage = " + sign);
         System.out.println("ecKey.toBase58Address() = " + ecKey.toBase58Address());
         if (ecKey.verifySign(data, sign)) {
             System.out.println(true);
-        }else {
+        } else {
             System.out.println(false);
         }
     }

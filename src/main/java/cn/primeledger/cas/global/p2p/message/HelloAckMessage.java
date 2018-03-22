@@ -1,9 +1,14 @@
 package cn.primeledger.cas.global.p2p.message;
 
-import cn.primeledger.cas.global.utils.ProtoBufUtil;
-import com.google.common.primitives.Longs;
+import cn.primeledger.cas.global.crypto.ECKey;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.util.SerializationUtils;
+
+import java.io.Serializable;
 
 /**
  * @author yuanjiantao
@@ -12,28 +17,40 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class HelloAckMessage extends BaseMessage {
-    private HelloAckWraper helloAckWraper;
+public class HelloAckMessage extends BaseMessage<HelloAckMessage.Wrapper> {
 
     public HelloAckMessage(byte[] encoded) {
-        super(encoded);
-        this.helloAckWraper = ProtoBufUtil.deserialize(encoded);
-        this.cmd = MessageType.HELLO_ACK.getCode();
+        this((Wrapper) SerializationUtils.deserialize(encoded));
     }
 
-    public HelloAckMessage(HelloAckWraper helloWraper) {
-        this.helloAckWraper = helloWraper;
-        this.encoded = ProtoBufUtil.serialize(helloWraper);
-        this.cmd = MessageType.HELLO_ACK.getCode();
-    }
-
-    @Override
-    public byte[] getEncoded() {
-        return this.encoded;
+    public HelloAckMessage(Wrapper wrapper) {
+        super(MessageType.HELLO_ACK.getCode(), wrapper);
     }
 
     @Override
     public Class<?> getAnswerMessage() {
         return null;
     }
+
+
+    @Data
+    @NoArgsConstructor
+    public static class Wrapper implements Serializable {
+        private String ip;
+        private int port;
+        private String pubKey;
+        private String signature;
+
+        public boolean validSignature() {
+            return ECKey.verifySign(ip, signature, pubKey);
+        }
+
+        public boolean validParams() {
+            return StringUtils.isNotEmpty(ip)
+                    && port != 0
+                    && StringUtils.isNotEmpty(pubKey)
+                    && StringUtils.isNotEmpty(signature);
+        }
+    }
+
 }

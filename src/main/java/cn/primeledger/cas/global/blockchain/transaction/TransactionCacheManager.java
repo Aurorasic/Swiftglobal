@@ -16,7 +16,7 @@ import java.util.Map;
 @Service
 @Data
 public class TransactionCacheManager {
-    private Map<String, BaseTx> transactionMap = new HashMap(16);
+    private Map<String, Transaction> transactionMap = new HashMap(16);
 
     public boolean hasTx() {
         if (CollectionUtils.isNotEmpty(transactionMap.values())) {
@@ -25,7 +25,7 @@ public class TransactionCacheManager {
         return false;
     }
 
-    public void addTransaction(BaseTx transaction) {
+    public void addTransaction(Transaction transaction) {
         if (transactionMap == null) {
             transactionMap = new HashMap(16);
         }

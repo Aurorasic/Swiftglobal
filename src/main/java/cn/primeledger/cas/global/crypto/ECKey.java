@@ -164,13 +164,15 @@ public class ECKey {
             throw new ParamsErrorException("LazyECASPoint is null");
         }
         this.keyPair = new KeyPair();
+        this.priv = priv;
+        this.pub = checkNotNull(pub);
         if (priv != null) {
             checkArgument(priv.bitLength() <= 32 * 8, "private key exceeds 32 bytes: %s bits", priv.bitLength());
             checkArgument(!priv.equals(BigInteger.ZERO));
             checkArgument(!priv.equals(BigInteger.ONE));
+            this.keyPair.setPriKey(getPrivateKeyAsHex());
+            this.keyPair.setPubKey(getPublicKeyAsHex());
         }
-        this.priv = priv;
-        this.pub = checkNotNull(pub);
     }
 
     /**
