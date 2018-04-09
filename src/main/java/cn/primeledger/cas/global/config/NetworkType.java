@@ -1,14 +1,12 @@
 package cn.primeledger.cas.global.config;
 
-import lombok.Data;
-
 /**
  * Define sorts of network types for the p2p network.
  *
- * @author  zhao xiaogang
- * */
+ * @author zhao xiaogang
+ */
 
-public enum  NetworkType {
+public enum NetworkType {
     MAINNET((byte) 0, "mainnet"),
 
     TESTNET((byte) 1, "testnet"),

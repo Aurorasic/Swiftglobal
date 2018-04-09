@@ -37,12 +37,12 @@ public class UTXO extends BaseSerializer {
         this.address = output.getLockScript().getAddress();
     }
 
-    public String getKey() {
-        return buildKey(hash, index);
-    }
-
     public static String buildKey(String hash, short index) {
         return hash + "_" + index;
+    }
+
+    public String getKey() {
+        return buildKey(hash, index);
     }
 
     @Override
@@ -77,7 +77,8 @@ public class UTXO extends BaseSerializer {
     public boolean isCommunityManagerCurrency() {
         return output.isCommunityManagerCurrency();
     }
-    public boolean isIssueTokenCurrency(){
+
+    public boolean isIssueTokenCurrency() {
         return output.isIssueTokenCurrency();
     }
 }

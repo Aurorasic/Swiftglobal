@@ -13,8 +13,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum EntityType {
 
-    // ================ type 0-99: p2p related =========================
-    PINT((short) 0),
+    // ================ type 0-99: base related =========================
+    UNKNOWN((short) 0),
 
     // ================ type 200-299: block related ====================
     BLOCK_BROADCAST((short) 200),

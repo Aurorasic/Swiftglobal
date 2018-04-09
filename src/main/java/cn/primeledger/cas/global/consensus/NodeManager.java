@@ -1,15 +1,25 @@
 package cn.primeledger.cas.global.consensus;
 
+import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.blockchain.Block;
+import cn.primeledger.cas.global.blockchain.BlockIndex;
+import cn.primeledger.cas.global.blockchain.BlockService;
+import cn.primeledger.cas.global.blockchain.BlockWitness;
 import cn.primeledger.cas.global.consensus.sign.service.CollectSignService;
 import cn.primeledger.cas.global.crypto.ECKey;
+import cn.primeledger.cas.global.crypto.model.KeyPair;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * @author yangyi
@@ -18,35 +28,38 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Component
 @Slf4j
-public class NodeManager {
-
-    @Autowired
-    private BlockTimer blockTimer;
-
-    @Autowired
-    private ScoreManager scoreManager;
-
-    @Resource(name = "blockData")
-    private ConcurrentMap<String, Block> blockMap;
-
-    private List<String> nextGroup = new ArrayList<>();
-
-    private List<String> currentGroup = new ArrayList<>();
-
-    private Map<Integer, Map<String, Integer>> groupMap = new HashMap<>();
-
-    private NodeComparator nodeComparator = new NodeComparator();
+public class NodeManager implements InitializingBean {
 
     public static final int NODESIZE = 5;
+    private static final int MAX_SIZE = 20;
+    @Autowired
+    private BlockService blockService;
+    @Autowired
+    private ScoreManager scoreManager;
+    @Autowired
+    private KeyPair keyPair;
+    private String myaddr = ECKey.pubKey2Base58Address(keyPair);
+    private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()
+            .maximumSize(MAX_SIZE)
+            .build();
+    private Map<Integer, Map<String, Integer>> groupMap = new HashMap<>();
+    private NodeComparator nodeComparator = new NodeComparator();
+    private Function<Long, List<String>> function = null;
 
-    public boolean parse(Block block) {
+    public boolean parseDpos(Block block) {
         if (block == null) {
             return false;
         }
         long height = block.getHeight();
         List<String> addressList = block.getNodes();
-        if (addressList == null || addressList.size() != NODESIZE) {return false;
+        if (addressList == null || addressList.size() != NODESIZE) {
+            return false;
         }
+        BlockIndex blockIndexByHeight = blockService.getBlockIndexByHeight(height);
+        LOGGER.info("the blockIndex is {}", blockIndexByHeight);
+        LOGGER.info("the height {} the nodes are {}  block {}", height, addressList, block);
+        List<String> currentGroup = getDposGroup(height);
+        List<String> nextGroup = getNextGroup(height);
         for (int i = 0; i < addressList.size(); i++) {
             String address = addressList.get(i);
             if (currentGroup.contains(address) || nextGroup.contains(address)) {
@@ -64,7 +77,7 @@ public class NodeManager {
                 indexMap.put(address, time + 1);
             }
         }
-        if ((height - 1) % NodeSelector.BATCHBLOCKNUM == 0) {
+        if (isEndHeight(height)) {
             List<String> nodes = null;
             try {
                 nodes = processSort(groupMap, nodeComparator);
@@ -75,20 +88,15 @@ public class NodeManager {
 
             height = height + CollectSignService.witnessNum;
             LOGGER.info("current block {}_{} selected dpos nodes: {}", height, block.getHash(), nodes);
-            blockTimer.processCandidates(height, nodes);
-            currentGroup = nextGroup;
-            nextGroup = nodes;
+            dposNodeMap.put(height, nodes);
             groupMap.clear();
-            blockTimer.processBlock(block);
             return true;
         }
-//        blockTimer.processRelease(block);
-        blockTimer.removeKey(height);
         return false;
     }
 
     private List<String> processSort(Map<Integer, Map<String, Integer>> groupMap, NodeComparator nodeComparator) {
-        List<String> nodes = new ArrayList<>();
+        List<String> nodes = Lists.newLinkedList();
         for (int k = 1; k <= groupMap.size(); k++) {
             Map<String, Integer> indexMap = groupMap.get(k);
             if (indexMap == null) {
@@ -103,6 +111,172 @@ public class NodeManager {
             nodes.add(value);
         }
         return nodes;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        function = (height) -> {
+            List<String> result = Lists.newLinkedList();
+            long endHeight = height - NodeSelector.BATCHBLOCKNUM;
+            List<Block> blocks = blockService.getBestBatchBlocks(endHeight);
+            if (blocks.size() != NodeSelector.BATCHBLOCKNUM) {
+                return result;
+            }
+            Map<Integer, Map<String, Integer>> groupMap = new HashMap<>();
+            Iterator<Block> iterator = blocks.iterator();
+            while (iterator.hasNext()) {
+                Block block = iterator.next();
+                long blockHeight = block.getHeight();
+                List<String> addressList = block.getNodes();
+                if (addressList == null || addressList.size() != NODESIZE) {
+                    return result;
+                }
+                for (int i = 0; i < addressList.size(); i++) {
+                    String address = addressList.get(i);
+                    Map<String, Integer> indexMap = groupMap.get(i + 1);
+                    if (indexMap == null) {
+                        indexMap = new HashMap<>();
+                        groupMap.put(i + 1, indexMap);
+                    }
+                    Integer time = indexMap.get(address);
+                    if (time == null) {
+                        indexMap.put(address, Integer.valueOf(1));
+                    } else {
+                        indexMap.put(address, time + 1);
+                    }
+                }
+                if (isEndHeight(blockHeight)) {
+                    try {
+                        result = processSort(groupMap, nodeComparator);
+                        LOGGER.info("current block {}_{} selected dpos nodes: {}", height, block.getHash(), result);
+                        return result;
+                    } catch (RuntimeException e) {
+                        LOGGER.error(e.getMessage(), e);
+                    }
+                }
+            }
+            return result;
+        };
+    }
+
+    public List<String> getNextGroup(long height) {
+        long batchEndHeight = getBatchEndHeight(height);
+        return dposNodeMap.get(batchEndHeight, function);
+    }
+
+    public List<String> getDposGroup(long height) {
+        long batchEndHeight = getBatchEndHeight(height);
+        batchEndHeight = batchEndHeight - NodeSelector.BATCHBLOCKNUM;
+        return dposNodeMap.get(batchEndHeight, function);
+    }
+
+    public boolean checkProducer(Block block) {
+        BlockWitness blockWitness = block.getMinerFirstPKSig();
+        String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
+        List<String> currentGroup = this.getDposGroup(block.getHeight());
+        return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
+    }
+
+    public int getFullBlockCountByHeight(long height) {
+        long mod = (height - Application.PRE_BLOCK_COUNT) % NodeSelector.BATCHBLOCKNUM;
+        if (mod == 1) {
+            return NodeManager.NODESIZE;
+        } else if (mod == 2) {
+            return NodeManager.NODESIZE - 1;
+        } else if (mod == 0) {
+            return NodeManager.NODESIZE - 2;
+        }
+        throw new RuntimeException("height is error");
+    }
+
+    public boolean isEndHeight(long height) {
+        return 0L == (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
+    }
+
+    public long getBatchStartHeight(long height) {
+        long mod = (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
+        if (mod == 1) {
+            return height;
+        } else if (mod == 2) {
+            return height - 1;
+        } else if (mod == 0) {
+            return height - 2;
+        }
+        throw new RuntimeException("height is error");
+    }
+
+    public long getBatchEndHeight(long height) {
+        long mod = (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
+        if (mod == 1) {
+            return height + 2;
+        } else if (mod == 2) {
+            return height + 1;
+        } else if (mod == 0) {
+            return height;
+        }
+        throw new RuntimeException("height is error");
+    }
+
+    public boolean canPackBlock(long height, String address) {
+        long batchStartHeight = getBatchStartHeight(height);
+        if (batchStartHeight > height) {
+            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height " + height);
+        }
+        Block block = null;
+        while (batchStartHeight < height && (block = blockService.getBestBlockByHeight(batchStartHeight)) != null) {
+            if (block == null) {
+                LOGGER.error("can not find best block by height {}", batchStartHeight);
+                return false;
+            }
+            BlockWitness minerFirstPKSig = block.getMinerFirstPKSig();
+            if (minerFirstPKSig == null) {
+                LOGGER.error("can not find minerFirstPKSig in block {}", block);
+                return false;
+            }
+            String minerAddress = minerFirstPKSig.getAddress();
+            if (StringUtils.isEmpty(minerAddress)) {
+                LOGGER.error("the miner address is empty {} ", block);
+                return false;
+            }
+            if (StringUtils.equals(address, minerAddress)) {
+                LOGGER.info("can not pack the block with height {},address {} ", height, address);
+                return false;
+            }
+            batchStartHeight++;
+        }
+        List<String> dposNodes = this.getDposGroup(height);
+        if (CollectionUtils.isEmpty(dposNodes)) {
+            LOGGER.error("the dpos node is empty with the height {}", height);
+            return false;
+        }
+        if (!dposNodes.contains(address)) {
+            LOGGER.error("the address is not in the dpos nodes,the height {},the address {}, the nodes {}", height, address, dposNodes);
+            return false;
+        }
+        List<Block> blocks = blockService.getBlocksByHeight(height);
+        if (CollectionUtils.isEmpty(blocks)) {
+            return true;
+        }
+        for (Block temp : blocks) {
+            BlockWitness minerFirstPKSig = temp.getMinerFirstPKSig();
+            if (minerFirstPKSig == null) {
+                LOGGER.error("can not find minerFirstPKSig in temp {}", block);
+                return false;
+            }
+            String minerAddress = minerFirstPKSig.getAddress();
+            if (StringUtils.isEmpty(minerAddress)) {
+                LOGGER.error("the miner address is empty {} ", block);
+                return false;
+            }
+            if (StringUtils.equals(minerAddress, address)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean canPackBlock(long height) {
+        return canPackBlock(height, myaddr);
     }
 
     static class NodeComparator implements Comparator<String> {
@@ -125,16 +299,4 @@ public class NodeManager {
         }
     }
 
-    public List<String> getNextGroup() {
-        return nextGroup;
-    }
-
-    public List<String> getCurrentGroup() {
-        return currentGroup;
-    }
-
-    public boolean checkProducer(String pubKey) {
-        String addr = ECKey.pubKey2Base58Address(pubKey);
-        return currentGroup.contains(addr);
-    }
 }

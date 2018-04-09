@@ -2,7 +2,6 @@ package cn.primeledger.cas.global.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import java.io.*;
 import java.util.ArrayList;

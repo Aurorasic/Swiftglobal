@@ -1,7 +1,6 @@
 package cn.primeledger.cas.global.consensus;
 
 import cn.primeledger.cas.global.blockchain.Block;
-import cn.primeledger.cas.global.blockchain.BlockIndex;
 import cn.primeledger.cas.global.blockchain.BlockService;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
@@ -24,39 +23,28 @@ import java.util.stream.Collectors;
 @Slf4j
 public class NodeSelector {
 
-    @Autowired
-    private ScoreManager scoreManager;
-
-    @Autowired
-    private BlockService blockService;
-
-    @Autowired
-    private NodeManager nodeManager;
-
     /**
      * the number of the block each group should pack
      */
     public static final int BATCHBLOCKNUM = 3;
-
     private final int maxScore = 1000;
-
     private final int midScore = 800;
-
     private final int mixScore = 600;
+    @Autowired
+    private ScoreManager scoreManager;
+    @Autowired
+    private BlockService blockService;
+    @Autowired
+    private NodeManager nodeManager;
 
-    public List<String> calculateNodes() {
+    public List<String> calculateNodes(long lastBlockHeight) {
 
         Map<String, Integer> minerSoreMap = scoreManager.getDposMinerSoreMap();
         if (minerSoreMap.size() < NodeManager.NODESIZE) {
             return ListUtils.EMPTY_LIST;
         }
 
-        BlockIndex lastBlockIndex = blockService.getLastBestBlockIndex();
-        if (lastBlockIndex == null) {
-            return ListUtils.EMPTY_LIST;
-        }
-        long height = lastBlockIndex.getHeight();
-        height = (height - 1) / BATCHBLOCKNUM * BATCHBLOCKNUM + 1;
+        long height = (lastBlockHeight - 1) / BATCHBLOCKNUM * BATCHBLOCKNUM + 1;
         if (height < 7) {
             return ListUtils.EMPTY_LIST;
         }
@@ -65,8 +53,8 @@ public class NodeSelector {
         LOGGER.info("begin to select dpos node when pack block,and the hash of the last block in the previous batch is {}", hash);
         LOGGER.info("the minerSoreMap to select dpos is {}", minerSoreMap);
 
-        final List<String> currentGroup = nodeManager.getCurrentGroup();
-        final List<String> nextGroup = nodeManager.getNextGroup();
+        final List<String> currentGroup = nodeManager.getDposGroup(lastBlockHeight + 1);
+        final List<String> nextGroup = nodeManager.getNextGroup(lastBlockHeight + 1);
         LOGGER.info("the currentGroup is {}", currentGroup);
         LOGGER.info("the nextGroup is {}", nextGroup);
 

@@ -12,6 +12,8 @@ import java.util.List;
 @Getter
 @Setter
 public class Script {
-    /**The program is a set of chunks where each element is either [opcode] or [data, data, data ...]*/
+    /**
+     * The program is a set of chunks where each element is either [opcode] or [data, data, data ...]
+     */
     private List<ScriptChunk> chunks;
 }

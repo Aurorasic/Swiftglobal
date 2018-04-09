@@ -1,14 +1,13 @@
 package cn.primeledger.cas.global.consensus.syncblock;
 
-import cn.primeledger.cas.global.blockchain.BlockIndex;
 import cn.primeledger.cas.global.blockchain.BlockService;
-import cn.primeledger.cas.global.common.handler.UniqueEntityHandler;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
+import cn.primeledger.cas.global.common.SocketRequest;
+import cn.primeledger.cas.global.common.handler.BaseEntityHandler;
 import cn.primeledger.cas.global.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.HashSet;
 
 /**
  * @author yuanjiantao
@@ -16,7 +15,7 @@ import java.util.HashSet;
  */
 @Component("maxHeightHandler")
 @Slf4j
-public class MaxHeightHandler extends UniqueEntityHandler<MaxHeight> {
+public class MaxHeightHandler extends BaseEntityHandler<MaxHeight> {
 
     @Autowired
     private BlockService blockService;
@@ -24,23 +23,17 @@ public class MaxHeightHandler extends UniqueEntityHandler<MaxHeight> {
     @Autowired
     private SyncBlockService syncBlockService;
 
+    @Autowired
+    private MessageCenter messageCenter;
+
     @Override
     public EntityType getType() {
         return EntityType.MAXHEIGHT;
     }
 
     @Override
-    public void process(MaxHeight data, short version, String sourceId) {
-
-        BlockIndex blockIndex = blockService.getLastBlockIndex();
-        if (null == blockIndex) {
-            return;
-        }
-        Inventory inventory = new Inventory();
-        inventory.setHeight(blockIndex.getHeight());
-        inventory.setHashs(new HashSet<>(blockIndex.getBlockHashs()));
-        syncBlockService.unicastInventory(inventory, sourceId);
+    protected void process(SocketRequest<MaxHeight> request) {
+        MaxHeight maxHeight = request.getData();
+        syncBlockService.updatePeersMaxHeight(maxHeight.getMaxHeight(), request.getSourceId());
     }
-
-
 }

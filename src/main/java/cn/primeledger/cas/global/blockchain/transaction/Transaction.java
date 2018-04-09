@@ -2,6 +2,8 @@ package cn.primeledger.cas.global.blockchain.transaction;
 
 import cn.primeledger.cas.global.blockchain.PubKeyAndSignPair;
 import cn.primeledger.cas.global.entity.BaseBizEntity;
+import cn.primeledger.cas.global.utils.JsonSizeCounter;
+import cn.primeledger.cas.global.utils.SizeCounter;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -18,43 +20,50 @@ import java.util.List;
  **/
 @Data
 public class Transaction extends BaseBizEntity {
+
+    private static final int LIMITED_SIZE_UNIT = 1024 * 100;
+
     /**
      * the hash of this transaction
      */
     protected String hash;
-
+    /**
+     * lock after pointed block height of time
+     */
+    protected long lockTime;
+    /**
+     * extra info for this transaction
+     */
+    protected String extra;
+    /**
+     * sign of this transaction
+     */
+    protected PubKeyAndSignPair pubKeyAndSignPair;
     /**
      * the sources of current spending
      */
     private List<TransactionInput> inputs;
-
     /**
      * transfer to other coin
      */
     private List<TransactionOutput> outputs;
 
     /**
-     * lock after pointed block height of time
+     * the timestamp of this transaction created
      */
-    protected long lockTime;
+    private long transactionTime = System.currentTimeMillis();
 
-    /**
-     * extra info for this transaction
-     */
-    protected String extra;
-
-    /**
-     * sign of this transaction
-     */
-    protected PubKeyAndSignPair pubKeyAndSignPair;
+    private String minerPubKey;
 
     public String getHash() {
         if (StringUtils.isBlank(hash)) {
             HashFunction function = Hashing.sha256();
             StringBuilder builder = new StringBuilder();
             builder.append(function.hashInt(version));
+            builder.append(function.hashLong(transactionTime));
             builder.append(function.hashLong(lockTime));
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
+            builder.append(function.hashString(null == minerPubKey ? Strings.EMPTY : minerPubKey, Charsets.UTF_8));
             if (CollectionUtils.isNotEmpty(inputs)) {
                 inputs.forEach((input) -> {
                     TransactionOutPoint prevOut = input.getPrevOut();
@@ -83,5 +92,22 @@ public class Transaction extends BaseBizEntity {
             return null;
         }
         return outputs.get(index);
+    }
+
+    public boolean sizeAllowed() {
+        SizeCounter sizeCounter = new JsonSizeCounter();
+        if (sizeCounter.calculateSize(this.inputs) > LIMITED_SIZE_UNIT) {
+            return false;
+        }
+        if (sizeCounter.calculateSize(this.outputs) > LIMITED_SIZE_UNIT) {
+            return false;
+        }
+        if (sizeCounter.calculateSize(this.extra) > LIMITED_SIZE_UNIT) {
+            return false;
+        }
+        if (sizeCounter.calculateSize(this) > LIMITED_SIZE_UNIT) {
+            return false;
+        }
+        return true;
     }
 }

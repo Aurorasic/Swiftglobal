@@ -1,15 +1,14 @@
 package cn.primeledger.cas.global.blockchain;
 
-import cn.primeledger.cas.global.consensus.syncblock.Inventory;
 import cn.primeledger.cas.global.consensus.syncblock.SyncBlockService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * orphan blocks manager storing blocks cannot been connected on chain
@@ -21,33 +20,58 @@ import java.util.*;
 @Data
 @Slf4j
 public class BlockCacheManager {
-    // TODO: yuguojia add overTime, and optimaze the syn proccessing of orphan block
-    private Map<String, BlockFullInfo> orphanBlockMap = new HashMap(16);
+    private static final int MAX_CACHE_HEIGHT = 16;
 
+    private final Map<Long, Map<String, BlockFullInfo>> orphanBlockMap;
     @Autowired
     private BlockService blockService;
     @Autowired
     private SyncBlockService sycBlockService;
 
-    public boolean put(BlockFullInfo blockInfo) {
-        //replace old full block directly
-        orphanBlockMap.put(blockInfo.getBlock().getHash(), blockInfo);
+    public BlockCacheManager() {
+        Comparator<Long> byHeight = Comparator.comparing(Long::longValue).reversed();
+        orphanBlockMap = Collections.synchronizedMap(new TreeMap<>(byHeight));
+    }
+
+    public boolean putAndRequestPreBlocks(BlockFullInfo blockInfo) {
+        long blockHeight = blockInfo.getBlock().getHeight();
+        LOGGER.info("Orphan block cache, map size: {}, height: {}", orphanBlockMap.size(), blockHeight);
+        while (orphanBlockMap.size() >= MAX_CACHE_HEIGHT) {
+            orphanBlockMap.remove(orphanBlockMap.keySet().iterator().next());
+        }
+
+        Map<String, BlockFullInfo> existOrphanBlocks = orphanBlockMap.get(blockHeight);
+        if (existOrphanBlocks == null) {
+            existOrphanBlocks = new ConcurrentHashMap<>();
+            existOrphanBlocks.put(blockInfo.getBlock().getHash(), blockInfo);
+            orphanBlockMap.put(blockHeight, existOrphanBlocks);
+        } else {
+            existOrphanBlocks.put(blockInfo.getBlock().getHash(), blockInfo);
+        }
+
+        requestPreBlocks();
+
         return true;
     }
 
-    public BlockFullInfo remove(String blockHash) {
-        if (orphanBlockMap != null) {
-            return orphanBlockMap.remove(blockHash);
+    public void remove(final String blockHash) {
+        for (Map<String, BlockFullInfo> blocks : orphanBlockMap.values()) {
+            if (blocks.remove(blockHash) != null) {
+                break;
+            }
         }
-        return null;
     }
 
-    public boolean isContains(String blockHash) {
-        BlockFullInfo blockFullInfo = orphanBlockMap.get(blockHash);
-        if (blockFullInfo != null) {
-            return true;
+    public boolean isContains(final String blockHash) {
+        boolean exist = false;
+        for (Map<String, BlockFullInfo> blocks : orphanBlockMap.values()) {
+            if (blocks.containsKey(blockHash)) {
+                exist = true;
+                break;
+            }
         }
-        return false;
+
+        return exist;
     }
 
     public List<BlockFullInfo> getNextConnectionBlocks(String blockHash) {
@@ -56,7 +80,11 @@ public class BlockCacheManager {
             return result;
         }
 
-        List<BlockFullInfo> blockFullInfos = new LinkedList<>(orphanBlockMap.values());
+        List<BlockFullInfo> blockFullInfos = new LinkedList<>();
+
+        for (Map<String, BlockFullInfo> blocks : orphanBlockMap.values()) {
+            blockFullInfos.addAll(blocks.values());
+        }
         for (BlockFullInfo blockFullInfo : blockFullInfos) {
             Block block = blockFullInfo.getBlock();
             if (StringUtils.equals(blockHash, block.getPrevBlockHash())) {
@@ -66,27 +94,23 @@ public class BlockCacheManager {
         return result;
     }
 
-    public void fetchPreBlocks() {
-        List<BlockFullInfo> blockFullInfos = new LinkedList<>(orphanBlockMap.values());
+    public void requestPreBlocks() {
+        List<BlockFullInfo> blockFullInfos = new LinkedList<>();
+        for (Map<String, BlockFullInfo> blocks : orphanBlockMap.values()) {
+            blockFullInfos.addAll(blocks.values());
+        }
+
         for (BlockFullInfo blockFullInfo : blockFullInfos) {
             Block block = blockFullInfo.getBlock();
             String prevBlockHash = block.getPrevBlockHash();
-            if (isContains(prevBlockHash)) {
-                //pre block is in the orphan block cache, donot fetch its pre-blocks
+            if (StringUtils.isEmpty(prevBlockHash) || isContains(prevBlockHash)) {
+//                LOGGER.warn("pre block={} is in the orphan block cache, donot fetch its pre-blocks", prevBlockHash);
                 continue;
             }
             long preHeight = block.getHeight() - 1;
-
-            Inventory inventory = new Inventory();
-            inventory.setHeight(preHeight);
-            BlockIndex preBlockIndex = blockService.getBlockIndexByHeight(preHeight);
-            if (preBlockIndex != null &&
-                    CollectionUtils.isNotEmpty(preBlockIndex.getBlockHashs())) {
-                Set set = new HashSet(preBlockIndex.getBlockHashs());
-                inventory.setHashs(set);
-            }
-            sycBlockService.unicastInventory(inventory, blockFullInfo.getSourceId());
-            LOGGER.info("fetch orphan block pre block height: " + preHeight);
+            sycBlockService.syncBlockByHeight(preHeight, blockFullInfo.getSourceId());
+            LOGGER.info("height={}_block={} is orphan block or no best pre block, fetch pre height blocks", block.getHeight(), block.getHash());
         }
     }
+
 }

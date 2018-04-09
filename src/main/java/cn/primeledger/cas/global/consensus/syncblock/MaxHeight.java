@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
  * @author yuanjiantao
  * @date Created on 3/8/2018
  */
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Data
 public class MaxHeight extends BaseBizEntity {
-
-    String pubKey;
+    private long maxHeight;
 }

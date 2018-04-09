@@ -6,6 +6,7 @@ import cn.primeledger.cas.global.blockchain.BlockService;
 import cn.primeledger.cas.global.blockchain.BlockWitness;
 import cn.primeledger.cas.global.blockchain.transaction.Transaction;
 import cn.primeledger.cas.global.blockchain.transaction.TransactionService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import java.util.Set;
  * @date 2018/03/02
  **/
 @Component
+@Slf4j
 public class MinerScoreStrategy {
     public static int INIT_SCORE = 1000;
     public static int FRESH_SCORE_BLOCK_NUM = 5 * NodeSelector.BATCHBLOCKNUM;
@@ -42,6 +44,7 @@ public class MinerScoreStrategy {
 
         if (newBlock.isPowerHeight(FRESH_SCORE_BLOCK_NUM) || needToFreshDposScore) {
             scoreManager.freshDposScoreMap();
+            LOGGER.info("after freshDposScoreMap, dpos miner score info size:" + scoreManager.getDposMinerSoreMap().size());
         }
     }
 
@@ -56,7 +59,7 @@ public class MinerScoreStrategy {
             return;
         }
         BlockWitness minerPKSig = bestBlock.getMinerFirstPKSig();
-        List<BlockWitness> otherPKSigs = bestBlock.getBlockWitnesses();
+        List<BlockWitness> otherPKSigs = bestBlock.getOtherWitnessSigPKS();
         //minus miner score
         plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         //plus signers score
@@ -92,7 +95,7 @@ public class MinerScoreStrategy {
 
     public static void refreshMinersScore(Block newBlock, boolean isBest) {
         BlockWitness minerPKSig = newBlock.getMinerFirstPKSig();
-        List<BlockWitness> otherPKSigs = newBlock.getBlockWitnesses();
+        List<BlockWitness> otherPKSigs = newBlock.getOtherWitnessSigPKS();
         if (!isBest) {
             //minus miner score
 //            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_ERROR);
@@ -145,7 +148,7 @@ public class MinerScoreStrategy {
     public static void changeScore(Block oldBestBlock, Block newBestBlock) {
         // 1.1 rollback :reduce old best block miner score
         BlockWitness oldBestMinerPKSig = oldBestBlock.getMinerFirstPKSig();
-        List<BlockWitness> oldBestOtherPKSigs = oldBestBlock.getBlockWitnesses();
+        List<BlockWitness> oldBestOtherPKSigs = oldBestBlock.getOtherWitnessSigPKS();
         plusScore(oldBestMinerPKSig.getAddress(),
                 MINUS_SCORE_PACKAGED_BEST * -1 + MINUS_SCORE_PACKAGED_ERROR);
         oldBestOtherPKSigs.forEach(otherPKSig -> {
@@ -154,7 +157,7 @@ public class MinerScoreStrategy {
         });
         //1.2 add miner new best block score
         BlockWitness newBestMinerPKSig = newBestBlock.getMinerFirstPKSig();
-        List<BlockWitness> newBestOtherPKSigs = newBestBlock.getBlockWitnesses();
+        List<BlockWitness> newBestOtherPKSigs = newBestBlock.getOtherWitnessSigPKS();
         plusScore(newBestMinerPKSig.getAddress(),
                 MINUS_SCORE_PACKAGED_ERROR * -1 + MINUS_SCORE_PACKAGED_BEST);
 

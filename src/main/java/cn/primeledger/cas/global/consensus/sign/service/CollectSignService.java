@@ -4,20 +4,13 @@ import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.blockchain.Block;
 import cn.primeledger.cas.global.blockchain.BlockService;
 import cn.primeledger.cas.global.blockchain.BlockWitness;
-import cn.primeledger.cas.global.blockchain.PreMiningService;
-import cn.primeledger.cas.global.blockchain.transaction.Transaction;
-import cn.primeledger.cas.global.blockchain.transaction.TransactionCacheManager;
-import cn.primeledger.cas.global.common.entity.UnicastMessageEntity;
-import cn.primeledger.cas.global.common.event.UnicastEvent;
 import cn.primeledger.cas.global.consensus.SignBlockScoreStrategy;
-import cn.primeledger.cas.global.consensus.sign.handler.BlockerCollectSignHandler;
-import cn.primeledger.cas.global.consensus.sign.handler.WitnessSignHandler;
 import cn.primeledger.cas.global.consensus.sign.model.WitnessSign;
 import cn.primeledger.cas.global.crypto.ECKey;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
-import cn.primeledger.cas.global.p2p.Peer;
+import cn.primeledger.cas.global.network.Peer;
+import cn.primeledger.cas.global.network.PeerManager;
 import cn.primeledger.cas.global.service.BlockReqService;
-import cn.primeledger.cas.global.service.PeerReqService;
 import cn.primeledger.cas.global.utils.ExecutorServices;
 import com.alibaba.fastjson.JSON;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -29,56 +22,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static cn.primeledger.cas.global.constants.EntityType.BLOCK_CREATE_SIGN;
-
-//import cn.primeledger.cas.global.p2p.RegisterCenter;
-
 
 /**
- * The collecting service responsible for signing the block and sending it to
- * the other witness peers for resigning the block. After other witness peers
- * resigning it {@link WitnessSignHandler}, they will send back the resigning
- * signs which be handled by {@link BlockerCollectSignHandler}.
- *
- * @author zhao xiaogang
+ * @author yangyi
  * @date 2018/3/6
  */
 @Component
 @Slf4j
 public class CollectSignService {
 
+    public final static int witnessNum = 3;
+    public final static int WITNESSBATCHNUM = 12;
     private static final int MAX_CACHE_SIZE = 100;
-
     @Autowired
     private KeyPair peerKeyPair;
-
     @Autowired
     private BlockService blockService;
-
     @Resource(name = "witnessedBlock")
     private ConcurrentMap<Long, Block> witnessedBlock;
-
-    @Autowired
-    private TransactionCacheManager txCacheManager;
-
-    @Autowired
-    private PreMiningService preMiningService;
-
-    public final static int witnessNum = 3;
-
-    public final static int WITNESSBATCHNUM = 12;
-
-    @Autowired
-    private PeerReqService peerReqService;
-
     @Autowired
     private BlockReqService blockReqService;
 
-    private ExecutorService executorService = ExecutorServices.newFixedThreadPool("blockTimer", 3, 100);
+    @Autowired
+    private PeerManager peerManager;
+
+    private ExecutorService executorService = ExecutorServices.newFixedThreadPool("collectSign", 3, 100);
 
     private Cache<String, String> witnessCache = Caffeine.
             newBuilder().maximumSize(MAX_CACHE_SIZE).build();
@@ -97,7 +68,7 @@ public class CollectSignService {
                 result.add((int) (height - signHeight));
             }
         }
-        LOGGER.info("for {} height, validate sign height gap set is: {}", height, result);
+        LOGGER.info("for height={}, validate sign height gap set is: {}", height, result);
 
         return result;
     }
@@ -110,12 +81,12 @@ public class CollectSignService {
         while (count > 0) {
             Block block = blockService.getBestBlockByHeight(height);
             if (block == null) {
-                return result;
+                throw new RuntimeException("the best block at " + height + " is empty when calculate the preRoundWitness " + startHeight);
             }
             BlockWitness minerPKSig = block.getMinerFirstPKSig();
             String pubKey = minerPKSig.getPubKey();
             if (StringUtils.isBlank(pubKey)) {
-                continue;
+                throw new RuntimeException("the best block at " + height + " is empty when calculate the preRoundWitness " + startHeight);
             }
             String address = ECKey.pubKey2Base58Address(pubKey);
             if (result.containsKey(address)) {
@@ -147,9 +118,7 @@ public class CollectSignService {
      */
     public WitnessSign createSign(Block block) {
         String sig = ECKey.signMessage(block.getHash(), peerKeyPair.getPriKey());
-        block.initMinerPkSig(peerKeyPair.getPubKey(), sig);
         WitnessSign sign = new WitnessSign(block.getHash(), sig, peerKeyPair.getPubKey());
-
         LOGGER.info("Create witness sign : {}", JSON.toJSONString(sign));
         return sign;
     }
@@ -157,16 +126,8 @@ public class CollectSignService {
     /**
      * Creator sends the signed block to other witnesses for resigning.
      */
-    public Block sendBlockToWitness() {
-        List<String> addresses = new ArrayList<>();
-        addresses.add(ECKey.pubKey2Base58Address("028a186b944c76d7ca626a3ba8ba9609d46de318affb48ee760a0c3336f426d741"));
-        Transaction transaction = preMiningService.buildMinerJoinTx(addresses, 0L, (short) 1, BigDecimal.ONE);
-        txCacheManager.addTransaction(transaction);
-        Block block = blockService.packageNewBlock();
+    public Block sendBlockToWitness(Block block) {
         LOGGER.info("pack new block {}", block);
-        if (block == null) {
-            return block;
-        }
         long height = block.getHeight();
         if (height > Application.PRE_BLOCK_COUNT) {
             Map<String, Map<String, Long>> prevRoundWitnessMap = findPrevRoundWitness(height);
@@ -177,9 +138,9 @@ public class CollectSignService {
                 return null;
             }
 
-            List<Peer> peers = peerReqService.doGetPeerListRequest(strings);
+            List<Peer> peers = peerManager.getByIds(strings);
             if (peers == null || peers.size() < 3) {
-                LOGGER.warn("can not find enough peers {}", height);
+                LOGGER.warn("can not find enough peers,height={}", height);
                 return null;
             }
 
@@ -189,7 +150,11 @@ public class CollectSignService {
             for (Peer peer : peers) {
                 Callable<WitnessSign> witnessSign = () -> {
                     try {
+                        if (peer == null) {
+                            return null;
+                        }
                         WitnessSign data = blockReqService.getWitnessSign(peer.getIp(), peer.getHttpServerPort(), block);
+                        LOGGER.info("get the witnessSign from {} for block height={}_block={}", data == null ? "NULL" : data.getPubKey(), height, block.getHash());
                         return data;
                     } catch (Throwable e) {
                         LOGGER.error(e.getMessage(), e);
@@ -200,13 +165,15 @@ public class CollectSignService {
             }
             List<Future<WitnessSign>> list = null;
             try {
+                LOGGER.info("begin to invokeAll thread to get sign");
                 list = executorService.invokeAll(callables, 5, TimeUnit.SECONDS);
+                LOGGER.info("get all sign or time out");
                 for (Future<WitnessSign> future : list) {
                     WitnessSign data = null;
                     try {
                         data = future.get();
                     } catch (Throwable e) {
-                        LOGGER.error(e.getMessage(), e);
+                        LOGGER.error("request sign time out");
                     }
                     if (data == null || StringUtils.isBlank(data.getSignature())) {
                         continue;
@@ -223,7 +190,7 @@ public class CollectSignService {
                         continue;
                     }
                     LOGGER.info("the signer's height is {} for blockHeight {}", signHeight, blockHeight);
-                    boolean valid = blockService.validateWitness(block.getSignedHash(), pubKey, data.getSignature(), block);
+                    boolean valid = blockService.validateWitness(block.getHash(), pubKey, data.getSignature(), block);
                     if (!valid) {
                         LOGGER.info("receive witness but the sign is not right from blockHash", block.getSignedHash());
                         continue;
@@ -268,32 +235,7 @@ public class CollectSignService {
             final String sig = ECKey.signMessage(blockHash, peerKeyPair.getPriKey());
             block.addMinerSignature(peerKeyPair.getPubKey(), sig, blockHash);
         }
-        LOGGER.info("persist the new block {}", height);
-        boolean success = blockService.persistBlockAndIndex(block, null, (short) 1);
-        LOGGER.info("persist {} height block {}", height, success);
-        if (success) {
-            blockService.broadCastBlock(block);
-        }
-        LOGGER.info("Send signed block : {}", JSON.toJSONString(block));
         return block;
     }
 
-    /**
-     * Witness sends the sign back to the block creator after creating the sign.
-     * {@link CollectSignService#createSign(Block)}
-     */
-    public void sendSignToCreator(WitnessSign sign, String sourceId) {
-        UnicastMessageEntity entity = new UnicastMessageEntity();
-        entity.setType(BLOCK_CREATE_SIGN.getCode());
-        entity.setVersion(sign.getVersion());
-        entity.setData(JSON.toJSONString(sign));
-        entity.setSourceId(sourceId);
-        Application.EVENT_BUS.post(new UnicastEvent(entity));
-
-        LOGGER.info("Send witness sign : {}", JSON.toJSONString(sign));
-    }
-
-    public boolean ifWitnessInCache(String key) {
-        return StringUtils.isNotEmpty(witnessCache.getIfPresent(key));
-    }
 }

@@ -1,7 +1,7 @@
 package cn.primeledger.cas.global.blockchain.transaction.formatter;
 
 import cn.primeledger.cas.global.blockchain.transaction.Transaction;
-import cn.primeledger.cas.global.common.formatter.IEntityFormatter;
+import cn.primeledger.cas.global.common.formatter.BaseEntityFormatter;
 import cn.primeledger.cas.global.constants.EntityType;
 import com.alibaba.fastjson.JSON;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  * @description
  */
 @Component
-public class TransactionFormatter implements IEntityFormatter<Transaction> {
+public class TransactionFormatter extends BaseEntityFormatter<Transaction> {
 
     @Override
     public EntityType getType() {
@@ -20,12 +20,12 @@ public class TransactionFormatter implements IEntityFormatter<Transaction> {
     }
 
     @Override
-    public Transaction parse(String data, short version) {
+    public Transaction doParse(String data) {
         return JSON.parseObject(data, Transaction.class);
     }
 
     @Override
-    public String format(Transaction data, short version) {
+    public String doFormat(Transaction data) {
         return JSON.toJSONString(data);
     }
 }

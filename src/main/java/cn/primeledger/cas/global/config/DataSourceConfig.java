@@ -1,5 +1,6 @@
 package cn.primeledger.cas.global.config;
 
+import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.bean.HTreeMapDelegate;
 import cn.primeledger.cas.global.blockchain.Block;
 import cn.primeledger.cas.global.blockchain.BlockIndex;
@@ -7,16 +8,17 @@ import cn.primeledger.cas.global.blockchain.transaction.TransactionIndex;
 import cn.primeledger.cas.global.blockchain.transaction.UTXO;
 import cn.primeledger.cas.global.crypto.ECKey;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
-import cn.primeledger.cas.global.p2p.Peer;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
+import cn.primeledger.cas.global.network.Peer;
+import lombok.extern.slf4j.Slf4j;
+import org.mapdb.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentMap;
 
@@ -27,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
  * @date 2018/2/24
  */
 @Configuration
+@Slf4j
 public class DataSourceConfig {
 
     @Autowired
@@ -39,11 +42,32 @@ public class DataSourceConfig {
 
     @Bean
     public DB blockChainDB(AppConfig config) throws IOException {
+        if (Application.TEST) {
+            testClearDBData(config);
+        }
         Files.createDirectories(Paths.get(config.getBlockChainDataPath()));
         return DBMaker.fileDB(config.getBlockChainDataFile())
                 .transactionEnable()
                 .closeOnJvmShutdown()
                 .make();
+    }
+
+    private void testClearDBData(AppConfig config) {
+        //delete db file
+        Path path = Paths.get(config.getBlockChainDataFile());
+        File file = new File(path.toFile().toURI());
+        if (file.exists()) {
+            boolean delete = file.delete();
+            if (delete) {
+                LOGGER.info("deleted file: {}", path.toAbsolutePath());
+            } else {
+                throw new RuntimeException("can not deleted file: " + path.toAbsolutePath());
+            }
+        } else {
+            LOGGER.info("file({}) does not exit", path.toAbsolutePath());
+        }
+
+        //delete log file
     }
 
     @Bean
@@ -94,5 +118,16 @@ public class DataSourceConfig {
         //block index table data
         HTreeMap<String, Peer> map = (HTreeMap<String, Peer>) blockChainDB.hashMap("peer").createOrOpen();
         return new HTreeMapDelegate<>(blockChainDB, map);
+    }
+
+    @Bean
+    public BTreeMap<byte[], byte[]> pubKeyMap(DB blockChainDB) {
+        //block index table data
+        BTreeMap<byte[], byte[]> map = blockChainDB.treeMap("pubKeyMap")
+                .keySerializer(Serializer.BYTE_ARRAY)
+                .valueSerializer(Serializer.BYTE_ARRAY)
+                .createOrOpen();
+//        return new BTreeMapDelegate<>(blockChainDB, map);
+        return map;
     }
 }

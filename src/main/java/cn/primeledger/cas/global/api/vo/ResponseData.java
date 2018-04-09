@@ -13,6 +13,19 @@ public class ResponseData<T> {
     private String respMsg;
     private T data;
 
+    public ResponseData(RespCodeEnum respCodeEnum) {
+        this(respCodeEnum.getCode(), respCodeEnum.getDesc());
+    }
+
+    public ResponseData(RespCodeEnum respCodeEnum, String respMsg) {
+        this(respCodeEnum.getCode(), respMsg);
+    }
+
+    public ResponseData(String respCode, String respMsg) {
+        this.respCode = respCode;
+        this.respMsg = respMsg;
+    }
+
     public static <R> ResponseData<R> failure(RespCodeEnum respCodeEnum) {
         return new ResponseData<>(respCodeEnum);
     }
@@ -25,19 +38,6 @@ public class ResponseData<T> {
         ResponseData<R> responseData = new ResponseData<>(RespCodeEnum.SUCCESS);
         responseData.setData(data);
         return responseData;
-    }
-
-    public ResponseData(RespCodeEnum respCodeEnum) {
-        this(respCodeEnum.getCode(), respCodeEnum.getDesc());
-    }
-
-    public ResponseData(RespCodeEnum respCodeEnum, String respMsg) {
-        this(respCodeEnum.getCode(), respMsg);
-    }
-
-    public ResponseData(String respCode, String respMsg) {
-        this.respCode = respCode;
-        this.respMsg = respMsg;
     }
 
     public RespCodeEnum respCodeEnum() {

@@ -29,7 +29,7 @@ public class TransactionIndex extends BaseSerializer {
      */
     private short txIndex;
 
-     /**
+    /**
      * outs spending info in this transaction. key: the out index, value: the spending transaction hash
      * if one out have not been isSpent, there is no key in the map.
      */

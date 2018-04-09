@@ -8,8 +8,6 @@ import lombok.Data;
  */
 @Data
 public abstract class BaseMessageEntity<T> {
-    private short type;
-    private short version;
-    private T data;
-    private String sourceId;
+    protected String sourceId;
+    protected T data;
 }

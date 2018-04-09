@@ -1,13 +1,15 @@
 package cn.primeledger.cas.global.api;
 
 import cn.primeledger.cas.global.api.service.PeerRespService;
-import cn.primeledger.cas.global.p2p.Peer;
-import cn.primeledger.cas.global.p2p.channel.ChannelMgr;
+import cn.primeledger.cas.global.network.Peer;
+import cn.primeledger.cas.global.network.socket.connection.ConnectionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +25,7 @@ public class PeerController {
     private PeerRespService peerRespService;
 
     @Autowired
-    private ChannelMgr channelMgr;
+    private ConnectionManager connectionManager;
 
     @RequestMapping("/list")
     public List<Peer> list() {
@@ -32,7 +34,7 @@ public class PeerController {
 
     @RequestMapping("/neighbors")
     public List<Peer> neighbors() {
-        return channelMgr.getActivePeers();
+        return connectionManager.getActivatedPeers();
     }
 
     @RequestMapping("/query")
@@ -42,7 +44,7 @@ public class PeerController {
     }
 
     @RequestMapping("/querylist")
-    public List<Peer> queryList(@RequestParam("address[]")String[] addressArr) {
+    public List<Peer> queryList(@RequestParam("address[]") String[] addressArr) {
         if (addressArr == null || addressArr.length == 0) {
             return null;
         }
@@ -52,6 +54,6 @@ public class PeerController {
 
     @RequestMapping("/register")
     public ResponseEntity<Boolean> register(@RequestBody Peer peer) {
-        return new ResponseEntity(peerRespService.peerRegister(peer),HttpStatus.OK);
+        return new ResponseEntity(peerRespService.peerRegister(peer), HttpStatus.OK);
     }
 }

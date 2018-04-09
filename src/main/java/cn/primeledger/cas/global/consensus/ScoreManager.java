@@ -67,6 +67,7 @@ public class ScoreManager {
 
     public void remove(String address) {
         allMinerSoreMap.remove(address);
+        tmpMinerSoreMap.remove(address);
     }
 
     public boolean isContains(String address) {

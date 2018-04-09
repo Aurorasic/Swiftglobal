@@ -2,7 +2,8 @@ package cn.primeledger.cas.global.blockchain.transaction.handler;
 
 import cn.primeledger.cas.global.blockchain.transaction.Transaction;
 import cn.primeledger.cas.global.blockchain.transaction.TransactionService;
-import cn.primeledger.cas.global.common.handler.BroadcastEntityHandler;
+import cn.primeledger.cas.global.common.SocketRequest;
+import cn.primeledger.cas.global.common.handler.BaseEntityHandler;
 import cn.primeledger.cas.global.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Component;
  * @description
  */
 @Slf4j
-@Component("transactionHandler")
-public class TransactionHandler extends BroadcastEntityHandler<Transaction> {
+@Component
+public class TransactionHandler extends BaseEntityHandler<Transaction> {
 
     @Autowired
     private TransactionService transactionService;
@@ -26,7 +27,7 @@ public class TransactionHandler extends BroadcastEntityHandler<Transaction> {
     }
 
     @Override
-    public void process(Transaction data, short version, String sourceId) {
-        transactionService.receivedTransaction(data);
+    protected void process(SocketRequest<Transaction> request) {
+        transactionService.receivedTransaction(request.getData());
     }
 }

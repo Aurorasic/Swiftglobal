@@ -1,11 +1,10 @@
 package cn.primeledger.cas.global.blockchain.transaction;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * transaction cache manager that manage transaction for mining
@@ -16,34 +15,38 @@ import java.util.Map;
 @Service
 @Data
 public class TransactionCacheManager {
-    private Map<String, Transaction> transactionMap = new HashMap(16);
+
+    private static final int MAX_SIZE = 10000;
+
+    private Cache<String, Transaction> transactionMap = Caffeine.newBuilder()
+            .maximumSize(MAX_SIZE)
+            .build();
+
+//    private Map<String, Transaction> transactionMap = new HashMap(16);
 
     public boolean hasTx() {
-        if (CollectionUtils.isNotEmpty(transactionMap.values())) {
+        if (CollectionUtils.isNotEmpty(transactionMap.asMap().values())) {
             return true;
         }
         return false;
     }
 
     public void addTransaction(Transaction transaction) {
-        if (transactionMap == null) {
-            transactionMap = new HashMap(16);
-        }
         if (transaction == null) {
             throw new RuntimeException("transaction is null, cannot add to cache");
         }
-        transactionMap.putIfAbsent(transaction.getHash(), transaction);
+        transactionMap.put(transaction.getHash(), transaction);
     }
 
     public void remove(String transactionHash) {
         if (transactionMap != null) {
-            transactionMap.remove(transactionHash);
+            transactionMap.invalidate(transactionHash);
         }
     }
 
     public boolean isContains(String transactionHash) {
         if (transactionMap != null) {
-            return transactionMap.containsKey(transactionHash);
+            return transactionMap.asMap().containsKey(transactionHash);
         }
         return false;
     }

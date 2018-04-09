@@ -1,14 +1,16 @@
 package cn.primeledger.cas.global.consensus.syncblock;
 
-import cn.primeledger.cas.global.blockchain.Block;
+import cn.primeledger.cas.global.blockchain.BlockIndex;
 import cn.primeledger.cas.global.blockchain.BlockService;
-import cn.primeledger.cas.global.common.handler.UniqueEntityHandler;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
+import cn.primeledger.cas.global.common.SocketRequest;
+import cn.primeledger.cas.global.common.handler.BaseEntityHandler;
 import cn.primeledger.cas.global.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -18,9 +20,7 @@ import java.util.Set;
  */
 @Component("inventoryHandler")
 @Slf4j
-public class InventoryHandler extends UniqueEntityHandler<Inventory> {
-
-    private static final int EACHINVENTORYSIZE = 10;
+public class InventoryHandler extends BaseEntityHandler<Inventory> {
 
     @Autowired
     private BlockService blockService;
@@ -28,33 +28,58 @@ public class InventoryHandler extends UniqueEntityHandler<Inventory> {
     @Autowired
     private SyncBlockService syncBlockService;
 
+    @Autowired
+    private MessageCenter messageCenter;
+
     @Override
     public EntityType getType() {
         return EntityType.INVENTORY;
     }
 
     @Override
-    public void process(Inventory data, short version, String sourceId) {
-
+    protected void process(SocketRequest<Inventory> request) {
+        Inventory data = request.getData();
+        String sourceId = request.getSourceId();
         long maxHeight = data.getHeight();
-        syncBlockService.updateMaxHeight(maxHeight, sourceId);
 
-        long height = data.getHeight();
-        if (height != 0L) {
-            Set<String> hashs = data.getHashs();
-            List<Block> list = blockService.getBlocksByHeight(height);
-            if (null != hashs && hashs.size() > 0) {
+        BlockIndex blockIndex = blockService.getBlockIndexByHeight(maxHeight);
+        if (null != blockIndex) {
+            List<String> myHashs = blockIndex.getBlockHashs();
+            Set<String> peerHashs = data.getHashs();
+            LOGGER.info("process inventory message! height:{}  ;myhashs:{}  peerHashs:{}", maxHeight, myHashs, peerHashs);
 
-                Set<String> myHashs = new HashSet<>();
-                list.forEach(block -> myHashs.add(block.getHash()));
-                myHashs.removeAll(hashs);
+            /**
+             * send block to peer
+             */
+            if (CollectionUtils.isNotEmpty(myHashs)) {
+                if (CollectionUtils.isNotEmpty(peerHashs)) {
+                    myHashs.removeAll(peerHashs);
+                }
+
                 myHashs.forEach(hash -> {
-                    Block block = blockService.getBlock(hash);
-                    syncBlockService.sendBlock(block, sourceId);
+                    messageCenter.unicast(sourceId, blockService.getBlock(hash));
                 });
-            } else {
-                list.forEach(block -> syncBlockService.sendBlock(block, sourceId));
             }
+            /**
+             * send sync block request to peer
+             */
+            if (CollectionUtils.isNotEmpty(peerHashs)) {
+                myHashs = blockIndex.getBlockHashs();
+                if (CollectionUtils.isNotEmpty(myHashs)) {
+                    peerHashs.removeAll(myHashs);
+                }
+                if (CollectionUtils.isNotEmpty(peerHashs)) {
+                    syncBlockService.syncBlockByHeight(maxHeight, sourceId);
+                }
+            }
+            return;
+        }
+        /**
+         * send sync block request to peer
+         */
+        if (CollectionUtils.isNotEmpty(data.getHashs())) {
+            syncBlockService.syncBlockByHeight(maxHeight, sourceId);
         }
     }
 }
+

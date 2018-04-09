@@ -14,21 +14,19 @@ import java.util.concurrent.TimeUnit;
  */
 public class HttpClient {
 
-    private HttpClient() {
-    }
-
     private static final long DEFAULT_TIMEOUT = 5L;
-
     private static final Cache<String, Retrofit> RETROFIT_CACHE = Caffeine.newBuilder()
             .maximumSize(100)
             .expireAfterAccess(30, TimeUnit.MINUTES)
             .build();
-
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
             .connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             .build();
+
+    private HttpClient() {
+    }
 
     public static <T> T getApi(String ip, int port, Class<T> clazz) {
         return getRetrofit(ip, port).create(clazz);

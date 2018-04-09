@@ -1,14 +1,18 @@
 package cn.primeledger.cas.global.blockchain;
 
 import cn.primeledger.cas.global.Application;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
 import cn.primeledger.cas.global.blockchain.transaction.*;
-import cn.primeledger.cas.global.common.entity.BroadcastMessageEntity;
-import cn.primeledger.cas.global.common.event.BroadcastEvent;
+import cn.primeledger.cas.global.common.SystemStatusManager;
+import cn.primeledger.cas.global.common.SystemStepEnum;
+import cn.primeledger.cas.global.common.event.BlockPersistedEvent;
 import cn.primeledger.cas.global.consensus.*;
 import cn.primeledger.cas.global.consensus.sign.service.CollectSignService;
 import cn.primeledger.cas.global.consensus.syncblock.SyncBlockService;
 import cn.primeledger.cas.global.crypto.ECKey;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
+import cn.primeledger.cas.global.script.LockScript;
+import cn.primeledger.cas.global.script.UnLockScript;
 import com.alibaba.fastjson.JSON;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -23,8 +27,6 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
-import static cn.primeledger.cas.global.constants.EntityType.BLOCK_BROADCAST;
-
 /**
  * @author baizhengwen
  * @date 2018/2/23
@@ -34,101 +36,143 @@ import static cn.primeledger.cas.global.constants.EntityType.BLOCK_BROADCAST;
 public class BlockService {
 
     private static final int LRU_CACHE_SIZE = 5;
+    /**
+     * the minimum of transactions number allowed in a block.
+     */
+    private static final int MINIMUM_TRANSACTION_IN_BLOCK = 2;
 
     private static List<String> COMMUN_ADDRS = new ArrayList<String>();
-
-    @Resource(name = "blockData")
-    private ConcurrentMap<String, Block> blockMap;
-
-    @Resource(name = "blockIndexData")
-    private ConcurrentMap<Long, BlockIndex> blockIndexMap;
-
-    @Resource(name = "transactionIndexData")
-    private ConcurrentMap<String, TransactionIndex> transactionIndexMap;
-
-    @Resource(name = "utxoData")
-    private ConcurrentMap<String, UTXO> utxoMap;
-
-    @Resource(name = "myUTXOData")
-    private ConcurrentMap<String, UTXO> myUTXOData;
-
-    @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private TransactionCacheManager txCacheManager;
-
-    @Autowired
-    private BlockCacheManager blockCacheManager;
-
-    @Autowired
-    private KeyPair peerKeyPair;
-
-    @Autowired
-    private ScoreManager scoreManager;
-
-    @Autowired
-    private NodeSelector nodeSelector;
-
-    @Autowired
-    private CollectSignService collectSignService;
-
-    @Autowired
-    private NodeManager nodeManager;
-
-    @Autowired
-    private SyncBlockService syncBlockService;
-
-    @Autowired
-    private PreMiningService preMiningService;
-
     /**
      * the max distance that miner got signatures
      */
     private static short MAX_DISTANCE_SIG = 50;
-
-
     /**
      * the max tx num in block
      */
     private static short MAX_TX_NUM_IN_BLOCK = 500;
-
+    @Resource(name = "blockData")
+    private ConcurrentMap<String, Block> blockMap;
+    @Resource(name = "blockIndexData")
+    private ConcurrentMap<Long, BlockIndex> blockIndexMap;
+    @Resource(name = "transactionIndexData")
+    private ConcurrentMap<String, TransactionIndex> transactionIndexMap;
+    @Resource(name = "utxoData")
+    private ConcurrentMap<String, UTXO> utxoMap;
+    @Resource(name = "myUTXOData")
+    private ConcurrentMap<String, UTXO> myUTXOData;
+    @Resource(name = "pubKeyMap")
+    private ConcurrentMap<byte[], byte[]> pubKeyMap;
+    @Autowired
+    private TransactionService transactionService;
+    @Autowired
+    private TransactionCacheManager txCacheManager;
+    @Autowired
+    private BlockCacheManager blockCacheManager;
+    @Autowired
+    private KeyPair peerKeyPair;
+    @Autowired
+    private ScoreManager scoreManager;
+    @Autowired
+    private NodeSelector nodeSelector;
+    @Autowired
+    private CollectSignService collectSignService;
+    @Autowired
+    private NodeManager nodeManager;
+    @Autowired
+    private SyncBlockService syncBlockService;
+    @Autowired
+    private MessageCenter messageCenter;
+    @Autowired
+    private SystemStatusManager systemStatusManager;
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
-    public boolean initGenesisBlock() {
-        return preMiningService.initGenesisBlocks();
-    }
-
-    public Block packageNewBlock() {
-        Map<String, Transaction> txMap = txCacheManager.getTransactionMap();
-        if (CollectionUtils.isEmpty(txMap.values())) {
-            LOGGER.warn("no transactions for block");
-            return null;
-        }
-        LOGGER.info("try to packageNewBlock");
-        //TODO yuguojia collect part txs for package
-        List<Transaction> transactions = Lists.newLinkedList();
-        transactions.addAll(txMap.values());
-
+    public Block packageNewBlock(KeyPair keyPair) {
         BlockIndex lastBlockIndex = getLastBestBlockIndex();
         if (lastBlockIndex == null) {
             throw new RuntimeException("no last block index");
         }
-        List<String> nodes = nodeSelector.calculateNodes();
-        Block block = Block.builder()
-                .version((short) 1)
-                .blockTime(0)
-                .prevBlockHash(lastBlockIndex.getBestBlockHash())
-                .transactions(transactions)
-                .height(lastBlockIndex.getHeight() + 1)
-                .nodes(nodes)
-                .build();
+        Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
+        ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
+        removeDoubleSpendTx(cacheTransactions);
+
+        if (cacheTransactions.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
+            LOGGER.warn("There are no enough transactions, less than two, for packaging a block.");
+            return null;
+        }
+        LOGGER.info("try to packageNewBlock, height={}", lastBlockIndex.getHeight() + 1);
+        List<Transaction> transactions = Lists.newLinkedList();
+        //todo kongyu add 2018-3-29 21:02
+        if (getLastBestBlockIndex().getHeight() >= 1) {
+            Transaction coinBaseTx = transactionService.buildCoinBaseTx(0L, (short) 1, lastBlockIndex.getHeight() + 1);
+            transactions.add(coinBaseTx);
+        }
+
+        transactions.addAll(cacheTransactions);
+
+        List<String> nodes = nodeSelector.calculateNodes(lastBlockIndex.getHeight());
+        Block block = new Block();
+        block.setVersion((short) 1);
+        block.setBlockTime(System.currentTimeMillis());
+        block.setPrevBlockHash(lastBlockIndex.getBestBlockHash());
+        block.setTransactions(transactions);
+        block.setHeight(lastBlockIndex.getHeight() + 1);
+        block.setNodes(nodes);
+        block.setPubKey(keyPair.getPubKey());
+        while (!block.sizeAllowed()) {
+            txCacheManager.addTransaction(transactions.remove(transactions.size() - 1));
+            if (transactions.size() < MINIMUM_TRANSACTION_IN_BLOCK) {
+                LOGGER.warn("The number of transactions available for being packaged into a block is less than two.");
+                return null;
+            }
+        }
 
         //Before collecting signs from witnesses just cache the block firstly.
-        String sig = ECKey.signMessage(block.getHash(), peerKeyPair.getPriKey());
-        block.initMinerPkSig(peerKeyPair.getPubKey(), sig);
+        String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
+        block.initMinerPkSig(keyPair.getPubKey(), sig);
         blockCache.put(block.getHash(), block);
+
+        //todo test 2018-3-29 21:02
+//        boolean isSuccess = transactionService.validCoinBaseTx(coinBaseTx,block);
+
         return block;
+    }
+
+    private void removeDoubleSpendTx(List<Transaction> cacheTransactions) {
+        if (CollectionUtils.isEmpty(cacheTransactions)) {
+            return;
+        }
+
+        HashMap<String, String> spentUTXOMap = new HashMap<>();
+        int size = cacheTransactions.size();
+        for (int i = size - 1; i >= 0; i--) {
+            Transaction tx = cacheTransactions.get(i);
+            List<TransactionInput> inputs = tx.getInputs();
+            if (CollectionUtils.isEmpty(inputs)) {
+                continue;
+            }
+            for (TransactionInput input : inputs) {
+                String preUTXOKey = input.getPreUTXOKey();
+                if (spentUTXOMap.containsKey(preUTXOKey)) {
+                    txCacheManager.remove(tx.getHash());
+                    cacheTransactions.remove(i);
+                    LOGGER.warn("there has two or one tx try to spent same uxto={}," +
+                            "old spend tx={}, other spend tx={}", preUTXOKey, spentUTXOMap.get(preUTXOKey), tx.getHash());
+                    break;
+                }
+                if (!utxoMap.containsKey(preUTXOKey)) {
+                    txCacheManager.remove(tx.getHash());
+                    cacheTransactions.remove(i);
+                    LOGGER.warn("utxo data map has no this uxto={}_tx={}", preUTXOKey, tx.getHash());
+                    break;
+                }
+                spentUTXOMap.put(preUTXOKey, tx.getHash());
+            }
+        }
+
+    }
+
+    public Block packageNewBlock() {
+        return packageNewBlock(peerKeyPair);
     }
 
     public Block getLocalBlock(String key) {
@@ -163,7 +207,12 @@ public class BlockService {
         return null;
     }
 
-    public long getMaxHeight() {
+    /**
+     * get the max height on the main/best chain
+     *
+     * @return
+     */
+    public long getBestMaxHeight() {
         BlockIndex lastBestBlockIndex = getLastBestBlockIndex();
         if (lastBestBlockIndex == null) {
             return 0L;
@@ -185,50 +234,75 @@ public class BlockService {
      *
      * @param block
      */
-    public boolean persistBlockAndIndex(Block block, String sourceId, short version) {
-        String bestBlockHash = null;
-        Block highestScoreBlock = null;
-        BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
+    synchronized public boolean persistBlockAndIndex(Block block, String sourceId, short version) {
+        long height = block.getHeight();
+        String blockHash = block.getHash();
         if (isExistInDB(block.getHash())) {
             return false;
         }
-        if (hasBestBlock(block.getHeight())) {
-            LOGGER.info("there has best block on height={}, do not persist block:{}", block.getHeight(), block.getHash());
-            return false;
-        }
-        //orphan block, add cache and return, do not persist to db
-        if (!preIsExitInDB(block) && !block.isgenesisBlock()) {
-            blockCacheManager.put(blockFullInfo);
-            return true;
+        //todo yuguojia valid the same miner mined second block
+        if (hasFullCountBlocks(height)) {
+            throw new RuntimeException("there has full count blocks on height=" + height + "_block=" + block);
         }
 
-        if (block.isPreBlock()) {
+        //handle orphan block
+        if (!preIsExitInDB(block) && !block.isgenesisBlock()) {
+            BlockIndex preBlockIndex = getBlockIndexByHeight(height - 1);
+            LOGGER.warn("Cannot get pre best block, put to cache and req pre blocks height={}_block={}_preBlock={}_preIndex={}"
+                    , height, blockHash, block.getPrevBlockHash(), preBlockIndex);
+            BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
+            blockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+            return false;
+        }
+
+        //valid
+        if (!validBlock(block)) {
+            LOGGER.error("Error block info, height={}_block={}", height, blockHash);
+            return false;
+        }
+
+        String bestBlockHash = null;
+        Block highestScoreBlock = null;
+        BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
+
+        Block oldBestBlock = getBestBlockByHeight(height);
+        String oldBestBlockHash = oldBestBlock == null ? null : oldBestBlock.getHash();
+        LOGGER.info("got old best block on height={}_block={}, persist new block={}",
+                height, oldBestBlockHash, block.getHash());
+
+        if (block.isPreMiningBlock()) {
             bestBlockHash = block.getHash();
             highestScoreBlock = block;
         } else {
-            List<Block> sameHeightBlocks = getBlocksByHeight(block.getHeight());
+            List<Block> sameHeightBlocks = getBlocksByHeight(height);
             sameHeightBlocks.add(block);
             highestScoreBlock = getHighestScoreBlock(sameHeightBlocks);
             if (highestScoreBlock != null) {
                 bestBlockHash = highestScoreBlock.getHash();
             }
         }
-        LOGGER.info("got highest score block: height={}, blockHash={}", block.getHeight(), bestBlockHash);
+        LOGGER.info("got highest score block: height={}_block={}", height, bestBlockHash);
 
         blockMap.put(block.getHash(), block);
-        LOGGER.info("persisted block, height={}, hash={}", block.getHeight(), block.getHash());
+        blockCacheManager.remove(block.getHash());
+        LOGGER.info("persisted block: height={}_block={}", height, block.getHash());
 
-        //persist block and tx and utxo index
         persistIndex(block, bestBlockHash);
 
-        //calc dpos node group
-        nodeManager.parse(highestScoreBlock);
+        Block newBestBlock = getBestBlockByHeight(height);
+        if (highestScoreBlock != null && !StringUtils.equals(highestScoreBlock.getHash(), newBestBlock.getHash())) {
+            throw new RuntimeException("persist error best block:" + highestScoreBlock + newBestBlock);
+        }
 
-        //calc miner score
-        MinerScoreStrategy.refreshMinersScore(highestScoreBlock);
-
-        //persist pre-block in orphan block cache
-        persistPreOrphanBlock(blockFullInfo);
+        if (!block.isPreMiningBlock()) {
+            broadBlockPersistedEvent(block, bestBlockHash);
+        }
+        if (oldBestBlock == null && highestScoreBlock != null) {
+            nodeManager.parseDpos(highestScoreBlock);
+            MinerScoreStrategy.refreshMinersScore(highestScoreBlock);
+            persistPreOrphanBlock(blockFullInfo);
+            LOGGER.error("The last best block is height={}_block={}", height, highestScoreBlock.getHash());
+        }
         return true;
     }
 
@@ -243,14 +317,8 @@ public class BlockService {
             blockIndex = new BlockIndex(1, blockHashs, 0);
             needBuildUTXO = true;
         } else {
-//            boolean needSwitch = needSwitchToBestChain(block);
             blockIndex = blockIndexMap.get(block.getHeight());
             boolean hasOldBest = blockIndex == null ? false : blockIndex.hasBestBlock();
-//            BlockIndex preBlockIndex = blockIndexMap.get(block.getHeight() - 1);
-//            if (needSwitch) {
-//                switchToBestChain(preBlockIndex, block.getPrevBlockHash());
-//            }
-
             boolean isBest = StringUtils.equals(bestBlockHash, block.getHash()) ? true : false;
 
             if (blockIndex == null) {
@@ -267,11 +335,29 @@ public class BlockService {
         blockIndexMap.put(blockIndex.getHeight(), blockIndex);
         LOGGER.info("persisted block index: " + blockIndex.toString());
 
-        //build transaction index and utxo
         if (!needBuildUTXO) {
             return;
         }
         Block bestBlock = getBlock(bestBlockHash);
+        if (null == bestBlock) {
+            throw new RuntimeException("the block hash is " + bestBlockHash + " ,which don't has block");
+        }
+        //todo kongyu add the function 2018-3-28 16:47
+        buildTXIndex(bestBlock);
+
+        buildPubKeyMapIndex(bestBlock);
+
+    }
+
+    /**
+     * build transaction index and utxo
+     *
+     * @param bestBlock
+     */
+    private void buildTXIndex(Block bestBlock) {
+        if (null == bestBlock) {
+            return;
+        }
         if (!bestBlock.isEmptyTransactions()) {
             List<Transaction> transactionList = bestBlock.getTransactions();
             for (int txCount = 0; txCount < transactionList.size(); txCount++) {
@@ -291,13 +377,16 @@ public class BlockService {
                         short spentTxOutIndex = outPoint.getIndex();
                         TransactionIndex txIndex = transactionIndexMap.get(spentTxHash);
                         if (txIndex == null) {
-                            LOGGER.error("persist block, cannot find tx");
-                            return;
+                            throw new RuntimeException("persist block error, no spent tx,tx=" + spentTxHash);
                         }
                         txIndex.addSpend(spentTxOutIndex, tx.getHash());
                         transactionIndexMap.put(txIndex.getTxHash(), txIndex);
                         //remove spent utxo
-                        utxoMap.remove(UTXO.buildKey(spentTxHash, spentTxOutIndex));
+                        String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
+                        if (utxoMap.get(utxoKey) == null) {
+                            throw new RuntimeException("persist block error, no utxo, key={}" + utxoKey);
+                        }
+                        utxoMap.remove(utxoKey);
                     }
                 }
 
@@ -318,13 +407,100 @@ public class BlockService {
         }
     }
 
-    public void broadCastBlock(Block block) {
-        BroadcastMessageEntity entity = new BroadcastMessageEntity();
-        entity.setType(BLOCK_BROADCAST.getCode());
-        entity.setVersion(block.getVersion());
-        entity.setData(JSON.toJSONString(block));
-        Application.EVENT_BUS.post(new BroadcastEvent(entity));
+    private void buildPubKeyMapIndex(Block bestBlock) {
+        if (null == bestBlock) {
+            return;
+        }
+        if (!bestBlock.isEmptyTransactions()) {
+            List<Transaction> transactionList = bestBlock.getTransactions();
+            for (int txCount = 0; txCount < transactionList.size(); txCount++) {
+                Transaction tx = transactionList.get(txCount);
+                //todo kongyu add pubKeyMap 2018-03-26 11:00
+                buildPubKeyMapWithTx(tx, txCount, bestBlock.getHash());
+            }
+        }
+    }
 
+    private void buildPubKeyMapWithTx(Transaction tx, int index, String blockHash) {
+        if (null == tx || null == blockHash) {
+            return;
+        }
+        if (index < 0) {
+            return;
+        }
+
+        try {
+            //inputs
+            List<TransactionInput> inputs = tx.getInputs();
+            if (!CollectionUtils.isEmpty(inputs)) {
+                for (TransactionInput input : inputs) {
+                    UnLockScript unLockScript = input.getUnLockScript();
+                    if (null == unLockScript || null == unLockScript.getPkList()) {
+                        continue;
+                    }
+
+                    List<String> pkList = unLockScript.getPkList();
+                    for (String key : pkList) {
+                        if (null == key) {
+                            continue;
+                        }
+                        StringBuilder addrAndTxHash = new StringBuilder();
+                        addrAndTxHash.append(ECKey.pubKey2Base58Address(key))
+                                .append(":")
+                                .append(tx.getHash())
+                                .append(":")
+                                .append(TransactionType.NORMAL.getCode());
+                        byte[] addkey = addrAndTxHash.toString().getBytes();
+                        byte[] value = blockHash.getBytes();
+                        pubKeyMap.put(addkey, value);
+                    }
+                }
+            }
+
+            //outputs
+            List<TransactionOutput> outputs = tx.getOutputs();
+            if (!CollectionUtils.isEmpty(outputs)) {
+                for (TransactionOutput output : outputs) {
+                    if (null == output || null == output.getLockScript()) {
+                        continue;
+                    }
+
+                    LockScript lockScript = output.getLockScript();
+                    if (null == lockScript.getAddress()) {
+                        continue;
+                    }
+
+                    StringBuilder addrAndTxHash = new StringBuilder();
+                    addrAndTxHash.append(lockScript.getAddress())
+                            .append(":")
+                            .append(tx.getHash())
+                            .append(":");
+                    if (0 == index) {
+                        addrAndTxHash.append(TransactionType.COINBASE.getCode());
+                    } else {
+                        addrAndTxHash.append(TransactionType.NORMAL.getCode());
+                    }
+
+                    byte[] addkey = addrAndTxHash.toString().getBytes();
+                    byte[] value = blockHash.getBytes();
+                    pubKeyMap.put(addkey, value);
+                }
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        }
+    }
+
+    private void broadBlockPersistedEvent(Block block, String bestBlockHash) {
+        BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
+        blockPersistedEvent.setHeight(block.getHeight());
+        blockPersistedEvent.setBestBlockHash(block.getHash());
+        blockPersistedEvent.setBestBlockHash(bestBlockHash);
+        messageCenter.send(blockPersistedEvent);
+    }
+
+    public void broadCastBlock(Block block) {
+        messageCenter.broadcast(block);
         LOGGER.info("broadcast block success: " + JSON.toJSONString(block));
     }
 
@@ -355,7 +531,6 @@ public class BlockService {
                 int brotherBlockSigsScore = calcSignaturesScore(brotherBlock);
                 if (currentBlockSigsScore > brotherBlockSigsScore &&
                         isBestOfPreBlock) {
-                    //todo yuguojia donot base on height, base on sign score
                     return true;
                 }
             }
@@ -387,57 +562,159 @@ public class BlockService {
     }
 
     public void loadAllBlockData() {
-        //todo yuguojia valid all block data
-        long maxHeight = blockIndexMap.keySet().size();
-//        long lastDposCalcHeight = ((maxHeight - 1) / NodeSelector.BATCHBLOCKNUM) * NodeSelector.BATCHBLOCKNUM + 1;
-        List<String> allBlockHashList = new LinkedList<>();
-        Set<String> bestBlockHashSet = new HashSet<>();
-        for (long i = 1; i <= maxHeight; i++) {
-            BlockIndex blockIndex = blockIndexMap.get(i);
-            String bestBlockHash = blockIndex.getBestBlockHash();
-            if (StringUtils.isNotEmpty(bestBlockHash)) {
-                bestBlockHashSet.add(bestBlockHash);
-            }
-            allBlockHashList.addAll(blockIndex.getBlockHashs());
-
-        }
         clearAllIndexData();
-        for (String blockHash : allBlockHashList) {
-            Block block = blockMap.get(blockHash);
-            boolean isBest = bestBlockHashSet.contains(blockHash);
-            String bestBlockHash = null;
-            if (isBest) {
-                bestBlockHash = blockHash;
-            }
-            persistIndex(block, bestBlockHash);
-            //calc miner score
-            MinerScoreStrategy.refreshMinersScore(block, isBest);
-            //calc dpos node group
-//            long blockHeight = block.getHeight();
-//            if (isBest && lastDposCalcHeight == blockHeight) {
-//                nodeManager.parse(block);
-//            }
+        buildBlockIndexMap();
+        //todo kongyu 2018-04-08 15:23 add
+        if (!checkBlockNumbers()) {
+            throw new RuntimeException("blockMap size is not equal blockIndexMap count number");
         }
 
-//        MinerScoreStrategy.refreshMinersScore(block, isBest);
-//        Block lastBestBlock = getLastBestBlock();
-//        parseNextDposNode(lastBestBlock);
+        long maxHeight = blockIndexMap.size();
+        for (long height = 1; height <= maxHeight; height++) {
+            Block bestBlock = blockMap.get(blockIndexMap.get(height).getBestBlockHash());
+
+            buildTXIndex(bestBlock);
+            buildPubKeyMapIndex(bestBlock);
+            MinerScoreStrategy.refreshMinersScore(bestBlock, true);
+        }
+
+        systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
+
+        //todo kongyu&yuguojia verify the validity and completeness between the blocks info and indexes info
     }
 
-    public void parseNextDposNode(Block block) {
-        if (block == null) {
-            LOGGER.error("error for parseNextDposNode");
+    private boolean checkBlockNumbers() {
+        long blockIndexSize = 0L;
+        long blockMapSize = 0L;
+
+        if (null == blockMap || null == blockIndexMap) {
+            LOGGER.error("blockMap or blockIndexMap is null");
+            return false;
+        }
+
+        blockMapSize = blockMap.size();
+        if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
+            LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
+            return false;
+        }
+
+        List<Long> heights = Lists.newArrayList(blockIndexMap.keySet());
+        if (CollectionUtils.isNotEmpty(heights)) {
+            for (Long height : heights) {
+                blockIndexSize += blockIndexMap.get(height).getBlockHashs().size();
+            }
+        }
+
+        if (blockIndexSize < 0L || blockIndexSize > Long.MAX_VALUE) {
+            LOGGER.error("blockIndexSize is error");
+            return false;
+        }
+
+        LOGGER.info("blockIndexSize is {}, blockMapSize is {}", blockIndexSize, blockMapSize);
+        return blockIndexSize == blockMapSize ? true : false;
+    }
+
+    private void buildBlockIndexMap() {
+        Set<String> keySet = blockMap.keySet();
+        for (String key : keySet) {
+            Block block = blockMap.get(key);
+            long height = block.getHeight();
+            BlockIndex blockIndex = blockIndexMap.get(height);
+            ArrayList<String> blockHashs = null;
+            if (null == blockIndex) {
+                blockHashs = Lists.newArrayList();
+                blockHashs.add(block.getHash());
+                blockIndex = new BlockIndex(height, blockHashs, -1);
+            } else {
+                blockIndex.getBlockHashs().add(block.getHash());
+            }
+            blockIndexMap.put(height, blockIndex);
+        }
+
+        buildBestBlockIndex();
+    }
+
+    private void buildBestBlockIndex() {
+        long maxHeight = blockIndexMap.size();
+        for (long height = 1; height <= maxHeight; height++) {
+            BlockIndex blockIndex = blockIndexMap.get(height);
+            if (null == blockIndex) {
+                throw new RuntimeException("The height is " + height + " blockIndex is null");
+            }
+
+            ArrayList<String> blockHashs = blockIndex.getBlockHashs();
+            if (CollectionUtils.isEmpty(blockHashs)) {
+                continue;
+            }
+
+            List<Block> blocks = Lists.newArrayList();
+            for (String hash : blockHashs) {
+                Block block = blockMap.get(hash);
+                if (null == block) {
+                    continue;
+                }
+                blocks.add(block);
+            }
+            if (CollectionUtils.isEmpty(blocks)) {
+                continue;
+            }
+
+            Block bestBlock = null;
+            if (height <= Application.PRE_BLOCK_COUNT) {
+                if (1 < blocks.size()) {
+                    throw new RuntimeException("pre mining height is " + height + " has more one block");
+                }
+                bestBlock = blocks.get(0);
+            } else {
+                bestBlock = getMaxScoreBlock(blocks);
+                if (null == bestBlock) {
+                    LOGGER.info("The height is " + height + " ,which don't has best block");
+                    continue;
+                }
+            }
+
+            //todo kongyu update blockIndexMap best 2018-3-28 17:13
+            updateBlockIndexMapBest(height, bestBlock.getHash());
+        }
+    }
+
+    private void updateBlockIndexMapBest(long height, String blockHash) {
+        boolean isUpdate = false;
+        if (0 >= height && height > Long.MAX_VALUE) {
+            LOGGER.error("block height is error");
             return;
         }
-        boolean isSuccess = nodeManager.parse(block);
-        if (!isSuccess) {
-            if (StringUtils.isEmpty(block.getPrevBlockHash())) {
-                LOGGER.error("error for parseNextDposNode, current block: " + block.getHeight());
-                return;
-            }
-            Block preBlock = blockMap.get(block.getPrevBlockHash());
-            parseNextDposNode(preBlock);
+        if (null == blockHash) {
+            LOGGER.error("blockHash is null");
+            return;
         }
+
+        BlockIndex blockIndex = blockIndexMap.get(height);
+        if (null == blockIndex) {
+            LOGGER.error("blockIndex is null");
+            return;
+        }
+
+        ArrayList<String> blockHashs = blockIndex.getBlockHashs();
+        if (CollectionUtils.isEmpty(blockHashs)) {
+            LOGGER.error("blockHashs is empty");
+            return;
+        }
+
+        for (int index = 0; index < blockHashs.size(); index++) {
+            if (StringUtils.equals(blockHashs.get(index), blockHash)) {
+                blockIndex.setBestIndex(index);
+                isUpdate = true;
+                break;
+            }
+        }
+
+        if (!isUpdate) {
+            LOGGER.error("blockIndexMap don't have best chain");
+            return;
+        }
+
+        blockIndexMap.put(height, blockIndex);
     }
 
     public void clearAllIndexData() {
@@ -445,6 +722,19 @@ public class BlockService {
         transactionIndexMap.clear();
         utxoMap.clear();
         myUTXOData.clear();
+        //todo kongyu add 2018-3-28 11:49
+        pubKeyMap.clear();
+        //todo kongyu test 2018-3-28 19:19
+    }
+
+    public void removeBlocks(long height) {
+        Set<Map.Entry<String, Block>> entries = blockMap.entrySet();
+        for (Map.Entry<String, Block> entry : entries) {
+            Block block = entry.getValue();
+            if (height < block.getHeight()) {
+                blockMap.remove(block.getHash());
+            }
+        }
     }
 
     public void clearAllDBData() {
@@ -453,6 +743,15 @@ public class BlockService {
         transactionIndexMap.clear();
         utxoMap.clear();
         myUTXOData.clear();
+    }
+
+    public boolean hasFullCountBlocks(long height) {
+        BlockIndex blockIndex = getBlockIndexByHeight(height);
+        if (blockIndex != null &&
+                blockIndex.getBlockHashCount() == nodeManager.getFullBlockCountByHeight(height)) {
+            return true;
+        }
+        return false;
     }
 
     public boolean hasBestBlock(long height) {
@@ -519,9 +818,19 @@ public class BlockService {
     }
 
 
+    public boolean hasBestPre(long preHeight, String preBlockHash) {
+        BlockIndex preBlockIndex = blockIndexMap.get(preHeight);
+        if (preBlockIndex != null) {
+            if (StringUtils.equals(preBlockIndex.getBestBlockHash(), preBlockHash)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public int calcSignaturesScore(Block block) {
         int sigScore = 0;
-        List<BlockWitness> otherPKSigs = block.getBlockWitnesses();
+        List<BlockWitness> otherPKSigs = block.getOtherWitnessSigPKS();
         for (BlockWitness pair : otherPKSigs) {
             String sigBlockHash = pair.getBlockHash();
             Block sigBlock = blockMap.get(sigBlockHash);
@@ -536,25 +845,48 @@ public class BlockService {
         if (CollectionUtils.isEmpty(blockList)) {
             return null;
         }
+        // 排序 for has same highest max score
+        blockList.sort(new Comparator<Block>() {
+            @Override
+            public int compare(Block o1, Block o2) {
+                return o1.getHash().compareTo(o2.getHash());
+            }
+        });
+        long height = blockList.get(0).getHeight();
+        LOGGER.info("there has {} count blocks of height={}", blockList.size(), height);
+        if (blockList.size() >= nodeManager.getFullBlockCountByHeight(height)) {
+            LOGGER.info("force select max score block,heigh={}", height);
+            return getMaxScoreBlock(blockList);
+        }
 
         boolean canBigger = canMineBiggerScoreBlock(blockList);
         if (!canBigger) {
-            Block highestScoreBlock = null;
-            long height = blockList.get(0).getHeight();
-            int signedMaxScore = Integer.MIN_VALUE;
-            for (Block block : blockList) {
-                if (height != block.getHeight()) {
-                    throw new RuntimeException("there is different block height");
-                }
-                int score = calcSignaturesScore(block);
-                if (score > signedMaxScore) {
-                    signedMaxScore = score;
-                    highestScoreBlock = block;
-                }
-            }
-            return highestScoreBlock;
+            return getMaxScoreBlock(blockList);
         }
         return null;
+    }
+
+    public Block getMaxScoreBlock(List<Block> blockList) {
+        if (CollectionUtils.isEmpty(blockList)) {
+            return null;
+        }
+        Block highestScoreBlock = null;
+        long height = blockList.get(0).getHeight();
+        int signedMaxScore = Integer.MIN_VALUE;
+        for (Block block : blockList) {
+            if (height != block.getHeight()) {
+                throw new RuntimeException("there is different block height");
+            }
+            int score = calcSignaturesScore(block);
+            //todo yuguojia has same highest score blocks
+            if (score > signedMaxScore) {
+                signedMaxScore = score;
+                highestScoreBlock = block;
+            }
+        }
+        LOGGER.info("getMaxScoreBlock height={}, max score={},block={}", height, signedMaxScore, highestScoreBlock.getHash());
+
+        return highestScoreBlock;
     }
 
     public boolean canMineBiggerScoreBlock(List<Block> blockList) {
@@ -576,15 +908,18 @@ public class BlockService {
                 signedMaxScore = score;
             }
             List<String> witnessBlockHashList = block.getWitnessBlockHashList();
+            List<Integer> oneBlockGapSet = new LinkedList<>();
             for (String witnessBlockHash : witnessBlockHashList) {
                 Block witnessBlock = getBlock(witnessBlockHash);
                 if (witnessBlock != null) {
                     int gap = (int) (height - witnessBlock.getHeight());
                     signedGapSet.add(gap);
+                    oneBlockGapSet.add(gap);
                 }
             }
+            LOGGER.info("the height={}_block={}_score={} signed high gaps is {}", height, block.getHash(), score, oneBlockGapSet);
         }
-        LOGGER.info("the height={} signed high gaps is {}, and max score is {}", height, signedGapSet, signedMaxScore);
+        LOGGER.info("the height={} all signed high gaps is {}, and max score is {}", height, signedGapSet, signedMaxScore);
 
         int mayMaxScore = 0;
         int count = 0;
@@ -613,6 +948,7 @@ public class BlockService {
         Iterator<String> txIndexIterator = transactionIndexMap.keySet().iterator();
         Iterator<String> utxoIterator = utxoMap.keySet().iterator();
         StringBuilder sb = new StringBuilder(1024);
+        int so = 0;
         while (blockIterator.hasNext() && count++ <= max_num) {
             String next = blockIterator.next();
             Block block = blockMap.get(next);
@@ -637,6 +973,16 @@ public class BlockService {
 //            LOGGER.info("utxo info: " + utxo);
 //        }
         LOGGER.info("my key pair info: " + peerKeyPair);
+    }
+
+    // check if the size of the block is appropriate.
+    private boolean verifySize(Block block) {
+        return block.sizeAllowed();
+    }
+
+    // check if the number of transactions in the block is appropriate.
+    private boolean verifyTransactionNumber(Block block) {
+        return block.getTransactions().size() >= MINIMUM_TRANSACTION_IN_BLOCK;
     }
 
     public boolean isExistInDB(String blockHash) {
@@ -675,18 +1021,75 @@ public class BlockService {
         return false;
     }
 
+    public boolean validBlock(Block block) {
+        long height = block.getHeight();
+        String blockHash = block.getHash();
+        if (!validBasic(block)) {
+            LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
+            return false;
+        }
+
+        if (!validBlockTransactions(block)) {
+            LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
+            return false;
+        }
+        return true;
+    }
+
     public boolean validBlockTransactions(Block block) {
         LOGGER.info("begin to check the transactions of block {}", block.getHeight());
 
+        if (block.isgenesisBlock()) {
+            return true;
+        }
+
+        List<Transaction> transactions = block.getTransactions();
+        if (CollectionUtils.isEmpty(transactions)) {
+            LOGGER.error("transactions is empty");
+            return false;
+        }
+
         // check transactions
-        for (Transaction tx : block.getTransactions()) {
-            if (!transactionService.valid(tx)) {
+        int size = transactions.size();
+        if (1 > size) {
+            LOGGER.error("transactions is less than one");
+            return false;
+        }
+
+        Transaction coinbaseTx = transactions.get(0);
+        if (null == coinbaseTx) {
+            LOGGER.error("Coinbase transaction is null");
+            return false;
+        }
+
+        if (!validTxInputsIsNull(coinbaseTx)
+                || !transactionService.validCoinBaseTx(coinbaseTx, block)) {
+            LOGGER.error("Invalidate Coinbase transaction");
+            return false;
+        }
+
+        HashSet<String> prevOutKey = new HashSet<>();
+        for (int index = 1; index < size; index++) {
+            if (!transactionService.verifyTransaction(transactions.get(index), prevOutKey, block)) {
+                LOGGER.error("Invalidate transaction");
                 return false;
             }
         }
         LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }
+
+    public boolean validTxInputsIsNull(Transaction tx) {
+        if (null == tx) {
+            return false;
+        }
+
+        if (null != tx.getInputs()) {
+            return false;
+        }
+        return true;
+    }
+
 
     public boolean validBasic(Block block) {
         short version = block.getVersion();
@@ -701,11 +1104,19 @@ public class BlockService {
         if (!block.isgenesisBlock() && StringUtils.isEmpty(prevBlockHash)) {
             return false;
         }
-        if (isExistInDB(blockHash)) {
-            LOGGER.error("the block is exist in db");
-            //has existed same block in db
+        if (!verifySize(block)) {
+            LOGGER.error("Size of the block is illegal.");
             return false;
         }
+        if (!block.isgenesisBlock() && !verifyTransactionNumber(block)) {
+            LOGGER.error("Number of transaction in the block is illegal.");
+            return false;
+        }
+        if (isExistInDB(blockHash)) {
+            LOGGER.error("the block is exist in db");
+            return false;
+        }
+        // todo yuguojia valid the block whether its pre block is best/main block(if best block exist)
 
         // check signature
         BlockWitness minerPKSig = block.getMinerFirstPKSig();
@@ -719,6 +1130,7 @@ public class BlockService {
             LOGGER.error("the first miner sign is not valid");
             return false;
         }
+        //todo yuguojia valid whether the miner could mining the height block
 
         BlockWitness signedWitness = block.getMinerSecondPKSig();
         if (Application.PRE_BLOCK_COUNT < block.getHeight()) {
@@ -737,15 +1149,11 @@ public class BlockService {
             }
         }
 
-        List<BlockWitness> otherPKSigs = block.getBlockWitnesses();
+        List<BlockWitness> otherPKSigs = block.getOtherWitnessSigPKS();
         if (Application.PRE_BLOCK_COUNT >= block.getHeight()) {
             return true;
         }
 
-//        if (CollectionUtils.isEmpty(otherPKSigs) || otherPKSigs.size() != 3) {
-//            LOGGER.error("the witness is empty or the number of witness is not three");
-//            return false;
-//        }
         if (CollectionUtils.isEmpty(otherPKSigs)) {
             return true;
         }
@@ -768,7 +1176,7 @@ public class BlockService {
             }
         }
         if (pkSet.size() != otherPKSigs.size()) {
-            //there are duplicate pks
+            //todo yuguojia there are duplicate pks
             return false;
         }
         return true;
@@ -776,14 +1184,24 @@ public class BlockService {
 
     public void persistPreOrphanBlock(BlockFullInfo blockFullInfo) {
         Block block = blockFullInfo.getBlock();
+        long height = block.getHeight();
+        String blockHash = block.getHash();
         List<BlockFullInfo> nextConnectionBlocks = blockCacheManager.getNextConnectionBlocks(block.getHash());
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
                 Block nextBlock = nextBlockFullInfo.getBlock();
+                long nextHeight = nextBlock.getHeight();
+                String nextBlockHash = nextBlock.getHash();
                 String nextSourceId = nextBlockFullInfo.getSourceId();
                 short nextVersion = nextBlockFullInfo.getVersion();
+                LOGGER.info("persisted height={}_block={}, find orphan next block height={}_block={} to persist",
+                        height, blockHash, nextHeight, nextBlockHash);
+                if (!validBlock(nextBlock)) {
+                    LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
+                    blockCacheManager.remove(nextBlock.getHash());
+                    continue;
+                }
                 persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
-                blockCacheManager.remove(nextBlock.getHash());
             }
         }
     }
@@ -816,19 +1234,6 @@ public class BlockService {
         return true;
     }
 
-//    private boolean validateWitnessFrom(Block localBlock, String pubKey) {
-//        boolean exists = false;
-//
-//        for (BlockWitness witness : localBlock.getBlockWitnesses()) {
-//            if (pubKey.equals(witness.getPubKey())) {
-//                exists = true;
-//                break;
-//            }
-//        }
-//
-//        return exists;
-//    }
-
     public boolean validBlockFromProducer(Block data) {
 
         if (data == null) {
@@ -848,7 +1253,7 @@ public class BlockService {
         }
 
         // check creator's signature
-        if (!validIfFromCreator(data)) {
+        if (!verifyMinerPermission(data)) {
             LOGGER.error("Validate the block if from creator failed");
             return false;
         }
@@ -862,30 +1267,13 @@ public class BlockService {
         return true;
     }
 
-    private boolean validateBlockParams(Block data) {
-        if (data == null) {
-            return false;
-        }
-
-        if (data.getVersion() < 0 ||
-                data.getHeight() < 1 ||
-                StringUtils.isEmpty(data.getPrevBlockHash()) ||
-                CollectionUtils.isEmpty(data.getTransactions())) {
-            return false;
-        }
-
-        List<BlockWitness> blockWitnessList = data.getBlockWitnesses();
-        if (CollectionUtils.isEmpty(blockWitnessList)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean validIfFromCreator(Block block) {
+    private boolean verifyMinerPermission(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
-
-        if (!nodeManager.checkProducer(blockWitness.getPubKey())) {
+        if (!nodeManager.checkProducer(block)) {
+            LOGGER.error("the height {}, this block miner is {}, the miners is {}"
+                    , block.getHeight()
+                    , block.getMinerSelfSigPKs().get(0).getAddress()
+                    , nodeManager.getDposGroup(block.getHeight()));
             return false;
         }
 
@@ -901,7 +1289,6 @@ public class BlockService {
     private boolean validatePreBlock(Block block) {
         if (!preIsExitInDB(block)) {
             //the pre block not exit in db
-            //todo yuguojia exit in cache
             return false;
         }
 

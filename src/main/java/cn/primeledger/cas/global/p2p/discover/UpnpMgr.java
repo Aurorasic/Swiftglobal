@@ -1,7 +1,6 @@
 package cn.primeledger.cas.global.p2p.discover;
 
 import cn.primeledger.cas.global.config.AppConfig;
-import cn.primeledger.cas.global.p2p.NetworkMgr;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,15 +12,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Start the unpn task.
+ *
  * @author zhao xiaogang
  */
 
 @Component
 @Slf4j
 public class UpnpMgr {
-
-    @Autowired
-    private NetworkMgr networkMgr;
 
     @Autowired
     private AppConfig appConfig;

@@ -36,10 +36,10 @@ public class BlockHeader {
 //     * public keys and signatures of pairs.
 //     * The first pk and sig is the miner's
 //     */
-//    private List<BlockWitness> blockWitnesses = new ArrayList<>();
+//    private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
 //
 //
-//    private List<BlockWitness> blockMiner = new ArrayList<>();
+//    private List<BlockWitness> minerSelfSigPKs = new ArrayList<>();
 //
 //    private List<String> nodes;
 }

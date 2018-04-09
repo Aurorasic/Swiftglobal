@@ -4,8 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static jdk.nashorn.internal.runtime.regexp.joni.Config.log;
-
 /**
  * @author kongyu
  * @create 2018-02-24 11:24

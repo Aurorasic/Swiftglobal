@@ -35,72 +35,57 @@ public class PreMiningService {
     private final static BigDecimal AMOUNT = new BigDecimal("1000000");
 
     private final static BigDecimal MINER_AMOUNT = new BigDecimal("1.0");
-
-    private static List<String> COMMUN_ADDRS = Lists.newArrayList();
-
-    @Resource(name = "blockData")
-    private ConcurrentMap<String, Block> blockMap;
-
-    @Resource(name = "blockIndexData")
-    private ConcurrentMap<Long, BlockIndex> blockIndexMap;
-
-    @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private KeyPair peerKeyPair;
-
-    @Autowired
-    private BlockService blockService;
-
-    @Autowired
-    private TransactionCacheManager txCacheManager;
-
-    @Resource(name = "utxoData")
-    private ConcurrentMap<String, UTXO> utxoMap;
-
     /**
      * 该私钥为超级社区矿机，用来创建创世快
-     * peer.priKey=1954b19a2f78e1a1b5a42bdc042e66a671152cc7a3ccab40b1bca14685a6d962
-     * peer.pubKey=03db15ebf22d4c997e189d684782739ca517b078d5890b2f87bd091a0641a9e1b3
-     * peer.addr=15sQCAYDG7CcmGVPX5KBjKQFFVnno4EJC5
+     * peer.priKey=6f297284275fe7d774977dd79d20496b3b8fc0405f64f28033842da74403ecb5
+     * peer.pubKey=024d2913d1390e5fcb74567291fe1cb3f7e53bac1fda5703e16df0b9df1fbc5e38
+     * peer.addr=1P453kHG2nb9P8LebFih1uXyLxU5D1GLwr
      */
-    public static ECKey GENESIS_ECKEY = ECKey.fromPrivateKey("6f297284275fe7d774977dd79d20496b3b8fc0405f64f28033842da74403ecb5");
-
+    public static ECKey GENESIS_ECKEY = ECKey.fromPrivateKey("94c3a68199dcb226104d4aeace181350f6a9ea45a356ae641a2147f4c7d9cbf0");
     /**
      * mining blocks of height are:2,3,4,5...
      */
     public static String[] PRE_BLOCK_PKS = new String[]{
-            //yuguojia
-            "03d5eb9f503d18e9c5d998e4dd9a3b5e43b7dccfa20957c7ee32ede8117d1a1a10"
-            , "0310d0395c023e37e8f68173391909c72d1730ba674fc0ca891bf9a358ba10855a"
-            , "03ac1c3501d70879ffd62b618ba79bd1b6938ed29a1ee7dadc5a3ffd95f7f7237e"
-            , "023e16858a397dc443f36a850735a7f735d3113e09a2353371f72ec72b6ca4bb32"
+
+            //jiantao
+//            "028a186b944c76d7ca626a3ba8ba9609d46de318affb48ee760a0c3336f426d741"
+            "03dac408737ba931026936b7420b7a72afedf358822e49436848a4b664362a833e"
+            , "02fa7f10fc794de37151738a1aadd95d3000206292b8b36fc1698e323c5543726d"
+            , "02560157ed444430b566494bf1f22e269b7874f2ca285e38dabf43c9bf41fa24e2"
+            , "0264c3d0e59862f9df7a5d8d9d812761a383559cb7ff1489ed16a12425e2224b13"
+//            , "02c3a0dae0b88758065981fa2f7c666123671cac621cb725f9cb6ca6418439d32a"
+//            , "03fabdc8f16a108e59453f6b658f47b9e158f0e0755bc04553b994a364fc7312ac"
+
             //yangyi
-            , "02ae5f432cec2b7e19bd5fb58fc98934f4b50a38a8376063f3bdb7a6f6291559a5"
-            , "02f9d158b8227bed46d916454be5cd2140d0b3e4d1f569a7c542f27e44d5ba4d43"
-            , "02a7aaeb38529b367c24f9d255cbc072ef2d339af0ebe71ae9723cc89f2f56acb2"
-            , "0330b29542bf6a0ea4bb9b99118d5ee50998031ec6ac2ba3fc0fc03f6b24c621b4"
-            , "02704d378d26a178fde9d79a0227052b62be3b8c3e50827b1adea364c059b09683"
+//            , "02ae5f432cec2b7e19bd5fb58fc98934f4b50a38a8376063f3bdb7a6f6291559a5"
+//            , "02f9d158b8227bed46d916454be5cd2140d0b3e4d1f569a7c542f27e44d5ba4d43"
+//            , "02a7aaeb38529b367c24f9d255cbc072ef2d339af0ebe71ae9723cc89f2f56acb2"
+//            , "0330b29542bf6a0ea4bb9b99118d5ee50998031ec6ac2ba3fc0fc03f6b24c621b4"
+//            , "02704d378d26a178fde9d79a0227052b62be3b8c3e50827b1adea364c059b09683"
             //jiulong
             , "0377b85fbc137825bac7d933faf7b9807579c62afaf2cd462cc471a1ea2b14ed90"
             , "03faab97fae96d4c492dd1bc0764c5a96a8b582c6ca4b41a583de1367b15d95812"
             , "031107ce9ca6db21b8732893873a0a5afb8f393601148acce9402bbab8562709a7"
             , "0367a2279fc0910c3feca555461ddda7f9173f74da99e454fcc2f36d0bb4feff6a"
             , "02a7c81cd3fe3ff0c05b7a3f87642d9aefa1386d8e58b09f613b25587be098b3d4"
+//            , "028dd824e120b070edc7436e2757cab81ca587b8992ec09a7b204e3774c9b876ac"
+//            , "02be14f156c60150e20ba865ed0e5189747c26154354f3d548c9ecb8a39264c65d"
+//            , "03e2576529b8e999a551e9ba46ad391b35200b3e4a7485fdc1e5322d9167bf7b48"
+
+            //yuguojia
+//            , "024d2913d1390e5fcb74567291fe1cb3f7e53bac1fda5703e16df0b9df1fbc5e38"
+//            , "03d5eb9f503d18e9c5d998e4dd9a3b5e43b7dccfa20957c7ee32ede8117d1a1a10"
+//            , "0310d0395c023e37e8f68173391909c72d1730ba674fc0ca891bf9a358ba10855a"
+//            , "03ac1c3501d70879ffd62b618ba79bd1b6938ed29a1ee7dadc5a3ffd95f7f7237e"
+//            , "023e16858a397dc443f36a850735a7f735d3113e09a2353371f72ec72b6ca4bb32"
 
             //kongyu
-//                "03db15ebf22d4c997e189d684782739ca517b078d5890b2f87bd091a0641a9e1b3"
-//                , "020b358c19b623c4fd5d3b38ac126c6f798b4d60eec1db39a2dfb035b96c734350"
-//                , "03c59ffcdf8a7155544a06b4cc0a5ad87824e959cec404a465ead672a12ec69a17"
-//                , "03aea965d1106f7a2927b62ad59d96aa8731b33eb07b2a6346fd2451b0cca2ba7e"
-//                , "03abcc6467ec25ea2f5a29b976cbf7df50e5d0c45be55ed781e3b3c8c9b687a976"
-            //jiantao
-//                , "028a186b944c76d7ca626a3ba8ba9609d46de318affb48ee760a0c3336f426d741"
-//                , "03dac408737ba931026936b7420b7a72afedf358822e49436848a4b664362a833e"
-//                , "02fa7f10fc794de37151738a1aadd95d3000206292b8b36fc1698e323c5543726d"
-//                , "02560157ed444430b566494bf1f22e269b7874f2ca285e38dabf43c9bf41fa24e2"
-//                , "0264c3d0e59862f9df7a5d8d9d812761a383559cb7ff1489ed16a12425e2224b13"
+            , "03db15ebf22d4c997e189d684782739ca517b078d5890b2f87bd091a0641a9e1b3"
+            , "020b358c19b623c4fd5d3b38ac126c6f798b4d60eec1db39a2dfb035b96c734350"
+            , "03c59ffcdf8a7155544a06b4cc0a5ad87824e959cec404a465ead672a12ec69a17"
+            , "03aea965d1106f7a2927b62ad59d96aa8731b33eb07b2a6346fd2451b0cca2ba7e"
+            , "03abcc6467ec25ea2f5a29b976cbf7df50e5d0c45be55ed781e3b3c8c9b687a976"
+
 
             //bailaoshi
 //                , "023277981818047207a5487591842cbc0f087a6f7d3fa0d8f1f3cf7c35b38bac71"
@@ -111,7 +96,45 @@ public class PreMiningService {
 //                , "031e00c3b505a82e9f3b913da8677e0ace9d59fa50064454155457e162c03bca7e"
 //                , "03bf0a736382220cd3509ec96e833e072ca907b3856fc676fa737cc7dbaa6b481a"
 
+            //zhao xiaogang
+//            , "037758be1e9d961bd40fff7e657dfac82d71d07280a594a60fcf188958314ae444"
+
+            // liu weizhen
+//            , "02e67329a60a7fdaa7ef6c119175ff6d870c84501008a4c9bb953053a35c4ad2f8"
+//            , "0343fd9e602f4f2f3cc9955b484e1378ac2a092a64d6f7c678d840883eddc5971d"
+
     };
+    private static List<String> COMMUN_ADDRS = Lists.newArrayList();
+    @Resource(name = "blockData")
+    private ConcurrentMap<String, Block> blockMap;
+    @Resource(name = "blockIndexData")
+    private ConcurrentMap<Long, BlockIndex> blockIndexMap;
+    @Autowired
+    private TransactionService transactionService;
+    @Autowired
+    private KeyPair peerKeyPair;
+    @Autowired
+    private BlockService blockService;
+    @Autowired
+    private TransactionCacheManager txCacheManager;
+    @Resource(name = "utxoData")
+    private ConcurrentMap<String, UTXO> utxoMap;
+
+    public static void main(String[] arg) {
+        for (int i = 1; i < 8; i++) {
+            ECKey ecKey = new ECKey();
+            System.out.println(ecKey.getKeyPair().getPriKey());
+            System.out.println(ecKey.getKeyPair().getPubKey());
+            System.out.println(ECKey.pubKey2Base58Address(ecKey.getKeyPair().getPubKey()));
+            System.out.println();
+        }
+
+        System.out.println(ECKey.pubKey2Base58Address("03db15ebf22d4c997e189d684782739ca517b078d5890b2f87bd091a0641a9e1b3"));
+
+        boolean pair = ECKey.checkPriKeyAndPubKey("1954b19a2f78e1a1b5a42bdc042e66a671152cc7a3ccab40b1bca14685a6d962",
+                "03db15ebf22d4c997e189d684782739ca517b078d5890b2f87bd091a0641a9e1b3");
+        System.out.println(pair);
+    }
 
     public boolean initGenesisBlocks() {
         Set set = blockMap.keySet();
@@ -142,14 +165,14 @@ public class PreMiningService {
             return false;
         }
 
-        Block block = Block.builder()
-                .version((short) 1)
-                .blockTime(0)
-                .prevBlockHash(null)
-                .transactions(transactions)
-                .height(1)
-                .nodes(COMMUN_ADDRS)
-                .build();
+        Block block = new Block();
+        block.setVersion((short) 1);
+        block.setBlockTime(0);
+        block.setPrevBlockHash(null);
+        block.setTransactions(transactions);
+        block.setHeight(1);
+        block.setNodes(COMMUN_ADDRS);
+        block.setPubKey(GENESIS_ECKEY.getKeyPair().getPubKey());
         String sig = ECKey.signMessage(block.getHash(), GENESIS_ECKEY.getKeyPair().getPriKey());
         block.initMinerPkSig(GENESIS_ECKEY.getKeyPair().getPubKey(), sig);
         blockService.persistBlockAndIndex(block, null, (short) 0);
@@ -157,21 +180,16 @@ public class PreMiningService {
         return true;
     }
 
-
     public void preMiningBlocks() {
         String myPubKey = peerKeyPair.getPubKey();
-//        String genesisPubKey = PreMiningService.GENESIS_ECKEY.getKeyPair().getPubKey();
-//        if (StringUtils.equals(myPubKey, genesisPubKey)) {
-//            for (int i = 2; i <= Application.PRE_BLOCK_COUNT - 2; i++) {
-//                //block 2,3,4,5
-//                packagePreBlock(pubKeys[i - 2]);
-//            }
-//        }
 
         //mining 2-->13 height blocks
-        for (int i = 0; i < PRE_BLOCK_PKS.length && i < Application.PRE_BLOCK_COUNT; i++) {
-            if (StringUtils.equals(myPubKey, PRE_BLOCK_PKS[i])) {
-                asynPackageOneBlock(myPubKey, i + 1);
+        if (PRE_BLOCK_PKS.length < Application.PRE_BLOCK_COUNT - 1) {
+            throw new RuntimeException("pre blocking address count is error.");
+        }
+        for (int i = 2; i <= Application.PRE_BLOCK_COUNT; i++) {
+            if (StringUtils.equals(myPubKey, PRE_BLOCK_PKS[i - 2])) {
+                asynPackageOneBlock(myPubKey, i - 1);
             }
         }
     }
@@ -191,6 +209,7 @@ public class PreMiningService {
         }
         Transaction transaction = new Transaction();
         transaction.setVersion(version);
+        transaction.setMinerPubKey(ecKey.getKeyPair().getPubKey());
         transaction.setLockTime(lockTime);
 
         TransactionOutput transactionOutput = new TransactionOutput();
@@ -206,7 +225,6 @@ public class PreMiningService {
                 , ECKey.signMessage(transaction.getHash(), ecKey.getKeyPair().getPriKey())));
         return transaction;
     }
-
 
     private void asynPackageOneBlock(String pubKey, long preHeight) {
         ExecutorService executorService = ExecutorServices.newSingleThreadExecutor("preMining", 1);
@@ -265,11 +283,12 @@ public class PreMiningService {
 
         String address = ECKey.pubKey2Base58Address(peerKeyPair.getPubKey());
         Transaction minerTx = new Transaction();
+        minerTx.setMinerPubKey(peerKeyPair.getPubKey());
         minerTx.setVersion(version);
         minerTx.setLockTime(lockTime);
 
         List<UTXO> utxos = utxoMap.values().stream().filter(utxo -> StringUtils.equals(address, utxo.getAddress())).collect(Collectors.toList());
-        if (org.apache.commons.collections.CollectionUtils.isEmpty(utxos)) {
+        if (CollectionUtils.isEmpty(utxos)) {
             throw new RuntimeException("address = " + address + " utxos is empty.");
         }
 
@@ -400,6 +419,7 @@ public class PreMiningService {
         }
 
         Transaction transaction = new Transaction();
+        transaction.setMinerPubKey(peerKeyPair.getPubKey());
         transaction.setVersion(version);
         transaction.setLockTime(lockTime);
         List outputLists = Lists.newArrayList();
@@ -449,21 +469,5 @@ public class PreMiningService {
         lockScript.setAddress(address);
         output.setLockScript(lockScript);
         return output;
-    }
-
-    public static void main(String[] arg) {
-        for (int i = 1; i < 8; i++) {
-            ECKey ecKey = new ECKey();
-            System.out.println(ecKey.getKeyPair().getPriKey());
-            System.out.println(ecKey.getKeyPair().getPubKey());
-            System.out.println(ECKey.pubKey2Base58Address(ecKey.getKeyPair().getPubKey()));
-            System.out.println();
-        }
-
-        System.out.println(ECKey.pubKey2Base58Address("024d2913d1390e5fcb74567291fe1cb3f7e53bac1fda5703e16df0b9df1fbc5e38"));
-
-        boolean pair = ECKey.checkPriKeyAndPubKey("6f297284275fe7d774977dd79d20496b3b8fc0405f64f28033842da74403ecb5",
-                "024d2913d1390e5fcb74567291fe1cb3f7e53bac1fda5703e16df0b9df1fbc5e38");
-        System.out.println(pair);
     }
 }

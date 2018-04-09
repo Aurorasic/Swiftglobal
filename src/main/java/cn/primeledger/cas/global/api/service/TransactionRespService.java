@@ -1,25 +1,24 @@
 package cn.primeledger.cas.global.api.service;
 
-import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.blockchain.Block;
 import cn.primeledger.cas.global.blockchain.BlockIndex;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
 import cn.primeledger.cas.global.blockchain.transaction.*;
-import cn.primeledger.cas.global.common.entity.UnicastMessageEntity;
-import cn.primeledger.cas.global.common.event.ReceivedDataEvent;
-import cn.primeledger.cas.global.constants.EntityType;
 import cn.primeledger.cas.global.crypto.ECKey;
 import cn.primeledger.cas.global.script.LockScript;
 import cn.primeledger.cas.global.script.UnLockScript;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.mapdb.BTreeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +40,12 @@ public class TransactionRespService {
     @Resource(name = "blockData")
     private ConcurrentMap<String, Block> blockData;
 
+    @Resource(name = "pubKeyMap")
+    private BTreeMap<byte[], byte[]> pubKeyMap;
+
+    @Autowired
+    private MessageCenter messageCenter;
+
     /**
      * Send transaction information
      *
@@ -53,16 +58,7 @@ public class TransactionRespService {
             return false;
         }
         LOGGER.info("transaction is = " + tx.toString());
-
-        UnicastMessageEntity entity = new UnicastMessageEntity();
-        entity.setType(EntityType.TRANSACTION_TRANSFER_BROADCAST.getCode());
-        entity.setVersion(tx.getVersion());
-        entity.setData(JSON.toJSONString(tx));
-
-        ReceivedDataEvent event = new ReceivedDataEvent();
-        event.setEntity(entity);
-        //send tx event
-        Application.EVENT_BUS.post(event);
+        messageCenter.accept(tx);
         return true;
     }
 
@@ -219,4 +215,55 @@ public class TransactionRespService {
         return flag;
     }
 
+    public List<Transaction> getTransactionByPubKeyMap(String pubKey, String op) {
+        List<Transaction> result = Lists.newArrayList();
+        if (null == pubKey || null == op) {
+            throw new RuntimeException("params is null");
+        }
+        String address = ECKey.pubKey2Base58Address(pubKey);
+        if (null == address) {
+            throw new RuntimeException("address is null");
+        }
+
+        ConcurrentNavigableMap<byte[], byte[]> map = pubKeyMap.prefixSubMap(address.getBytes(), true);
+        if (map.isEmpty()) {
+            return result;
+        }
+
+        //遍历查询到的map数据
+        for (byte[] addrKey : map.keySet()) {
+            if (null == addrKey) {
+                continue;
+            }
+
+            String[] addressAndTxHash = new String(addrKey).split(":");
+            if (3 != addressAndTxHash.length) {
+                continue;
+            }
+
+            String blockHash = new String(map.get(addrKey));
+            if (null == blockHash) {
+                continue;
+            }
+            Block block = blockData.get(blockHash);
+            if (null == block) {
+                continue;
+            }
+
+            List<Transaction> transactions = block.getTransactions();
+            if (CollectionUtils.isEmpty(transactions)) {
+                continue;
+            }
+
+            for (Transaction tx : transactions) {
+                if (null == tx) {
+                    continue;
+                }
+                if (StringUtils.equals(addressAndTxHash[1], tx.getHash())) {
+                    result.add(tx);
+                }
+            }
+        }
+        return result;
+    }
 }

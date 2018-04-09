@@ -2,13 +2,18 @@ package cn.primeledger.cas.global.blockchain.handler;
 
 import cn.primeledger.cas.global.blockchain.Block;
 import cn.primeledger.cas.global.blockchain.BlockCacheManager;
-import cn.primeledger.cas.global.blockchain.BlockFullInfo;
 import cn.primeledger.cas.global.blockchain.BlockService;
-import cn.primeledger.cas.global.common.handler.BroadcastEntityHandler;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
+import cn.primeledger.cas.global.common.SocketRequest;
+import cn.primeledger.cas.global.common.handler.BaseEntityHandler;
+import cn.primeledger.cas.global.consensus.syncblock.Inventory;
 import cn.primeledger.cas.global.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author baizhengwen
@@ -16,7 +21,7 @@ import org.springframework.stereotype.Component;
  */
 @Component("blockHandler")
 @Slf4j
-public class BlockHandler extends BroadcastEntityHandler<Block> {
+public class BlockHandler extends BaseEntityHandler<Block> {
 
     @Autowired
     private BlockService blockService;
@@ -24,39 +29,34 @@ public class BlockHandler extends BroadcastEntityHandler<Block> {
     @Autowired
     private BlockCacheManager blockCacheManager;
 
+    @Autowired
+    private MessageCenter messageCenter;
+
     @Override
     public EntityType getType() {
         return EntityType.BLOCK_BROADCAST;
     }
 
-    //todo yuguojia remove synchronized
     @Override
-    synchronized public void process(Block data, short version, String sourceId) {
-        //todo yangyi 需要实现防攻击，避免大量的孤儿区块
-        Block preBlock = blockService.getBlock(data.getPrevBlockHash());
-        if (preBlock == null) {
-            LOGGER.warn("cannot get pre block of {}, to cache", data.getHeight() + "_" + data.getHash());
-            BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, data);
-            blockCacheManager.put(blockFullInfo);
+    protected void process(SocketRequest<Block> request) {
+        Block data = request.getData();
+        long height = data.getHeight();
+        String hash = data.getHash();
+        if (blockCacheManager.isContains(hash)) {
             return;
         }
-        if (!blockService.validBasic(data)) {
-            LOGGER.error("error block: " + data);
-            return;
-        }
-        if (!blockService.validBlockTransactions(data)) {
-            LOGGER.error("error block transactions: " + data);
-            return;
-        }
-        boolean success = blockService.persistBlockAndIndex(data, sourceId, version);
-        LOGGER.info("persist block {}", success);
-        if (success && !data.isgenesisBlock()) {
-            blockService.broadCastBlock(data);
-        }
-    }
+        short version = data.getVersion();
+        String sourceId = request.getSourceId();
 
-    @Override
-    synchronized public void queueElementConsumeOver() {
-        blockCacheManager.fetchPreBlocks();
+        boolean success = blockService.persistBlockAndIndex(data, sourceId, version);
+        LOGGER.info("persisted block all info, height={}_block={},success?{}", height, hash, success);
+        if (success && !data.isgenesisBlock()) {
+            Inventory inventory = new Inventory();
+            inventory.setHeight(height);
+            Set<String> set = new HashSet<>(blockService.getBlockIndexByHeight(height).getBlockHashs());
+            inventory.setHashs(set);
+            messageCenter.broadcast(new String[]{sourceId}, inventory);
+//            messageCenter.broadcast(new String[]{sourceId}, data);
+        }
     }
 }

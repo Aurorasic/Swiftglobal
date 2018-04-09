@@ -39,14 +39,14 @@ public class Money implements Serializable, Comparable {
         return newAmount(getAmountValue());
     }
 
-    public String getAmountValue() {
-        return amount.toString();
-    }
-
     public void setAmount(BigDecimal val) {
         if (val != null) {
             this.amount = newAmount(val);
         }
+    }
+
+    public String getAmountValue() {
+        return amount.toString();
     }
 
     public String getCurrency() {

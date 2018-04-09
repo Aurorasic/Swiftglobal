@@ -1,22 +1,14 @@
 package cn.primeledger.cas.global;
 
 import cn.primeledger.cas.global.blockchain.BlockService;
-import cn.primeledger.cas.global.blockchain.PreMiningService;
 import cn.primeledger.cas.global.blockchain.transaction.TransactionCacheManager;
-import cn.primeledger.cas.global.blockchain.transaction.TransactionService;
-import cn.primeledger.cas.global.common.listener.IEventBusListener;
-import cn.primeledger.cas.global.config.AppConfig;
-import cn.primeledger.cas.global.consensus.NodeManager;
-import cn.primeledger.cas.global.crypto.model.KeyPair;
-import cn.primeledger.cas.global.network.socket.server.SocketServer;
-import cn.primeledger.cas.global.p2p.NetworkMgr;
-import cn.primeledger.cas.global.p2p.PeerClient;
-import cn.primeledger.cas.global.p2p.PeerMgr;
-import cn.primeledger.cas.global.utils.ExecutorServices;
+import cn.primeledger.cas.global.common.handler.IEntityHandler;
+import cn.primeledger.cas.global.consensus.syncblock.SyncBlockService;
+import cn.primeledger.cas.global.network.PeerManager;
+import cn.primeledger.cas.global.network.socket.Server;
+import cn.primeledger.cas.global.schedule.BaseTask;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -40,43 +32,29 @@ import java.util.concurrent.TimeUnit;
 @ComponentScan({"cn.primeledger.cas.global"})
 public class Application {
 
-    public static final EventBus EVENT_BUS = new AsyncEventBus(ExecutorServices.newFixedThreadPool(
-            "AsyncEventBus", Runtime.getRuntime().availableProcessors() * 2, 10000
-    ));
-
-
     public static final int PRE_BLOCK_COUNT = 13;
+
+    public static final boolean TEST = false;
 
     @Autowired
     private BlockService blockService;
     @Autowired
-    private PreMiningService preMiningService;
-    @Autowired
     private TransactionCacheManager txCacheManager;
-    @Autowired
-    private TransactionService transactionService;
-    @Autowired
-    private List<IEventBusListener> eventBusListeners;
 
     @Autowired
-    private NodeManager nodeManager;
+    private Server server;
 
     @Autowired
-    private NetworkMgr networkMgr;
+    private PeerManager peerManager;
 
     @Autowired
-    private AppConfig appConfig;
-    @Autowired
-    private KeyPair peerKeyPair;
+    private List<BaseTask> tasks;
 
     @Autowired
-    private SocketServer socketServer;
+    private List<IEntityHandler> entityHandlers;
 
     @Autowired
-    private PeerClient socketClient;
-
-    @Autowired
-    private PeerMgr peerMgr;
+    private SyncBlockService syncBlockService;
 
     public static void main(String[] args) throws Exception {
         // Cyclic reference detection
@@ -105,33 +83,30 @@ public class Application {
         // 同步区块完成后，加载本节点所有区块，并计算索引等相关数据
         // 开始挖矿
 
-
-
-        // init genesis block
-        preMiningService.initGenesisBlocks();
         blockService.printAllBlockData();
-        // register event listeners
-        registerEventListeners();
-        LOGGER.info("started...");
         try {
-//            blockService.loadAllBlockData();
-            socketServer.start();
-            peerMgr.doGetSeedPeers();
-            startNetwork();
-            socketClient.register();
-            preMiningService.preMiningBlocks();
+            blockService.loadAllBlockData();
+            server.start();
+            startEntityHandler();
+            peerManager.getSeedPeers();
+            startTask();
+            syncBlockService.startSyncBlock();
+            LOGGER.info("started...");
         } catch (Throwable e) {
             LOGGER.error(e.getMessage(), e);
         }
     }
 
-
-    private void startNetwork() {
-        networkMgr.start();
+    private void startTask() {
+        if (CollectionUtils.isNotEmpty(tasks)) {
+            tasks.forEach(BaseTask::start);
+        }
     }
 
-    private void registerEventListeners() {
-        CollectionUtils.forAllDo(eventBusListeners, EVENT_BUS::register);
+    private void startEntityHandler() {
+        if (CollectionUtils.isNotEmpty(entityHandlers)) {
+            entityHandlers.forEach(IEntityHandler::start);
+        }
     }
 
     private void test() {

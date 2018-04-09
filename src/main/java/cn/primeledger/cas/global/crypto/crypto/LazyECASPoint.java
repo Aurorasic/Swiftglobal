@@ -2,10 +2,8 @@ package cn.primeledger.cas.global.crypto.crypto;
 
 import org.jetbrains.annotations.Nullable;
 import org.spongycastle.math.ec.ECCurve;
-import org.spongycastle.math.ec.ECFieldElement;
 import org.spongycastle.math.ec.ECPoint;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;

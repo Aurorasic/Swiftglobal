@@ -116,6 +116,13 @@ public class BlockIndex extends BaseSerializer {
         return false;
     }
 
+    public int getBlockHashCount() {
+        if (blockHashs == null) {
+            return 0;
+        }
+        return blockHashs.size();
+    }
+
     public boolean switchToBestChain(String blockHash) {
         int index = getIndex(blockHash);
         if (index < 0) {

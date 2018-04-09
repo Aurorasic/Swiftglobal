@@ -1,6 +1,6 @@
 package cn.primeledger.cas.global.consensus.syncblock;
 
-import cn.primeledger.cas.global.common.formatter.IEntityFormatter;
+import cn.primeledger.cas.global.common.formatter.BaseEntityFormatter;
 import cn.primeledger.cas.global.constants.EntityType;
 import com.alibaba.fastjson.JSON;
 import org.springframework.stereotype.Component;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * @date Created on 3/8/2018
  */
 @Component
-public class InventoryFormatter implements IEntityFormatter<Inventory> {
+public class InventoryFormatter extends BaseEntityFormatter<Inventory> {
 
     @Override
     public EntityType getType() {
@@ -18,12 +18,12 @@ public class InventoryFormatter implements IEntityFormatter<Inventory> {
     }
 
     @Override
-    public Inventory parse(String data, short version) {
+    public Inventory doParse(String data) {
         return JSON.parseObject(data, Inventory.class);
     }
 
     @Override
-    public String format(Inventory data, short version) {
+    public String doFormat(Inventory data) {
         return JSON.toJSONString(data);
     }
 }

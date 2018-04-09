@@ -1,30 +1,28 @@
 package cn.primeledger.cas.global.consensus.syncblock;
 
-import cn.primeledger.cas.global.Application;
-import cn.primeledger.cas.global.blockchain.Block;
+import cn.primeledger.cas.global.blockchain.BlockIndex;
 import cn.primeledger.cas.global.blockchain.BlockService;
-import cn.primeledger.cas.global.common.entity.BroadcastMessageEntity;
-import cn.primeledger.cas.global.common.entity.UnicastMessageEntity;
-import cn.primeledger.cas.global.common.event.BroadcastEvent;
-import cn.primeledger.cas.global.common.event.UnicastEvent;
-import cn.primeledger.cas.global.crypto.model.KeyPair;
-import cn.primeledger.cas.global.p2p.channel.ChannelMgr;
-import com.alibaba.fastjson.JSON;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import javafx.util.Pair;
+import cn.primeledger.cas.global.blockchain.listener.MessageCenter;
+import cn.primeledger.cas.global.common.SystemStatus;
+import cn.primeledger.cas.global.common.SystemStatusManager;
+import cn.primeledger.cas.global.common.SystemStepEnum;
+import cn.primeledger.cas.global.common.event.BlockPersistedEvent;
+import cn.primeledger.cas.global.common.listener.IEventBusListener;
+import cn.primeledger.cas.global.network.socket.connection.ConnectionManager;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.eventbus.Subscribe;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static cn.primeledger.cas.global.constants.EntityType.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author yuanjiantao
@@ -32,135 +30,238 @@ import static cn.primeledger.cas.global.constants.EntityType.*;
  */
 @Component
 @Slf4j
-public class SyncBlockService implements InitializingBean {
+public class SyncBlockService implements IEventBusListener {
+
+    /**
+     * the num of active connections to trigger sync data
+     */
+    private static final int ACTIVE_CONNECTION_NUM = 8;
+
+    private static final int MAX_RETRY_TIMES = 3;
+
+    private static final int SYNC_BLOCK_TEMP_SIZE = 10;
+
+    private static final int SYNC_BLOCK_EXPIRATION = 3;
+
+
+    @Autowired
+    private MessageCenter messageCenter;
 
     @Autowired
     private BlockService blockService;
 
-    private ThreadPoolExecutor executor;
-
-    private List<Pair<Long, String>> list = Collections.synchronizedList(new ArrayList<>());
+    @Autowired
+    private ConnectionManager connectionManager;
 
     @Autowired
-    private ChannelMgr channelMgr;
+    private SystemStatusManager systemStatusManager;
 
-    @Autowired
-    private KeyPair keyPair;
+    private CountDownLatch countDownLatch = new CountDownLatch(ACTIVE_CONNECTION_NUM);
 
-    @Override
-    public void afterPropertiesSet() {
+    private ConcurrentHashMap<String, Long> map = new ConcurrentHashMap<>();
 
-        executor = new ThreadPoolExecutor(2, 2, 100L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(),
-                new ThreadFactoryBuilder().setNameFormat("sycBlock-pool-%d").build());
+    private ConcurrentHashMap<String, AtomicLong> retryTimes = new ConcurrentHashMap<>();
 
-        executor.allowCoreThreadTimeOut(true);
+    private boolean allowUpdatePeersMaxHeight = true;
 
-        executor.execute(() -> {
-            while (true) {
+    private long lastSyncHeight = 0L;
+
+    private Cache<Long, String> cache = Caffeine.newBuilder().maximumSize(20)
+            .expireAfterWrite(SYNC_BLOCK_EXPIRATION, TimeUnit.SECONDS)
+            .removalListener((RemovalListener<Long, String>) (height, sourceId, cause) -> {
+                if (cause.wasEvicted() && null != height) {
+                    retrySendSyncBlockRequest(height, sourceId);
+                }
+            })
+            .build();
+
+    public void startSyncBlock() {
+        try {
+            countDownLatch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+
+        if (map.size() == 0) {
+            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.info("have no peer to sync block, sync block finished!");
+            return;
+        }
+
+        allowUpdatePeersMaxHeight = false;
+        long peersMaxHeight = getPeersMaxHeight();
+        long startHeight = blockService.getBestMaxHeight();
+
+        if (peersMaxHeight <= startHeight) {
+            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.info("all peers' max height aren't higher than mine, sync block finished!");
+            return;
+        }
+        sendSyncBlockRequest(startHeight, peersMaxHeight);
+        LOGGER.info("send sync block request end!");
+    }
+
+    @Subscribe
+    public void process(BlockPersistedEvent event) {
+        if (systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
+            return;
+        }
+        if (event.hasBestBlock()) {
+            cache.invalidate(event.getHeight());
+            if (event.getHeight() >= lastSyncHeight && systemStatusManager.getSystemStatus().equals(SystemStatus.SYNC_BLOCKS)) {
+                systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+                LOGGER.info("sync block finished !");
+            }
+        }
+    }
+
+    /**
+     * sync block only called one times in the start process
+     *
+     * @param startHeight
+     * @param endHeight
+     */
+    private void sendSyncBlockRequest(long startHeight, long endHeight) {
+        long syncHeight = startHeight;
+        if (syncHeight < 1L) {
+            syncHeight = 1L;
+        }
+        while (syncHeight <= endHeight) {
+            if (syncHeight > blockService.getBestMaxHeight() + SYNC_BLOCK_TEMP_SIZE) {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(1000L);
                 } catch (InterruptedException e) {
                     LOGGER.error(e.getMessage(), e);
                 }
-                if (channelMgr.countActionChannels() > 0) {
-                    askMaxHeight();
+                continue;
+            }
+            for (Map.Entry<String, Long> entry : map.entrySet()) {
+                if (entry.getValue() >= syncHeight) {
+                    messageCenter.unicast(entry.getKey(), createInventoryByHeight(syncHeight));
+                    cache.put(syncHeight, entry.getKey());
+                    LOGGER.info("send sync block request height:{} sourceId:{}", syncHeight, entry.getKey());
+                    lastSyncHeight = syncHeight;
+                    syncHeight++;
+                }
+                if (syncHeight > endHeight) {
                     break;
                 }
+            }
+        }
+    }
+
+    public void retrySendSyncBlockRequest(long syncHeight, String preSourceId) {
+        if (syncHeight == blockService.getBestMaxHeight() + 1) {
+            retryTimes.computeIfAbsent(preSourceId, s -> new AtomicLong()).incrementAndGet();
+            checkTimeoutAndSystemStatus(preSourceId);
+            List<String> list = new ArrayList<>();
+            for (Map.Entry<String, Long> entry : map.entrySet()) {
+                if (!entry.getKey().equals(preSourceId)
+                        && entry.getValue() >= syncHeight) {
+                    list.add(entry.getKey());
+                }
+            }
+
+            String sourceId = null;
+            if (map.containsKey(preSourceId)) {
+                sourceId = preSourceId;
+            }
+            if (list.size() > 0) {
+                sourceId = list.get((int) (Math.random() * (list.size() - 1)));
+            }
+            if (null == sourceId) {
+                return;
             }
 
             while (true) {
+                if (cache.estimatedSize() < SYNC_BLOCK_TEMP_SIZE) {
+                    messageCenter.unicast(sourceId, createInventoryByHeight(syncHeight));
+                    cache.put(syncHeight, sourceId);
+                    break;
+                }
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(SYNC_BLOCK_EXPIRATION);
                 } catch (InterruptedException e) {
                     LOGGER.error(e.getMessage(), e);
                 }
-                if (list.size() > 0) {
-                    break;
-                }
             }
+        } else {
+            cache.put(syncHeight, preSourceId);
+        }
 
-            long syncHeight = blockService.getMaxHeight();
-            int startIndex = 0;
-            while (syncHeight <= list.get(list.size() - 1).getKey()) {
-                if (syncHeight > list.get(startIndex).getKey()) {
-                    startIndex++;
-                }
-                int index = (int) syncHeight % (list.size() - startIndex);
+
+    }
+
+    private void checkTimeoutAndSystemStatus(String sourceId) {
+        if (retryTimes.get(sourceId).get() > MAX_RETRY_TIMES) {
+            connectionManager.close(sourceId);
+            map.remove(sourceId);
+            lastSyncHeight = getPeersMaxHeight();
+            if (map.size() == 0) {
+                systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+                LOGGER.info("have no peer to sync block, sync block finished!");
+            }
+            if (blockService.getBestMaxHeight() >= lastSyncHeight) {
+                systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+                LOGGER.info("sync block finished !");
+            }
+        }
+    }
+
+    public void syncBlockByHeight(long targetHeight, String sourceId) {
+
+        /**
+         * sync block when SystemStatus is RUNNING
+         */
+        if (systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
+            long myMaxHeight = blockService.getBestMaxHeight();
+            messageCenter.unicast(sourceId, createInventoryByHeight(myMaxHeight));
+            for (long i = myMaxHeight + 1; i <= targetHeight; i++) {
                 Inventory inventory = new Inventory();
-                inventory.setHeight(syncHeight);
-                unicastInventory(inventory, list.get(index + startIndex).getValue());
-
-                if (syncHeight % 10 == 0L || syncHeight == list.get(list.size() - 1).getKey()) {
-                    try {
-                        Thread.sleep(1500);
-                    } catch (InterruptedException e) {
-                        LOGGER.error(e.getMessage(), e);
-                    }
-                }
-                syncHeight++;
-            }
-        });
-    }
-
-    public void sendBlock(Block block, String sourceId) {
-        UnicastMessageEntity entity = new UnicastMessageEntity();
-        entity.setType(BLOCK_BROADCAST.getCode());
-        entity.setVersion(block.getVersion());
-        entity.setData(JSON.toJSONString(block));
-        entity.setSourceId(sourceId);
-        Application.EVENT_BUS.post(new UnicastEvent(entity));
-        LOGGER.info("send syncblock response");
-    }
-
-
-    public void updateMaxHeight(long height, String sourceId) {
-        int size = list.size();
-        int i;
-        for (i = 0; i < size; i++) {
-            if (list.get(i).getKey() > height) {
-                list.add(i, new Pair<>(height, sourceId));
-                break;
+                inventory.setHeight(i);
+                messageCenter.unicast(sourceId, inventory);
             }
         }
-        if (i == size) {
-            list.add(new Pair<>(height, sourceId));
+    }
+
+    public void updatePeersMaxHeight(long height, String sourceId) {
+        if (allowUpdatePeersMaxHeight) {
+            if (!map.containsKey(sourceId)) {
+                map.put(sourceId, height);
+                countDownLatch.countDown();
+                LOGGER.info("update peer's max height! maxHeight:{},sourceId:{}", height, sourceId);
+            } else if (map.containsKey(sourceId) && height > map.get(sourceId)) {
+                map.put(sourceId, height);
+            }
         }
     }
 
-    public void askMaxHeight() {
-        MaxHeight maxHeight = new MaxHeight(keyPair.getPubKey());
-        BroadcastMessageEntity entity = new BroadcastMessageEntity();
-        entity.setType(MAXHEIGHT.getCode());
-        entity.setVersion(maxHeight.getVersion());
-        entity.setData(JSON.toJSONString(maxHeight));
-        Application.EVENT_BUS.post(new BroadcastEvent(entity));
+    /**
+     * get my peers max height
+     *
+     * @return
+     */
+    private long getPeersMaxHeight() {
+        long height = 1L;
+        for (Map.Entry<String, Long> entry : map.entrySet()) {
+            long tempHeight = entry.getValue();
+            if (tempHeight > height) {
+                height = tempHeight;
+            }
+        }
+        return height;
     }
 
-    public void unicastMaxHeight(MaxHeight maxHeight, String sourceId) {
-        if (null == maxHeight) {
-            return;
+    private Inventory createInventoryByHeight(long height) {
+        Inventory inventory = new Inventory();
+        inventory.setHeight(height);
+        BlockIndex blockIndex = blockService.getBlockIndexByHeight(height);
+        if (blockIndex != null &&
+                CollectionUtils.isNotEmpty(blockIndex.getBlockHashs())) {
+            Set<String> set = new HashSet<>(blockIndex.getBlockHashs());
+            inventory.setHashs(set);
         }
-        UnicastMessageEntity entity = new UnicastMessageEntity();
-        entity.setType(MAXHEIGHT.getCode());
-        entity.setVersion(maxHeight.getVersion());
-        entity.setData(JSON.toJSONString(maxHeight));
-        entity.setSourceId(sourceId);
-        Application.EVENT_BUS.post(new UnicastEvent(entity));
-
-        LOGGER.info("unicast syncblock success: " + JSON.toJSONString(maxHeight));
-    }
-
-    public void unicastInventory(Inventory inventory, String sourceId) {
-        if (null == inventory) {
-            return;
-        }
-        UnicastMessageEntity entity = new UnicastMessageEntity();
-        entity.setType(INVENTORY.getCode());
-        entity.setVersion(inventory.getVersion());
-        entity.setData(JSON.toJSONString(inventory));
-        entity.setSourceId(sourceId);
-        Application.EVENT_BUS.post(new UnicastEvent(entity));
-
-        LOGGER.info("unicast syncBlock message success: " + JSON.toJSONString(inventory));
+        return inventory;
     }
 }
+

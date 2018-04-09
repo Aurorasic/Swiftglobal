@@ -2,12 +2,12 @@ package cn.primeledger.cas.global.crypto;
 
 import cn.primeledger.cas.global.crypto.crypto.*;
 import cn.primeledger.cas.global.crypto.model.KeyPair;
+import cn.primeledger.cas.global.crypto.utils.Base58;
+import cn.primeledger.cas.global.crypto.utils.CryptoUtils;
+import cn.primeledger.cas.global.crypto.utils.Sha256Hash;
 import cn.primeledger.cas.global.exception.AddressFormatException;
 import cn.primeledger.cas.global.exception.ECKeyCrypterException;
 import cn.primeledger.cas.global.exception.ParamsErrorException;
-import cn.primeledger.cas.global.utils.Base58;
-import cn.primeledger.cas.global.utils.CryptoUtils;
-import cn.primeledger.cas.global.utils.Sha256Hash;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
@@ -224,12 +224,6 @@ public class ECKey {
         return fromPublicKeyOnly(CryptoUtils.HEX.decode(pubKey));
     }
 
-    public static class MissingPrivateKeyException extends RuntimeException {
-    }
-
-    public static class KeyIsEncryptedException extends MissingPrivateKeyException {
-    }
-
     /**
      * Verify that the public key is legal
      *
@@ -321,7 +315,7 @@ public class ECKey {
      * @param key
      * @return
      */
-    public static String pubKey2Base58Address(KeyPair key){
+    public static String pubKey2Base58Address(KeyPair key) {
         if (null == key || null == key.getPubKey()) {
             return null;
         }
@@ -339,7 +333,7 @@ public class ECKey {
         return Base58.encode(addressBytes);
     }
 
-    public static String pubKey2Base58Address(String pubKey){
+    public static String pubKey2Base58Address(String pubKey) {
         if (null == pubKey) {
             return null;
         }
@@ -441,100 +435,6 @@ public class ECKey {
         BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
         ECPoint q = ECAlgorithms.sumOfTwoMultiplies(CURVE.getG(), eInvrInv, point, srInv);
         return ECKey.fromPublicKeyOnly(q.getEncoded(compressed));
-    }
-
-    public static class ECASSignature {
-        //The two components of a digital signature.
-        public final BigInteger r, s;
-
-        public ECASSignature(BigInteger r, BigInteger s) {
-            this.r = r;
-            this.s = s;
-        }
-
-        public static ECASSignature decodeFromDER(byte[] bytes) throws IllegalArgumentException {
-            if (null == bytes) {
-                return null;
-            }
-            ASN1InputStream decoder = null;
-            try {
-                decoder = new ASN1InputStream(bytes);
-                final ASN1Primitive seqObj = decoder.readObject();
-                if (seqObj == null) {
-                    throw new IllegalArgumentException("Reached past end of ASN.1 stream.");
-                }
-
-                if (!(seqObj instanceof DLSequence)) {
-                    throw new IllegalArgumentException("Read unexpected class: " + seqObj.getClass().getName());
-                }
-
-                final DLSequence seq = (DLSequence) seqObj;
-                ASN1Integer r, s;
-                try {
-                    r = (ASN1Integer) seq.getObjectAt(0);
-                    s = (ASN1Integer) seq.getObjectAt(1);
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException(e);
-                }
-                return new ECASSignature(r.getPositiveValue(), s.getPositiveValue());
-            } catch (IOException e) {
-                throw new IllegalArgumentException(e);
-            } finally {
-                if (decoder != null) {
-                    try {
-                        decoder.close();
-                    } catch (IOException x) {
-                    }
-                }
-            }
-        }
-
-        public boolean isCanonical() {
-            return s.compareTo(HALF_CURVE_ORDER) <= 0;
-        }
-
-        public ECASSignature toCanonicalised() {
-            if (!isCanonical()) {
-                return new ECASSignature(r, CURVE.getN().subtract(s));
-            } else {
-                return this;
-            }
-        }
-
-        public byte[] encodeToDER() {
-            try {
-                return derByteStream().toByteArray();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        protected ByteArrayOutputStream derByteStream() throws IOException {
-            // Usually 70-72 bytes.
-            ByteArrayOutputStream bos = new ByteArrayOutputStream(72);
-            DERSequenceGenerator seq = new DERSequenceGenerator(bos);
-            seq.addObject(new ASN1Integer(r));
-            seq.addObject(new ASN1Integer(s));
-            seq.close();
-            return bos;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ECASSignature other = (ECASSignature) o;
-            return r.equals(other.r) && s.equals(other.s);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(r, s);
-        }
     }
 
     /**
@@ -967,6 +867,106 @@ public class ECKey {
 
     public KeyPair getKeyPair() {
         return keyPair;
+    }
+
+    public static class MissingPrivateKeyException extends RuntimeException {
+    }
+
+    public static class KeyIsEncryptedException extends MissingPrivateKeyException {
+    }
+
+    public static class ECASSignature {
+        //The two components of a digital signature.
+        public final BigInteger r, s;
+
+        public ECASSignature(BigInteger r, BigInteger s) {
+            this.r = r;
+            this.s = s;
+        }
+
+        public static ECASSignature decodeFromDER(byte[] bytes) throws IllegalArgumentException {
+            if (null == bytes) {
+                return null;
+            }
+            ASN1InputStream decoder = null;
+            try {
+                decoder = new ASN1InputStream(bytes);
+                final ASN1Primitive seqObj = decoder.readObject();
+                if (seqObj == null) {
+                    throw new IllegalArgumentException("Reached past end of ASN.1 stream.");
+                }
+
+                if (!(seqObj instanceof DLSequence)) {
+                    throw new IllegalArgumentException("Read unexpected class: " + seqObj.getClass().getName());
+                }
+
+                final DLSequence seq = (DLSequence) seqObj;
+                ASN1Integer r, s;
+                try {
+                    r = (ASN1Integer) seq.getObjectAt(0);
+                    s = (ASN1Integer) seq.getObjectAt(1);
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException(e);
+                }
+                return new ECASSignature(r.getPositiveValue(), s.getPositiveValue());
+            } catch (IOException e) {
+                throw new IllegalArgumentException(e);
+            } finally {
+                if (decoder != null) {
+                    try {
+                        decoder.close();
+                    } catch (IOException x) {
+                    }
+                }
+            }
+        }
+
+        public boolean isCanonical() {
+            return s.compareTo(HALF_CURVE_ORDER) <= 0;
+        }
+
+        public ECASSignature toCanonicalised() {
+            if (!isCanonical()) {
+                return new ECASSignature(r, CURVE.getN().subtract(s));
+            } else {
+                return this;
+            }
+        }
+
+        public byte[] encodeToDER() {
+            try {
+                return derByteStream().toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        protected ByteArrayOutputStream derByteStream() throws IOException {
+            // Usually 70-72 bytes.
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(72);
+            DERSequenceGenerator seq = new DERSequenceGenerator(bos);
+            seq.addObject(new ASN1Integer(r));
+            seq.addObject(new ASN1Integer(s));
+            seq.close();
+            return bos;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ECASSignature other = (ECASSignature) o;
+            return r.equals(other.r) && s.equals(other.s);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(r, s);
+        }
     }
 
 }

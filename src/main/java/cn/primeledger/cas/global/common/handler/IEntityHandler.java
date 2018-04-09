@@ -1,6 +1,9 @@
 package cn.primeledger.cas.global.common.handler;
 
+import cn.primeledger.cas.global.common.SocketRequest;
 import cn.primeledger.cas.global.constants.EntityType;
+
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author baizhengwen
@@ -10,10 +13,13 @@ public interface IEntityHandler<T> {
 
     EntityType getType();
 
-    void process(T data, short version, String sourceId);
+    Class<T> getEntityClass();
 
-    /**
-     * when the message queue has no data, this api should be called
-     */
-    void queueElementConsumeOver();
+    void start();
+
+    void start(ExecutorService executorService);
+
+    void stop();
+
+    boolean accept(SocketRequest<T> request);
 }

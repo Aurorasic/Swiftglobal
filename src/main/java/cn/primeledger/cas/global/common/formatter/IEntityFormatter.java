@@ -9,9 +9,23 @@ import cn.primeledger.cas.global.constants.EntityType;
  */
 public interface IEntityFormatter<T> {
 
+    Class<T> getEntityClass();
+
     EntityType getType();
 
-    T parse(String data, short version);
+    /**
+     * parse string to object
+     *
+     * @param data
+     * @return exclude type by default
+     */
+    T parse(String data);
 
-    String format(T data, short version);
+    /**
+     * format object to string
+     *
+     * @param data
+     * @return exclude type by default
+     */
+    String format(T data);
 }

@@ -4,11 +4,16 @@ import cn.primeledger.cas.global.Application;
 import cn.primeledger.cas.global.blockchain.transaction.Transaction;
 import cn.primeledger.cas.global.consensus.NodeSelector;
 import cn.primeledger.cas.global.entity.BaseBizEntity;
+import cn.primeledger.cas.global.utils.JsonSizeCounter;
+import cn.primeledger.cas.global.utils.SizeCounter;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import lombok.*;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -26,6 +31,7 @@ import java.util.List;
 @Data
 @Slf4j
 public class Block extends BaseBizEntity {
+    private static final int LIMITED_SIZE = 1024 * 1024 * 1;
 
     /**
      * block height begin with 1
@@ -56,22 +62,27 @@ public class Block extends BaseBizEntity {
     @Getter
     private List<Transaction> transactions;
 
+    private String pubKey;
+
+
     /**
-     * public keys and signatures of pairs.
-     * The first pk and sig is the miner's
+     * signature and pubkey list whose mined this block
      */
     @Setter
     @Getter
-    private List<BlockWitness> blockWitnesses = new ArrayList<>();
+    private List<BlockWitness> minerSelfSigPKs = new ArrayList<>();
 
-
+    /**
+     * witness signature and pubkey list who sig this block for calculating score
+     */
     @Setter
     @Getter
-    private List<BlockWitness> blockMiner = new ArrayList<>();
+    private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
+
 
     @Getter
     @Setter
-    private List<String> nodes;
+    private List<String> nodes = new ArrayList<>();
 
     private Block(short version, long blockTime, String prevBlockHash, List<Transaction> transactions, long height, List<String> nodes) {
         this.setVersion(version);
@@ -83,9 +94,9 @@ public class Block extends BaseBizEntity {
     }
 
     public void initMinerPkSig(String pubKey, String signature) {
-        //blockWitnesses = new LinkedList<>();
+        //otherWitnessSigPKS = new LinkedList<>();
         BlockWitness pair = new BlockWitness(pubKey, signature, null);
-        blockMiner.add(pair);
+        minerSelfSigPKs.add(pair);
     }
 
     public Transaction getTransactionByHash(String txHash) {
@@ -99,33 +110,33 @@ public class Block extends BaseBizEntity {
 
     public void addMinerSignature(String pubKey, String signature, String blockHash) {
         BlockWitness pair = new BlockWitness(pubKey, signature, blockHash);
-        blockMiner.add(pair);
+        minerSelfSigPKs.add(pair);
     }
 
     public void addWitnessSignature(String pubKey, String signature, String blockHash) {
         BlockWitness pair = new BlockWitness(pubKey, signature, blockHash);
-        blockWitnesses.add(pair);
+        otherWitnessSigPKS.add(pair);
     }
 
     public BlockWitness getMinerFirstPKSig() {
-        if (!CollectionUtils.isEmpty(blockMiner)) {
-            return blockMiner.get(0);
+        if (!CollectionUtils.isEmpty(minerSelfSigPKs)) {
+            return minerSelfSigPKs.get(0);
         }
         return null;
     }
 
     public BlockWitness getMinerSecondPKSig() {
-        if (!CollectionUtils.isEmpty(blockMiner) && blockMiner.size() >= 2) {
-            return blockMiner.get(1);
+        if (!CollectionUtils.isEmpty(minerSelfSigPKs) && minerSelfSigPKs.size() >= 2) {
+            return minerSelfSigPKs.get(1);
         }
         return null;
     }
 
 //    public List<BlockWitness> getOtherPKSigs() {
-//        if (!CollectionUtils.isEmpty(blockWitnesses)) {
+//        if (!CollectionUtils.isEmpty(otherWitnessSigPKS)) {
 //            ArrayList<BlockWitness> othersPair = new ArrayList<BlockWitness>();
-//            for (int i = 1; i < blockWitnesses.size(); i++) {
-//                othersPair.add(blockWitnesses.get(i));
+//            for (int i = 1; i < otherWitnessSigPKS.size(); i++) {
+//                othersPair.add(otherWitnessSigPKS.get(i));
 //            }
 //            return othersPair;
 //        }
@@ -133,7 +144,7 @@ public class Block extends BaseBizEntity {
 //    }
 
     public boolean isContainOtherPK(String oneSigPubKey) {
-        List<BlockWitness> otherPKSigs = getBlockWitnesses();
+        List<BlockWitness> otherPKSigs = getOtherWitnessSigPKS();
         for (BlockWitness pair : otherPKSigs) {
             if (StringUtils.equals(oneSigPubKey, pair.getPubKey())) {
                 return true;
@@ -154,10 +165,6 @@ public class Block extends BaseBizEntity {
         return sysTransactions;
     }
 
-    public static BlockBuilder builder() {
-        return new BlockBuilder();
-    }
-
     public boolean isgenesisBlock() {
         if (height == 1 && prevBlockHash == null) {
             return true;
@@ -165,7 +172,7 @@ public class Block extends BaseBizEntity {
         return false;
     }
 
-    public boolean isPreBlock() {
+    public boolean isPreMiningBlock() {
         if (height <= Application.PRE_BLOCK_COUNT) {
             return true;
         }
@@ -178,13 +185,15 @@ public class Block extends BaseBizEntity {
      * @return
      */
     public String getHash() {
+        //todo yuguojia this hash should be final hash value that include self sig and witness signatures
         if (StringUtils.isBlank(hash)) {
             HashFunction function = Hashing.sha256();
             StringBuilder builder = new StringBuilder();
             builder.append(function.hashInt(getVersion()))
                     .append(function.hashLong(blockTime))
                     .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
-                    .append(getTransactionsHash());
+                    .append(getTransactionsHash())
+                    .append(function.hashString(null == pubKey ? Strings.EMPTY : pubKey, Charsets.UTF_8));
             nodes.forEach(address -> builder.append(address));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
@@ -192,28 +201,27 @@ public class Block extends BaseBizEntity {
     }
 
     public String getSignedHash() {
-        if (StringUtils.isBlank(hash)) {
-            HashFunction function = Hashing.sha256();
-            StringBuilder builder = new StringBuilder();
-            builder.append(function.hashInt(getVersion()))
-                    .append(function.hashLong(blockTime))
-                    .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
-                    .append(getTransactionsHash());
-            BlockWitness firstPKSig = getMinerFirstPKSig();
-            if (firstPKSig != null) {
-                builder.append(firstPKSig.getBlockWitnessHash());
-            }
-            List<BlockWitness> blockWitnesses = getBlockWitnesses();
-            if (CollectionUtils.isNotEmpty(blockWitnesses)) {
-                blockWitnesses.forEach(blockWitness -> {
-                    builder.append(blockWitness.getBlockWitnessHash());
-                });
-            }
-            nodes.forEach(address -> builder.append(address));
-            hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder();
+        builder.append(function.hashInt(getVersion()))
+                .append(function.hashLong(blockTime))
+                .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
+                .append(getTransactionsHash())
+                .append(function.hashString(null == pubKey ? Strings.EMPTY : pubKey, Charsets.UTF_8));
+        BlockWitness firstPKSig = getMinerFirstPKSig();
+        if (firstPKSig != null) {
+            builder.append(firstPKSig.getBlockWitnessHash());
         }
-        LOGGER.info("the block signedHash is {}", hash);
-        return hash;
+        List<BlockWitness> blockWitnesses = getOtherWitnessSigPKS();
+        if (CollectionUtils.isNotEmpty(blockWitnesses)) {
+            blockWitnesses.forEach(blockWitness -> {
+                builder.append(blockWitness.getBlockWitnessHash());
+            });
+        }
+        nodes.forEach(address -> builder.append(address));
+        String signHash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
+        LOGGER.info("the block signedHash is {}", signHash);
+        return signHash;
     }
 
     public boolean isPowerHeight(long h) {
@@ -249,51 +257,6 @@ public class Block extends BaseBizEntity {
         return Hashing.sha256().hashString(builder.toString(), Charsets.UTF_8).toString();
     }
 
-    @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class BlockBuilder {
-
-        private short version;
-        private long blockTime;
-        private String prevBlockHash;
-        private List<Transaction> transactions;
-        private long height;
-        private List<String> nodes;
-
-        public BlockBuilder nodes(List<String> nodes) {
-            this.nodes = nodes;
-            return this;
-        }
-
-        public BlockBuilder version(short version) {
-            this.version = version;
-            return this;
-        }
-
-        public BlockBuilder blockTime(long blockTime) {
-            this.blockTime = blockTime;
-            return this;
-        }
-
-        public BlockBuilder prevBlockHash(String prevBlockHash) {
-            this.prevBlockHash = prevBlockHash;
-            return this;
-        }
-
-        public BlockBuilder transactions(List<Transaction> transactions) {
-            this.transactions = transactions;
-            return this;
-        }
-
-        public BlockBuilder height(long height) {
-            this.height = height;
-            return this;
-        }
-
-        public Block build() {
-            return new Block(version, blockTime, prevBlockHash, transactions, height, nodes);
-        }
-    }
-
     @JSONField(serialize = false)
     public boolean isDPosEndHeight() {
         long num = NodeSelector.BATCHBLOCKNUM;
@@ -306,9 +269,14 @@ public class Block extends BaseBizEntity {
     @JSONField(serialize = false)
     public List<String> getWitnessBlockHashList() {
         LinkedList<String> result = new LinkedList<>();
-        for (BlockWitness blockWitness : blockWitnesses) {
+        for (BlockWitness blockWitness : otherWitnessSigPKS) {
             result.add(blockWitness.getBlockHash());
         }
         return result;
+    }
+
+    public boolean sizeAllowed() {
+        SizeCounter sizeCounter = new JsonSizeCounter();
+        return sizeCounter.calculateSize(this) <= LIMITED_SIZE;
     }
 }
