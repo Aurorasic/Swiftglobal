@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT-APPENDER" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="[%t] %d{HH:mm:ss.SSS} %highlight{%-5level} %cyan{%logger{36}.%M()} @%L => %highlight{%msg%n}"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <asyncRoot level="info" includeLocation="true">
+            <AppenderRef ref="STDOUT-APPENDER"/>
+        </asyncRoot>
+    </Loggers>
+
+
+</Configuration>
