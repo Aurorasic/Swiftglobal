@@ -3,9 +3,9 @@ package com.higgsblock.global.browser.example.test;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
-import com.higgsblock.global.browser.app.utils.HttpClient;
-import com.higgsblock.global.browser.app.vo.BlockVO;
-import com.higgsblock.global.browser.app.vo.ResponseData;
+import com.higgsblock.global.browser.utils.HttpClient;
+import com.higgsblock.global.browser.vo.BlockVO;
+import com.higgsblock.global.browser.vo.ResponseData;
 import com.higgsblock.global.browser.example.utils.UrlUtils;
 import lombok.extern.slf4j.Slf4j;
 
