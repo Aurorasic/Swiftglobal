@@ -7,7 +7,6 @@ import com.higgsblock.global.browser.service.bo.BlockHeaderBO;
 import com.higgsblock.global.browser.service.bo.BlockWitnessBO;
 import com.higgsblock.global.browser.service.bo.TransactionBO;
 import com.higgsblock.global.browser.service.iface.*;
-import com.higgsblock.global.browser.service.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -19,7 +18,6 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author yangshenghong

@@ -1,4 +1,4 @@
-package com.higgsblock.global.browser.app.constants;
+package com.higgsblock.global.browser.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

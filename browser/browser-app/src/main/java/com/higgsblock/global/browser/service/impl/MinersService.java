@@ -3,7 +3,7 @@ package com.higgsblock.global.browser.service.impl;
 import com.higgsblock.global.browser.dao.entity.MinerPO;
 import com.higgsblock.global.browser.dao.iface.IMinersDAO;
 import com.higgsblock.global.browser.service.iface.IMinersService;
-import com.higgsblock.global.browser.service.utils.Money;
+import com.higgsblock.global.browser.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;

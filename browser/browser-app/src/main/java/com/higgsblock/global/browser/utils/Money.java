@@ -1,6 +1,7 @@
-package com.higgsblock.global.browser.service.utils;
+package com.higgsblock.global.browser.utils;
 
 import com.google.common.base.Objects;
+import com.higgsblock.global.browser.enums.SystemCurrencyEnum;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -38,7 +39,7 @@ public class Money implements Serializable, Comparable {
     }
 
     public Money(String val) {
-        this(val, SystemCurrencyEnum.CAS.getCurrency());
+        this(val, com.higgsblock.global.browser.enums.SystemCurrencyEnum.CAS.getCurrency());
     }
 
     public Money(long val) {

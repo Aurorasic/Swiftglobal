@@ -1,4 +1,4 @@
-package com.higgsblock.global.browser.service.utils;
+package com.higgsblock.global.browser.enums;
 
 import lombok.Getter;
 

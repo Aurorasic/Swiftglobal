@@ -1,10 +1,10 @@
-package com.higgsblock.global.browser.app.controller;
+package com.higgsblock.global.browser.controller;
 
-import com.higgsblock.global.browser.app.constants.RespCodeEnum;
-import com.higgsblock.global.browser.app.vo.BlockHeaderVO;
-import com.higgsblock.global.browser.app.vo.BlockVO;
-import com.higgsblock.global.browser.app.vo.PageResultVO;
-import com.higgsblock.global.browser.app.vo.ResponseData;
+import com.higgsblock.global.browser.enums.RespCodeEnum;
+import com.higgsblock.global.browser.vo.BlockHeaderVO;
+import com.higgsblock.global.browser.vo.BlockVO;
+import com.higgsblock.global.browser.vo.PageResultVO;
+import com.higgsblock.global.browser.vo.ResponseData;
 import com.higgsblock.global.browser.service.bo.BlockBO;
 import com.higgsblock.global.browser.service.bo.BlockHeaderBO;
 import com.higgsblock.global.browser.service.bo.PageEntityBO;

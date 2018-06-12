@@ -1,6 +1,6 @@
-package com.higgsblock.global.browser.app.vo;
+package com.higgsblock.global.browser.vo;
 
-import com.higgsblock.global.browser.app.constants.RespCodeEnum;
+import com.higgsblock.global.browser.enums.RespCodeEnum;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

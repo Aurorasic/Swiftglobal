@@ -1,4 +1,4 @@
-package com.higgsblock.global.browser.app;
+package com.higgsblock.global.browser;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;

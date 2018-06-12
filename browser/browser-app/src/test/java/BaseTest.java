@@ -1,4 +1,4 @@
-import com.higgsblock.global.browser.app.Application;
+import com.higgsblock.global.browser.Application;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;

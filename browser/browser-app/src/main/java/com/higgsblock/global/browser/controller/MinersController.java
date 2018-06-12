@@ -1,9 +1,9 @@
-package com.higgsblock.global.browser.app.controller;
+package com.higgsblock.global.browser.controller;
 
 import com.google.common.collect.Maps;
-import com.higgsblock.global.browser.app.constants.RespCodeEnum;
-import com.higgsblock.global.browser.app.vo.PageRewardBlockVO;
-import com.higgsblock.global.browser.app.vo.ResponseData;
+import com.higgsblock.global.browser.enums.RespCodeEnum;
+import com.higgsblock.global.browser.vo.PageRewardBlockVO;
+import com.higgsblock.global.browser.vo.ResponseData;
 import com.higgsblock.global.browser.service.bo.PageEntityBO;
 import com.higgsblock.global.browser.service.bo.RewardBlockBO;
 import com.higgsblock.global.browser.service.iface.IMinersService;

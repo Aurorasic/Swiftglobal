@@ -1,4 +1,4 @@
-package com.higgsblock.global.browser.app.vo;
+package com.higgsblock.global.browser.vo;
 
 import lombok.Data;
 

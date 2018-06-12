@@ -1,4 +1,4 @@
-package com.higgsblock.global.browser.app.utils;
+package com.higgsblock.global.browser.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;

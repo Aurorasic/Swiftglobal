@@ -1,13 +1,15 @@
-package com.higgsblock.global.browser.app.vo;
+package com.higgsblock.global.browser.vo;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author yangshenghong
- * @date 2018-05-25
+ * @date 2018-05-26
  */
 @Data
-public class BlockHeaderVO {
+public class BlockVO {
     /**
      * Block height
      */
@@ -24,4 +26,15 @@ public class BlockHeaderVO {
      * Previous block hash
      */
     private String preBlockHash;
+
+    /**
+     * transaction list
+     */
+    private List<TransactionVO> transactions;
+
+    private List<BlockWitnessVO> blockWitnesses;
+
+    private List<BlockWitnessVO> blockMiner;
+
+    private List<String> nodes;
 }
