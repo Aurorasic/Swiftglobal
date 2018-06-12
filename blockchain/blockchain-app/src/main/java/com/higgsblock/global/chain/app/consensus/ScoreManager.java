@@ -1,12 +1,17 @@
 package com.higgsblock.global.chain.app.consensus;
 
+
+import com.higgsblock.global.chain.app.dao.ScoreDao;
+import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import lombok.Data;
+import org.rocksdb.RocksDBException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author yuguojia
@@ -24,100 +29,58 @@ public class ScoreManager {
      * when current block height is [401-500], it stores the score of  [1-300]
      * and so on
      */
-//    private Map<String, Integer> dposMinerSoreMap = new ConcurrentHashMap<>(256);
+
+    @Autowired
+    private ScoreDao scoreDao;
+
+
+//    public Map getDposMinerSoreMap() {
+//        return getAllScoreMap();
+//    }
 //
-//    private Map<String, Integer> tmpMinerSoreMap = new ConcurrentHashMap<>(256);
-
-    /**
-     * key:address, value:score
-     * all of scores from genesis block to current block
-     */
-//    private Map<String, Integer> allMinerSoreMap = new ConcurrentHashMap<>(256);
-
-    public static String DPOS_SCORE_KEY = "dposMinerSoreMap";
-    public static String TMP_SCORE_KEY = "tmpMinerSoreMap";
-    public static String ALL_SCORE_KEY = "allMinerSoreMap";
-
-    @Resource(name = "minerScoreMaps")
-    private ConcurrentMap<String, Map> minerScoreMaps;
-
-    public Map getDposMinerSoreMap() {
-        return minerScoreMaps.get("dposMinerSoreMap");
-    }
-
-    public void freshDposScoreMap() {
-        Map allMinerSoreMap = minerScoreMaps.get("allMinerSoreMap");
-        Map tmpMinerSoreMap = minerScoreMaps.get("tmpMinerSoreMap");
-
-        Map<String, Integer> newBaseMinerSoreMap = new ConcurrentHashMap<>();
-        if (tmpMinerSoreMap.isEmpty()) {
-            tmpMinerSoreMap.putAll(allMinerSoreMap);
-        }
-        newBaseMinerSoreMap.putAll(tmpMinerSoreMap);
-        Map dposMinerSoreMap = newBaseMinerSoreMap;
-
-        tmpMinerSoreMap.clear();
-        tmpMinerSoreMap.putAll(allMinerSoreMap);
-
-        minerScoreMaps.put("allMinerSoreMap", allMinerSoreMap);
-        minerScoreMaps.put("tmpMinerSoreMap", tmpMinerSoreMap);
-        minerScoreMaps.put("dposMinerSoreMap", dposMinerSoreMap);
-    }
-
-    public void putIfAbsent(String address, Integer score) {
-        Map<String, Integer> allMinerSoreMap = (Map<String, Integer>) minerScoreMaps.get("allMinerSoreMap");
-        allMinerSoreMap.putIfAbsent(address, score);
-        minerScoreMaps.put("allMinerSoreMap", allMinerSoreMap);
-    }
-
-    public Integer get(String address) {
-        Map<String, Integer> allMinerSoreMap = (Map<String, Integer>) minerScoreMaps.get("allMinerSoreMap");
-        return allMinerSoreMap.get(address);
-    }
-
-    public void put(String address, Integer score) {
-        Map allMinerSoreMap = minerScoreMaps.get("allMinerSoreMap");
-        allMinerSoreMap.put(address, score);
-        minerScoreMaps.put("allMinerSoreMap", allMinerSoreMap);
-    }
-
-    public void remove(String address) {
-        Map allMinerSoreMap = minerScoreMaps.get("allMinerSoreMap");
-        Map tmpMinerSoreMap = minerScoreMaps.get("tmpMinerSoreMap");
-        allMinerSoreMap.remove(address);
-        tmpMinerSoreMap.remove(address);
-        minerScoreMaps.put("allMinerSoreMap", allMinerSoreMap);
-        minerScoreMaps.put("tmpMinerSoreMap", tmpMinerSoreMap);
-    }
-
-    /**
-     public void freshDposScoreMap() {
-     Map<String, Integer> newBaseMinerSoreMap = new ConcurrentHashMap<>();
-     if (tmpMinerSoreMap.isEmpty()) {
-     tmpMinerSoreMap.putAll(allMinerSoreMap);
-     }
-     newBaseMinerSoreMap.putAll(tmpMinerSoreMap);
-     dposMinerSoreMap = newBaseMinerSoreMap;
-
-     tmpMinerSoreMap.clear();
-     tmpMinerSoreMap.putAll(allMinerSoreMap);
-     }
-
-     public void putIfAbsent(String address, Integer score) {
-     allMinerSoreMap.putIfAbsent(address, score);
-     }
-
-     public Integer get(String address) {
-     return allMinerSoreMap.get(address);
-     }
-
-     public void put(String address, Integer score) {
-     allMinerSoreMap.put(address, score);
-     }
-
-     public void remove(String address) {
-     allMinerSoreMap.remove(address);
-     tmpMinerSoreMap.remove(address);
-     }
-     */
+//    public Map getAllScoreMap() {
+//        try {
+//            return null == scoreDao.get("allMinerSoreMap") ? new HashMap<String, Integer>(10) : scoreDao.get("allMinerSoreMap");
+//        } catch (RocksDBException e) {
+//            throw new IllegalStateException("Get all score error");
+//        }
+//    }
+//
+//    public List<BaseDaoEntity> remove(Map<String, Integer> allMinerSoreMap, String address) throws RocksDBException {
+//        List<BaseDaoEntity> entityList = new ArrayList<>();
+//        allMinerSoreMap.remove(address);
+//
+//        BaseDaoEntity allMinerSoreEntity = scoreDao.getEntity("allMinerSoreMap", allMinerSoreMap);
+//        entityList.add(allMinerSoreEntity);
+//
+//        return entityList;
+//    }
+//
+//    public BaseDaoEntity putIfAbsent(Map<String, Integer> allMinerSoreMap, String address, Integer score) throws RocksDBException {
+//        allMinerSoreMap.putIfAbsent(address, score);
+//
+//        BaseDaoEntity allMinerSoreEntity = scoreDao.getEntity("allMinerSoreMap", allMinerSoreMap);
+//
+//        return allMinerSoreEntity;
+//    }
+//
+//    public Integer get(String address) throws RocksDBException {
+//        Map<String, Integer> allMinerSoreMap = (Map<String, Integer>) scoreDao.get("allMinerSoreMap");
+//
+//        if (allMinerSoreMap == null) {
+//            return null;
+//        }
+//        return allMinerSoreMap.get(address);
+//    }
+//
+//    public BaseDaoEntity put(Map<String, Integer> allMinerSoreMap, String address, Integer score) throws RocksDBException {
+//        if (allMinerSoreMap == null) {
+//            return null;
+//        }
+//        allMinerSoreMap.put(address, score);
+//
+//        BaseDaoEntity allMinerSoreEntity = scoreDao.getEntity("allMinerSoreMap", allMinerSoreMap);
+//
+//        return allMinerSoreEntity;
+//    }
 }

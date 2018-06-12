@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.network.config;
 
 import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.network.enums.NetworkType;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 
@@ -17,6 +18,7 @@ public class PeerConfig {
     private int httpPort;
     private int socketPort;
     private String priKey;
+    private NetworkType networkType;
 
     public String getPubKey() {
         if (StringUtils.isNotBlank(priKey)) {

@@ -6,6 +6,8 @@ package com.higgsblock.global.chain.crypto.utils;
  */
 public interface IBase58CheckSumProvider {
     /**
+     * calculateActualCheckSum
+     *
      * @param data
      * @return
      */

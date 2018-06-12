@@ -4,6 +4,8 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
+import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +29,15 @@ public class InventoryTask extends BaseTask {
     @Autowired
     private BlockService blockService;
 
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
+
     @Override
     protected void task() {
         long height = blockService.getBestMaxHeight();
         Inventory inventory = new Inventory();
         inventory.setHeight(height);
-        BlockIndex blockIndex = blockService.getBlockIndexByHeight(height);
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
         if (blockIndex != null &&
                 CollectionUtils.isNotEmpty(blockIndex.getBlockHashs())) {
             Set<String> set = new HashSet<>(blockIndex.getBlockHashs());

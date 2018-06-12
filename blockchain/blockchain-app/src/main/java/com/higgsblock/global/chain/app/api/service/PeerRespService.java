@@ -8,15 +8,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 
+/**
+ *
+ * @author zhao xiaogang
+ * @date 2018/3/24
+ */
 @Slf4j
 @Service
 public class PeerRespService {
     private static int DEFAULT_RETURN_COUNT = 30;
-
-    @Autowired
-    private ConcurrentMap<String, Peer> peerMap;
 
     @Autowired
     private PeerManager peerManager;
@@ -37,19 +38,19 @@ public class PeerRespService {
             return false;
         }
 
-        peerMap.put(peer.getId(), peer);
+        peerManager.addOrUpdate(peer);
 
         return true;
     }
 
     public Peer getPeer(String id) {
-        return peerMap.get(id);
+        return peerManager.getById(id);
     }
 
     public List<Peer> getPeers(List<String> addressList) {
         List<Peer> peers = new LinkedList<>();
         addressList.stream().forEach(address -> {
-            Peer peer = peerMap.get(address);
+            Peer peer = getPeer(address);
             if (peer != null) {
                 peers.add(peer);
             }
@@ -64,5 +65,24 @@ public class PeerRespService {
      */
     public List<Peer> getSeedPeerList() {
         return peerManager.shuffle(DEFAULT_RETURN_COUNT);
+    }
+
+    /**
+     * Report peer.
+     *
+     * @param peer the peer
+     * @return the boolean
+     */
+    public Boolean report(Peer peer) {
+        if (null == peer) {
+            return false;
+        }
+
+        if(!peer.valid()){
+            return false;
+        }
+
+        this.peerManager.addOrUpdate(peer);
+        return true;
     }
 }

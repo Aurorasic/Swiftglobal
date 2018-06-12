@@ -5,6 +5,10 @@ package com.higgsblock.global.chain.crypto.utils;
  * @create 2018-02-23 15:42
  */
 public class VarLength {
+    private static final long FIRST_VAR_LENGTH_ONE = 253L;
+    private static final long FIRST_VAR_LENGTH_TWO = 254L;
+    private static final long MIDDLE_SIZE = 0xFFFFL;
+    private static final long MAX_SIZE = 0xFFFFL;
     public final long value;
     private final int originallyEncodedSize;
 
@@ -15,15 +19,15 @@ public class VarLength {
 
     public VarLength(byte[] buf, int offset) {
         int first = 0xFF & buf[offset];
-        if (first < 253) {
+        if (first < FIRST_VAR_LENGTH_ONE) {
             value = first;
             // 1 request byte (8 bits)
             originallyEncodedSize = 1;
-        } else if (first == 253) {
+        } else if (first == FIRST_VAR_LENGTH_ONE) {
             value = (0xFF & buf[offset + 1]) | ((0xFF & buf[offset + 2]) << 8);
             // 1 marker + 2 request bytes (16 bits)
             originallyEncodedSize = 3;
-        } else if (first == 254) {
+        } else if (first == FIRST_VAR_LENGTH_TWO) {
             value = CryptoUtils.readUint32(buf, offset + 1);
             // 1 marker + 4 request bytes (32 bits)
             originallyEncodedSize = 5;
@@ -40,15 +44,15 @@ public class VarLength {
             // 1 marker + 8 request bytes
             return 9;
         }
-        if (value < 253) {
+        if (value < FIRST_VAR_LENGTH_ONE) {
             // 1 request byte
             return 1;
         }
-        if (value <= 0xFFFFL) {
+        if (value <= MIDDLE_SIZE) {
             // 1 marker + 2 request bytes
             return 3;
         }
-        if (value <= 0xFFFFFFFFL) {
+        if (value <= MAX_SIZE) {
             // 1 marker + 4 request bytes
             return 5;
         }

@@ -8,19 +8,19 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
-import com.higgsblock.global.chain.app.consensus.sign.service.CollectSignService;
+import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.RandomUtils;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @author baizhengwen
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public class MiningListener implements IEventBusListener {
 
     @Autowired
-    private CollectSignService collectSignService;
+    private SourceBlockService sourceBlockService;
     @Autowired
     private BlockService blockService;
     @Autowired
@@ -44,8 +44,9 @@ public class MiningListener implements IEventBusListener {
     /**
      * the block height which is produced recently
      */
-    private long miningHeight;
-    private ExecutorService executorService = ExecutorServices.newSingleThreadExecutor("mining", 2);
+    private volatile long miningHeight;
+    private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<Runnable>(3), new ThreadPoolExecutor.DiscardOldestPolicy());
     private Future<?> future;
     private boolean isMining;
 
@@ -63,6 +64,7 @@ public class MiningListener implements IEventBusListener {
     public void process(SystemStatusEvent event) {
         LOGGER.info("process event: {}", JSON.toJSONString(event));
         SystemStatus state = event.getSystemStatus();
+        calculateDpos();
         if (SystemStatus.RUNNING == state) {
             isMining = true;
             LOGGER.info("The system is ready, start mining");
@@ -72,6 +74,22 @@ public class MiningListener implements IEventBusListener {
         } else {
             isMining = false;
             LOGGER.info("The system state is changed to {}, stop mining", state);
+        }
+    }
+
+    private void calculateDpos() {
+        long maxHeight = blockService.getBestMaxHeight();
+        if (maxHeight == 1L) {
+            try {
+                List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
+                if (CollectionUtils.isEmpty(dposGroupBySn)) {
+                    Block block = blockService.getBestBlockByHeight(1L);
+                    List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
+                    nodeManager.persistDposNodes(0L, dposAddresses);
+                }
+            } catch (RocksDBException e) {
+                LOGGER.info(e.getMessage(), e);
+            }
         }
     }
 
@@ -90,15 +108,13 @@ public class MiningListener implements IEventBusListener {
             LOGGER.info("mining task is running, height={}", miningHeight);
             return;
         }
-
+        miningHeight = expectHeight;
         // cancel running task
         if (null != future) {
             future.cancel(true);
             future = null;
             LOGGER.info("cancel mining task, height={}", miningHeight);
         }
-
-        miningHeight = expectHeight;
 
         // check if my turn now
         String address = peerManager.getSelf().getId();
@@ -107,20 +123,20 @@ public class MiningListener implements IEventBusListener {
             LOGGER.info("it is not my turn");
             return;
         }
-
         future = executorService.submit(() -> mining(expectHeight));
         LOGGER.info("try to produce block, height={}", expectHeight);
     }
 
     private void mining(long expectHeight) {
-        while (!doMining(expectHeight)) {
+        while ((this.miningHeight == expectHeight) && !doMining(expectHeight)) {
             try {
-                TimeUnit.MILLISECONDS.sleep(5000 + RandomUtils.nextInt(10) * 500);
+                TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
             } catch (Exception e) {
                 LOGGER.error(e.getMessage(), e);
             }
         }
     }
+
 
     private boolean doMining(long expectHeight) {
         try {
@@ -133,7 +149,7 @@ public class MiningListener implements IEventBusListener {
                 LOGGER.error("the expect height of block is {}, but {}", expectHeight, block.getHeight());
                 return true;
             }
-            collectSignService.sendBlockToWitness(block);
+            sourceBlockService.sendBlockToWitness(block);
             return true;
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);

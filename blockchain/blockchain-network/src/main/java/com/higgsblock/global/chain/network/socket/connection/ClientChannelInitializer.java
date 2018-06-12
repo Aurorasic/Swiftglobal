@@ -1,5 +1,7 @@
 package com.higgsblock.global.chain.network.socket.connection;
 
+import com.higgsblock.global.chain.network.Peer;
+import com.higgsblock.global.chain.network.socket.ClientConnectionHandler;
 import com.higgsblock.global.chain.network.socket.handler.ClientInboundHandler;
 import com.higgsblock.global.chain.network.socket.handler.MessageCodecHandler;
 import io.netty.channel.ChannelHandler;
@@ -8,6 +10,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.SocketChannelConfig;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.AttributeKey;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -16,32 +21,31 @@ import org.springframework.stereotype.Component;
  * Initialize the channel configuration: Set the handlers for the pipeline and reset the
  * {@link SocketChannelConfig} for the {@link NioSocketChannel}
  *
- * @author zhao xiaogang
+ * @author zhaoxiaogang
+ * @author chenjiawei
+ * @date 2018-05-21
  */
 @ChannelHandler.Sharable
 @Component
-public class ClientChannelInitializer extends io.netty.channel.ChannelInitializer<NioSocketChannel> {
-    private final static int MAX_CONNECTION = 100;
-    private final static int BUFF_SIZE = 256 * 1024;
-
-    @Autowired
-    private ConnectionManager connectionManager;
+@Slf4j
+public class ClientChannelInitializer extends BaseChannelInitializer {
     @Autowired
     private ApplicationContext context;
 
+    @Setter
+    private ClientConnectionHandler handler = new ClientConnectionHandler();
+
     @Override
-    protected void initChannel(NioSocketChannel channel) throws Exception {
-        Connection connection = connectionManager.newConnection(channel.id().toString(), true);
-        if (null == connection) {
+    protected void initChannel(NioSocketChannel channel) {
+        AttributeKey<Peer> key = AttributeKey.valueOf("peer");
+        Peer peer = channel.attr(key).get();
+        Connection connection = handler.onChannelInitial(channel, peer);
+        if (connection == null) {
             channel.close();
             return;
         }
-        initChannelConfig(channel, connection);
-    }
 
-    private void initChannelConfig(NioSocketChannel channel, Connection connection) {
-        final ChannelPipeline pipe = channel.pipeline();
-
+        ChannelPipeline pipe = channel.pipeline();
         pipe.addFirst("messageCodecHandler", new MessageCodecHandler());
         pipe.addLast("messageHandler", new ClientInboundHandler(context, connection));
 
@@ -49,6 +53,6 @@ public class ClientChannelInitializer extends io.netty.channel.ChannelInitialize
         channel.config().setOption(ChannelOption.SO_RCVBUF, BUFF_SIZE);
         channel.config().setOption(ChannelOption.SO_BACKLOG, MAX_CONNECTION);
 
-        channel.closeFuture().addListener(listener -> connectionManager.close(connection));
+        channel.closeFuture().addListener(channelFuture -> handler.onChannelClosed(connection));
     }
 }

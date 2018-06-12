@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 @Data
 public abstract class BaseEntityHandler<T> implements IEntityHandler<T> {
 
-    private boolean isRunning;
+    private volatile boolean isRunning;
     private ExecutorService executorService;
     private BlockingQueue<SocketRequest<T>> queue;
 
@@ -51,8 +51,8 @@ public abstract class BaseEntityHandler<T> implements IEntityHandler<T> {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
-            this.executorService.submit(() -> {
-                while (true) {
+            this.executorService.execute(() -> {
+                while (isRunning) {
                     try {
                         SocketRequest request = takeRequest();
                         LOGGER.info("task request for processing; {}", JSON.toJSONString(request));

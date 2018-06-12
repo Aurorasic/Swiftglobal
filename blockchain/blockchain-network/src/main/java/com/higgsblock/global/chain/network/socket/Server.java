@@ -10,6 +10,7 @@ import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,21 +18,20 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * The server merely listens and holds the incoming connections. And the messages handled by handlers.
+ * The server get started to listen specific port, and accept incoming connections.
  *
- * @author zhao xiaogang
+ * @author zhaoxiaogang
+ * @author chenjiawei
+ * @date 2018-05-21
  */
-
 @Component
 @Slf4j
 public class Server {
+    private NioEventLoopGroup bossGroup;
 
-    private ThreadFactory factory;
+    private NioEventLoopGroup workerGroup;
 
     private Channel serverChannel;
-
-    private NioEventLoopGroup bossGroup;
-    private NioEventLoopGroup workerGroup;
 
     @Autowired
     private PeerConfig config;
@@ -39,14 +39,11 @@ public class Server {
     @Autowired
     private ServerChannelInitializer serverChannelInitializer;
 
-    public Server() {
-        this.factory = ThreadFactoryUtils.createThreadFactory("socket-server");
-    }
-
-    // todo baizhengwen 优化锁机制
+    @Setter
+    private ServerConnectionHandler handler = new ServerConnectionHandler();
 
     /**
-     * Start the p2p server.
+     * Start as p2p server.
      */
     public synchronized void start() {
         if (isActive()) {
@@ -54,19 +51,20 @@ public class Server {
         }
 
         try {
+            ThreadFactory factory = ThreadFactoryUtils.createThreadFactory("socket-server");
             bossGroup = new NioEventLoopGroup(1, factory);
             workerGroup = new NioEventLoopGroup(0, factory);
 
             ServerBootstrap bootstrap = new ServerBootstrap();
-
             bootstrap.group(bossGroup, workerGroup);
-            bootstrap.channel(NioServerSocketChannel.class);
 
+            bootstrap.channel(NioServerSocketChannel.class);
             bootstrap.option(ChannelOption.MESSAGE_SIZE_ESTIMATOR, DefaultMessageSizeEstimator.DEFAULT);
             bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, config.getConnectionTimeOutMs());
             bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
             bootstrap.handler(new LoggingHandler());
+            serverChannelInitializer.setHandler(handler);
             bootstrap.childHandler(serverChannelInitializer);
 
             LOGGER.info("Starting socket server");
@@ -74,12 +72,10 @@ public class Server {
             serverChannel = bootstrap.bind(socketServerPort).addListener(channelFuture -> {
                 if (channelFuture.isSuccess()) {
                     LOGGER.info("Successfully bind local port : {}", socketServerPort);
+                    return;
                 }
-
                 if (channelFuture.cause() != null) {
-                    LOGGER.error("Failed to bind port : {}. Exception : {}",
-                            socketServerPort,
-                            channelFuture.cause().getMessage());
+                    LOGGER.error("Failed to bind port : {}. Exception : {}", socketServerPort, channelFuture.cause().getMessage());
                 }
             }).sync().channel();
         } catch (Exception e) {
@@ -102,12 +98,12 @@ public class Server {
             } catch (Exception e) {
                 LOGGER.error("Failed to close the connection", e);
             }
-            LOGGER.info("PeerServer shut down");
+            LOGGER.info("Server shutdown");
         }
     }
 
     /**
-     * Return if the p2p server is on working.
+     * Return true if the p2p server is on working, false otherwise.
      */
     public synchronized boolean isActive() {
         return serverChannel != null;

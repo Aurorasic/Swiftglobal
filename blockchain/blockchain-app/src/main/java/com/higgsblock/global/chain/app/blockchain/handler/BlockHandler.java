@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -35,26 +36,83 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private WitnessService witnessService;
 
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
+
     @Override
     protected void process(SocketRequest<Block> request) {
         Block data = request.getData();
         long height = data.getHeight();
         String hash = data.getHash();
+        String sourceId = request.getSourceId();
+
         if (blockCacheManager.isContains(hash)) {
             return;
         }
-        short version = data.getVersion();
-        String sourceId = request.getSourceId();
 
-        boolean success = blockService.persistBlockAndIndex(data, sourceId, version);
-        LOGGER.error("persisted block all info, success=_height={}_block={}", success, height, hash);
-        if (success && !data.isgenesisBlock()) {
+        boolean success = blockService.persistBlockAndIndex(data, sourceId, data.getVersion());
+        LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
+
+        if (success && !data.isGenesisBlock()) {
             Inventory inventory = new Inventory();
             inventory.setHeight(height);
-            Set<String> set = new HashSet<>(blockService.getBlockIndexByHeight(height).getBlockHashs());
+            Set<String> set = new HashSet<>(blockIdxDaoService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
             witnessService.initWitnessTask(blockService.getBestMaxHeight() + 1);
         }
     }
+
+
+    /**
+     * Steps:
+     * 1.Roughly check the witness signatures' count;
+     * 2.Check if the block is an orphan block;
+     * 3.Thoroughly validate the block;
+     * 4.Save the block and block index;
+     * 5.Broadcast the persist event;
+     * 6.Update the block producer's score;
+     * 7.Parse dpos;
+     * 8.Chaining the orphan block to the chain;
+     */
+//    private synchronized boolean processBlock(Block block, String sourceId, short version) {
+//        long height = block.getHeight();
+//        String blockHash = block.getHash();
+//        int sigCount = block.getWitnessSigCount();
+//
+//        //Check the signature count roughly
+//        if (!block.isPreMiningBlock() && sigCount < BlockService.MIN_WITNESS) {
+//            LOGGER.warn("The witness number is not enough : sigCount=>{}", sigCount);
+//            return false;
+//        }
+//
+//        //Check if orphan block
+//        if (blockService.checkOrphanBlock(block, sourceId, version)) {
+//            LOGGER.warn("The block is an orphan block: height=>{} hash=>{}", height, blockHash);
+//            //If the block was an orphan block always return false.
+//            return false;
+//        }
+//
+//        //Valid block thoroughly
+//        if (!blockService.validBlock(block)) {
+//            LOGGER.error("Validate block failed, height=>{} hash=>{}", height, blockHash);
+//            return false;
+//        }
+//
+//        //Save block and index
+//        if (!blockService.saveBlockAndIndex(block, blockHash)) {
+//            LOGGER.error("Save block and block index failed, height=>{} hash=>{}", height, blockHash);
+//            return false;
+//        }
+//
+//        //Broadcast persisted event
+//        if (!block.isPreMiningBlock()) {
+//            blockService.broadBlockPersistedEvent(block, blockHash);
+//        }
+//
+//        //Do finishing job for the block
+//        blockService.finishingJobForBlock(block, sourceId, version);
+//
+//        return true;
+//    }
 }

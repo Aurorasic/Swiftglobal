@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
@@ -14,6 +15,7 @@ import java.util.Map;
  **/
 @Setter
 @Getter
+@NoArgsConstructor
 public class TransactionIndex extends BaseSerializer {
     /**
      * the hash of the block witch the transaction belongs to

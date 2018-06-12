@@ -5,10 +5,9 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.Application;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.consensus.NodeSelector;
+import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
@@ -85,10 +84,6 @@ public class Block extends BaseBizEntity {
     private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
 
 
-    @Getter
-    @Setter
-    private List<String> nodes = new ArrayList<>();
-
     @Override
     public boolean valid() {
         if (version < 0) {
@@ -128,17 +123,15 @@ public class Block extends BaseBizEntity {
         return true;
     }
 
-    private Block(short version, long blockTime, String prevBlockHash, List<Transaction> transactions, long height, List<String> nodes) {
+    private Block(short version, long blockTime, String prevBlockHash, List<Transaction> transactions, long height) {
         this.setVersion(version);
         this.blockTime = blockTime;
         this.prevBlockHash = prevBlockHash;
         this.transactions = transactions;
         this.height = height;
-        this.nodes = nodes;
     }
 
     public void initMinerPkSig(String pubKey, String signature) {
-        //otherWitnessSigPKS = new LinkedList<>();
         BlockWitness pair = new BlockWitness(pubKey, signature, null);
         minerSelfSigPKs.add(pair);
     }
@@ -150,11 +143,6 @@ public class Block extends BaseBizEntity {
             }
         }
         return null;
-    }
-
-    public void addMinerSignature(String pubKey, String signature, String blockHash) {
-        BlockWitness pair = new BlockWitness(pubKey, signature, blockHash);
-        minerSelfSigPKs.add(pair);
     }
 
     public void addWitnessSignature(String pubKey, String signature, String blockHash) {
@@ -169,55 +157,8 @@ public class Block extends BaseBizEntity {
         return null;
     }
 
-    public BlockWitness getMinerSecondPKSig() {
-        if (!CollectionUtils.isEmpty(minerSelfSigPKs) && minerSelfSigPKs.size() >= 2) {
-            return minerSelfSigPKs.get(1);
-        }
-        return null;
-    }
-
-//    public List<BlockWitness> getOtherPKSigs() {
-//        if (!CollectionUtils.isEmpty(otherWitnessSigPKS)) {
-//            ArrayList<BlockWitness> othersPair = new ArrayList<BlockWitness>();
-//            for (int i = 1; i < otherWitnessSigPKS.size(); i++) {
-//                othersPair.add(otherWitnessSigPKS.get(i));
-//            }
-//            return othersPair;
-//        }
-//        return null;
-//    }
-
-    public boolean isContainOtherPK(String oneSigPubKey) {
-        List<BlockWitness> otherPKSigs = getOtherWitnessSigPKS();
-        for (BlockWitness pair : otherPKSigs) {
-            if (StringUtils.equals(oneSigPubKey, pair.getPubKey())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<Transaction> getSysTransactions() {
-        List<Transaction> sysTransactions = new LinkedList<>();
-//        if (CollectionUtils.isNotEmpty(transactions)) {
-//            transactions.forEach(tx -> {
-//                if (tx.isSysTransaction()) {
-//                    sysTransactions.add(tx);
-//                }
-//            });
-//        }
-        return sysTransactions;
-    }
-
-    public boolean isgenesisBlock() {
+    public boolean isGenesisBlock() {
         if (height == 1 && prevBlockHash == null) {
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isPreMiningBlock() {
-        if (height <= Application.PRE_BLOCK_COUNT) {
             return true;
         }
         return false;
@@ -229,7 +170,6 @@ public class Block extends BaseBizEntity {
      * @return
      */
     public String getHash() {
-        //todo yuguojia this hash should be final hash value that include self sig and witness signatures
         if (StringUtils.isBlank(hash)) {
             HashFunction function = Hashing.sha256();
             StringBuilder builder = new StringBuilder();
@@ -238,7 +178,6 @@ public class Block extends BaseBizEntity {
                     .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
                     .append(getTransactionsHash())
                     .append(function.hashString(null == pubKey ? Strings.EMPTY : pubKey, Charsets.UTF_8));
-            nodes.forEach(address -> builder.append(address));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
         return hash;
@@ -262,7 +201,6 @@ public class Block extends BaseBizEntity {
                 builder.append(blockWitness.getBlockWitnessHash());
             });
         }
-        nodes.forEach(address -> builder.append(address));
         String signHash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         LOGGER.info("the block signedHash is {}", signHash);
         return signHash;
@@ -303,7 +241,7 @@ public class Block extends BaseBizEntity {
 
     @JSONField(serialize = false)
     public boolean isDPosEndHeight() {
-        long num = NodeSelector.BATCHBLOCKNUM;
+        long num = NodeManager.BATCH_BLOCK_NUM;
         if ((height - 1) % num == 0) {
             return true;
         }

@@ -88,11 +88,9 @@ public class BlockCacheManager {
             Block block = blockFullInfo.getBlock();
             String prevBlockHash = block.getPrevBlockHash();
             if (StringUtils.isEmpty(prevBlockHash) || isContains(prevBlockHash)) {
-//                LOGGER.warn("pre block={} is in the orphan block cache, donot fetch its pre-blocks", prevBlockHash);
                 continue;
             }
             long preHeight = block.getHeight() - 1;
-//            sycBlockService.syncBlockByHeight(preHeight, blockFullInfo.getSourceId());
             eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight(), block.getHash(), blockFullInfo.getSourceId()));
             LOGGER.info("height={}_block={} is orphan block or no best pre block, fetch pre height blocks", block.getHeight(), block.getHash());
         }

@@ -10,6 +10,7 @@ import java.util.Arrays;
  * @create 2018-02-22
  */
 public class Base58 {
+    private static final int LENGTH = 4;
     private static final char[] ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
     private static final char ENCODED_ZERO = ALPHABET[0];
     private static final int[] INDEXES = new int[128];
@@ -96,7 +97,7 @@ public class Base58 {
 
     public static byte[] decodeChecked(String input, IBase58CheckSumProvider checksumProvider) {
         byte[] decoded = decode(input);
-        if (decoded.length < 4) {
+        if (decoded.length < LENGTH) {
             throw new AddressFormatException("Input too short");
         }
         byte[] data = Arrays.copyOfRange(decoded, 0, decoded.length - 4);
@@ -110,7 +111,7 @@ public class Base58 {
 
     public static byte[] decodeChecked(String input) throws AddressFormatException {
         byte[] decoded = decode(input);
-        if (decoded.length < 4) {
+        if (decoded.length < LENGTH) {
             throw new AddressFormatException("Input too short");
         }
         byte[] data = Arrays.copyOfRange(decoded, 0, decoded.length - 4);

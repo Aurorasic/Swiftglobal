@@ -10,8 +10,10 @@ import java.util.LinkedList;
 
 /**
  * Peer message as the response message for {@link GetPeersMessage}.
+ *
+ * @author zhaoxiaogang
+ * @date 2018-05-21
  */
-
 @Data
 @NoArgsConstructor
 @Slf4j

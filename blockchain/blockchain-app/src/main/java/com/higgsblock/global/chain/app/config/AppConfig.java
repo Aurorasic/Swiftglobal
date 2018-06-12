@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
+import java.util.List;
+
 /**
  * system config
  *
@@ -30,10 +32,6 @@ public class AppConfig {
 
     @Value("${data.blockchain.file}")
     private String blockChainDataFile;
-
-    @Deprecated
-    @Value("${peer.pubKey}")
-    private String pubKey;
 
     @Value("${registry.center.ip}")
     private String registryCenterIp;
@@ -68,6 +66,31 @@ public class AppConfig {
 
     @Value("${genesis.block.hash}")
     private String genesisBlockHash;
+
+    @Value("${access.isAllowed}")
+    private boolean accessIsAllowed;
+
+    @Value("${access.allow.ip}")
+    private String accessAllowIp;
+
+    @Value("${access.allow.ip.range}")
+    private String accessAllowIpRange;
+
+    @Value("${access.allow.ip.wild.card}")
+    private String accessAllowIpWildCard;
+
+    //@Value("${witness.addr}")
+    @Value("#{'${witness.addr}'.split(',')}")
+    private List<String> witnessAddrList;
+
+    @Value("#{'${witness.socketport}'.split(',')}")
+    private List<Integer> witnessSocketPortList;
+
+    @Value("#{'${witness.httpport}'.split(',')}")
+    private List<Integer> witnessHttpPortList;
+
+    @Value("#{'${witness.pubkey}'.split(',')}")
+    private List<String> witnessPubkeyList;
 
     public String getValue(String key) {
         return environment.getProperty(key);

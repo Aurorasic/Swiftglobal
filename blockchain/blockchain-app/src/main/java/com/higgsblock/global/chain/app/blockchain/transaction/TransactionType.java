@@ -21,9 +21,10 @@ public enum TransactionType {
      */
     NORMAL("NORMAL", "NORMAL");
 
-    @Setter
     @Getter
     private String code;
+
+    @Getter
     private String desc;
 
     TransactionType(String code, String desc) {

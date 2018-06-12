@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.api.inner;
 
 import com.higgsblock.global.chain.app.api.vo.ConnectionInfo;
-import com.higgsblock.global.chain.network.socket.connection.ConnectionManager;
+import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +31,7 @@ public class ConnectionController {
             info.setPort(connection.getPort());
             info.setActivated(connection.isActivated());
             info.setClient(connection.isClient());
+            info.setConnectionLevel(connection.getConnectionLevel());
             return info;
         }).collect(Collectors.toList());
     }

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>miner info</title>
+</head>
+<!-- 新 Bootstrap 核心 CSS 文件 -->
+<link href="http://apps.bdimg.com/libs/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="css/base.css" rel="stylesheet">
+<!--jQery文件,务必在bootstrap.min.js之前引入-->
+<script src="js/base.js"></script>
+<script src="http://apps.bdimg.com/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="http://apps.bdimg.com/libs/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function () {
+        //根据公钥查询是否是矿工
+        $("#isMiner").click(function () {
+            var pubKey = $("#pubKey").val();
+            $.get(browser_api.URL.isMinerByPubKey(pubKey), function (success) {
+                var result;
+                if (success.data.stat) {
+                    result = "您是矿工。";
+                } else {
+                    result = "您不是矿工。";
+                }
+                alert(result);
+            });
+        });
+
+        //查询全网矿工数量
+        $("#minerCount").click(function () {
+            $.get(browser_api.URL.getMinerCount(), function (success) {
+                alert("全网矿工数量为:" + success.data.count);
+            });
+        });
+    });
+</script>
+<body>
+<div>
+    <span class="font">校验公钥查询节点是否是矿工</span>
+    <input type="text" class="form-control" placeholder="Please enter the pubKey" id="pubKey" style="width: 500px;margin:45px auto 10px auto ">
+    <button id="isMiner" class="btn btn-primary">查询</button>
+    <br/>
+    <button id="minerCount" class="btn btn-primary">查询全网矿工数量</button>
+</div>
+</body>
+</html>

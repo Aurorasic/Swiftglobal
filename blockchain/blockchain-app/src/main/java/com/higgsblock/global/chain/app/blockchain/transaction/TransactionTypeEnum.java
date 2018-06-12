@@ -72,7 +72,6 @@ public enum TransactionTypeEnum {
     /**
      * the enum type of transaction
      */
-    @Setter
     @Getter
     private short type;
 

@@ -2,12 +2,14 @@ package com.higgsblock.global.chain.app.api.vo;
 
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author baizhengwen
  * @date 2018/3/16
  */
 @Data
+@NoArgsConstructor
 public class ResponseData<T> {
     private String respCode;
     private String respMsg;

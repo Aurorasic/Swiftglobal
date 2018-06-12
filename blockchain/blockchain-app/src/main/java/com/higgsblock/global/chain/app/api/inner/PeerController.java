@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.api.inner;
 
 import com.higgsblock.global.chain.app.api.service.PeerRespService;
+import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.socket.connection.ConnectionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

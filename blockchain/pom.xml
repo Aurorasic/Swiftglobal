@@ -16,6 +16,7 @@
         <module>blockchain-common</module>
         <module>blockchain-crypto</module>
         <module>blockchain-app</module>
+        <module>blockchain-example</module>
     </modules>
 
 

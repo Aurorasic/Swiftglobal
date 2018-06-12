@@ -3,9 +3,12 @@ package com.higgsblock.global.chain.network.http;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.fastjson.FastJsonConverterFactory;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -13,6 +16,11 @@ import java.util.concurrent.TimeUnit;
  * @create 2018-03-17
  */
 public class HttpClient {
+
+    /**
+     * The constant DEFAULT_PORT. 80
+     */
+    public static final int DEFAULT_PORT = 80;
 
     private static final long DEFAULT_TIMEOUT = 60L;
     private static final Cache<String, Retrofit> RETROFIT_CACHE = Caffeine.newBuilder()
@@ -32,6 +40,38 @@ public class HttpClient {
         return getRetrofit(ip, port).create(clazz);
     }
 
+    /**
+     * Get string.
+     *
+     * @param url  the url
+     * @param port the port
+     * @return the string
+     * @throws IOException the io exception
+     */
+    public static String get(String url, Integer port) throws IOException {
+        if (null == port) {
+            port = DEFAULT_PORT;
+        }
+
+        url = getFormat(url, port);
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        Response response = CLIENT.newCall(request).execute();
+        return response.body().string().trim();
+    }
+
+    /**
+     * Get string.
+     *
+     * @param url the url
+     * @return the string
+     * @throws IOException the io exception
+     */
+    public static String get(String url) throws IOException {
+        return get(url, null);
+    }
+
     private static Retrofit newRetrofit(String url) {
         return new Retrofit.Builder()
                 .baseUrl(url)
@@ -41,7 +81,11 @@ public class HttpClient {
     }
 
     private static Retrofit getRetrofit(String ip, int port) {
-        String url = String.format("http://%s:%s/", ip, port);
+        String url = getFormat(ip, port);
         return RETROFIT_CACHE.get(url, HttpClient::newRetrofit);
+    }
+
+    private static String getFormat(String ip, int port) {
+        return String.format("http://%s:%s/", ip, port);
     }
 }

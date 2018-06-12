@@ -5,59 +5,119 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.network.api.IRegistryApi;
 import com.higgsblock.global.chain.network.config.PeerConfig;
+import com.higgsblock.global.chain.network.config.PeerConstant;
+import com.higgsblock.global.chain.network.config.RegistryConfig;
 import com.higgsblock.global.chain.network.socket.PeerCache;
+import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
+import com.higgsblock.global.chain.network.upnp.UpnpManager;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * The peer manager provides basic methods to add peers into database or to find peers from database.
  *
- * @author zhao xiaogang
+ * @author zhaoxiaogang
+ * @author chenjiawei
+ * @date 2018 -05-22
  */
-
 @Component
 @Slf4j
-public class PeerManager implements InitializingBean {
-
-    @Autowired
-    private ConcurrentMap<String, Peer> peerMap;
-
+public class PeerManager {
+    /**
+     * The Config.
+     */
     @Autowired
     private PeerConfig config;
 
+    /**
+     * The Peer cache.
+     */
     @Autowired
     private PeerCache peerCache;
 
+    /**
+     * The Registry api.
+     */
     @Autowired
     private IRegistryApi registryApi;
 
+    /**
+     * The Self.
+     */
     private Peer self;
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        // todo baizhengwen 移动到启动逻辑中
-        getSelf();
+    /**
+     * The Upnp manager.
+     */
+    @Autowired
+    private UpnpManager upnpManager;
+
+    /**
+     * The Peer map.
+     */
+    private Map<String, Peer> peerMap = new ConcurrentHashMap<>();
+
+    /**
+     * The Registry config.
+     */
+    @Autowired
+    private RegistryConfig registryConfig;
+
+    /**
+     * List of witnesses.
+     */
+    @Getter
+    private List<Peer> witnessPeers = Lists.newArrayList();
+
+    /**
+     * Sets witness peers.
+     *
+     * @param witnessPeers the witness peers
+     */
+    public void setWitnessPeers(List<Peer> witnessPeers) {
+        this.witnessPeers.clear();
+        for (Peer peer : witnessPeers) {
+            // if (peer == null || !peer.valid()) {  TODO  yanghuadong  for test 2018-05-28
+            if (peer == null) {
+                continue;
+            }
+            this.witnessPeers.add(peer);
+        }
     }
 
     /**
+     * List of miners.
+     */
+    @Getter
+    @Setter
+    private List<String> minerAddresses = Lists.newArrayList();
+
+
+    /**
      * Add peers to the peer queue.
+     *
+     * @param collection the collection
      */
     public void add(Collection<Peer> collection) {
-        List<Peer> peers = (List<Peer>) collection;
-        if (CollectionUtils.isEmpty(peers)) {
+        if (CollectionUtils.isEmpty(collection)) {
             return;
         }
+
+        List<Peer> peers = Lists.newArrayList(collection);
+
         //todo kongyu 2018-4-25 20:03
         /*
         1.Need to empty all the peer nodes and try to connect retries to 0
@@ -79,18 +139,36 @@ public class PeerManager implements InitializingBean {
             }
 
             if (null == getById(peer.getId())) {
-                add(peer);
+                addOrUpdate(peer);
             }
         }
     }
 
     /**
      * add peer node to the peers queue
+     *
+     * @param peer the peer
      */
-    public void add(Peer peer) {
+    public void addOrUpdate(Peer peer) {
+        if (null == peer) {
+            return;
+        }
+
         peerMap.put(peer.getId(), peer);
     }
 
+    /**
+     * Clear peer.
+     */
+    public void clearPeer() {
+        peerMap.clear();
+    }
+
+    /**
+     * Count int.
+     *
+     * @return the int
+     */
     public int count() {
         return peerMap.size();
     }
@@ -111,6 +189,9 @@ public class PeerManager implements InitializingBean {
 
     /**
      * Get peer instance by peer id.
+     *
+     * @param id the id
+     * @return the by id
      */
     public Peer getById(String id) {
         if (StringUtils.isNotEmpty(id)) {
@@ -120,23 +201,9 @@ public class PeerManager implements InitializingBean {
     }
 
     /**
-     * Get peer list by peer ids.
-     */
-    public List<Peer> getByIds(String[] ids) {
-        List<Peer> list = Lists.newArrayList();
-        if (null != ids) {
-            for (String id : ids) {
-                Peer peer = getById(id);
-                if (peer != null) {
-                    list.add(peer);
-                }
-            }
-        }
-        return list;
-    }
-
-    /**
      * Return all peers from database.
+     *
+     * @return the peers
      */
     public Collection<Peer> getPeers() {
         return peerMap.values();
@@ -144,6 +211,9 @@ public class PeerManager implements InitializingBean {
 
     /**
      * Shuffle limit peers from database.
+     *
+     * @param limit the limit
+     * @return the list
      */
     public List<Peer> shuffle(int limit) {
         String rnd = RandomStringUtils.randomAlphanumeric(10);
@@ -159,13 +229,42 @@ public class PeerManager implements InitializingBean {
     }
 
     /**
+     * Load self peer info boolean.
+     *
+     * @return the boolean
+     */
+    public boolean loadSelfPeerInfo() {
+        // include public ip and port by upnp
+        return this.upnpManager.initPeerInfo();
+    }
+
+    /**
+     * Load neighbor peers boolean.
+     *
+     * @return the boolean
+     */
+    public boolean loadNeighborPeers() {
+        // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
+        // 1.load neighbor peers from local
+        Collection<Peer> localPeers = getPeers();
+        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < PeerConstant.MIN_LOCAL_PEER_COUNT) {
+            this.getSeedPeers();
+        } else {
+            this.add(localPeers);
+        }
+
+        return true;
+    }
+
+    /**
      * Get local peer instance.
+     *
+     * @return the self
      */
     public Peer getSelf() {
         if (null == self) {
             Peer peer = new Peer();
             peer.setIp(config.getIp());
-            // todo baizhengwen 通过upnp设置端口
             peer.setSocketServerPort(config.getSocketPort());
             peer.setHttpServerPort(config.getHttpPort());
             peer.setPubKey(config.getPubKey());
@@ -175,25 +274,41 @@ public class PeerManager implements InitializingBean {
             if (!self.valid()) {
                 throw new IllegalArgumentException("self peer params invalid");
             }
-            add(self);
+
+            addOrUpdate(self);
         }
+
         return self;
     }
 
     /**
      * Set value for the local peer and save to database.
+     *
+     * @param self the self
      */
     public void setSelf(Peer self) {
         if (null != self) {
             this.self = self;
-            add(self);
+            addOrUpdate(self);
+        }
+    }
+
+    /**
+     * Sets cache.
+     *
+     * @param peer the peer
+     */
+    public void setCache(Peer peer) {
+        peerCache.setCached(peer);
+        if (null != peer) {
+            this.self = peer;
         }
     }
 
     /**
      * Delete peer node request
      *
-     * @param peer
+     * @param peer the peer
      */
     public void removePeer(Peer peer) {
         if (null == peer) {
@@ -211,7 +326,7 @@ public class PeerManager implements InitializingBean {
     /**
      * Update peer node request
      *
-     * @param peer
+     * @param peer the peer
      */
     public void updatePeer(Peer peer) {
         if (null != peer) {
@@ -222,7 +337,7 @@ public class PeerManager implements InitializingBean {
     /**
      * Need to reset the attempt to connect retries to 0
      *
-     * @param peer
+     * @param peer the peer
      */
     public void clearPeerRetries(Peer peer) {
         if (null != peer) {
@@ -230,6 +345,112 @@ public class PeerManager implements InitializingBean {
             peerMap.put(peer.getId(), peer);
         }
     }
+
+    /**
+     * Check if pool contains specific peer or not.
+     *
+     * @param peer peer to check
+     * @return true if pool contains the peer, false otherwise
+     */
+    public boolean contains(Peer peer) {
+        return getById(peer.getId()) != null;
+    }
+
+    /**
+     * Check if specific peer is this node itself or not.
+     *
+     * @param peer peer to check
+     * @return true if the peer is this node itself, false otherwise
+     */
+    public boolean isSelf(Peer peer) {
+        if (peer == null) {
+            throw new IllegalArgumentException("Peer is null");
+        }
+        if (getSelf() == null) {
+            throw new IllegalArgumentException("Self peer is null");
+        }
+        return peer.getId().equals(getSelf().getId());
+    }
+
+    /**
+     * Check if peer is a witness or not.
+     *
+     * @param peer peer to check
+     * @return true if the peer is a witness, false otherwise
+     */
+    public boolean isWitness(Peer peer) {
+        if (peer == null) {
+            throw new IllegalArgumentException("Peer is null");
+        }
+        return witnessPeers.stream().filter(
+                witness -> witness != null).anyMatch(witness -> witness.getId().equals(peer.getId()));
+    }
+
+    /**
+     * Triggered by failing to connect to the peer.
+     */
+    public void onTryCompleted(Peer peer) {
+        peer.onTryCompleted();
+        if (peer.retryExceedLimitation()) {
+            removePeer(peer);
+            peerCache.setCached(peer);
+        } else {
+            updatePeer(peer);
+        }
+    }
+
+    /**
+     * Calculate the node role.
+     *
+     * @param peer the target node to be calculated
+     * @return node role the peer plays
+     */
+    public NodeRoleEnum getNodeRole(Peer peer) {
+        return getNodeRole(peer.getId());
+    }
+
+    /**
+     * Calculate the node role.
+     *
+     * @param peerId id of the target node to be calculated
+     * @return node role the peer plays
+     */
+    private NodeRoleEnum getNodeRole(String peerId) {
+        if (witnessPeers.stream().anyMatch(witness -> witness.getId().equals(peerId))) {
+            return NodeRoleEnum.WITNESS;
+        }
+        if (minerAddresses.stream().anyMatch(miner -> miner.equals(peerId))) {
+            return NodeRoleEnum.MINER;
+        }
+        return NodeRoleEnum.PEER;
+    }
+
+
+    /**
+     * Exists in pools boolean.
+     *
+     * @param peer the peer
+     * @return the boolean
+     */
+    public boolean existsInPools(Peer peer) {
+        if (peer == null) {
+            return false;
+        }
+        String peerId = peer.getId();
+        return peerMap.containsKey(peerId)
+                || minerAddresses.contains(peerId)
+                || witnessPeers.stream().filter(witness -> witness != null).anyMatch(witness -> witness.getId().equals(peerId));
+    }
+
+    /**
+     * Report to registry.
+     */
+    public void reportToRegistry() {
+        try {
+            boolean result = this.registryApi.report(getSelf()).execute().body();
+            LOGGER.info("report self info to register({}) {}", registryConfig.toString(), result);
+        } catch (Exception e) {
+            LOGGER.error("report peer info to register error:" + e.getMessage(), e);
+        }
+    }
 }
-
-

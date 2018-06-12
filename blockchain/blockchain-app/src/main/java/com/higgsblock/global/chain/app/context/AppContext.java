@@ -1,6 +1,18 @@
 package com.higgsblock.global.chain.app.context;
 
+import com.google.common.eventbus.EventBus;
+import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
+import com.higgsblock.global.chain.app.connection.ConnectionManager;
+import com.higgsblock.global.chain.app.consensus.syncblock.SyncBlockService;
+import com.higgsblock.global.chain.app.schedule.BaseTask;
+import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
+import com.higgsblock.global.chain.network.PeerManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * @author baizhengwen
@@ -9,43 +21,83 @@ import org.springframework.stereotype.Component;
 @Component
 public class AppContext {
 
-    public void start() {
-        // 启动本地socket服务端（连接进来的peer必须在一定时间内上报自己的peer信息，服务端才会保持长连接，否则会在超时后丢弃）
+    @Autowired
+    private BlockService blockService;
+
+    @Autowired
+    private ConnectionManager connectionManager;
+
+    @Autowired
+    private PeerManager peerManager;
+
+    @Autowired
+    private List<BaseTask> tasks;
+
+    @Autowired
+    private List<IEntityHandler> entityHandlers;
+
+    @Autowired
+    private SyncBlockService syncBlockService;
+
+    @Autowired
+    private List<IEventBusListener> eventBusListeners;
+
+    @Autowired
+    private EventBus eventBus;
+
+    public void start() throws Exception {
+        checkAndRecoveryBlockData();
+
+        startHandlers();
+
+        startListeners();
+
         startSocketServer();
-        // 从注册中心获取peer信息
-        getPeers();
-        // 作为客户端尝试连接其他peer服务端（并在连接建立之后，上报自己的peer信息，收到服务端响应后则保持长连接，否则可能会被丢弃）
-        startSocketClient();
-        // 加载本节点所有区块，并计算索引等相关数据
-        loadData();
-        // 询问相邻节点区块高度，同步区块
-        syncData();
-        // 开始挖矿
-        startMining();
+
+        loadSelfPeerInfo();
+
+        loadOrFetchPeers();
+
+        startPeerTimerTasks();
+
+        syncBlocks();
+    }
+
+    private void checkAndRecoveryBlockData() {
+        blockService.loadAllBlockData();
+    }
+
+    private void startHandlers() {
+        if (CollectionUtils.isNotEmpty(entityHandlers)) {
+            entityHandlers.forEach(IEntityHandler::start);
+        }
+    }
+
+    private void startListeners() {
+        CollectionUtils.forAllDo(eventBusListeners, eventBus::register);
     }
 
     private void startSocketServer() {
-        // todo baizhengwen 启动本地socket服务端
+        connectionManager.startServer();
     }
 
-    private void getPeers() {
-        // todo baizhengwen 从注册中心获取peer信息
+    private void loadSelfPeerInfo() {
+        peerManager.loadSelfPeerInfo();
     }
 
-    private void startSocketClient() {
-        // todo baizhengwen 作为客户端尝试连接其他peer服务端
+    private void loadOrFetchPeers() {
+        peerManager.loadNeighborPeers();
+        connectionManager.connectToPeers(1, 5, 20);
     }
 
-    private void syncData() {
-        // todo baizhengwen 同步区块
+    private void startPeerTimerTasks() {
+        if (CollectionUtils.isNotEmpty(tasks)) {
+            tasks.forEach(BaseTask::start);
+        }
     }
 
-    private void loadData() {
-        // todo baizhengwen 加载本节点所有区块
-    }
-
-    private void startMining() {
-        // todo baizhengwen 开始挖矿
+    private void syncBlocks() {
+        syncBlockService.startSyncBlock();
     }
 
 }

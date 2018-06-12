@@ -13,10 +13,11 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
+import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
-import com.higgsblock.global.chain.network.socket.connection.ConnectionManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class SyncBlockService implements IEventBusListener {
+public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     /**
      * the num of active connections to trigger sync data
@@ -62,6 +63,10 @@ public class SyncBlockService implements IEventBusListener {
 
     private ConcurrentHashMap<String, Long> peersMaxHeight = new ConcurrentHashMap<>();
 
+    /**
+     * long :block height
+     * String :source ID
+     */
     private Cache<Long, String> requestRecord = Caffeine.newBuilder().maximumSize(100)
             .expireAfterWrite(SYNC_BLOCK_EXPIRATION, TimeUnit.SECONDS)
             .removalListener((RemovalListener<Long, String>) (height, sourceId, cause) -> {
@@ -88,9 +93,10 @@ public class SyncBlockService implements IEventBusListener {
     }
 
     public void startSyncBlock() {
-        scheduledExecutorService.schedule(() -> requestRecord.cleanUp(), 3, TimeUnit.SECONDS);
+        messageCenter.broadcast(new GetMaxHeight());
+
         try {
-            countDownLatch.await(30, TimeUnit.SECONDS);
+            countDownLatch.await(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -109,11 +115,11 @@ public class SyncBlockService implements IEventBusListener {
     private void sendInitRequest() {
         long initHeight = blockService.getBestMaxHeight();
         for (long i = 1; i <= SYNC_BLOCK_TEMP_SIZE && i + initHeight <= getPeersMaxHeight(); i++) {
-            sendGetData(initHeight + i);
+            sendGetBlock(initHeight + i);
         }
     }
 
-    private boolean sendGetData(long height) {
+    private boolean sendGetBlock(long height) {
         List<String> list = new ArrayList<>();
         peersMaxHeight.forEach((k, v1) -> {
             if (v1 >= height) {
@@ -125,7 +131,7 @@ public class SyncBlockService implements IEventBusListener {
         }
         String sourceId = list.get(new Random().nextInt(list.size()));
         requestRecord.get(height, v -> {
-            messageCenter.unicast(sourceId, new GetData(height));
+            messageCenter.unicast(sourceId, new GetBlock(height));
             LOGGER.info("send block request! height:{} ", height);
             return sourceId;
         });
@@ -134,12 +140,15 @@ public class SyncBlockService implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
+        if (getPeersMaxHeight() < event.getHeight()) {
+            return;
+        }
         LOGGER.info("process event: {}", JSON.toJSONString(event));
         if (event.hasBestBlock()) {
             requestRecord.invalidate(event.getHeight());
             long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
             if (targetHeight <= getPeersMaxHeight()) {
-                sendGetData(targetHeight);
+                sendGetBlock(targetHeight);
             }
             if (isSyncBlockState() && blockService.getBestMaxHeight() >= getPeersMaxHeight()) {
                 systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
@@ -148,9 +157,10 @@ public class SyncBlockService implements IEventBusListener {
         }
     }
 
+
     @Subscribe
     public void process(SystemStatusEvent event) {
-        LOGGER.info("process event: {}", JSON.toJSONString(event));
+        LOGGER.info("process SystemStatusEvent: {}", JSON.toJSONString(event));
         SystemStatus state = event.getSystemStatus();
         if (SystemStatus.RUNNING == state) {
             syncState = 2;
@@ -159,7 +169,7 @@ public class SyncBlockService implements IEventBusListener {
 
     @Subscribe
     public void process(ReceiveOrphanBlockEvent event) {
-        LOGGER.info("process event: {}", JSON.toJSONString(event));
+        LOGGER.info("process ReceiveOrphanBlockEvent: {}", JSON.toJSONString(event));
         long height = event.getHeight();
         String sourceId = event.getSourceId();
         peersMaxHeight.compute(sourceId, (k, v) -> {
@@ -176,8 +186,9 @@ public class SyncBlockService implements IEventBusListener {
         if (height <= blockService.getBestMaxHeight()) {
             return;
         }
+        LOGGER.info("time out, remove it .sourceId:{} ", sourceId);
         removePeer(sourceId);
-        if (!sendGetData(height)) {
+        if (!sendGetBlock(height)) {
             if (blockService.getBestMaxHeight() >= getPeersMaxHeight() && isSyncBlockState()) {
                 systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
                 LOGGER.info("sync block finished !");
@@ -186,7 +197,7 @@ public class SyncBlockService implements IEventBusListener {
     }
 
     private void removePeer(String sourceId) {
-        connectionManager.close(sourceId);
+        connectionManager.remove(sourceId);
         peersMaxHeight.remove(sourceId);
     }
 
@@ -218,6 +229,11 @@ public class SyncBlockService implements IEventBusListener {
             }
         }
         return height;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        scheduledExecutorService.scheduleWithFixedDelay(() -> requestRecord.cleanUp(), 20, SYNC_BLOCK_EXPIRATION / 5, TimeUnit.SECONDS);
     }
 }
 

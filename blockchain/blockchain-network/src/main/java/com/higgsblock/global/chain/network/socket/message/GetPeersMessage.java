@@ -2,11 +2,11 @@ package com.higgsblock.global.chain.network.socket.message;
 
 import lombok.Data;
 
-
 /**
  * Get peers message as the request message for {@link PeersMessage}.
+ * @author zhaoxiaogang
+ * @date 2018-05-21
  */
-
 @Data
 public class GetPeersMessage extends BaseMessage {
 

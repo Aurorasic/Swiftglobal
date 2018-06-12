@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.google.common.base.Objects;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * For checking a spending transaction that it can spend an out put without spending on the most long chain.
@@ -11,6 +12,7 @@ import lombok.Data;
  * @create 2018-02-23
  **/
 @Data
+@NoArgsConstructor
 public class UTXO extends BaseSerializer {
 
     /**
@@ -26,9 +28,6 @@ public class UTXO extends BaseSerializer {
     private TransactionOutput output;
 
     private String address;
-
-    public UTXO() {
-    }
 
     public UTXO(Transaction tx, short outIndex, TransactionOutput output) {
         this.hash = tx.getHash();

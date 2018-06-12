@@ -1,12 +1,12 @@
 package com.higgsblock.global.chain.app.api.service;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.dao.UtxoDao;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -16,8 +16,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class UTXORespService {
-    @Resource(name = "myUTXOData")
-    private ConcurrentMap<String, UTXO> myUTXOData;
+
+    @Autowired
+    private UtxoDao utxoDao;
 
     /**
      * Query the corresponding UTXOS according to the address information
@@ -29,8 +30,6 @@ public class UTXORespService {
         if (null == addr) {
             throw new RuntimeException("addr is null");
         }
-
-        List<UTXO> list = myUTXOData.values().stream().collect(Collectors.toList());
-        return list;
+        return utxoDao.allValues().stream().filter(utxo -> utxo.getAddress().equals(addr)).collect(Collectors.toList());
     }
 }

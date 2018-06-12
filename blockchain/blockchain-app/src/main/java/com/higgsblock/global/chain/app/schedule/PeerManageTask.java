@@ -1,8 +1,10 @@
 package com.higgsblock.global.chain.app.schedule;
 
+import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.network.api.IRegistryApi;
+import com.higgsblock.global.chain.network.config.PeerConstant;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
-import com.higgsblock.global.chain.network.socket.connection.ConnectionManager;
 import com.higgsblock.global.chain.network.socket.message.GetPeersMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +29,9 @@ public class PeerManageTask extends BaseTask {
 
     @Override
     protected void task() {
+
         // get seed peers from registry center if there are less then 2 peers
-        if (peerManager.count() < 2) {
+        if (peerManager.count() < PeerConstant.MIN_LOCAL_PEER_COUNT) {
             peerManager.getSeedPeers();
         }
 

@@ -47,6 +47,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 @Slf4j
 public class ECKey {
+    private static final int COMPRESS_PUBKEY_LENGTH = 33;
+    private static final int UNCOMPRESS_PUBKEY_LENGTH = 65;
+    private static final byte UNCOMPRESS_PRE_PUBKEY = 0x04;
+    private static final byte COMPRESS_PRE_PUBKEY_EVEN = 0x02;
+    private static final byte COMPRESS_PRE_PUBKEY_ODD = 0x03;
+    private static final int MAX_SIGNATURE = 255;
+    private static final int LOW_HEADER_BORDER = 27;
+    private static final int MIDDLE_HEADER_BORDER = 31;
+    private static final int HIGH_HEADER_BORDER = 34;
+    private static final int LOOP_COUNT = 4;
+
     private static final Logger log = LoggerFactory.getLogger(ECKey.class);
     /**
      * The parameters of the secp256k1 curve that ECKey uses.
@@ -359,19 +370,19 @@ public class ECKey {
             return false;
         }
         byte[] pubkey = CryptoUtils.HEX.decode(key.getPubKey());
-        if (pubkey.length < 33) {
+        if (pubkey.length < COMPRESS_PUBKEY_LENGTH) {
             return false;
         }
         // Uncompressed pubkey
-        if (pubkey[0] == 0x04) {
-            if (pubkey.length != 65) {
+        if (pubkey[0] == UNCOMPRESS_PRE_PUBKEY) {
+            if (pubkey.length != UNCOMPRESS_PUBKEY_LENGTH) {
                 return false;
             }
             return true;
         }
         // Compressed pubkey
-        if (pubkey[0] == 0x02 || pubkey[0] == 0x03) {
-            if (pubkey.length != 33) {
+        if (pubkey[0] == COMPRESS_PRE_PUBKEY_EVEN || pubkey[0] == COMPRESS_PRE_PUBKEY_ODD) {
+            if (pubkey.length != COMPRESS_PUBKEY_LENGTH) {
                 return false;
             }
             return true;
@@ -384,19 +395,19 @@ public class ECKey {
             return false;
         }
         byte[] key = CryptoUtils.HEX.decode(pubKey);
-        if (key.length < 33) {
+        if (key.length < COMPRESS_PUBKEY_LENGTH) {
             return false;
         }
         // Uncompressed pubkey
-        if (key[0] == 0x04) {
-            if (key.length != 65) {
+        if (key[0] == UNCOMPRESS_PRE_PUBKEY) {
+            if (key.length != UNCOMPRESS_PUBKEY_LENGTH) {
                 return false;
             }
             return true;
         }
         // Compressed pubkey
-        if (key[0] == 0x02 || key[0] == 0x03) {
-            if (key.length != 33) {
+        if (key[0] == COMPRESS_PRE_PUBKEY_EVEN || key[0] == COMPRESS_PRE_PUBKEY_ODD) {
+            if (key.length != COMPRESS_PUBKEY_LENGTH) {
                 return false;
             }
             return true;
@@ -475,7 +486,7 @@ public class ECKey {
         if (sigNum > pubKeyLists.size()) {
             throw new ParamsErrorException("sigNum cannot large pubKeyLists.size()");
         }
-        if (sigNum > 255) {
+        if (sigNum > MAX_SIGNATURE) {
             throw new ParamsErrorException("sigNum is too large than 255");
         }
         int length = pubKeyLists.size();
@@ -546,13 +557,13 @@ public class ECKey {
             throw new SignatureException("Could not decode base64", e);
         }
 
-        if (signatureEncoded.length < 65) {
+        if (signatureEncoded.length < UNCOMPRESS_PUBKEY_LENGTH) {
             throw new SignatureException("Signature truncated, expected 65 bytes and got " + signatureEncoded.length);
         }
 
         int header = signatureEncoded[0] & 255;
 
-        if (header < 27 || header > 34) {
+        if (header < LOW_HEADER_BORDER || header > HIGH_HEADER_BORDER) {
             throw new SignatureException("Header byte out of range: " + header);
         }
 
@@ -563,7 +574,7 @@ public class ECKey {
 
         Sha256Hash messageHash = Sha256Hash.twiceOf(messageBytes);
         boolean compressed = false;
-        if (header >= 31) {
+        if (header >= MIDDLE_HEADER_BORDER) {
             compressed = true;
             header -= 4;
         }
@@ -770,7 +781,7 @@ public class ECKey {
         }
         ECASSignature sig = sign(messageHash, aesKey);
         int recId = -1;
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < LOOP_COUNT; i++) {
             ECKey k = ECKey.recoverFromSignature(i, sig, messageHash, isCompressed());
             if (k != null && k.pub.equals(pub)) {
                 recId = i;
@@ -873,7 +884,6 @@ public class ECKey {
     }
 
     public static class ECASSignature {
-        //The two components of a digital signature.
         public final BigInteger r, s;
 
         public ECASSignature(BigInteger r, BigInteger s) {

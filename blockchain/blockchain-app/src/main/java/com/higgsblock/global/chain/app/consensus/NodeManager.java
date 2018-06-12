@@ -2,24 +2,30 @@ package com.higgsblock.global.chain.app.consensus;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.collect.Lists;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.Application;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.consensus.sign.service.CollectSignService;
+import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
+import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
-import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 
 /**
  * @author yangyi
@@ -30,194 +36,183 @@ import java.util.function.Function;
 @Slf4j
 public class NodeManager implements InitializingBean {
 
-    public static final int NODESIZE = 5;
-    private static final int MAX_SIZE = 20;
+    public static final int NODE_SIZE = 5;
+    public static final int MAX_SIZE = 20;
+    public static final int BATCH_BLOCK_NUM = 3;
+    public static final long DPOS_START_HEIGHT = 2L;
+    public static final long FIRST_HEIGHT_CAL_HEIGHT = 4L;
+    private final int maxScore = 1000;
+    private final int midScore = 800;
+    private final int mixScore = 600;
     @Autowired
     private BlockService blockService;
     @Autowired
-    private ScoreManager scoreManager;
+    private IScoreService scoreDaoService;
+
     @Autowired
-    private KeyPair keyPair;
-    private String myaddr = ECKey.pubKey2Base58Address(keyPair);
+    private BlockIdxDaoService blockIdxDaoService;
+    @Autowired
+    private DposService dposService;
     private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
-    private Map<Integer, Map<String, Integer>> groupMap = new HashMap<>();
-    private NodeComparator nodeComparator = new NodeComparator();
     private Function<Long, List<String>> function = null;
 
-    public boolean parseDpos(Block block) {
-        if (block == null) {
-            return false;
+    public BaseDaoEntity calculateDposNodes(Block block) throws RocksDBException {
+        List<String> dposAddresses = calculateDposAddresses(block);
+        if (CollectionUtils.isEmpty(dposAddresses)) {
+            return null;
         }
-        long height = block.getHeight();
-        List<String> addressList = block.getNodes();
-        if (addressList == null || addressList.size() != NODESIZE) {
-            return false;
-        }
-        BlockIndex blockIndexByHeight = blockService.getBlockIndexByHeight(height);
-        LOGGER.info("the blockIndex is {}", blockIndexByHeight);
-        LOGGER.info("the height {} the nodes are {}  block {}", height, addressList, block);
-        List<String> currentGroup = getDposGroup(height);
-        List<String> nextGroup = getNextGroup(height);
-        for (int i = 0; i < addressList.size(); i++) {
-            String address = addressList.get(i);
-            if (currentGroup.contains(address) || nextGroup.contains(address)) {
-                continue;
-            }
-            Map<String, Integer> indexMap = groupMap.get(i + 1);
-            if (indexMap == null) {
-                indexMap = new HashMap<>();
-                groupMap.put(i + 1, indexMap);
-            }
-            Integer time = indexMap.get(address);
-            if (time == null) {
-                indexMap.put(address, Integer.valueOf(1));
-            } else {
-                indexMap.put(address, time + 1);
-            }
-        }
-        if (isEndHeight(height)) {
-            List<String> nodes = null;
-            try {
-                nodes = processSort(groupMap, nodeComparator);
-            } catch (RuntimeException e) {
-                LOGGER.error(e.getMessage(), e);
-                LOGGER.error("the groupMap is {} \n the nodes is {}\n the scoreMap is {}", groupMap, addressList, scoreManager.getDposMinerSoreMap());
-            }
-
-            height = height + CollectSignService.witnessNum;
-            LOGGER.info("current block {}_{} selected dpos nodes: {}", height, block.getHash(), nodes);
-            dposNodeMap.put(height, nodes);
-            groupMap.clear();
-            return true;
-        }
-        return false;
+        long sn = getSn(block.getHeight());
+        return persistDposNodes(sn, dposAddresses);
     }
 
-    private List<String> processSort(Map<Integer, Map<String, Integer>> groupMap, NodeComparator nodeComparator) {
-        List<String> nodes = Lists.newLinkedList();
-        for (int k = 1; k <= groupMap.size(); k++) {
-            Map<String, Integer> indexMap = groupMap.get(k);
-            if (indexMap == null) {
-                throw new RuntimeException("the indexMap is null,the index is " + k);
-            }
-            nodeComparator.setMap(indexMap);
-            Map<String, Integer> sortMap = new TreeMap<>(nodeComparator);
-            sortMap.putAll(indexMap);
-            Set<Map.Entry<String, Integer>> entries = sortMap.entrySet();
-            Iterator<Map.Entry<String, Integer>> iterator = entries.iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, Integer> next = iterator.next();
-                String value = next.getKey();
-                if (!nodes.contains(value)) {
-                    nodes.add(value);
-                    break;
-                }
-            }
+    public List<String> calculateDposAddresses(Block block) throws RocksDBException {
+        long height = block.getHeight();
+        boolean isEndHeight = isEndHeight(height);
+        if (!isEndHeight) {
+            return null;
         }
-        return nodes;
+        Map<String, Integer> dposMinerSoreMap = scoreDaoService.loadAll();
+        if (dposMinerSoreMap.size() < NodeManager.NODE_SIZE) {
+            return null;
+        }
+        long sn = getSn(height);
+        final String hash = block.getHash();
+        LOGGER.info("begin to select dpos node,the block hash is {}", hash);
+        final List<String> currentGroup = getDposGroupBySn(sn);
+        final List<String> nextGroup = getDposGroupBySn(sn + 1);
+        LOGGER.info("the currentGroup is {}", currentGroup);
+        List<String> maxScoreList = new ArrayList<>();
+        List<String> midScoreList = new ArrayList<>();
+        List<String> minScoreList = new ArrayList<>();
+        List<String> inadequateScoreList = new ArrayList<>();
+        dposMinerSoreMap.forEach((address, score) -> {
+            if (currentGroup.contains(address) || nextGroup.contains(address)) {
+                return;
+            }
+            if (score >= maxScore) {
+                maxScoreList.add(address);
+                return;
+            }
+            if (score >= midScore) {
+                midScoreList.add(address);
+                return;
+            }
+            if (score >= mixScore) {
+                minScoreList.add(address);
+                return;
+            }
+            inadequateScoreList.add(address);
+        });
+        int maxSize = 2;
+        int midSize = 2;
+        int minSize = 1;
+        HashFunction function = Hashing.sha256();
+        Comparator<String> comparator = (o1, o2) -> {
+            o1 = o1 + hash;
+            o2 = o2 + hash;
+            HashCode hashCode1 = function.hashString(o1, Charset.forName("UTF-8"));
+            HashCode hashCode = function.hashString(o2, Charset.forName("UTF-8"));
+            return hashCode1.toString().compareTo(hashCode.toString());
+        };
+        List<String> select = maxScoreList.stream().sorted(comparator).limit(maxSize).collect(Collectors.toList());
+        select.addAll(midScoreList.stream().sorted(comparator).limit(midSize).collect(Collectors.toList()));
+        select.addAll(minScoreList.stream().sorted(comparator).limit(minSize).collect(Collectors.toList()));
+        int size = maxSize + midSize + minSize - select.size();
+        if (size <= 0) {
+            return select;
+        }
+        List<String> list = new LinkedList();
+        list.addAll(maxScoreList);
+        list.addAll(midScoreList);
+        list.addAll(minScoreList);
+        list.addAll(inadequateScoreList);
+        list.removeAll(select);
+        select.addAll(list.stream().sorted(comparator).limit(size).collect(Collectors.toList()));
+        LOGGER.info("the dpos node is {}", select);
+        if (select.size() < BATCH_BLOCK_NUM) {
+            throw new RuntimeException("can not find enough dpos node");
+        }
+        return select;
+    }
+
+    public BaseDaoEntity persistDposNodes(long sn, List<String> dposNodes) {
+        dposNodeMap.put(sn + 2, dposNodes);
+        return dposService.put(sn + 2, dposNodes);
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        function = (height) -> {
-            List<String> result = Lists.newLinkedList();
-            long endHeight = height - NodeSelector.BATCHBLOCKNUM;
-            List<Block> blocks = blockService.getBestBatchBlocks(endHeight);
-            if (blocks.size() != NodeSelector.BATCHBLOCKNUM) {
-                return result;
-            }
-            Map<Integer, Map<String, Integer>> groupMap = new HashMap<>();
-            Iterator<Block> iterator = blocks.iterator();
-            while (iterator.hasNext()) {
-                Block block = iterator.next();
-                List<String> addressList = block.getNodes();
-                if (addressList == null || addressList.size() != NODESIZE) {
-                    return result;
-                }
-                for (int i = 0; i < addressList.size(); i++) {
-                    String address = addressList.get(i);
-                    Map<String, Integer> indexMap = groupMap.get(i + 1);
-                    if (indexMap == null) {
-                        indexMap = new HashMap<>();
-                        groupMap.put(i + 1, indexMap);
-                    }
-                    Integer time = indexMap.get(address);
-                    if (time == null) {
-                        indexMap.put(address, Integer.valueOf(1));
-                    } else {
-                        indexMap.put(address, time + 1);
-                    }
-                }
-            }
-            try {
-                result = processSort(groupMap, nodeComparator);
-                LOGGER.info(" selected dpos nodes: {}", result);
-                return result;
-            } catch (RuntimeException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
-            return result;
-        };
+        function = (sn) -> dposService.get(sn);
     }
 
-    public List<String> getNextGroup(long height) {
-        long batchEndHeight = getBatchEndHeight(height);
-        return dposNodeMap.get(batchEndHeight, function);
+    public List<String> getDposGroupBySn(long sn) {
+        List<String> dposAddress = dposNodeMap.get(sn, function);
+        List<String> result = new LinkedList<>();
+        if (dposAddress != null) {
+            result.addAll(dposAddress);
+        }
+        return result;
     }
 
-    public List<String> getDposGroup(long height) {
-        long batchEndHeight = getBatchEndHeight(height);
-        batchEndHeight = batchEndHeight - NodeSelector.BATCHBLOCKNUM;
-        return dposNodeMap.get(batchEndHeight, function);
+    public List<String> getDposGroupByHeihgt(long height) {
+        long sn = getSn(height);
+        List<String> dposGroupBySn = getDposGroupBySn(sn);
+        if (CollectionUtils.isEmpty(dposGroupBySn)) {
+            return new ArrayList<>();
+        }
+        long startHeight = getBatchStartHeight(height);
+        for (long i = startHeight; i < height; i++) {
+            Block block = blockService.getBestBlockByHeight(i);
+            if (block == null) {
+                continue;
+            }
+            BlockWitness minerFirstPKSig = block.getMinerFirstPKSig();
+            String address = minerFirstPKSig.getAddress();
+            dposGroupBySn.remove(address);
+        }
+        return dposGroupBySn;
     }
 
     public boolean checkProducer(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
         String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
-        List<String> currentGroup = this.getDposGroup(block.getHeight());
+        List<String> currentGroup = this.getDposGroupByHeihgt(block.getHeight());
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
     }
 
     public int getFullBlockCountByHeight(long height) {
-        long mod = (height - Application.PRE_BLOCK_COUNT) % NodeSelector.BATCHBLOCKNUM;
+        long mod = (height - Application.PRE_BLOCK_COUNT) % BATCH_BLOCK_NUM;
         if (mod == 1) {
-            return NodeManager.NODESIZE;
+            return NodeManager.NODE_SIZE;
         } else if (mod == 2) {
-            return NodeManager.NODESIZE - 1;
+            return NodeManager.NODE_SIZE - 1;
         } else if (mod == 0) {
-            return NodeManager.NODESIZE - 2;
+            return NodeManager.NODE_SIZE - 2;
         }
         throw new RuntimeException("height is error");
     }
 
+
     public boolean isEndHeight(long height) {
-        return 0L == (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
+        return 1L == height % BATCH_BLOCK_NUM;
     }
 
     public long getBatchStartHeight(long height) {
-        long mod = (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
-        if (mod == 1) {
-            return height;
-        } else if (mod == 2) {
-            return height - 1;
-        } else if (mod == 0) {
+        long mod = height % BATCH_BLOCK_NUM;
+        if (mod == 1L) {
             return height - 2;
+        } else if (mod == 2L) {
+            return height;
+        } else if (mod == 0L) {
+            return height - 1;
         }
         throw new RuntimeException("height is error");
     }
 
     public long getBatchEndHeight(long height) {
-        long mod = (height - Application.PRE_BLOCK_COUNT + 2 * NodeSelector.BATCHBLOCKNUM) % NodeSelector.BATCHBLOCKNUM;
-        if (mod == 1) {
-            return height + 2;
-        } else if (mod == 2) {
-            return height + 1;
-        } else if (mod == 0) {
-            return height;
-        }
-        throw new RuntimeException("height is error");
+        return getBatchStartHeight(height) + BATCH_BLOCK_NUM - 1L;
     }
 
     public boolean canPackBlock(long height, String address) {
@@ -225,29 +220,7 @@ public class NodeManager implements InitializingBean {
         if (batchStartHeight > height) {
             throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height " + height);
         }
-        Block block = null;
-        while (batchStartHeight < height && (block = blockService.getBestBlockByHeight(batchStartHeight)) != null) {
-            if (block == null) {
-                LOGGER.error("can not find best block by height {}", batchStartHeight);
-                return false;
-            }
-            BlockWitness minerFirstPKSig = block.getMinerFirstPKSig();
-            if (minerFirstPKSig == null) {
-                LOGGER.error("can not find minerFirstPKSig in block {}", block);
-                return false;
-            }
-            String minerAddress = minerFirstPKSig.getAddress();
-            if (StringUtils.isEmpty(minerAddress)) {
-                LOGGER.error("the miner address is empty {} ", block);
-                return false;
-            }
-            if (StringUtils.equals(address, minerAddress)) {
-                LOGGER.info("can not pack the block with height {},address {} ", height, address);
-                return false;
-            }
-            batchStartHeight++;
-        }
-        List<String> dposNodes = this.getDposGroup(height);
+        List<String> dposNodes = this.getDposGroupByHeihgt(height);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.error("the dpos node is empty with the height {}", height);
             return false;
@@ -256,50 +229,18 @@ public class NodeManager implements InitializingBean {
             LOGGER.info("the address is not in the dpos nodes,the height {},the address {}, the nodes {}", height, address, dposNodes);
             return false;
         }
-        List<Block> blocks = blockService.getBlocksByHeight(height);
-        if (CollectionUtils.isEmpty(blocks)) {
-            return true;
-        }
-        for (Block temp : blocks) {
-            BlockWitness minerFirstPKSig = temp.getMinerFirstPKSig();
-            if (minerFirstPKSig == null) {
-                LOGGER.error("can not find minerFirstPKSig in temp {}", block);
-                return false;
-            }
-            String minerAddress = minerFirstPKSig.getAddress();
-            if (StringUtils.isEmpty(minerAddress)) {
-                LOGGER.error("the miner address is empty {} ", block);
-                return false;
-            }
-            if (StringUtils.equals(minerAddress, address)) {
-                return false;
-            }
-        }
         return true;
     }
 
-    public boolean canPackBlock(long height) {
-        return canPackBlock(height, myaddr);
+    private long getBeforePreBatchLastHeight(long sn) {
+        return Math.max(sn - 3L, 0L) * BATCH_BLOCK_NUM + 1L;
     }
 
-    static class NodeComparator implements Comparator<String> {
-
-        private Map<String, Integer> map;
-
-        public void setMap(Map<String, Integer> map) {
-            this.map = map;
+    public long getSn(long height) {
+        if (height == 1L) {
+            return 1L;
         }
-
-        @Override
-        public int compare(String o1, String o2) {
-            Integer integer = map.get(o1);
-            Integer integer1 = map.get(o2);
-            int i = integer.compareTo(integer1);
-            if (i != 0) {
-                return i * -1;
-            }
-            return -1;
-        }
+        return (height - DPOS_START_HEIGHT) / BATCH_BLOCK_NUM + 2L;
     }
 
 }

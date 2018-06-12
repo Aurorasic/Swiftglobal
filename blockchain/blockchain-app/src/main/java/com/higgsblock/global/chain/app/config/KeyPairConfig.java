@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.config;
 
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.network.config.PeerConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 public class KeyPairConfig {
 
     @Bean
-    public KeyPair peerKeyPair(AppConfig config) {
+    public KeyPair peerKeyPair(PeerConfig config) {
         KeyPair keyPair = new KeyPair();
         keyPair.setPriKey(config.getPriKey());
         keyPair.setPubKey(config.getPubKey());

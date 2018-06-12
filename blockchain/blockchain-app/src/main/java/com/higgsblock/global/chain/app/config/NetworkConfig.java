@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.config;
 
 import com.higgsblock.global.chain.network.api.IRegistryApi;
+import com.higgsblock.global.chain.network.enums.NetworkType;
 import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.network.config.RegistryConfig;
 import com.higgsblock.global.chain.network.http.HttpClient;
@@ -26,6 +27,7 @@ public class NetworkConfig {
         peerConfig.setSocketPort(config.getSocketServerPort());
         peerConfig.setHttpPort(config.getHttpServerPort());
         peerConfig.setPriKey(config.getPriKey());
+        peerConfig.setNetworkType(NetworkType.getNetworkType(config.getNetworkType()));
         return peerConfig;
     }
 

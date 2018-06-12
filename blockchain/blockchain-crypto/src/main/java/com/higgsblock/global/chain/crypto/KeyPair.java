@@ -35,12 +35,18 @@ public class KeyPair extends BaseSerializer {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof KeyPair)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof KeyPair)) {
+            return false;
+        }
 
         KeyPair keyPair = (KeyPair) o;
 
-        if (priKey != null ? !priKey.equals(keyPair.priKey) : keyPair.priKey != null) return false;
+        if (priKey != null ? !priKey.equals(keyPair.priKey) : keyPair.priKey != null) {
+            return false;
+        }
         return pubKey != null ? pubKey.equals(keyPair.pubKey) : keyPair.pubKey == null;
     }
 

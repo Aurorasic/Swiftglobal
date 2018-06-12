@@ -10,4 +10,9 @@ import lombok.Data;
 public class RegistryConfig {
     private String ip;
     private int port;
+
+    @Override
+    public String toString() {
+        return ip + ":" + port;
+    }
 }

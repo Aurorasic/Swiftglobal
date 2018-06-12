@@ -1,10 +1,13 @@
 package com.higgsblock.global.chain.app.api.outer;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.api.vo.BlockHeader;
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
+import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +20,7 @@ import static com.higgsblock.global.chain.app.constants.RespCodeEnum.*;
 
 /**
  * @author yuanjiantao
- * @date Created on 3/19/2018
+ * @date 3/19/2018
  */
 @RequestMapping("/v1.0.0/blocks")
 @RestController
@@ -26,12 +29,53 @@ public class BlockApi {
     @Autowired
     private BlockService blockService;
 
+    @Autowired
+    private BlockDaoService blockDaoService;
+
+    /**
+     * @param fromHeight
+     * @param limit
+     * @return
+     */
+    @RequestMapping("/getBlocks")
+    public ResponseData<List<Block>> getBlocksByApiServer(long fromHeight, long limit) {
+        //1.首先判断fromHeight与当前peer节点的最长height的关系
+        if (fromHeight <= 0 || fromHeight >= Long.MAX_VALUE) {
+            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "The height does not exist.");
+        }
+
+        if (limit <= 0 || limit >= Long.MAX_VALUE) {
+            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
+        }
+
+        if (fromHeight <= 0 || fromHeight >= Long.MAX_VALUE) {
+            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
+        }
+
+        long currentHeight = blockService.getBestMaxHeight();
+        if (fromHeight > currentHeight) {
+            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "It's already the longest chain height.");
+        }
+
+        List<Block> resultBlocks = Lists.newArrayList();
+        for (long height = fromHeight; height < fromHeight + limit; height++) {
+            List<Block> blocks = blockService.getBlocksByHeight(height);
+            if (CollectionUtils.isNotEmpty(blocks) && null != blocks.get(0)) {
+                resultBlocks.add(blocks.get(0));
+            }
+        }
+
+        ResponseData<List<Block>> responseData = new ResponseData<List<Block>>(RespCodeEnum.SUCCESS, "success");
+        responseData.setData(resultBlocks);
+        return responseData;
+    }
+
     @RequestMapping("/info")
     public ResponseData info(String hash) {
         if (null == hash) {
             return new ResponseData(PARAM_INVALID);
         }
-        Block block = blockService.getBlock(hash);
+        Block block = blockDaoService.getBlockByHash(hash);
         if (null == block) {
             return new ResponseData(HASH_NOT_EXIST);
         }
@@ -45,7 +89,7 @@ public class BlockApi {
         if (null == hash) {
             return new ResponseData(PARAM_INVALID);
         }
-        Block block = blockService.getBlock(hash);
+        Block block = blockDaoService.getBlockByHash(hash);
         if (null == block) {
             return new ResponseData(HASH_NOT_EXIST);
         }
@@ -113,9 +157,7 @@ public class BlockApi {
 
     @RequestMapping("/lastBlock")
     public ResponseData<Block> getBlocksByHeight() {
-        Block block = blockService.getLastBestBlock();
         ResponseData<Block> responseData = new ResponseData<Block>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(block);
         return responseData;
     }
 

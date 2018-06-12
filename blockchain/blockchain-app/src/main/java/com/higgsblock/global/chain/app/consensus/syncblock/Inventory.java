@@ -9,7 +9,7 @@ import java.util.Set;
 
 /**
  * @author yuanjiantao
- * @date Created on 3/8/2018
+ * @date 3/8/2018
  */
 @Data
 @Message(EntityType.INVENTORY)

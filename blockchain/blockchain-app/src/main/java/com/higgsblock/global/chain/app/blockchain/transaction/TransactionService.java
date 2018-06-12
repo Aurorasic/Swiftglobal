@@ -1,28 +1,30 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.dao.BlockIndexDao;
+import com.higgsblock.global.chain.app.dao.TransDao;
+import com.higgsblock.global.chain.app.dao.UtxoDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
+import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
-import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 /**
  * @author baizhengwen
@@ -31,64 +33,45 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 @Slf4j
 public class TransactionService {
-    private static final int MAX_WITNESS_NUM = 7;
 
-    public final static List<String> WITNESS_ADDRESS_LIST = BlockService.WITNESS_ADDRESS_LIST;
-    private static final int WITNESS_SIZE = WITNESS_ADDRESS_LIST.size();
-    private static final int MIN_OUTPUT_SIZE = WITNESS_SIZE + 1; //11+1
 
-    @Autowired
-    private ConcurrentMap<String, TransactionIndex> transactionIndexData;
-    @Autowired
-    private ConcurrentMap<Long, BlockIndex> blockIndexData;
-    @Autowired
-    private ConcurrentMap<String, Block> blockData;
-    @Autowired
-    private BlockService blockService;
-    @Autowired
-    private KeyPair peerKeyPair;
+//    public final static List<String> WITNESS_ADDRESS_LIST = BlockService.WITNESS_ADDRESS_LIST;
+//    private static final int WITNESS_SIZE = WITNESS_ADDRESS_LIST.size();
+    /**
+     * 11+1
+     */
+    private static final int MIN_OUTPUT_SIZE = 11 + 1;
+
     @Autowired
     private TransactionCacheManager txCacheManager;
     @Autowired
     private MessageCenter messageCenter;
-    @Resource(name = "utxoData")
-    private ConcurrentMap<String, UTXO> utxoMap;
 
-    public static boolean checkSig(String txHash, LockScript lockScript, UnLockScript unLockScript) {
-        short type = lockScript.getType();
-        List<String> pkList = unLockScript.getPkList();
-        List<String> sigList = unLockScript.getSigList();
+    @Autowired
+    private BlockDaoService blockDaoService;
 
-        boolean valid = unLockScript.valid();
-        if (!valid) {
-            return valid;
-        }
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
 
-        if (type == ScriptTypeEnum.P2PKH.getType()) {
-            if (sigList.size() != 1 || pkList.size() != 1) {
-                return false;
-            }
-            String pubKey = pkList.get(0);
-            String signature = sigList.get(0);
-            if (!ECKey.checkPubKeyAndAddr(pubKey, lockScript.getAddress())) {
-                return false;
-            }
-            if (!ECKey.verifySign(txHash, signature, pubKey)) {
-                return false;
-            }
-        } else if (type == ScriptTypeEnum.P2SH.getType()) {
-            //TODO yuguojia verify <P2SH> : hash(<2 pk1 pk2 pk3 3>) = p2sh
-            for (int i = 0; i < sigList.size(); i++) {
-                String pubKey = pkList.get(i);
-                String signature = sigList.get(i);
-                if (!ECKey.verifySign(txHash, signature, pubKey)) {
-                    return false;
-                }
-            }
-        }
-        return false;
-    }
+    @Autowired
+    private UtxoDao utxoDao;
 
+    @Autowired
+    private TransDao transDao;
+
+    @Autowired
+    private BlockIndexDao blockIndexDao;
+
+    @Autowired
+    private TransactionFeeService transactionFeeService;
+
+    /**
+     * validate coin base tx
+     *
+     * @param tx    one transaction
+     * @param block current block
+     * @return validate success return true else false
+     */
     public boolean validCoinBaseTx(Transaction tx, Block block) {
         List<TransactionOutput> outputs = tx.getOutputs();
         if (CollectionUtils.isEmpty(outputs)) {
@@ -97,12 +80,12 @@ public class TransactionService {
         }
 
         final int outputSize = outputs.size();
-        if (block.getHeight() > 14 && MIN_OUTPUT_SIZE != outputSize) {
+        if (MIN_OUTPUT_SIZE != outputSize) {
             LOGGER.error("Coinbase outputs number is less than twelve,tx hash={}_block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
-        Block preBlock = blockService.getBlock(block.getPrevBlockHash());
+        Block preBlock = blockDaoService.getBlockByHash(block.getPrevBlockHash());
         if (preBlock == null) {
             LOGGER.error("preBlock == null,tx hash={}_block hash={}", tx.getHash(), block.getHash());
             return false;
@@ -112,19 +95,30 @@ public class TransactionService {
             return false;
         }
 
-        Money totalReward = getTotalTransactionsRewards(preBlock);
+        SortResult sortResult = transactionFeeService.orderTransaction(block.getTransactions().subList(1, block.getTransactions().size()));
+        TransactionFeeService.Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        //verify count coin base output
+        if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
+            LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
+            return false;
+        }
 
         //verify producer coinbase output
-        if (!validateProducerOutput(outputs.get(0), preBlock, totalReward)) {
+        if (!validateProducerOutput(outputs.get(0), preBlock, rewards.getMinerTotal())) {
             LOGGER.error("verify miner coinbase output failed,tx hash={}_block hash={}", tx.getHash(), block.getHash());
             return false;
         }
-        if (outputSize > 1) {
-            return validateWitnessOutputs(outputs.subList(1, outputSize), preBlock, totalReward);
-        }
-        return true;
+
+        return validateWitnessOutputs(outputs.subList(1, outputSize), rewards.getTopTenSingleWitnessMoney(), rewards.getLastWitnessMoney());
     }
 
+    /**
+     * validate previous block
+     *
+     * @param preBlock previous block
+     * @param height   current height
+     * @return return result
+     */
     public boolean validPreBlock(Block preBlock, long height) {
         boolean isEffective = false;
         if (null == preBlock) {
@@ -140,7 +134,7 @@ public class TransactionService {
             return false;
         }
 
-        BlockIndex blockIndex = blockService.getBlockIndexByHeight(preBlock.getHeight());
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight());
         if (null == blockIndex) {
             LOGGER.error("null == blockIndex, preBlock hash={}_height={}", preBlock.getHash(), height);
             return false;
@@ -162,6 +156,14 @@ public class TransactionService {
         return isEffective;
     }
 
+    /**
+     * validate producer
+     *
+     * @param output      producer reward  output
+     * @param preBlock    previous block
+     * @param totalReward total reward
+     * @return return validate result
+     */
     public boolean validateProducerOutput(TransactionOutput output, Block preBlock, Money totalReward) {
         if (!totalReward.checkRange()) {
             LOGGER.error("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
@@ -178,21 +180,12 @@ public class TransactionService {
             return false;
         }
 
-        BlockWitness signature = preBlock.getMinerFirstPKSig();
-        String preBlockProducerAddr = signature.getAddress();
-        String curProducerAddr = script.getAddress();
-
-        if (!preBlockProducerAddr.equals(curProducerAddr)) {
-            LOGGER.error("Invalid producer coinbase transaction: Address not match, output={}_preBlock hash={}_totalReward={}", output, preBlock.getHash(), totalReward.getValue());
-            return false;
-        }
-
         if (!SystemCurrencyEnum.CAS.getCurrency().equals(output.getMoney().getCurrency())) {
             LOGGER.error("Invalid producer coinbase transaction: Currency is not cas, output={}_preBlock hash={}_totalReward={}", output, preBlock.getHash(), totalReward.getValue());
             return false;
         }
 
-        if (!validateProducerReward(output, preBlock, totalReward)) {
+        if (!validateProducerReward(output, totalReward)) {
             LOGGER.error("Validate producer reward failed, output={}_preBlock hash={}_totalReward={}", output, preBlock.getHash(), totalReward.getValue());
             return false;
         }
@@ -200,81 +193,38 @@ public class TransactionService {
         return true;
     }
 
-
-    private boolean validateProducerReward(TransactionOutput output, Block preBlock, Money totalReward) {
+    /**
+     * validate producer reward
+     *
+     * @param output      producer reward  output
+     * @param totalReward reward
+     * @return if coin base producer output money == count producer reward money return true else false
+     */
+    private boolean validateProducerReward(TransactionOutput output, Money totalReward) {
         if (!totalReward.checkRange()) {
             LOGGER.error("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
             return false;
         }
 
-        List<BlockWitness> signatures = preBlock.getOtherWitnessSigPKS();
-        if (CollectionUtils.isEmpty(signatures)) {
-            Money preReward = new Money("0.1").multiply(totalReward);
-            if (preReward.compareTo(output.getMoney()) != 0) {
-                LOGGER.error("Producer reward is invalid, output={}_preBlock hash={}_totalReward_value={}_currency={} ", output, preBlock.getHash(), totalReward.getValue(), totalReward.getCurrency());
-                return false;
-            }
-        } else {
-            Money preReward = new Money("0.5").multiply(totalReward);
-            if (preReward.compareTo(output.getMoney()) != 0) {
-                LOGGER.error("Producer reward is invalid, output={}_preBlock hash={}_totalReward={}_value={}_currency={}", output, preBlock.getHash(), totalReward.getValue(), totalReward.getCurrency());
-                return false;
-            }
-        }
+        return output.getMoney().compareTo(totalReward) == 0;
 
-        return true;
     }
 
-    public boolean validateWitnessOutputs(List<TransactionOutput> outputs, Block preBlock, Money totalReward) {
-        if (!totalReward.checkRange()) {
-            LOGGER.error("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
+    /**
+     * validate witness
+     *
+     * @param outputs                  witness reward  outputs
+     * @param topTenSingleWitnessMoney 10 of 11   reward
+     * @param lastWitnessMoney         1 of 11    reward
+     * @return return validate result
+     */
+    public boolean validateWitnessOutputs(List<TransactionOutput> outputs, Money topTenSingleWitnessMoney, Money lastWitnessMoney) {
+        if (!topTenSingleWitnessMoney.checkRange() && !lastWitnessMoney.checkRange()) {
+            LOGGER.error("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", topTenSingleWitnessMoney.getValue(), lastWitnessMoney.getValue());
             return false;
         }
 
-        if (null == preBlock) {
-            LOGGER.error("outputs or preBlock is null");
-            return false;
-        }
-
-        if (CollectionUtils.isEmpty(outputs)) {
-            LOGGER.error("Witness coinbase transaction: Outputs is empty, outputs={}_preBlock hash={}_totalReward={}", outputs, preBlock.getHash(), totalReward.getValue());
-            return false;
-        }
-
-        List<BlockWitness> signatures = preBlock.getOtherWitnessSigPKS();
-        if (CollectionUtils.isEmpty(signatures) || signatures.size() < MAX_WITNESS_NUM) {
-            LOGGER.error("Witness coinbase transaction: Pre-signatures are invalid, outputs={}_preBlock hash={}_totalReward={}", outputs, preBlock.getHash(), totalReward.getValue());
-            return false;
-        }
-
-        int size = signatures.size();
-        for (int i = 0; i < size; i++) {
-            BlockWitness signature = signatures.get(i);
-            String preAddr = signature.getAddress();
-            TransactionOutput output = outputs.get(i);
-            LockScript script = output.getLockScript();
-            if (script == null) {
-                LOGGER.error("Witness coinbase transaction: Lock script is null, outputs={}_preBlock hash={}_totalReward={}", outputs, preBlock.getHash(), totalReward.getValue());
-                return false;
-            }
-
-            if (!WITNESS_ADDRESS_LIST.contains(script.getAddress())) {
-                LOGGER.error("Witness address not in list");
-                return false;
-            }
-
-            if (StringUtils.isEmpty(output.getMoney().getCurrency())) {
-                LOGGER.error("Invalid Witness coinbase transaction: Currency is null, outputs={}_preBlock hash={}_totalReward={}", outputs, preBlock.getHash(), totalReward.getValue());
-                return false;
-            }
-
-            if (!SystemCurrencyEnum.CAS.getCurrency().equals(output.getMoney().getCurrency())) {
-                LOGGER.error("Invalid Witness coinbase transaction: Currency is not cas, outputs={}_preBlock hash={}_totalReward={}", outputs, preBlock.getHash(), totalReward.getValue());
-                return false;
-            }
-        }
-
-        if (!validateWitnessRewards(outputs, totalReward)) {
+        if (!validateWitnessRewards(outputs, topTenSingleWitnessMoney, lastWitnessMoney)) {
             LOGGER.error("Validate witness reward failed");
             return false;
         }
@@ -282,24 +232,33 @@ public class TransactionService {
         return true;
     }
 
-    private boolean validateWitnessRewards(List<TransactionOutput> outputs, Money totalReward) {
-        if (!totalReward.checkRange()) {
-            LOGGER.error("Pre-block all transactions' reward is error");
-            return false;
-        }
+    /**
+     * validate witness rewards
+     *
+     * @param outputs                  witness reward  outputs
+     * @param topTenSingleWitnessMoney 10 of 11   reward
+     * @param lastWitnessMoney         1 of 11    reward
+     * @return if count outputs money == （topTenSingleWitnessMoney*10+lastWitnessMoney） return true else false
+     */
+    private boolean validateWitnessRewards(List<TransactionOutput> outputs, Money topTenSingleWitnessMoney, Money lastWitnessMoney) {
 
-        Money preReward = new Money("0.5").multiply(totalReward);
-        Money witnessReward = preReward.divide(WITNESS_SIZE);
-
-        outputs.stream().forEach(output -> {
-            if (witnessReward.compareTo(output.getMoney()) != 0) {
-                LOGGER.error("Witness reward is invalid");
-            }
+        Money witnessTotalMoney = new Money("0");
+        outputs.forEach(output -> {
+            witnessTotalMoney.add(output.getMoney());
         });
+        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(BlockService.WITNESS_ADDRESS_LIST.size() - 1).add(lastWitnessMoney);
 
-        return true;
+        return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
     }
 
+    /**
+     * validate tx
+     *
+     * @param tx         one tx
+     * @param prevOutKey input outputs
+     * @param block      current block
+     * @return return result
+     */
     public boolean verifyTransaction(Transaction tx, HashSet<String> prevOutKey, Block block) {
         short version = tx.getVersion();
         if (version < 0) {
@@ -308,22 +267,13 @@ public class TransactionService {
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
-//        boolean checkInput = block == null || !block.isgenesisBlock();
-//        if (checkInput && CollectionUtils.isEmpty(inputs)) {
-//            LOGGER.error("inputs is empty");
-//            return false;
-//        }
-//        if (CollectionUtils.isEmpty(outputs)) {
-//            LOGGER.error("outputs is empty");
-//            return false;
-//        }
         if (!tx.sizeAllowed()) {
             LOGGER.error("Size of the transaction is illegal.");
             return false;
         }
 
         String blockHash = block != null ? block.getHash() : null;
-        Map<String, Money> preMoneyMap = new HashMap<>();
+        Map<String, Money> preMoneyMap = new HashMap<>(8);
         for (TransactionInput input : inputs) {
             if (!input.valid()) {
                 LOGGER.error("input is invalid");
@@ -352,7 +302,7 @@ public class TransactionService {
             }
         }
 
-        Map<String, Money> curMoneyMap = new HashMap<>();
+        Map<String, Money> curMoneyMap = new HashMap<>(8);
         for (TransactionOutput output : outputs) {
             if (!output.valid()) {
                 LOGGER.error("Current output is invalid");
@@ -385,14 +335,18 @@ public class TransactionService {
                 LOGGER.error("Current output currency is null {}", key);
                 return false;
             }
-
+            LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
-                curMoney.add(getCurrencyFee(""));
+                if (block == null) {
+                    curMoney.add(transactionFeeService.getCurrencyFee(tx));
+                }
+
                 if (preMoney.compareTo(curMoney) < 0) {
                     LOGGER.error("Not enough cas fees");
                     return false;
                 }
             } else {
+                //TODO this ‘else’ is unnecessary, below code should be a precondition then  moved ahead ;commented by huangshengli 2018-05-28
                 if (preMoney.compareTo(curMoney) < 0) {
                     LOGGER.error("Not enough fees, currency type: ", key);
                     return false;
@@ -403,6 +357,12 @@ public class TransactionService {
         return verifyInputs(inputs, hash);
     }
 
+    /**
+     * get input utxo
+     *
+     * @param input tx input
+     * @return tx input ref output
+     */
     private TransactionOutput getPreOutput(TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
@@ -410,7 +370,12 @@ public class TransactionService {
             return null;
         }
 
-        UTXO utxo = utxoMap.get(preOutKey);
+        UTXO utxo;
+        try {
+            utxo = utxoDao.get(preOutKey);
+        } catch (RocksDBException e) {
+            throw new IllegalStateException("Get utxo error");
+        }
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={}_preOutKey={}", JSONObject.toJSONString(input, true), preOutKey);
@@ -420,11 +385,13 @@ public class TransactionService {
         return output;
     }
 
-    //TODO: zhao xiaogang currently all currency return one value
-    private Money getCurrencyFee(String currency) {
-        return new Money("0.001");
-    }
-
+    /**
+     * validate inputs
+     *
+     * @param inputs tx inputs
+     * @param hash   tx hash
+     * @return return validate result
+     */
     private boolean verifyInputs(List<TransactionInput> inputs, String hash) {
         int size = inputs.size();
         TransactionInput input = null;
@@ -440,13 +407,23 @@ public class TransactionService {
                 LOGGER.error("the unLockScript is empty {}", i);
                 return false;
             }
-            TransactionIndex preTxIndex = transactionIndexData.get(input.getPrevOut().getHash());
+
+            String preTxHash = input.getPrevOut().getHash();
+            TransactionIndex preTxIndex;
+
+            try {
+                preTxIndex = transDao.get(preTxHash);
+            } catch (RocksDBException e) {
+                throw new IllegalStateException("Get transaction index error");
+            }
+
             if (preTxIndex == null) {
                 //if the transactionIndex is not exist,
                 //so local data is not right
                 LOGGER.error("the preTxIndex is empty {}", i);
                 return false;
             }
+
             Map<Short, String> outsSpend = preTxIndex.getOutsSpend();
             if (MapUtils.isEmpty(outsSpend)) {
                 //if the outsSpend is empty;
@@ -458,18 +435,25 @@ public class TransactionService {
             String txHash = preTxIndex.getTxHash();
             if (spent) {
                 String blockHash = preTxIndex.getBlockHash();
-                Block block = blockData.get(blockHash);
+                Block block = blockDaoService.getBlockByHash(blockHash);
                 if (block == null) {
                     LOGGER.error("the block is empty {}", i);
                     return false;
                 }
-                BlockIndex blockIndex = blockIndexData.get(block.getHeight());
+
+                BlockIndex blockIndex = null;
+                try {
+                    blockIndex = blockIndexDao.get(block.getHeight());
+                } catch (RocksDBException e) {
+                    throw new IllegalStateException("Get block index error");
+                }
                 if (blockIndex == null) {
                     LOGGER.error("the blockIndex is empty {}", i);
                     //if the blockIndex is not exist,
                     //so local data is not right
                     return false;
                 }
+                //TODO the line below is wrong despite of never execute ,the param should be block hash rather than trans hash,huangshengli 2018-05-28
                 boolean best = blockIndex.isBest(txHash);
                 if (best) {
                     LOGGER.error("the blockIndex is empty {}", i);
@@ -493,161 +477,12 @@ public class TransactionService {
         return true;
     }
 
-    private TransactionOutput generateTransactionOutput(String address, Money money) {
-        if (!ECKey.checkBase58Addr(address)) {
-            return null;
-        }
-        if (!money.checkRange()) {
-            return null;
-        }
-        TransactionOutput output = new TransactionOutput();
-        output.setMoney(money);
-        LockScript lockScript = new LockScript();
-        lockScript.setAddress(address);
-        output.setLockScript(lockScript);
-        return output;
-    }
-
-    public Transaction buildCoinBaseTx(long lockTime, short version, long height) {
-        LOGGER.info("begin to build coinBase transaction");
-        //BlockIndex lastBlockIndex = blockService.getLastBlockIndex();
-        BlockIndex lastBlockIndex = blockService.getBlockIndexByHeight(height - 1);
-        if (lastBlockIndex == null) {
-            throw new RuntimeException("can not find last blockIndex");
-        }
-
-        String blockHash = lastBlockIndex.getBestBlockHash();
-        LOGGER.info("the current height={} and blockHash={}", lastBlockIndex.getHeight(), blockHash);
-        Block block = blockData.get(blockHash);
-        if (block == null) {
-            throw new RuntimeException("can not find block with blockHash " + blockHash);
-        }
-
-        BlockWitness minerPKSig = block.getMinerFirstPKSig();
-        if (minerPKSig == null) {
-            throw new RuntimeException("can not find miner PK sig from block");
-        }
-
-        Money totalRewards = getTotalTransactionsRewards(block);
-
-        Transaction transaction = new Transaction();
-        transaction.setCreatorPubKey(peerKeyPair.getPubKey());
-        transaction.setVersion(version);
-        transaction.setLockTime(lockTime);
-
-        List<TransactionOutput> outputList = Lists.newArrayList();
-        List<BlockWitness> witnessList = block.getOtherWitnessSigPKS();
-
-        if (CollectionUtils.isEmpty(witnessList)) {
-            //producer occupy 10%
-            Money rewards = new Money("0.1").multiply(totalRewards);
-            TransactionOutput output = generateTransactionOutput(minerPKSig.getAddress(), rewards);
-            if (output != null) {
-                outputList.add(output);
-            }
-        } else {
-            //producer occupy 50%，others for witness
-            Money rewards = new Money("0.5").multiply(totalRewards);
-            LOGGER.info("buildCoinBaseTx's rewards is {}", rewards.getValue());
-            String producerAddr = minerPKSig.getAddress();
-            TransactionOutput produerCoinbaseOutput = generateTransactionOutput(producerAddr, rewards);
-            List<TransactionOutput> witnessCoinbaseOutput = genWitnessCoinbaseOutput(rewards);
-
-            if (produerCoinbaseOutput != null) {
-                outputList.add(produerCoinbaseOutput);
-            }
-            outputList.addAll(witnessCoinbaseOutput);
-        }
-
-        if (CollectionUtils.isEmpty(outputList)) {
-            return null;
-        }
-        transaction.setOutputs(outputList);
-
-        return transaction;
-    }
-
-//    private Transaction buildProducerCoinBaseTx(String address, Money producerReward, long lockTime, short version) {
-//        Transaction transaction = new Transaction();
-//        transaction.setVersion(version);
-//        transaction.setLockTime(lockTime);
-//
-//        TransactionOutput transactionOutput = new TransactionOutput();
-//        transactionOutput.setMoney(producerReward);
-//        LockScript lockScript = new LockScript();
-//        lockScript.setAddress(address);
-//        transactionOutput.setLockScript(lockScript);
-//        List emptyList = Lists.newArrayList();
-//        emptyList.add(transactionOutput);
-//        transaction.setOutputs(emptyList);
-//        return transaction;
-//    }
-
-    private Money getTotalTransactionsRewards(Block block) {
-        Money totalMoney = new Money("1");
-
-//        List<Transaction> transactions = block.getTransactions();
-//        for (Transaction transaction : transactions) {
-//            totalFee = totalFee.add(getOneTransactionFee(transaction));
-//        }
-
-
-        LOGGER.info("Transactions' total reward : {}", totalMoney.getValue());
-
-//        Money percent = new Money("0.4"); //producer occupy rewards 40%
-//        return totalMoney.multiply(percent.getAmount());
-
-        return totalMoney;
-    }
-
-    private Money getOneTransactionFee(Transaction transaction) {
-        List<TransactionInput> inputs = transaction.getInputs();
-        List<TransactionOutput> outputs = transaction.getOutputs();
-
-        Money preOutMoney = new Money("0");
-        for (TransactionInput input : inputs) {
-            String preOutKey = input.getPrevOut().getKey();
-            UTXO utxo = utxoMap.get(preOutKey);
-            TransactionOutput output = utxo.getOutput();
-            if (output.isCASCurrency()) {
-                preOutMoney.add(output.getMoney());
-            }
-        }
-
-        LOGGER.info("Transactions' pre-output amount : {}", preOutMoney.getValue());
-
-        Money outPutMoney = new Money("0");
-        for (TransactionOutput output : outputs) {
-            if (output.isCASCurrency()) {
-                outPutMoney.add(output.getMoney());
-            }
-        }
-
-        LOGGER.info("Transactions' output amount : {}", outPutMoney);
-
-        return preOutMoney.subtract(outPutMoney);
-    }
-
-//    private Transaction buildWitnessCoinBaseTx(List<TransactionOutput> outputList, long lockTime, short version) {
-//        Transaction transaction = new Transaction();
-//        transaction.setVersion(version);
-//        transaction.setLockTime(lockTime);
-//        transaction.setOutputs(outputList);
-//        return transaction;
-//    }
-
-    private List<TransactionOutput> genWitnessCoinbaseOutput(Money producerReward) {
-        List<TransactionOutput> outputList = Lists.newArrayList();
-        Money witnessReword = new Money(producerReward.getValue()).divide(WITNESS_SIZE);
-
-        WITNESS_ADDRESS_LIST.forEach(address -> {
-            TransactionOutput transactionOutput = generateTransactionOutput(address, witnessReword);
-            outputList.add(transactionOutput);
-        });
-
-        return outputList;
-    }
-
+    /**
+     * step 1：validate transaction
+     * step 2: broad transaction
+     *
+     * @param tx received tx
+     */
     public void receivedTransaction(Transaction tx) {
         String hash = tx.getHash();
         LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
@@ -656,8 +491,13 @@ public class TransactionService {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        TransactionIndex transactionIndex = transactionIndexData.get(hash);
-        if (transactionIndex != null) {
+        TransactionIndex transactionIndexEntity = null;
+        try {
+            transactionIndexEntity = transDao.get(hash);
+        } catch (RocksDBException e) {
+            throw new IllegalStateException("Get transaction index error");
+        }
+        if (transactionIndexEntity != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
         }
@@ -671,6 +511,7 @@ public class TransactionService {
         broadcastTransaction(tx);
     }
 
+
     public Set<String> getRemovedMiners(Transaction tx) {
         Set<String> result = new HashSet<>();
         List<TransactionInput> inputs = tx.getInputs();
@@ -681,9 +522,18 @@ public class TransactionService {
             TransactionOutPoint prevOutPoint = input.getPrevOut();
 
             String txHash = prevOutPoint.getHash();
-            TransactionIndex transactionIndex = transactionIndexData.get(txHash);
+            TransactionIndex transactionIndex;
+            try {
+                transactionIndex = transDao.get(txHash);
+            } catch (RocksDBException e) {
+                throw new IllegalStateException("Get transaction index error");
+            }
+            if (transactionIndex == null) {
+                continue;
+            }
+
             String blockHash = transactionIndex.getBlockHash();
-            Block block = blockService.getBlock(blockHash);
+            Block block = blockDaoService.getBlockByHash(blockHash);
             Transaction transactionByHash = block.getTransactionByHash(txHash);
             short index = prevOutPoint.getIndex();
             TransactionOutput preOutput = null;
@@ -711,7 +561,13 @@ public class TransactionService {
             if (!outputs.get(i).isMinerCurrency()) {
                 continue;
             }
-            UTXO utxo = utxoMap.get(UTXO.buildKey(tx.getHash(), (short) i));
+
+            UTXO utxo = null;
+            try {
+                utxo = utxoDao.get(UTXO.buildKey(tx.getHash(), (short) i));
+            } catch (RocksDBException e) {
+                throw new IllegalStateException("Get utxo error");
+            }
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;
@@ -728,47 +584,14 @@ public class TransactionService {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-        List<UTXO> result = new LinkedList<>();
-        Iterator<String> utxoIterator = utxoMap.keySet().iterator();
-        while (utxoIterator.hasNext()) {
-            String next = utxoIterator.next();
-            UTXO utxo = utxoMap.get(next);
-            if (StringUtils.equals(utxo.getOutput().getMoney().getCurrency(), currency) &&
-                    StringUtils.equals(address, utxo.getAddress())) {
-                result.add(utxo);
-            }
-        }
-        return result;
+
+        return utxoDao.allValues().stream()
+                .filter(utxo -> StringUtils.equals(utxo.getOutput().getMoney().getCurrency(), currency)
+                        && StringUtils.equals(address, utxo.getAddress()))
+                .collect(Collectors.toList());
+
     }
 
-    /**
-     * statics miner number
-     *
-     * @return
-     */
-    public long getMinerNumber() {
-        long count = 0L;
-        Iterator<String> utxoIterator = utxoMap.keySet().iterator();
-        Set<String> addresses = new HashSet<>();
-        while (utxoIterator.hasNext()) {
-            String next = utxoIterator.next();
-            UTXO utxo = utxoMap.get(next);
-            if (utxo == null) {
-                continue;
-            }
-            if (!SystemCurrencyEnum.MINER.getCurrency().equals(utxo.getOutput().getMoney().getCurrency())) {
-                continue;
-            }
-            String address = utxo.getOutput().getLockScript().getAddress();
-            addresses.add(address);
-        }
-        for (String address : addresses) {
-            if (hasMinerStake(address)) {
-                count++;
-            }
-        }
-        return count;
-    }
 
     public boolean hasMinerStake(String address) {
         String minerCurrency = SystemCurrencyEnum.MINER.getCurrency();
@@ -784,6 +607,11 @@ public class TransactionService {
         return false;
     }
 
+    /**
+     * received transaction if validate success and board
+     *
+     * @param tx received tx
+     */
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
         LOGGER.info("broadcast transaction success: " + tx.getHash());

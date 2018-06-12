@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
@@ -18,6 +19,7 @@ import java.nio.charset.Charset;
  * @create 2018-03-06
  **/
 @Data
+@NoArgsConstructor
 public class TransactionOutput extends BaseSerializer {
 
     /**

@@ -19,12 +19,15 @@ public class SystemStatusManager {
     private SystemStatus systemStatus = SystemStatus.INI;
 
     public void setSysStep(SystemStepEnum sysStep) {
-        //todo yuguojia check the status validity
+        //todo yuguojia 2018-6-4 check the status validity
         if (SystemStepEnum.LOADED_ALL_DATA.equals(sysStep)) {
             systemStatus = SystemStatus.SYNC_BLOCKS;
         }
         if (SystemStepEnum.SYNCED_BLOCKS.equals(sysStep)) {
             systemStatus = SystemStatus.RUNNING;
+        }
+        if (SystemStepEnum.START_CHECK_DATA.equals(sysStep)) {
+            systemStatus = SystemStatus.LOADING;
         }
         sendSystemStateEvent(systemStatus);
     }

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author yuanjiantao
- * @date Created on 3/8/2018
+ * @date 3/8/2018
  */
 @Component("inventoryHandler")
 @Slf4j
@@ -53,17 +53,17 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
         Set<String> peerHashs = data.getHashs();
 
         peerHashs.forEach(hash -> {
-            if (!isExist(hash)) {
+            if (!isExist(height, hash)) {
                 requestRecord.get(hash, v -> {
-                    GetData getData = new GetData(height, hash);
-                    messageCenter.unicast(sourceId, getData);
+                    GetBlock getBlock = new GetBlock(height, hash);
+                    messageCenter.unicast(sourceId, getBlock);
                     return height;
                 });
             }
         });
     }
 
-    private boolean isExist(String hash) {
-        return blockService.isExistInDB(hash) || blockCacheManager.isContains(hash);
+    private boolean isExist(long height, String hash) {
+        return blockService.isExistInDB(height, hash) || blockCacheManager.isContains(hash);
     }
 }

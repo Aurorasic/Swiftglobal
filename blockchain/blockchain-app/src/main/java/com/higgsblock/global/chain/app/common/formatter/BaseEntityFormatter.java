@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.common.formatter;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -30,6 +31,6 @@ public abstract class BaseEntityFormatter<T> implements IEntityFormatter<T> {
 
     @Override
     public String format(T data) {
-        return JSON.toJSONString(data);
+        return JSON.toJSONString(data, SerializerFeature.DisableCircularReferenceDetect);
     }
 }

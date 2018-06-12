@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author yuanjiantao
- * @date Created on 3/8/2018
+ * @date 3/8/2018
  */
 @Component("maxHeightHandler")
 @Slf4j

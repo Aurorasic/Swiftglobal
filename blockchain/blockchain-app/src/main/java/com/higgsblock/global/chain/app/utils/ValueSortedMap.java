@@ -1,9 +1,14 @@
 package com.higgsblock.global.chain.app.utils;
 
+import com.google.common.base.Objects;
+
 import java.util.*;
 
 /**
  * Map sorted by value.
+ *
+ *  * @author zhao xiaogang
+ *  * @date 2018-03-28
  */
 public class ValueSortedMap<K, V> extends HashMap<K, V> {
     protected Map<V, Collection<K>> valueToKeysMap;
@@ -96,6 +101,22 @@ public class ValueSortedMap<K, V> extends HashMap<K, V> {
                     @Override
                     public V setValue(V v) {
                         throw new UnsupportedOperationException();
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        return  (k == null ? 0 : k.hashCode()) ^ (v == null ? 0 : v.hashCode());
+                    }
+
+                    @Override
+                    public boolean equals(Object object) {
+                        if (!(object instanceof Entry)) {
+                            return false;
+                        } else {
+                            Entry<?, ?> that = (Entry)object;
+                            return com.google.common.base.Objects.equal(this.getKey(),
+                                    that.getKey()) && Objects.equal(this.getValue(), that.getValue());
+                        }
                     }
                 });
             }

@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.network.socket.connection;
 
+import com.higgsblock.global.chain.network.socket.ServerConnectionHandler;
 import com.higgsblock.global.chain.network.socket.handler.MessageCodecHandler;
 import com.higgsblock.global.chain.network.socket.handler.ServerInboundHandler;
 import io.netty.channel.ChannelHandler;
@@ -7,6 +8,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -14,39 +17,38 @@ import org.springframework.stereotype.Component;
 /**
  * Initialize the channel configuration.
  *
- * @author zhao xiaogang
+ * @author zhaoxiaogang
+ * @author chenjiawei
+ * @date 2018-05-22
  */
 @ChannelHandler.Sharable
 @Component
-public class ServerChannelInitializer extends io.netty.channel.ChannelInitializer<NioSocketChannel> {
-    private final static int MAX_CONNECTION = 100;
-    private final static int BUFF_SIZE = 256 * 1024;
-
-    @Autowired
-    private ConnectionManager connectionManager;
+@Slf4j
+public class ServerChannelInitializer extends BaseChannelInitializer {
     @Autowired
     private ApplicationContext context;
 
+    @Setter
+    private ServerConnectionHandler handler = new ServerConnectionHandler();
+
     @Override
-    protected void initChannel(NioSocketChannel channel) throws Exception {
-        Connection connection = connectionManager.newConnection(channel.id().toString(), false);
-        if (null == connection) {
+    protected void initChannel(NioSocketChannel channel) {
+        Connection connection = handler.onChannelInitial(channel);
+        if (connection == null) {
             channel.close();
             return;
         }
-        initChannelConfig(channel, connection);
-    }
 
-    private void initChannelConfig(NioSocketChannel channel, Connection connection) {
-        final ChannelPipeline pipe = channel.pipeline();
-
+        ChannelPipeline pipe = channel.pipeline();
         pipe.addFirst("messageCodecHandler", new MessageCodecHandler());
-        pipe.addLast("messageHandler", new ServerInboundHandler(context, connection));
+        ServerInboundHandler serverInboundHandler = new ServerInboundHandler(context, connection);
+        serverInboundHandler.setHandler(handler);
+        pipe.addLast("messageHandler", serverInboundHandler);
 
         channel.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(BUFF_SIZE));
         channel.config().setOption(ChannelOption.SO_RCVBUF, BUFF_SIZE);
         channel.config().setOption(ChannelOption.SO_BACKLOG, MAX_CONNECTION);
 
-        channel.closeFuture().addListener(listener -> connectionManager.close(connection));
+        channel.closeFuture().addListener(channelFuture -> handler.onChannelClosed(connection));
     }
 }

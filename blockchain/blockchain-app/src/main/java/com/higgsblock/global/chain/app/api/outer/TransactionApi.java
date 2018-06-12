@@ -2,12 +2,10 @@ package com.higgsblock.global.chain.app.api.outer;
 
 import com.higgsblock.global.chain.app.api.service.TransactionRespService;
 import com.higgsblock.global.chain.app.api.service.UTXORespService;
-import com.higgsblock.global.chain.app.api.vo.Balance;
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
-import com.higgsblock.global.chain.crypto.ECKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,33 +36,6 @@ public class TransactionApi {
         return (result) ? new ResponseData<Boolean>(RespCodeEnum.SUCCESS, "success") : new ResponseData<Boolean>(RespCodeEnum.FAILED, "failed");
     }
 
-    @RequestMapping("/info")
-    public ResponseData<List<Transaction>> queryTxByTxHash(String hash) {
-        if (null == hash) {
-            return new ResponseData<List<Transaction>>(RespCodeEnum.PARAM_INVALID, "hash params is null");
-        }
-        List<Transaction> transactions = transactionRespService.getTransactionByTxHash(hash);
-        ResponseData<List<Transaction>> responseData = new ResponseData<List<Transaction>>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(transactions);
-        return responseData;
-    }
-
-    @RequestMapping("/list")
-    public ResponseData<List<Transaction>> queryTxByPubKey(String pubKey, String op) {
-        String option = "all";
-        ResponseData<List<Transaction>> responseData = null;
-        if (null == pubKey) {
-            responseData = new ResponseData<List<Transaction>>(RespCodeEnum.PARAM_INVALID, "pubKey params is null");
-            return responseData;
-        }
-        option = null != op ? op : option;
-
-        List<Transaction> transactions = transactionRespService.getTransactionByPubKeyMap(pubKey, option);
-        responseData = new ResponseData<List<Transaction>>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(transactions);
-        return responseData;
-    }
-
     @RequestMapping("/queryUTXO")
     public ResponseData<List<UTXO>> queryUTXO(String address) {
         if (null == address) {
@@ -76,17 +47,4 @@ public class TransactionApi {
         responseData.setData(list);
         return responseData;
     }
-
-    @RequestMapping("/checkBalance")
-    public ResponseData<List<Balance>> checkBalanceByPubKey(String pubKey) {
-        if (null == pubKey) {
-            return new ResponseData<List<Balance>>(RespCodeEnum.PARAM_INVALID, "pubKey can not be set null");
-        }
-        String address = ECKey.fromPublicKeyOnly(pubKey).toBase58Address();
-        List<Balance> balances = transactionRespService.checkBalanceByAddr(address);
-        ResponseData<List<Balance>> responseData = new ResponseData<List<Balance>>(RespCodeEnum.SUCCESS, "return data");
-        responseData.setData(balances);
-        return responseData;
-    }
-
 }

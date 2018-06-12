@@ -25,6 +25,7 @@ public class MessageCodecHandler extends ByteToMessageCodec<BaseMessage> {
      * 16mb
      */
     private final static int MAX_SIZE = 16 * 1024 * 1024;
+    private final static int DATA_MAX_SIZE = MAX_SIZE - 4;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, BaseMessage message, ByteBuf byteBuf) throws Exception {
@@ -51,6 +52,11 @@ public class MessageCodecHandler extends ByteToMessageCodec<BaseMessage> {
 
         int readerIndex = in.readerIndex();
         int size = in.readInt();
+
+        if (size > DATA_MAX_SIZE) {
+            throw new Exception("find huge packet and consider it is an attacker");
+        }
+
         if (in.readableBytes() < size) {
             in.readerIndex(readerIndex);
             return;

@@ -1,9 +1,6 @@
 package com.higgsblock.global.chain.app.consensus;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.consensus.sign.service.CollectSignService;
-
-import java.util.List;
 
 /**
  * @author yuguojia
@@ -13,23 +10,6 @@ public class SignBlockScoreStrategy {
     public static int MAX_SIGN_SCORE = 2 << 20;
     public static int MAX_HIGH_GAP = 20;
 
-    public static boolean isAbsoluteHighestScore(long myBlockHeight, List<Long> witnessBlockHeights) {
-        if (witnessBlockHeights.size() > CollectSignService.witnessNum) {
-            throw new RuntimeException("error witness block height list.");
-        }
-        int absoluteMaxScore = 0;
-        int start = CollectSignService.witnessNum;
-        for (int gap = start; gap < (start << 1); gap++) {
-            absoluteMaxScore += getScoreByHighGap(gap);
-        }
-
-        int myWitnessSignsScore = 0;
-        for (Long height : witnessBlockHeights) {
-            int gap = (int) (myBlockHeight - height);
-            myWitnessSignsScore += getScoreByHighGap(gap);
-        }
-        return myWitnessSignsScore >= absoluteMaxScore ? true : false;
-    }
 
     public static int calcSignScore(Block myBlock, Block signerBlock) {
         long blockHeight = myBlock.getHeight();

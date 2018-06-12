@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.api.vo;
 
+import com.higgsblock.global.chain.network.socket.connection.ConnectionLevelEnum;
 import lombok.Data;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -16,6 +17,7 @@ public class ConnectionInfo {
     private int port;
     private boolean isActivated;
     private boolean isClient;
+    private ConnectionLevelEnum connectionLevel;
 
     @Override
     public String toString() {
@@ -26,6 +28,7 @@ public class ConnectionInfo {
                 .append("port", port)
                 .append("isClient", isClient)
                 .append("isActivated", isActivated)
+                .append("connectionLevel", connectionLevel)
                 .toString();
     }
 }

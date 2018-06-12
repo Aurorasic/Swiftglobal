@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>utxo info</title>
+</head>
+<!-- 新 Bootstrap 核心 CSS 文件 -->
+<link href="http://apps.bdimg.com/libs/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="css/base.css" rel="stylesheet">
+<!--jQery文件,务必在bootstrap.min.js之前引入-->
+<script src="js/base.js"></script>
+<script src="http://apps.bdimg.com/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="http://apps.bdimg.com/libs/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function () {
+        //根据区块hash查询区块详情
+        $("#queryUTXO").click(function () {
+            var val = $("#queryUTXO").html();
+            var newVal = val.replace(/(^\s*)|(\s*$)/g, "");
+            if (newVal == "查询") {
+                var address = $("#address").val();
+                $.get(browser_api.URL.getUTXOByAddress(address), function (success) {
+                    $("#tab").html("");
+                    var tableHeader = "<tr><td>transaction hash</td> <td>outPut index</td><td>amount</td><td>currency</td><td>transaction type</td><td>address</td></tr>";
+                    $("#tab").append(tableHeader);
+                    var dataInfo = "";
+                    var transactionType;
+                    $(success.data).each(function (i, n) {
+                        if (n.scriptType == 0) {
+                            transactionType = "P2PKH";
+                        } else if (n.scriptType == 1) {
+                            transactionType = "P2SH";
+                        } else if (n.scriptType == 2) {
+                            transactionType = "P2PK";
+                        }
+                        dataInfo = "<tr><td>" + n.transactionHash + "</td><td>" + n.outIndex + "</td><td>" + n.amount + "</td><td>" + n.currency + "" +
+                            "</td><td>" + transactionType + "</td><td>" + n.address + "</td></tr>";
+                        $("#tab").append(dataInfo);
+                        $("#queryUTXO").html("");
+                        $("#queryUTXO").html("收起")
+                        $('#collapseTwo').collapse('show')
+                    });
+                });
+            } else {
+                $("#queryUTXO").html("查询");
+                $('#collapseTwo').collapse('hide')
+            }
+        });
+    });
+</script>
+<body>
+<div>
+    <span class="font">根据地址查询对应的UTXO</span>
+    <input type="text" class="form-control" placeholder="Please enter the address" id="address" style="width: 500px;margin:45px auto 10px auto ">
+    <button id="queryUTXO" class="btn btn-primary" >查询</button>
+</div>
+<div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+    <div class="panel-body">
+        <table id="tab" class="table table-hover">
+        </table>
+    </div>
+</div>
+</body>
+</html>

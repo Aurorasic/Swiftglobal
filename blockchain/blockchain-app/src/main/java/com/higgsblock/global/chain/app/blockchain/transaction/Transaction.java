@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.SizeCounter;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -23,10 +24,12 @@ import java.util.List;
  **/
 @Data
 @Slf4j
+@NoArgsConstructor
 @Message(EntityType.TRANSACTION)
 public class Transaction extends BaseBizEntity {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
+    private static final int EXTRA_LIMITED_SIZE_UNIT = 1024 * 10;
 
     /**
      * the hash of this transaction
@@ -145,18 +148,19 @@ public class Transaction extends BaseBizEntity {
 
     public boolean sizeAllowed() {
         SizeCounter sizeCounter = new JsonSizeCounter();
-        if (sizeCounter.calculateSize(this.inputs) > LIMITED_SIZE_UNIT) {
-            return false;
-        }
-        if (sizeCounter.calculateSize(this.outputs) > LIMITED_SIZE_UNIT) {
-            return false;
-        }
-        if (sizeCounter.calculateSize(this.extra) > LIMITED_SIZE_UNIT) {
+        if (sizeCounter.calculateSize(this.extra) > EXTRA_LIMITED_SIZE_UNIT) {
             return false;
         }
         if (sizeCounter.calculateSize(this) > LIMITED_SIZE_UNIT) {
             return false;
         }
         return true;
+    }
+
+    public boolean isEmptyInputs() {
+        if (CollectionUtils.isEmpty(inputs)) {
+            return true;
+        }
+        return false;
     }
 }

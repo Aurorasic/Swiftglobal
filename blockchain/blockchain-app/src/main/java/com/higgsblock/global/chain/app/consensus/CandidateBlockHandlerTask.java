@@ -1,15 +1,10 @@
 package com.higgsblock.global.chain.app.consensus;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.sign.service.CollectWitnessBlockService;
-import com.higgsblock.global.chain.app.service.IWitnessApi;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
-import com.higgsblock.global.chain.network.http.HttpClient;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,54 +22,59 @@ import java.util.concurrent.*;
 public class CandidateBlockHandlerTask implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private PeerManager peerManager;
     private Map<String, Block> candidateBlocksFromMiner = new ConcurrentHashMap<>();
     private ArrayList<Block> candidateAllBlocks = new ArrayList(5);
     private CountDownLatch countDownLatch = null;
-    public static final int RETRY_REQ_MAX_NUM = 200;
     public static final int MAX_GAP_BLOCK_NUM = 2;
 
-    private static final int MIN_TASK_SIZE = 2;
-    public static final int MIN_MISECOND = 3 * 1000;
     private volatile boolean flag = false;
+    private Semaphore semaphore = new Semaphore(10);
     private KeyPair keyPair;
     private String address;
 
     private Block recommendBlock = null;
     private List<String> minerAddresses = null;
-    private List<String> witnessAddresses = BlockService.WITNESS_ADDRESS_LIST;
     private ExecutorService executorService = null;
     private CollectWitnessBlockService collectWitnessBlockService;
     private BlockService blockService;
+    private MessageCenter messageCenter;
 
     private long height;
     private Future future;
     private int fullBlockCount;
+    private boolean firstMiner = false;
+    private Block firstMinerBlock = null;
+    private String sourceBlockWitnessAddress = null;
+    private List<CandidateBlockHashs> candidateBlockHashsList = new ArrayList<>();
+    private List<String> relasedAddress = new ArrayList<>(10);
 
-    public CandidateBlockHandlerTask(KeyPair keyPair, long height, BlockService blockService, NodeManager nodeManager, PeerManager peerManager, ExecutorService executorService, CollectWitnessBlockService collectWitnessBlockService) {
+    public CandidateBlockHandlerTask(KeyPair keyPair, long height, BlockService blockService, MessageCenter messageCenter, NodeManager nodeManager, ExecutorService executorService, CollectWitnessBlockService collectWitnessBlockService) {
         this.height = height;
         this.keyPair = keyPair;
         address = ECKey.pubKey2Base58Address(keyPair);
-        minerAddresses = nodeManager.getDposGroup(this.height);
-        this.peerManager = peerManager;
+        minerAddresses = nodeManager.getDposGroupByHeihgt(this.height);
         this.executorService = executorService;
         this.blockService = blockService;
         this.collectWitnessBlockService = collectWitnessBlockService;
+        this.messageCenter = messageCenter;
         fullBlockCount = nodeManager.getFullBlockCountByHeight(height);
         countDownLatch = new CountDownLatch(fullBlockCount);
     }
 
-    public Future addCandidateBlockFromMiner(Block block) {
+    private boolean validCandidateBlock(Block block) {
         if (block == null) {
             logger.error("the candidate block is null");
-            return future;
+            return false;
         }
         if (!block.valid()) {
             logger.warn("the candidate block is not valid {}", block);
-            return future;
+            return false;
         }
-        boolean fromProducer = blockService.validBlockFromProducer(block);
-        if (!fromProducer) {
+        return blockService.validBlockFromProducer(block);
+    }
+
+    public Future addCandidateBlockFromMiner(Block block) {
+        if (!validCandidateBlock(block)) {
             logger.warn("the candidate block from miner is not valid {}", block);
             return future;
         }
@@ -83,10 +83,12 @@ public class CandidateBlockHandlerTask implements Runnable {
                 logger.info("receive the first candidate block from miner with the height {}", block.getHeight());
             }
             boolean firstMiner = isTheFirstMiner(block);
+            this.firstMiner = firstMiner ? firstMiner : this.firstMiner;
             candidateBlocksFromMiner.computeIfAbsent(block.getHash(), s -> {
                 logger.info("get new candidate block with hash {}", s);
                 countDownLatch.countDown();
                 if (firstMiner) {
+                    firstMinerBlock = block;
                     long count = countDownLatch.getCount();
                     for (long i = 0; i < count; i++) {
                         countDownLatch.countDown();
@@ -94,9 +96,16 @@ public class CandidateBlockHandlerTask implements Runnable {
                 }
                 return block;
             });
-            boolean submit = future == null && (candidateBlocksFromMiner.size() == (fullBlockCount - MAX_GAP_BLOCK_NUM) || firstMiner);
-            if (submit) {
-                future = executorService.submit(this);
+            boolean submit = candidateBlocksFromMiner.size() == (fullBlockCount - MAX_GAP_BLOCK_NUM) || firstMiner;
+            logger.info("the fullBlockCount is {},the size of candidateBlocksFromMiner is {}", fullBlockCount, candidateBlocksFromMiner.size());
+            if (submit && future == null) {
+                try {
+                    future = executorService.submit(this);
+                    logger.info("submit the task success {}", this.height);
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                    logger.info("submit the task fail {}", this.height);
+                }
             }
         }
         return future;
@@ -104,7 +113,7 @@ public class CandidateBlockHandlerTask implements Runnable {
 
     private boolean isTheFirstMiner(Block block) {
         BlockWitness minerFirstPKSig = block.getMinerFirstPKSig();
-        if (minerFirstPKSig != null || CollectionUtils.isEmpty(minerAddresses)) {
+        if (minerFirstPKSig == null || CollectionUtils.isEmpty(minerAddresses)) {
             return false;
         }
         return StringUtils.equals(minerFirstPKSig.getAddress(), minerAddresses.get(0));
@@ -145,13 +154,21 @@ public class CandidateBlockHandlerTask implements Runnable {
 
     @Override
     public void run() {
+        logger.info("begin to collection candidate block from other witness");
         try {
-            logger.info("wait for candidate block with height {}", this.height);
-            countDownLatch.await(10, TimeUnit.SECONDS);
+            if (!this.firstMiner) {
+                logger.info("wait for candidate block with height {}", this.height);
+                countDownLatch.await(10, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            logger.error(e.getMessage(), e);
+            return;
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
         }
-        flag = true;
+        synchronized (this) {
+            flag = true;
+        }
         process();
         logger.info("witness success {}", height);
     }
@@ -159,93 +176,152 @@ public class CandidateBlockHandlerTask implements Runnable {
     public void process() {
         try {
             recommendBlock = null;
-            candidateAllBlocks.clear();
-
-            candidateAllBlocks.addAll(candidateBlocksFromMiner.values());
-            Map<String, Callable> taskMap = new ConcurrentHashMap<>(10);
-            witnessAddresses.forEach(address -> {
-                if (StringUtils.equals(address, this.address)) {
-                    return;
+            Collection<Block> values = candidateBlocksFromMiner.values();
+            values.forEach(block -> {
+                if (!candidateAllBlocks.contains(block)) {
+                    candidateAllBlocks.add(block);
                 }
-                Peer peer = peerManager.getById(address);
-                if (peer == null) {
-                    return;
-                }
-                String ip = peer.getIp();
-                int port = peer.getHttpServerPort();
-                //todo yangyi move to service
-                IWitnessApi api = HttpClient.getApi(ip, port, IWitnessApi.class);
-                Callable task = () -> {
-                    try {
-                        logger.info("begin to swap candidate blocks with witness={}", address);
-
-                        //step 1: fetch block hashs from other witness
-                        Collection<String> fromWitnessBlockHashs = api.getCandidateBlockHashs(height).execute().body();
-                        if (CollectionUtils.isEmpty(fromWitnessBlockHashs)) {
-                            logger.info("fromWitnessBlockHashs is empty,try next. witness={}", address);
-                            return null;
-                        }
-                        Collection<String> myCandidateBlockHashs = getCandidateBlockHashs();
-                        Collection<String> otherWitnessDiffBlockHashs = calcAMore2B(fromWitnessBlockHashs, myCandidateBlockHashs);
-                        Collection<String> myDiffBlockHashs = calcAMore2B(myCandidateBlockHashs, fromWitnessBlockHashs);
-                        logger.info("begin my candidate blocks={},the witness={} candidate blocks={}", myCandidateBlockHashs, address, fromWitnessBlockHashs);
-
-                        //step 2: get different blocks that other witness more than mine
-                        if (CollectionUtils.isNotEmpty(otherWitnessDiffBlockHashs)) {
-                            Collection<Block> otherWinessDiffBlocks = api.getCandidateBlocksByHashs(otherWitnessDiffBlockHashs).execute().body();
-                            //if other witness have selected besb block and stoped this height witness, he will return empty blocks
-                            if (CollectionUtils.isNotEmpty(otherWinessDiffBlocks)) {
-                                addCandidateBlocksFromWitness(otherWinessDiffBlocks);
-                            }
-                        }
-
-                        //step 3: put different blocks to other witness that mine more than other witness
-                        if (CollectionUtils.isNotEmpty(myDiffBlockHashs)) {
-                            Collection<Block> myDiffBlocks = getCandidateBlocksByHash(myDiffBlockHashs);
-                            api.putBlocksToWitness(myDiffBlocks).execute().body();
-                        }
-                        logger.info("end my candidate blocks={}", myCandidateBlockHashs);
-
-                        taskMap.remove(address);
-                    } catch (Exception e) {
-                        logger.error("error for swap blocks with witness=" + address, e);
-                    }
-                    return null;
-                };
-                taskMap.put(address, task);
             });
+            semaphore.acquire(10);
+            CandidateBlockHashs candidateBlockHashs = new CandidateBlockHashs();
+            candidateBlockHashs.setBlockHashs(getCandidateBlockHashs());
+            candidateBlockHashs.setHeight(this.height);
+            candidateBlockHashs.setAddress(this.address);
+            candidateBlockHashs.setPubKey(keyPair.getPubKey());
+            candidateBlockHashs.setSignature(ECKey.signMessage(candidateBlockHashs.getHash(), keyPair.getPriKey()));
+            logger.info("send myself block hash to other witness {}", candidateBlockHashs);
+            messageCenter.dispatchToWitnesses(candidateBlockHashs);
+            if (CollectionUtils.isNotEmpty(candidateBlockHashsList)) {
+                candidateBlockHashsList.forEach(hashs -> {
+                    String address = hashs.getAddress();
+                    List<String> blockHashs = hashs.getBlockHashs();
+                    setBlockHashsFromWitness(address, blockHashs);
+                });
+            }
+            logger.info("wait 8 release");
             try {
-                logger.info("begin to get query other witness's candidate block with height {}", height);
-                collectCandidateBlocks(taskMap);
-                logger.info("query other witness's candidate block success with height {}", height);
+                semaphore.acquire(8);
             } catch (InterruptedException e) {
                 logger.error(e.getMessage(), e);
+                return;
             }
+            logger.info("wait 8 release success");
+
             recommendBlock = selectRecommendBlock(candidateAllBlocks);
             logger.info("select the recommend block success {}", recommendBlock);
-            collectWitnessBlockService.reInit(height, executorService);
-            collectWitnessBlockService.addBlock(SerializationUtils.clone(recommendBlock));
-            boolean success = collectWitnessBlockService.collectAllSignedBlockAndBroadcast();
-            if (!success && blockService.getBestMaxHeight() < height) {
-                logger.error("collect sign fail,try again,the height is {}", height);
-                process();
-            }
+            collectWitnessBlockService.reInit(height);
+            collectWitnessBlockService.processBlockAfterCollected(SerializationUtils.clone(recommendBlock));
+            collectWitnessBlockService.collectAllSignedBlockAndBroadcast(recommendBlock);
         } catch (Throwable e) {
             logger.error(e.getMessage(), e);
         }
     }
 
-    private Collection<String> calcAMore2B(final Collection<String> A, final Collection<String> B) {
+    public void setBlockHashsFromWitness(String address, List<String> blockHashsFromWitness) {
+        if (blockHashsFromWitness == null) {
+            blockHashsFromWitness = new LinkedList<>();
+        }
+        if (!flag) {
+            synchronized (this) {
+                if (!flag) {
+                    CandidateBlockHashs candidateBlockHashs = new CandidateBlockHashs();
+                    candidateBlockHashs.setBlockHashs(blockHashsFromWitness);
+                    candidateBlockHashs.setHeight(this.height);
+                    candidateBlockHashs.setAddress(address);
+                    logger.info("add candidateBlockHashs to cache {}", candidateBlockHashs);
+                    candidateBlockHashsList.add(candidateBlockHashs);
+                    if (future != null || StringUtils.isNotBlank(sourceBlockWitnessAddress)) {
+                        return;
+                    }
+                    candidateBlockHashs = new CandidateBlockHashs();
+                    candidateBlockHashs.setBlockHashs(new LinkedList<>());
+                    candidateBlockHashs.setHeight(this.height);
+                    candidateBlockHashs.setAddress(this.address);
+                    candidateBlockHashs.setAddress(ECKey.pubKey2Base58Address(keyPair.getPubKey()));
+                    candidateBlockHashs.setPubKey(keyPair.getPubKey());
+                    candidateBlockHashs.setSignature(ECKey.signMessage(candidateBlockHashs.getHash(), keyPair.getPriKey()));
+                    messageCenter.unicast(address, candidateBlockHashs);
+                    this.sourceBlockWitnessAddress = address;
+                }
+            }
+        }
+        logger.info("receive the blockHash from {} with blockHash {}", address, blockHashsFromWitness);
+        if (firstMinerBlock != null) {
+            logger.info(" firstMiner block exist {}", firstMiner);
+            if (!blockHashsFromWitness.contains(firstMinerBlock.getHash())) {
+                CandidateBlock candidateBlock = new CandidateBlock();
+                candidateBlock.setHeight(this.height);
+                List<Block> blocks = new ArrayList<>();
+                blocks.add(firstMinerBlock);
+                candidateBlock.setBlocks(blocks);
+                candidateBlock.setPubKey(keyPair.getPubKey());
+                String signMessage = ECKey.signMessage(candidateBlock.getHash(), keyPair.getPriKey());
+                candidateBlock.setSignature(signMessage);
+                logger.info(" send firstMiner block to {} ", address);
+                messageCenter.unicast(address, candidateBlock);
+            }
+            semaphore.release();
+            relasedAddress.add(address);
+            logger.info(" release address {} ", address);
+            return;
+        }
+        List<String> candidateBlockHashs = getCandidateBlockHashs();
+        List<String> moreBlockHash = calcAMore2B(candidateBlockHashs, blockHashsFromWitness);
+        List<Block> candidateBlocksByHash = getCandidateBlocksByHash(moreBlockHash);
+        if (CollectionUtils.isNotEmpty(candidateBlocksByHash)) {
+            CandidateBlock candidateBlock = new CandidateBlock();
+            candidateBlock.setHeight(this.height);
+            List<Block> blocks = new ArrayList<>();
+            blocks.addAll(candidateBlocksByHash);
+            candidateBlock.setBlocks(blocks);
+            candidateBlock.setPubKey(keyPair.getPubKey());
+            String signMessage = ECKey.signMessage(candidateBlock.getHash(), keyPair.getPriKey());
+            candidateBlock.setSignature(signMessage);
+            logger.info(" send more block to {} and block with hashs {}", address, moreBlockHash);
+            messageCenter.unicast(address, candidateBlock);
+        }
+        moreBlockHash = calcAMore2B(blockHashsFromWitness, candidateBlockHashs);
+        if (CollectionUtils.isEmpty(moreBlockHash)) {
+            logger.info(" has all block hash from {} ", address);
+            semaphore.release();
+            relasedAddress.add(address);
+            logger.info(" release address {} ", address);
+        }
+    }
+
+    public void setBlockHashsListFromWitness(List<CandidateBlockHashs> candidateBlockHashsList) {
+        this.candidateBlockHashsList.addAll(candidateBlockHashsList);
+    }
+
+    public void setBlocksFromWitness(String address, CandidateBlock data) {
+        List<Block> blocksFromWitness = data.getBlocks();
+        logger.info(" get more block from {} with block ", address, blocksFromWitness);
+        addCandidateBlocksFromWitness(blocksFromWitness);
+        if (!relasedAddress.contains(address)) {
+            semaphore.release();
+            relasedAddress.add(address);
+            logger.info(" release address {} ", address);
+        }
+        if (StringUtils.equals(sourceBlockWitnessAddress, address) && future == null) {
+            synchronized (this) {
+                if (future == null) {
+                    future = executorService.submit(this);
+                }
+            }
+        }
+    }
+
+    private List<String> calcAMore2B(final List<String> listA, final List<String> listB) {
         List diffList = new LinkedList();
-        if (CollectionUtils.isEmpty(A)) {
+        if (CollectionUtils.isEmpty(listA)) {
             return diffList;
         }
 
-        if (CollectionUtils.isEmpty(B)) {
-            return A;
+        if (CollectionUtils.isEmpty(listB)) {
+            return listA;
         }
-        for (String a : A) {
-            if (!B.contains(a)) {
+        for (String a : listA) {
+            if (!listB.contains(a)) {
                 diffList.add(a);
             }
         }
@@ -255,14 +331,11 @@ public class CandidateBlockHandlerTask implements Runnable {
     public synchronized int addCandidateBlocksFromWitness(Collection<Block> blocks) {
         int count = 0;
         for (Block block : blocks) {
-            if (block != null && block.getHeight() == height) {
-                if (!block.valid()) {
-                    logger.error("the candidate block is not valid");
-                }
-                if (!blockService.validBlockCommon(block)) {
-                    logger.error("the candidate block from witness is not valid");
-                }
+            if (block != null && block.getHeight() == height && validCandidateBlock(block)) {
                 if (!candidateAllBlocks.contains(block)) {
+                    boolean firstMiner = isTheFirstMiner(block);
+                    this.firstMiner = firstMiner ? firstMiner : this.firstMiner;
+                    firstMinerBlock = block;
                     candidateAllBlocks.add(block);
                     count++;
                 }
@@ -271,38 +344,7 @@ public class CandidateBlockHandlerTask implements Runnable {
         return count;
     }
 
-
-    private void collectCandidateBlocks(Map<String, Callable> taskMap) throws InterruptedException {
-        int retryNum = 0;
-        while (retryNum++ < RETRY_REQ_MAX_NUM && taskMap.size() >= MIN_TASK_SIZE) {
-            Collection values = taskMap.values();
-            Collection tasks = new LinkedList<>();
-            tasks.addAll(values);
-            long timeMillis = System.currentTimeMillis();
-            logger.info("try again with retryNum {} and task size {}", retryNum, taskMap.size());
-            List<Future> futures = executorService.invokeAll(tasks, 5, TimeUnit.SECONDS);
-            futures.forEach(future -> {
-                if (!future.isDone()) {
-                    future.cancel(false);
-                }
-            });
-            timeMillis = MIN_MISECOND - (System.currentTimeMillis() - timeMillis);
-            if (timeMillis > 0) {
-                Thread.sleep(timeMillis);
-            }
-        }
-        retryNum = 0;
-        while (retryNum++ < 3 && taskMap.size() != 0) {
-            Collection values = taskMap.values();
-            Collection tasks = new LinkedList<>();
-            tasks.addAll(values);
-            logger.info("try again with retryNum {} and task size {}", retryNum, taskMap.size());
-            executorService.invokeAll(tasks, 5, TimeUnit.SECONDS);
-            Thread.sleep(1000);
-        }
-    }
-
-    public Collection<Block> getCandidateAllBlocks() {
+    public List<Block> getAllCandidateBlocks() {
         if (flag) {
             return candidateAllBlocks;
         } else {
@@ -310,7 +352,7 @@ public class CandidateBlockHandlerTask implements Runnable {
         }
     }
 
-    public Collection<Block> getCandidateBlocksByHash(Collection<String> blockHashs) {
+    public List<Block> getCandidateBlocksByHash(List<String> blockHashs) {
         List<Block> result = new LinkedList<>();
         if (flag && CollectionUtils.isNotEmpty(blockHashs)) {
             for (Block block : candidateAllBlocks) {
@@ -322,9 +364,13 @@ public class CandidateBlockHandlerTask implements Runnable {
         return result;
     }
 
-    public Collection<String> getCandidateBlockHashs() {
+    public List<String> getCandidateBlockHashs() {
         List<String> result = new LinkedList<>();
         if (flag) {
+            if (firstMinerBlock != null) {
+                result.add(firstMinerBlock.getHash());
+                return result;
+            }
             for (Block block : candidateAllBlocks) {
                 result.add(block.getHash());
             }
@@ -335,5 +381,9 @@ public class CandidateBlockHandlerTask implements Runnable {
 
     public Block getRecommendBlock() {
         return recommendBlock;
+    }
+
+    public Future getFuture() {
+        return future;
     }
 }

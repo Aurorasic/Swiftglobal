@@ -8,10 +8,10 @@ import java.io.Serializable;
  **/
 public enum SystemStatus implements Serializable {
 
-    INI(1, "初始化"),
-    LOADING(2, "加载所有区块数据"),
-    SYNC_BLOCKS(3, "区块数据同步"),
-    RUNNING(4, "正常运行");
+    INI(1, "init status"),
+    LOADING(2, "load all block data on local"),
+    SYNC_BLOCKS(3, "sync blocks with other peers"),
+    RUNNING(4, "running status");
 
     private int state;
     private String desc;

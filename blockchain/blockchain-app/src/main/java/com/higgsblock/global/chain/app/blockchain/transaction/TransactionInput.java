@@ -3,12 +3,14 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author baizhengwen
  * @create 2018-03-06
  **/
 @Data
+@NoArgsConstructor
 public class TransactionInput extends BaseSerializer {
     /**
      * the sources of current spending

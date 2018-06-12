@@ -16,6 +16,8 @@ import static com.higgsblock.global.chain.crypto.NativeSecp256k1Util.assertEqual
  * @create 2018-02-24 11:24
  */
 public class NativeSecp256k1 {
+    private static final int TOTAL_CAPACITY = 520;
+    private static final int CAPACITY = 32;
     private static final ReentrantReadWriteLock RWL = new ReentrantReadWriteLock();
     private static final Lock R_LOCK = RWL.readLock();
     private static ThreadLocal<ByteBuffer> nativeECDSABuffer = new ThreadLocal<>();
@@ -24,8 +26,8 @@ public class NativeSecp256k1 {
         Preconditions.checkArgument(data.length == 32 && signature.length <= 520 && pub.length <= 520);
 
         ByteBuffer byteBuff = nativeECDSABuffer.get();
-        if (byteBuff == null || byteBuff.capacity() < 520) {
-            byteBuff = ByteBuffer.allocateDirect(520);
+        if (byteBuff == null || byteBuff.capacity() < TOTAL_CAPACITY) {
+            byteBuff = ByteBuffer.allocateDirect(TOTAL_CAPACITY);
             byteBuff.order(ByteOrder.nativeOrder());
             nativeECDSABuffer.set(byteBuff);
         }
@@ -38,8 +40,8 @@ public class NativeSecp256k1 {
         try {
             return secp256k1_ecdsa_verify(byteBuff, Secp256k1Context.getContext(), signature.length, pub.length) == 1;
         } finally {
-            nativeECDSABuffer.remove();
             R_LOCK.unlock();
+            nativeECDSABuffer.remove();
         }
     }
 
@@ -47,8 +49,8 @@ public class NativeSecp256k1 {
         Preconditions.checkArgument(data.length == 32 && sec.length <= 32);
 
         ByteBuffer byteBuff = nativeECDSABuffer.get();
-        if (byteBuff == null || byteBuff.capacity() < 32 + 32) {
-            byteBuff = ByteBuffer.allocateDirect(32 + 32);
+        if (byteBuff == null || byteBuff.capacity() < CAPACITY + CAPACITY) {
+            byteBuff = ByteBuffer.allocateDirect(CAPACITY + CAPACITY);
             byteBuff.order(ByteOrder.nativeOrder());
             nativeECDSABuffer.set(byteBuff);
         }

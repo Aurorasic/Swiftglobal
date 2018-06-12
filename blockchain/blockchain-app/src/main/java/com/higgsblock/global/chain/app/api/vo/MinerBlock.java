@@ -35,18 +35,12 @@ public class MinerBlock extends BaseBizEntity {
     @Getter
     private long blockSize;
 
-//    @Getter
-//    private BigDecimal earnings;
-
     /**
      * The money includes value and currency, a different currency is a different token.
      * If it is null, the coin is CAS.
      */
     @Getter
     private Money money;
-
-//    @Getter
-//    private String currency;
 
     private MinerBlock(long height, String hash, long blockTime, long blockSize, Money money) {
         this.height = height;
@@ -92,16 +86,6 @@ public class MinerBlock extends BaseBizEntity {
             this.money = money;
             return this;
         }
-
-//        public MinerBlockBuilder earnings(BigDecimal earnings) {
-//            this.earnings = earnings;
-//            return this;
-//        }
-//
-//        public MinerBlockBuilder currency(String currency) {
-//            this.currency = currency;
-//            return this;
-//        }
 
         public MinerBlock build() {
             return new MinerBlock(height, hash, blockTime, blockSize,money);
