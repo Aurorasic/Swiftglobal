@@ -34,7 +34,7 @@ public class CollectWitnessBlockService {
     public static Integer WITNESS_NUM = 11;
     public static Integer RETRY_REQ_MAX_NUM = 100;
 
-    private static final int BLOCK_SIZE = 3;
+    private static final int BLOCK_SIZE = 5;
 
     @Autowired
     private BlockService blockService;

@@ -12,7 +12,6 @@ import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +35,6 @@ public class WitnessService {
     private KeyPair keyPair;
 
     @Autowired
-    private PeerManager peerManager;
-
-    @Autowired
     private NodeManager nodeManager;
 
     @Autowired
@@ -49,7 +45,7 @@ public class WitnessService {
 
     @Autowired
     private MessageCenter messageCenter;
-    public static final int MAX_SIZE = 3;
+    public static final int MAX_SIZE = 5;
 
     private Cache<Long, List<Block>> sourceBlockMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
@@ -65,7 +61,7 @@ public class WitnessService {
 
     private ExecutorService executorService = ExecutorServices.newFixedThreadPool("witnessTask", 1, 5);
 
-    public void initWitnessTask(long height) {
+    public synchronized void initWitnessTask(long height) {
         if (height <= this.height) {
             return;
         }
@@ -89,11 +85,12 @@ public class WitnessService {
         }
     }
 
-    public boolean addCandidateBlockFromMiner(Block block) {
+    public synchronized boolean addCandidateBlockFromMiner(Block block) {
         if (block == null) {
             return false;
         }
         if (!block.valid()) {
+            LOGGER.info("this block is not valid {}", block);
             return false;
         }
         boolean minerPermission = nodeManager.checkProducer(block);
@@ -151,7 +148,7 @@ public class WitnessService {
         return null;
     }
 
-    public void setBlockHashsFromWitness(CandidateBlockHashs data) {
+    public synchronized void setBlockHashsFromWitness(CandidateBlockHashs data) {
         if (data == null) {
             return;
         }
@@ -168,7 +165,7 @@ public class WitnessService {
         }
     }
 
-    public void setBlocksFromWitness(String address, CandidateBlock data) {
+    public synchronized void setBlocksFromWitness(String address, CandidateBlock data) {
         if (task != null && this.height == data.getHeight()) {
             LOGGER.info("the height is {} and the block height is {}", this.height, data.getHeight());
             LOGGER.info("add CandidateBlock to task address {} data {}", address, data);
