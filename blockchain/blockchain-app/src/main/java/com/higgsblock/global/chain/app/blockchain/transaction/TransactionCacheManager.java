@@ -41,6 +41,7 @@ public class TransactionCacheManager {
     public void remove(String transactionHash) {
         if (transactionMap != null) {
             transactionMap.invalidate(transactionHash);
+            transactionMap.cleanUp();
         }
     }
 
