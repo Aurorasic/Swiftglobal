@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import com.higgsblock.global.chain.app.service.ITransService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -121,14 +122,18 @@ public class TransDaoService implements ITransService {
                             spentUTXOMap.get(preUTXOKey), tx.getHash());
                     break;
                 }
-
-                if (!utxoDao.allKeys().contains(preUTXOKey)) {
-                    txCacheManager.remove(tx.getHash());
-                    cacheTransactions.remove(i);
-                    LOGGER.warn("utxo data map has no this uxto={}_tx={}", preUTXOKey, tx.getHash());
+                try {
+                    UTXO utxo = utxoDao.get(preUTXOKey);
+                    if (utxo == null) {
+                        txCacheManager.remove(tx.getHash());
+                        cacheTransactions.remove(i);
+                        LOGGER.warn("utxo data map has no this uxto={}_tx={}", preUTXOKey, tx.getHash());
+                        break;
+                    }
+                } catch (RocksDBException e) {
+                    LOGGER.error(e.getMessage(), e);
                     break;
                 }
-
                 spentUTXOMap.put(preUTXOKey, tx.getHash());
             }
         }
