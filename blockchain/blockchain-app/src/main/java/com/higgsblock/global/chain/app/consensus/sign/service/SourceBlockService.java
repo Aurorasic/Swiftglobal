@@ -32,7 +32,7 @@ public class SourceBlockService {
      * Creator sends the signed block to other witnesses for resigning.
      */
     public void sendBlockToWitness(Block block) {
-        LOGGER.info("begin to send block to witness");
+        LOGGER.info("begin to send block to witness,height=",block.getHeight());
         SourceBlock sourceBlock = new SourceBlock(block);
         messageCenter.dispatchToWitnesses(sourceBlock);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {

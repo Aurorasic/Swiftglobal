@@ -124,7 +124,10 @@ public class MiningListener implements IEventBusListener {
             return;
         }
         future = executorService.submit(() -> mining(expectHeight));
-        LOGGER.info("try to produce block, height={}", expectHeight);
+        int queueSize = ((ThreadPoolExecutor) executorService).getQueue().size();
+        int poolSize = ((ThreadPoolExecutor) executorService).getPoolSize();
+
+        LOGGER.info("try to produce block, height={},queueSize={},poolSize={}", expectHeight,queueSize,poolSize);
     }
 
     private void mining(long expectHeight) {
@@ -132,27 +135,27 @@ public class MiningListener implements IEventBusListener {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
             } catch (Exception e) {
-                LOGGER.error(e.getMessage(), e);
+                LOGGER.error("mining exception,height="+expectHeight, e);
             }
         }
     }
 
-
     private boolean doMining(long expectHeight) {
         try {
+            LOGGER.info("begin to packageNewBlock,height={}",expectHeight);
             Block block = blockService.packageNewBlock();
             if (block == null) {
-                LOGGER.info("can not produce a new block");
+                LOGGER.info("can not produce a new block,height={}",expectHeight);
                 return false;
             }
             if (expectHeight != block.getHeight()) {
-                LOGGER.error("the expect height of block is {}, but {}", expectHeight, block.getHeight());
+                LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
                 return true;
             }
             sourceBlockService.sendBlockToWitness(block);
             return true;
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error("domining exception,height="+expectHeight, e);
         }
         return false;
     }
