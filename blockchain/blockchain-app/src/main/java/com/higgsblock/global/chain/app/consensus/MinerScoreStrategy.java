@@ -51,6 +51,7 @@ public class MinerScoreStrategy {
         entityList.add(plusEntity);
 
         //handle joined miner and removed miner
+        LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", bestBlock.getHash());
         List<Transaction> transactions = bestBlock.getTransactions();
         for (Transaction tx : transactions) {
             Set<String> removedMiners = transactionService.getRemovedMiners(tx);
@@ -65,7 +66,7 @@ public class MinerScoreStrategy {
                 entityList.add(putEntity);
             }
         }
-        LOGGER.info("handled joined miner and removed miner,bestBlock={}", bestBlock.getHash());
+        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", bestBlock.getHash());
 
         return entityList;
     }
