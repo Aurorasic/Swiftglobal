@@ -54,6 +54,7 @@ public class MinerScoreStrategy {
         LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", bestBlock.getHash());
         List<Transaction> transactions = bestBlock.getTransactions();
         for (Transaction tx : transactions) {
+            LOGGER.info("calc removing and adding miner currency,tx={}",tx.getHash());
             Set<String> removedMiners = transactionService.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 BaseDaoEntity removeEntity = scoreDaoService.remove(removedMiner);
