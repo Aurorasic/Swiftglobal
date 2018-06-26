@@ -52,7 +52,7 @@ public class ECKey {
     private static final byte UNCOMPRESS_PRE_PUBKEY = 0x04;
     private static final byte COMPRESS_PRE_PUBKEY_EVEN = 0x02;
     private static final byte COMPRESS_PRE_PUBKEY_ODD = 0x03;
-    private static final int MAX_SIGNATURE = 255;
+    private static final int MAX_SIGNATURE = 21;
     private static final int LOW_HEADER_BORDER = 27;
     private static final int MIDDLE_HEADER_BORDER = 31;
     private static final int HIGH_HEADER_BORDER = 34;
@@ -487,7 +487,7 @@ public class ECKey {
             throw new ParamsErrorException("sigNum cannot large pubKeyLists.size()");
         }
         if (sigNum > MAX_SIGNATURE) {
-            throw new ParamsErrorException("sigNum is too large than 255");
+            throw new ParamsErrorException("sigNum is too large than 21");
         }
         int length = pubKeyLists.size();
         byte[] array = new byte[1 + (length * 33)];
