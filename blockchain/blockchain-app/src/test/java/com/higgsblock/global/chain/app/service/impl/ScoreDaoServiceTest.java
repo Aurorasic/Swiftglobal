@@ -22,6 +22,7 @@ public class ScoreDaoServiceTest extends BaseMockTest {
 
     @Mock
     private ScoreDao scoreDao;
+
     @InjectMocks
     private ScoreDaoService scoreDaoService;
 
