@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InitVote {
 
-    private AllVote allVote;
+    private VoteTable allVote;
 
     private Block block;
 }
