@@ -255,11 +255,10 @@ public class TransactionService {
      * validate tx
      *
      * @param tx         one tx
-     * @param prevOutKey input outputs
      * @param block      current block
      * @return return result
      */
-    public boolean verifyTransaction(Transaction tx, HashSet<String> prevOutKey, Block block) {
+    public boolean verifyTransaction(Transaction tx, Block block) {
         short version = tx.getVersion();
         if (version < 0) {
             return false;
@@ -274,6 +273,7 @@ public class TransactionService {
 
         String blockHash = block != null ? block.getHash() : null;
         Map<String, Money> preMoneyMap = new HashMap<>(8);
+        HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
             if (!input.valid()) {
                 LOGGER.error("input is invalid");
@@ -501,8 +501,7 @@ public class TransactionService {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
         }
-        HashSet<String> prevOutKey = new HashSet<>();
-        boolean valid = this.verifyTransaction(tx, prevOutKey, null);
+        boolean valid = verifyTransaction(tx, null);
         if (!valid) {
             LOGGER.info("the transaction is not valid {}", tx);
             return;

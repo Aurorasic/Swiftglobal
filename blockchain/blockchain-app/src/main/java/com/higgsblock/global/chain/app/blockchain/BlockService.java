@@ -386,13 +386,8 @@ public class BlockService {
         }
 
         for (int index = 0; index < size; index++) {
-            if (0 == index) {
-                if (!validTransactions(true, transactions.get(index), block)) {
-                    return false;
-                }
-                continue;
-            }
-            if (!validTransactions(false, transactions.get(index), block)) {
+            boolean isCoinBaseTx = index == 0 ? true : false;
+            if (!validTransactions(isCoinBaseTx, transactions.get(index), block)) {
                 return false;
             }
         }
@@ -413,8 +408,8 @@ public class BlockService {
             }
             return true;
         }
-        HashSet<String> prevOutKey = new HashSet<>();
-        if (!transactionService.verifyTransaction(transaction, prevOutKey, block)) {
+
+        if (!transactionService.verifyTransaction(transaction, block)) {
             LOGGER.error("Invalidate transaction");
             return false;
         }
