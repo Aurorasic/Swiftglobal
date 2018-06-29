@@ -19,7 +19,6 @@ import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.SerializationUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -251,13 +250,13 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public boolean checkBlockNumbers() {
-        long blockIndexSize = 0L;
+       /* long blockIndexSize = 0L;
         long blockMapSize = blockDao.keys().size();
 
         if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
             LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
             return false;
-        }
+        }*/
 
         //TODO: zhao xiaogang  should optimize  2018-05-22
 

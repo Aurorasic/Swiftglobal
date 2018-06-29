@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.BlockDao;
@@ -48,6 +49,10 @@ public class BlockDaoServiceTest extends BaseMockTest {
 
     @Mock
     private TransDaoService transDaoService;
+
+
+    @Mock
+    private TransactionCacheManager txCacheManager;
 
     @Mock
     private NodeManager nodeManager;
@@ -321,8 +326,6 @@ public class BlockDaoServiceTest extends BaseMockTest {
 
     @Test
     public void checkBlockNumbers() throws Exception {
-        List<byte[]> bytes = new ArrayList<>();
-        PowerMockito.when(blockDao.keys()).thenReturn(bytes);
-        Assert.assertTrue(blockDaoService.checkBlockNumbers());
+        blockDaoService.checkBlockNumbers();
     }
 }
