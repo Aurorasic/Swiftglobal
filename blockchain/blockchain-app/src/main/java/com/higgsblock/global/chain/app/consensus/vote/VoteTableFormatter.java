@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
  * @date 6/29/2018
  */
 @Component
-public class AllVoteFormatter extends BaseEntityFormatter<AllVote> {
+public class VoteTableFormatter extends BaseEntityFormatter<VoteTable> {
 }

@@ -25,5 +25,7 @@ public class Vote {
 
     private String proofPubKey;
 
+    private String proofVersion;
+
     private String signature;
 }
