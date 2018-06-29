@@ -148,7 +148,7 @@ public class Transaction extends BaseBizEntity {
 
     public boolean sizeAllowed() {
         SizeCounter sizeCounter = new JsonSizeCounter();
-        if (sizeCounter.calculateSize(this.extra) > EXTRA_LIMITED_SIZE_UNIT) {
+        if (sizeCounter.calculateSize(extra) > EXTRA_LIMITED_SIZE_UNIT) {
             return false;
         }
         if (sizeCounter.calculateSize(this) > LIMITED_SIZE_UNIT) {
@@ -162,5 +162,31 @@ public class Transaction extends BaseBizEntity {
             return true;
         }
         return false;
+    }
+
+    public boolean containsSpendUTXO(String utxoKey) {
+        if (isEmptyInputs()) {
+            return false;
+        }
+        for (TransactionInput input : inputs) {
+            if (StringUtils.equals(input.getPreUTXOKey(), utxoKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public UTXO getAddedUTXOByKey(String utxoKey) {
+        if (CollectionUtils.isNotEmpty(outputs)) {
+            final int outputSize = outputs.size();
+            for (int i = 0; i < outputSize; i++) {
+                TransactionOutput output = outputs.get(i);
+                UTXO utxo = new UTXO(this, (short) i, output);
+                if (StringUtils.equals(utxo.getKey(), utxoKey)) {
+                    return utxo;
+                }
+            }
+        }
+        return null;
     }
 }
