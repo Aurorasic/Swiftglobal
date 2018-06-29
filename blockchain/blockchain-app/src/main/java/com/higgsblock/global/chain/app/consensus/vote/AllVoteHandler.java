@@ -11,15 +11,15 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 6/29/2018
  */
-@Component("voteInfoHandler")
+@Component("allVoteHandler")
 @Slf4j
-public class VoteInfoHandler extends BaseEntityHandler<VoteInfo> {
+public class AllVoteHandler extends BaseEntityHandler<AllVote> {
 
     @Autowired
     private WitnessService witnessService;
 
     @Override
-    protected void process(SocketRequest<VoteInfo> request) {
+    protected void process(SocketRequest<AllVote> request) {
 
     }
 }
