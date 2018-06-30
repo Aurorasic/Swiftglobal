@@ -203,13 +203,13 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public boolean checkBlockNumbers() {
-//               long blockIndexSize = 0L;
-//        long blockMapSize = blockDao.keys().size();
-//
-//        if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
-//            LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
-//            return false;
-//        }
+        //               long blockIndexSize = 0L;
+        //        long blockMapSize = blockDao.keys().size();
+        //
+        //        if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
+        //            LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
+        //            return false;
+        //        }
 
         //TODO: zhao xiaogang  should optimize  2018-05-22
 
