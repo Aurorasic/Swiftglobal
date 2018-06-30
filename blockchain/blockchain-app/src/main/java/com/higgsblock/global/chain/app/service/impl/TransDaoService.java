@@ -40,7 +40,6 @@ public class TransDaoService implements ITransService {
     @Autowired
     private SpentTransactionOutIndexEntityDao spentTransactionOutIndexEntityDao;
 
-    @Transactional
     @Override
     public void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) {
 

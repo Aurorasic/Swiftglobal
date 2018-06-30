@@ -10,7 +10,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
@@ -47,8 +46,6 @@ public class NodeManager implements InitializingBean {
     @Autowired
     private IScoreService scoreDaoService;
 
-    @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
     @Autowired
     private DposService dposService;
     private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()

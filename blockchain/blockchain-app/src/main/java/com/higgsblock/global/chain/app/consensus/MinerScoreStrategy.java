@@ -35,6 +35,7 @@ public class MinerScoreStrategy {
     /**
      * Called by block dao service
      */
+
     public static void refreshMinersScore(Block bestBlock) {
 
         BlockWitness minerPKSig = bestBlock.getMinerFirstPKSig();
