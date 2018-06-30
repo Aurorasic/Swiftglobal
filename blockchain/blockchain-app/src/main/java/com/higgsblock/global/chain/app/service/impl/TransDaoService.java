@@ -91,7 +91,7 @@ public class TransDaoService implements ITransService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void removeDoubleSpendTx(List<Transaction> cacheTransactions) {
         if (CollectionUtils.isEmpty(cacheTransactions)) {
