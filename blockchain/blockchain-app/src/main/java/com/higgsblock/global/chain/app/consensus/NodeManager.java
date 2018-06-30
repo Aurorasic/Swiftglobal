@@ -9,7 +9,6 @@ import com.higgsblock.global.chain.app.Application;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
@@ -58,13 +57,13 @@ public class NodeManager implements InitializingBean {
             .build();
     private Function<Long, List<String>> function = null;
 
-    public BaseDaoEntity calculateDposNodes(Block block) throws RocksDBException {
+    public void calculateDposNodes(Block block) throws RocksDBException {
         List<String> dposAddresses = calculateDposAddresses(block);
         if (CollectionUtils.isEmpty(dposAddresses)) {
-            return null;
+            return;
         }
         long sn = getSn(block.getHeight());
-        return persistDposNodes(sn, dposAddresses);
+        persistDposNodes(sn, dposAddresses);
     }
 
     public List<String> calculateDposAddresses(Block block) throws RocksDBException {
@@ -137,9 +136,9 @@ public class NodeManager implements InitializingBean {
         return select;
     }
 
-    public BaseDaoEntity persistDposNodes(long sn, List<String> dposNodes) {
+    public void persistDposNodes(long sn, List<String> dposNodes) {
         dposNodeMap.put(sn + 2, dposNodes);
-        return dposService.put(sn + 2, dposNodes);
+        dposService.put(sn + 2, dposNodes);
     }
 
     @Override

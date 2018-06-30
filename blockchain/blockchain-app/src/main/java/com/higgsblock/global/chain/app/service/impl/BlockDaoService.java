@@ -176,8 +176,7 @@ public class BlockDaoService implements IBlockService {
         blockIdxDaoService.addBlockIndex(block, bestBlockHash);
 
         //step 5
-        List<BaseDaoEntity> entityList = MinerScoreStrategy.refreshMinersScore(block);
-        blockDao.writeBatch(entityList);
+        MinerScoreStrategy.refreshMinersScore(block);
 
         //step 6
         BaseDaoEntity entity = nodeManager.calculateDposNodes(block);
