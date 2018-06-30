@@ -179,10 +179,7 @@ public class BlockDaoService implements IBlockService {
         MinerScoreStrategy.refreshMinersScore(block);
 
         //step 6
-        BaseDaoEntity entity = nodeManager.calculateDposNodes(block);
-        if (entity != null) {
-            blockDao.writeBatch(ImmutableList.of(entity));
-        }
+        nodeManager.calculateDposNodes(block);
 
         //step 7
         refreshCache(bestBlockHash, block);

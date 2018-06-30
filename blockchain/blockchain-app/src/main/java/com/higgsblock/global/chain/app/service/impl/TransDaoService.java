@@ -92,6 +92,7 @@ public class TransDaoService implements ITransService {
         }
     }
 
+    @Transactional
     @Override
     public void removeDoubleSpendTx(List<Transaction> cacheTransactions) {
         if (CollectionUtils.isEmpty(cacheTransactions)) {
