@@ -16,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -165,6 +166,7 @@ public class BlockDaoService implements IBlockService {
      * 6.save new dpos
      * 7.refresh cache
      **/
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
 
