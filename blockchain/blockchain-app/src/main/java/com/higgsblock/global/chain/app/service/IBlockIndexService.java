@@ -22,17 +22,10 @@ public interface IBlockIndexService {
     /**
      * fetch data by rule id
      *
-     * @param block the block
+     * @param block         the block
      * @param bestBlockHash best block hash
-     * @throws Exception
      * @return BlockIndexDaoEntity
      */
-    BlockIndexDaoEntity addBlockIndex(Block block, String bestBlockHash) throws Exception;
+    void addBlockIndex(Block block, String bestBlockHash);
 
-    /**
-     * get all the block index keys
-     *
-     * @return List<byte[]>
-     */
-    List<byte[]> keys();
 }

@@ -1,12 +1,19 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.dao.BlockIndexDao;
 import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
+import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexDaoEntity;
+import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
+import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,33 +31,28 @@ import java.util.List;
 public class BlockIdxDaoService implements IBlockIndexService {
 
     @Autowired
-    private BlockIndexDao blockIndexDao;
+    private BlockEntityDao blockDao;
 
     @Autowired
-    private DictionaryService dictionaryService;
+    private BlockIndexEntityDao blockIndexDao;
+
+    @Autowired
+    private TransDaoService transDaoService;
+
+    @Autowired
+    private BlockFormatter blockFormatter;
 
     @Override
-    public BlockIndex getBlockIndexByHeight(long height) {
-        try {
-            return blockIndexDao.get(height);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block index error");
-        }
-    }
-
-    @Override
-    public BlockIndexDaoEntity  addBlockIndex(Block block, String bestBlockHash) throws Exception {
-        boolean needBuildUTXO;
+    public void addBlockIndex(Block block, String bestBlockHash) {
+        boolean needBuildUTXO = false;
         BlockIndex blockIndex;
-        ArrayList blockHashes = new ArrayList<String>(1);
-        List<BaseDaoEntity> entityList = new ArrayList<>();
-
+        ArrayList<String> blockHashes = new ArrayList<String>(1);
         if (block.isGenesisBlock()) {
             blockHashes.add(block.getHash());
             blockIndex = new BlockIndex(1, blockHashes, 0);
             needBuildUTXO = true;
         } else {
-            blockIndex = blockIndexDao.get(block.getHeight());
+            blockIndex = getBlockIndexByHeight(block.getHeight());
             boolean hasOldBest = blockIndex == null ? false : blockIndex.hasBestBlock();
             boolean isBest = StringUtils.equals(bestBlockHash, block.getHash()) ? true : false;
 
@@ -62,28 +64,72 @@ public class BlockIdxDaoService implements IBlockIndexService {
                 blockIndex.setBestHash(bestBlockHash);
             }
 
-            if (isBest) {
-                BaseDaoEntity entity = dictionaryService.saveLatestBestBlockIndex(block.getHeight(), bestBlockHash);
-                entityList.add(entity);
-            }
             boolean hasNewBest = blockIndex.hasBestBlock();
             needBuildUTXO = !hasOldBest && hasNewBest;
+
+            if (!needBuildUTXO) {
+                return;
+            }
+            transDaoService.addTransIdxAndUtxo(block,bestBlockHash);
         }
 
+        //insert BlockIndexEntity to sqlite DB
+        insertBatch(block, blockIndex);
         LOGGER.info("persisted block index: " + blockIndex.toString());
 
-        BaseDaoEntity baseDaoEntity = blockIndexDao.getEntity(blockIndex.getHeight(), blockIndex);
-        entityList.add(baseDaoEntity);
-        BlockIndexDaoEntity entity = new BlockIndexDaoEntity();
-        entity.setCreateUtxo(needBuildUTXO);
-        entity.setBaseDaoEntity(entityList);
-
-        return  entity;
     }
 
     @Override
-    public List<byte[]> keys() {
-        return blockIndexDao.keys();
+    public BlockIndex getBlockIndexByHeight(long height) {
+        List<BlockIndexEntity> blockIndexEntities = blockIndexDao.getAllByHeight(height);
+        ArrayList<String> blockHashs = Lists.newArrayList();
+        if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
+            blockIndexEntities.forEach(blockIdxEntity -> {
+                blockHashs.add(blockIdxEntity.getBlockHash());
+            });
+
+            blockIndexEntities.forEach(blockIndexEntity -> {
+                if (blockIndexEntity.getIsBest() != -1) {
+                    BlockIndex blockIndex = new BlockIndex();
+                    blockIndex.setHeight(blockIndexEntity.getHeight());
+                    blockIndex.setBestIndex(blockIndexEntity.getIsBest());
+                    blockIndex.setBlockHashs(blockHashs);
+                }
+            });
+        }
+        LOGGER.error("get blockIndex is null by height = " + height);
+        return null;
     }
 
+    private void insertBatch(Block block, BlockIndex blockIndex) {
+        long blockHeight = blockIndex.getHeight();
+        String minerAddress = block.getMinerFirstPKSig().getAddress();
+        ArrayList<String> blockHashs = blockIndex.getBlockHashs();
+        String bestBlockHash = blockIndex.getBestBlockHash();
+        List<BlockIndexEntity> blockIndexEntities = Lists.newArrayList();
+        for (int i = 0; i < blockHashs.size(); i++) {
+            String blockHash = blockHashs.get(i);
+            BlockIndexEntity blockIndexEntity = new BlockIndexEntity();
+            blockIndexEntity.setHeight(blockHeight);
+            blockIndexEntity.setBlockHash(blockHash);
+            if (StringUtils.equals(blockHash, bestBlockHash)) {
+                blockIndexEntity.setIsBest(i);
+                blockIndexEntity.setMinerAddress(minerAddress);
+            } else {
+                blockIndexEntity.setIsBest(-1);
+                Block block1 = getBlockEntity2Block(blockHash);
+                blockIndexEntity.setMinerAddress(block1.getMinerFirstPKSig().getAddress());
+            }
+            blockIndexEntities.add(blockIndexEntity);
+        }
+        blockIndexDao.insertBatch(blockIndexEntities);
+    }
+
+    private Block getBlockEntity2Block(String blockHash) {
+        BlockEntity blockEntity = blockDao.getByField(blockHash);
+        if (blockEntity == null) {
+            return null;
+        }
+        return blockFormatter.parse(blockEntity.getData());
+    }
 }

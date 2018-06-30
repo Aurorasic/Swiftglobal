@@ -8,6 +8,10 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.BlockIndexDao;
 import com.higgsblock.global.chain.app.dao.TransDao;
 import com.higgsblock.global.chain.app.dao.UtxoDao;
+import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
@@ -64,6 +68,12 @@ public class TransactionService {
 
     @Autowired
     private TransactionFeeService transactionFeeService;
+
+    @Autowired
+    private ITransactionIndexEntity transactionIndexEntityDao;
+
+    @Autowired
+    private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
 
     /**
      * validate coin base tx
@@ -409,32 +419,26 @@ public class TransactionService {
             }
 
             String preTxHash = input.getPrevOut().getHash();
-            TransactionIndex preTxIndex;
-
-            try {
-                preTxIndex = transDao.get(preTxHash);
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get transaction index error");
-            }
-
-            if (preTxIndex == null) {
+            TransactionIndexEntity preTxIndexEntity = transactionIndexEntityDao.getByField(preTxHash);
+            if (preTxIndexEntity == null) {
                 //if the transactionIndex is not exist,
                 //so local data is not right
                 LOGGER.error("the preTxIndex is empty {}", i);
                 return false;
             }
 
-            Map<Short, String> outsSpend = preTxIndex.getOutsSpend();
-            if (MapUtils.isEmpty(outsSpend)) {
+            List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
+
+            if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
                 //if the outsSpend is empty;
                 //this transaction's transactions have not been used
                 continue;
             }
             short index = input.getPrevOut().getIndex();
-            boolean spent = preTxIndex.isSpent(index);
-            String txHash = preTxIndex.getTxHash();
+            boolean spent = isSpent(preTxHash, index);
+            String txHash = preTxIndexEntity.getTransactionHash();
             if (spent) {
-                String blockHash = preTxIndex.getBlockHash();
+                String blockHash = preTxIndexEntity.getBlockHash();
                 Block block = blockDaoService.getBlockByHash(blockHash);
                 if (block == null) {
                     LOGGER.error("the block is empty {}", i);
@@ -615,6 +619,19 @@ public class TransactionService {
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
         LOGGER.info("broadcast transaction success: " + tx.getHash());
+    }
+
+    private boolean isSpent(String preTxHash, short outIndex) {
+        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
+        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
+            return false;
+        }
+        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
+            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
