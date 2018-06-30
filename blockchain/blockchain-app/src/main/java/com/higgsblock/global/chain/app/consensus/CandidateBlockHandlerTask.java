@@ -1,8 +1,10 @@
 package com.higgsblock.global.chain.app.consensus;
 
+import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.sign.service.CollectWitnessBlockService;
+import com.higgsblock.global.chain.app.consensus.vote.Vote;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import org.apache.commons.collections.CollectionUtils;
@@ -385,5 +387,8 @@ public class CandidateBlockHandlerTask implements Runnable {
 
     public Future getFuture() {
         return future;
+    }
+
+    public void addVoteTable(HashBasedTable<Integer, String, Vote> voteTable) {
     }
 }
