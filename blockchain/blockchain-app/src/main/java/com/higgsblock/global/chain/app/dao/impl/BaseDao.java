@@ -92,7 +92,6 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, new BeanPropertySqlParameterSource(t), new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
-            System.err.println(e.getMessage());
             return null;
         }
     }
@@ -109,8 +108,6 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, paramMap, new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
-            //e.printStackTrace();
-            System.err.println(e.getMessage());
             return null;
         }
     }

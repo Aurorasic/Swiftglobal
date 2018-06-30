@@ -7,11 +7,9 @@ import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
 import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
 import com.higgsblock.global.chain.app.dao.iface.IWitnessEntity;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +24,7 @@ public class WitnessEntityService implements IWitnessEntityService {
      * TODO lwz pre mine block num 2018-05-26
      */
     private static final int PRE_BLOCKS = 13;
+
     /**
      * TODO lwz block num for a round of witness to sign 2018-05-26
      */
@@ -40,7 +39,7 @@ public class WitnessEntityService implements IWitnessEntityService {
     @Autowired
     private IWitnessEntity iWitnessEntity;
 
-    @Override
+   /* @Override
     public List<WitnessEntity> getByHeight(long height) {
         String key = buildCacheKey(height);
 
@@ -58,18 +57,11 @@ public class WitnessEntityService implements IWitnessEntityService {
         }
 
         return list;
-    }
+    }*/
 
     @Override
-    public List<WitnessEntity> getAll() {
-        List<WitnessPo> witnessPos = iWitnessEntity.findAll();
-        List<WitnessEntity> witnessEntities = new ArrayList<>();
-        for (WitnessPo witnessPo : witnessPos) {
-            WitnessEntity witnessEntity = new WitnessEntity();
-            BeanUtils.copyProperties(witnessPo, witnessEntity);
-            witnessEntities.add(witnessEntity);
-        }
-        return witnessEntities;
+    public List<WitnessPo> getAll() {
+        return iWitnessEntity.findAll();
     }
 
     private String buildCacheKey(long height) {

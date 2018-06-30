@@ -10,7 +10,7 @@ import lombok.Data;
 public class WitnessPo {
     private int id;
     private String pubKey;
-    private String ip;
+    private String address;
     private int socketPort;
     private int httpPort;
 }

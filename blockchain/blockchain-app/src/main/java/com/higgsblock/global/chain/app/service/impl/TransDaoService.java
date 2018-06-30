@@ -2,8 +2,10 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
@@ -35,6 +37,9 @@ public class TransDaoService implements ITransService {
     @Autowired
     private TransactionIndexEntityDao transactionIndexEntityDao;
 
+    @Autowired
+    private SpentTransactionOutIndexEntityDao spentTransactionOutIndexEntityDao;
+
     @Transactional
     @Override
     public void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) {
@@ -59,19 +64,17 @@ public class TransDaoService implements ITransService {
                     if (txIndex == null) {
                         throw new IllegalStateException("Spent tx not exits: " + spentTxHash);
                     }
-
-                    txIndex.addSpend(spentTxOutIndex, tx.getHash());
-
                     //update the pre-transaction state
-                    BaseDaoEntity entity = transDao.getEntity(txIndex.getTxHash(), txIndex);
-                    entityList.add(entity);
-
+                    SpentTransactionOutIndexEntity spentTxOutIndexEntity = new SpentTransactionOutIndexEntity();
+                    spentTxOutIndexEntity.setPreTransactionHash(spentTxHash);
+                    spentTxOutIndexEntity.setOutIndex(spentTxOutIndex);
+                    spentTxOutIndexEntity.setNowTransactionHash(tx.getHash());
+                    spentTransactionOutIndexEntityDao.add(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (getUTXO(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey);
                     }
-
                     utxoEntityDao.delete(spentTxHash, spentTxOutIndex);
                 }
             }
@@ -83,13 +86,13 @@ public class TransDaoService implements ITransService {
                 for (int i = 0; i < outputSize; i++) {
                     TransactionOutput output = outputs.get(i);
                     UTXO utxo = new UTXO(tx, (short) i, output);
-
                     saveUTXO(utxo);
                 }
             }
         }
     }
 
+    @Transactional
     @Override
     public void removeDoubleSpendTx(List<Transaction> cacheTransactions) {
         if (CollectionUtils.isEmpty(cacheTransactions)) {

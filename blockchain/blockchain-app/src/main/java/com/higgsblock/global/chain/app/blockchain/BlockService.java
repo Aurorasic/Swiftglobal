@@ -10,6 +10,8 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
+import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.DictionaryService;
@@ -86,6 +88,9 @@ public class BlockService {
     @Autowired
     private DictionaryService dictionaryService;
 
+    @Autowired
+    private IWitnessEntityService witnessService;
+
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
     public final static List<String> WITNESS_ADDRESS_LIST = new ArrayList<>();
@@ -96,11 +101,17 @@ public class BlockService {
     private TransactionFeeService transactionFeeService;
 
     public void initWitness() {
-        List<String> witnessAddrList = config.getWitnessAddrList();
-        List<Integer> witnessSocketPortList = config.getWitnessSocketPortList();
-        List<Integer> witnessHttpPortList = config.getWitnessHttpPortList();
-        List<String> witnessPubkeyList = config.getWitnessPubkeyList();
-
+        List<WitnessPo> witnessPos = witnessService.getAll();
+        List<String> witnessAddrList = new ArrayList<>();
+        List<Integer> witnessSocketPortList = new ArrayList<>();
+        List<Integer> witnessHttpPortList = new ArrayList<>();
+        List<String> witnessPubkeyList = new ArrayList<>();
+        for (WitnessPo witnessPo : witnessPos) {
+            witnessAddrList.add(witnessPo.getAddress());
+            witnessSocketPortList.add(witnessPo.getSocketPort());
+            witnessHttpPortList.add(witnessPo.getHttpPort());
+            witnessPubkeyList.add(witnessPo.getPubKey());
+        }
         int size = witnessAddrList.size();
         for (int i = 0; i < size; i++) {
             WitnessEntity entity = getEntity(

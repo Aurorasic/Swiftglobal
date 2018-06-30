@@ -60,18 +60,18 @@ public class TransactionIndex extends BaseSerializer {
         this.txIndex = txIndex;
     }
 
-    public boolean isSpent(short outIndex) {
+//    public boolean isSpent(short outIndex) {
+//
+//        if (outsSpend != null && outsSpend.containsKey(outIndex)) {
+//            return true;
+//        }
+//        return false;
+//    }
 
-        if (outsSpend != null && outsSpend.containsKey(outIndex)) {
-            return true;
-        }
-        return false;
-    }
-
-    public void addSpend(short outIndex, String spendTxHash) {
-        if (outsSpend == null) {
-            outsSpend = new HashMap<>(8);
-        }
-        outsSpend.put(outIndex, spendTxHash);
-    }
+//    public void addSpend(short outIndex, String spendTxHash) {
+//        if (outsSpend == null) {
+//            outsSpend = new HashMap<>(8);
+//        }
+//        outsSpend.put(outIndex, spendTxHash);
+//    }
 }
