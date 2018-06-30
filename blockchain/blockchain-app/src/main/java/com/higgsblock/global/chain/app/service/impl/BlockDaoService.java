@@ -218,8 +218,7 @@ public class BlockDaoService implements IBlockService {
         }
 
         //step 5
-        List<BaseDaoEntity> entityList = MinerScoreStrategy.refreshMinersScore(block);
-        blockDao.writeBatch(entityList);
+        MinerScoreStrategy.refreshMinersScore(block);
 
         //step 6
         nodeManager.calculateDposNodes(block);
