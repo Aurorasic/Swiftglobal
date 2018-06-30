@@ -66,7 +66,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
             if (!needBuildUTXO) {
                 return;
             }
-            transDaoService.addTransIdxAndUtxo(block,bestBlockHash);
+            transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
         }
 
         //insert BlockIndexEntity to sqlite DB
@@ -127,5 +127,10 @@ public class BlockIdxDaoService implements IBlockIndexService {
             return null;
         }
         return blockFormatter.parse(blockEntity.getData());
+    }
+
+    public BlockIndex getLastBlockIndex() {
+        long maxHeight = blockIndexDao.getMaxHeight();
+        return getBlockIndexByHeight(maxHeight);
     }
 }

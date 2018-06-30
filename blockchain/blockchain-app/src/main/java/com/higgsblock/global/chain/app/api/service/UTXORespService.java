@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.api.service;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.dao.UtxoDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

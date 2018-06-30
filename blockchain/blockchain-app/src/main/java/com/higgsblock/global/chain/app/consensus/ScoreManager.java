@@ -1,18 +1,8 @@
 package com.higgsblock.global.chain.app.consensus;
 
 
-import com.higgsblock.global.chain.app.dao.ScoreDao;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import lombok.Data;
-import org.rocksdb.RocksDBException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author yuguojia
  * @date 2018/03/02
@@ -30,8 +20,8 @@ public class ScoreManager {
      * and so on
      */
 
-    @Autowired
-    private ScoreDao scoreDao;
+//    @Autowired
+//    private ScoreDao scoreDao;
 
 
 //    public Map getDposMinerSoreMap() {

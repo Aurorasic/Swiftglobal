@@ -2,9 +2,6 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.dao.entity.BlockIndexDaoEntity;
-
-import java.util.List;
 
 /**
  * @author Zhao xiaogang
