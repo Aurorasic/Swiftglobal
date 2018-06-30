@@ -62,17 +62,16 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
             boolean hasNewBest = blockIndex.hasBestBlock();
             needBuildUTXO = !hasOldBest && hasNewBest;
-
-            if (!needBuildUTXO) {
-                return;
-            }
-            transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
         }
 
         //insert BlockIndexEntity to sqlite DB
         insertBatch(block, blockIndex);
         LOGGER.info("persisted block index: " + blockIndex.toString());
 
+        if (!needBuildUTXO) {
+            return;
+        }
+        transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
     }
 
     @Override
