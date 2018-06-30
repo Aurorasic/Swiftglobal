@@ -41,7 +41,12 @@ public class ScoreDaoService implements IScoreService {
      */
     @Override
     public void put(String address, Integer score) {
-        scoreDao.add(new ScoreEntity(address, score));
+        ScoreEntity scoreEntity = new ScoreEntity(address, score);
+        if (null != scoreDao.getByField(address)) {
+            scoreDao.update(scoreEntity);
+        } else {
+            scoreDao.add(scoreEntity);
+        }
     }
 
     /**
