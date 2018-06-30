@@ -17,7 +17,7 @@ import java.util.List;
 public class SpentTransactionOutIndexEntityDao extends BaseDao<SpentTransactionOutIndexEntity> implements ISpentTransactionOutIndexEntity {
     @Override
     public int add(SpentTransactionOutIndexEntity spentTransactionOutIndexEntity) {
-        String sql = "insert into spent_transaction_out_index values (:preTransactionHash,:outIndex,:nowTransactionHash)";
+        String sql = "insert into spent_transaction_out_index (pre_transaction_hash,out_index,now_transaction_hash)values (:preTransactionHash,:outIndex,:nowTransactionHash)";
         return super.add(spentTransactionOutIndexEntity, sql);
     }
 

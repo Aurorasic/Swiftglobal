@@ -43,7 +43,7 @@ public class WitnessEntityDao extends BaseDao<WitnessPo> implements IWitnessEnti
 
     @Override
     public int[] batchInsert(List<WitnessPo> witnessEntities) {
-        String sql = "insert into t_witness values (:id,:pubKey,:address,:socketPort,:httpPort)";
+        String sql = "insert into t_witness (id,pub_key,address,socket_port,http_port)values (:id,:pubKey,:address,:socketPort,:httpPort)";
         return super.template.batchUpdate(sql, SqlParameterSourceUtils.createBatch(witnessEntities.toArray()));
     }
 }

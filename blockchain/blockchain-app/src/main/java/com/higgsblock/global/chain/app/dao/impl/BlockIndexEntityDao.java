@@ -17,7 +17,7 @@ import java.util.List;
 public class BlockIndexEntityDao extends BaseDao<BlockIndexEntity> implements IBlockIndexEntity {
     @Override
     public int add(BlockIndexEntity blockIndexEntity) {
-        String sql = "insert into t_block_index values (:height,:blockHash,:isBest,:minerAddress)";
+        String sql = "insert into t_block_index (height,block_hash,is_best,miner_address)values (:height,:blockHash,:isBest,:minerAddress)";
         return super.add(blockIndexEntity, sql);
     }
 
@@ -53,7 +53,7 @@ public class BlockIndexEntityDao extends BaseDao<BlockIndexEntity> implements IB
 
     @Override
     public int[] insertBatch(List<BlockIndexEntity> blockIndexEntities) {
-        String sql = "insert into t_block_index values (:height,:blockHash,:isBest,:minerAddress)";
+        String sql = "insert into t_block_index (height,block_hash,is_best,miner_address)values (:height,:blockHash,:isBest,:minerAddress)";
         return super.template.batchUpdate(sql, SqlParameterSourceUtils.createBatch(blockIndexEntities.toArray()));
     }
 

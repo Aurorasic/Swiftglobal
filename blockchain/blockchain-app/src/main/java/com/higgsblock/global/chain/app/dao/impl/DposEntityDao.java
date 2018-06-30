@@ -15,7 +15,7 @@ import java.util.List;
 public class DposEntityDao extends BaseDao<DposEntity> implements IDposEntity {
     @Override
     public int add(DposEntity dposEntity) {
-        String sql = "insert into t_dpos values (:sn, :addresses)";
+        String sql = "insert into t_dpos (sn,addresses)values (:sn, :addresses)";
         return super.add(dposEntity, sql);
     }
 

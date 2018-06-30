@@ -15,7 +15,7 @@ import java.util.List;
 public class UTXOEntityDao extends BaseDao<UTXOEntity> implements IUTXOEntity {
     @Override
     public int add(UTXOEntity utxoEntity) {
-        String sql = "insert into t_utxo values (:transactionHash,:outIndex,:amount,:currency,:scriptType,:lockScript);";
+        String sql = "insert into t_utxo (transaction_hash,out_index,amount,currency,script_type,lock_script)values (:transactionHash,:outIndex,:amount,:currency,:scriptType,:lockScript);";
         return super.add(utxoEntity, sql);
     }
 

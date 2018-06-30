@@ -15,7 +15,7 @@ import java.util.List;
 public class ScoreEntityDao extends BaseDao<ScoreEntity> implements IScoreEntity {
     @Override
     public int add(ScoreEntity scoreEntity) {
-        String sql = "insert into t_score values (:address,:score)";
+        String sql = "insert into t_score (address,score)values (:address,:score)";
         return super.add(scoreEntity, sql);
     }
 

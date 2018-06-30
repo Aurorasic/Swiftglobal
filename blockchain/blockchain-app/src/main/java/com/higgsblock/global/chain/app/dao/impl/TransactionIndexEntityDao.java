@@ -16,7 +16,7 @@ import java.util.List;
 public class TransactionIndexEntityDao extends BaseDao<TransactionIndexEntity> implements ITransactionIndexEntity {
     @Override
     public int add(TransactionIndexEntity transactionIndexEntity) {
-        String sql = "insert into t_transaction_index values (:transactionHash,:blockHash,:transactionIndex)";
+        String sql = "insert into t_transaction_index (transaction_hash,block_hash,transaction_index)values (:transactionHash,:blockHash,:transactionIndex)";
         return super.add(transactionIndexEntity, sql);
     }
 
@@ -47,7 +47,6 @@ public class TransactionIndexEntityDao extends BaseDao<TransactionIndexEntity> i
     @Override
     public TransactionIndex get(String transactionHash) {
         TransactionIndexEntity entity = getByField(transactionHash);
-
         return new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex());
     }
 }
