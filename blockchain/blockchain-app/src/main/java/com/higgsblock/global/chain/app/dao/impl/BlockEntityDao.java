@@ -16,7 +16,7 @@ public class BlockEntityDao extends BaseDao<BlockEntity> implements IBlockEntity
 
     @Override
     public int add(BlockEntity blockEntity) {
-        String sql = "insert into t_block values (:blockHash, :height,:data)";
+        String sql = "insert into t_block values (:blockHash,:height,:data)";
         return super.add(blockEntity, sql);
     }
 
