@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.dao.impl;
 import com.google.common.collect.ImmutableMap;
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
 import com.higgsblock.global.chain.app.dao.iface.IDposEntity;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
@@ -10,6 +11,7 @@ import java.util.List;
  * @author yuanjiantao
  * @date 6/30/2018
  */
+@Repository
 public class DposEntityDao extends BaseDao<DposEntity> implements IDposEntity {
     @Override
     public int add(DposEntity dposEntity) {
