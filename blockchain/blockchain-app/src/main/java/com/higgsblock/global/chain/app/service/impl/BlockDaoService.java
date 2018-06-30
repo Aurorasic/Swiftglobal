@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.collect.ImmutableList;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;

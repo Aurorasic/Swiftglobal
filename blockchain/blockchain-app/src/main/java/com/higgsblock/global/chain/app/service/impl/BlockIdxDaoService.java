@@ -4,10 +4,7 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
-import com.higgsblock.global.chain.app.dao.BlockIndexDao;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
-import com.higgsblock.global.chain.app.dao.entity.BlockIndexDaoEntity;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
 import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
@@ -15,7 +12,6 @@ import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
