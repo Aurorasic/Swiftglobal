@@ -51,7 +51,7 @@ public class ConnectionManager implements InitializingBean {
      * Maximum number of l3-level connections a node can accept as a server. The word "l3-level" means that
      * connection is not miner to witness, nor is witness to another witness.
      */
-    private static final int SERVER_L3_CONN_LIMIT = 6;
+    private static final int SERVER_L3_CONN_LIMIT = 30;
 
     /**
      * Maximum number of l2-level connections a node can accept as a server. The word "l2-level" means that
