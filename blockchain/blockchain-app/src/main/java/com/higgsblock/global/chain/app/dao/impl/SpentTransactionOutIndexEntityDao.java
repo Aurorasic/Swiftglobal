@@ -17,14 +17,14 @@ import java.util.List;
 public class SpentTransactionOutIndexEntityDao extends BaseDao<SpentTransactionOutIndexEntity> implements ISpentTransactionOutIndexEntity {
     @Override
     public int add(SpentTransactionOutIndexEntity spentTransactionOutIndexEntity) {
-        String sql = "insert into spent_transaction_out_index (pre_transaction_hash,out_index,now_transaction_hash)values (:preTransactionHash,:outIndex,:nowTransactionHash)";
+        String sql = "insert into t_spent_transaction_out_index (pre_transaction_hash,out_index,now_transaction_hash)values (:preTransactionHash,:outIndex,:nowTransactionHash)";
         return super.add(spentTransactionOutIndexEntity, sql);
     }
 
     @Override
     public List<SpentTransactionOutIndexEntity> getByPreHash(String preTxHash) {
         List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = null;
-        String sql = "select pre_transaction_hash,out_index,now_transaction_hash from spent_transaction_out_index where pre_transaction_hash=:preTransactionHash";
+        String sql = "select pre_transaction_hash,out_index,now_transaction_hash from t_spent_transaction_out_index where pre_transaction_hash=:preTransactionHash";
         try {
             spentTxOutIndexEntities = super.template.query(sql, ImmutableMap.of("preTransactionHash", preTxHash), new BeanPropertyRowMapper<>(SpentTransactionOutIndexEntity.class));
         } catch (DataAccessException e) {
