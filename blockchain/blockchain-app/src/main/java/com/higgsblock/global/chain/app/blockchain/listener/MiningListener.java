@@ -15,7 +15,6 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.RandomUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -87,7 +86,8 @@ public class MiningListener implements IEventBusListener {
                     List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
                     nodeManager.persistDposNodes(0L, dposAddresses);
                 }
-            } catch (RocksDBException e) {
+            } catch (Exception e) {
+                //TODO yangshenghong 检查抛出的正确的异常
                 LOGGER.info(e.getMessage(), e);
             }
         }

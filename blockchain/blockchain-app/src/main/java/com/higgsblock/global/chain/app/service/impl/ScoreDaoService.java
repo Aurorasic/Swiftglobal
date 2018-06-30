@@ -4,7 +4,6 @@ import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.dao.iface.IScoreEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +28,7 @@ public class ScoreDaoService implements IScoreService {
      * @return
      */
     @Override
-    public Integer get(String address) throws RocksDBException {
+    public Integer get(String address) {
         ScoreEntity scoreEntity = scoreDao.getByField(address);
         return null == scoreEntity ? null : scoreEntity.getScore();
     }
@@ -75,7 +74,6 @@ public class ScoreDaoService implements IScoreService {
      * query all score
      *
      * @return
-     * @throws RocksDBException
      */
     @Override
     public Map<String, Integer> loadAll() {

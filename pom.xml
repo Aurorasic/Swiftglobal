@@ -260,13 +260,6 @@
                 <version>1.6.0</version>
             </dependency>
 
-            <!-- rocksdb -->
-            <dependency>
-                <groupId>org.rocksdb</groupId>
-                <artifactId>rocksdbjni</artifactId>
-                <version>5.9.2</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 

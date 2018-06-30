@@ -15,7 +15,6 @@ import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -57,7 +56,7 @@ public class NodeManager implements InitializingBean {
             .build();
     private Function<Long, List<String>> function = null;
 
-    public void calculateDposNodes(Block block) throws RocksDBException {
+    public void calculateDposNodes(Block block) {
         List<String> dposAddresses = calculateDposAddresses(block);
         if (CollectionUtils.isEmpty(dposAddresses)) {
             return;
@@ -66,7 +65,7 @@ public class NodeManager implements InitializingBean {
         persistDposNodes(sn, dposAddresses);
     }
 
-    public List<String> calculateDposAddresses(Block block) throws RocksDBException {
+    public List<String> calculateDposAddresses(Block block) {
         long height = block.getHeight();
         boolean isEndHeight = isEndHeight(height);
         if (!isEndHeight) {

@@ -8,7 +8,6 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +35,7 @@ public class MinerScoreStrategy {
     /**
      * Called by block dao service
      */
-    public static void refreshMinersScore(Block bestBlock) throws RocksDBException {
+    public static void refreshMinersScore(Block bestBlock) {
 
         BlockWitness minerPKSig = bestBlock.getMinerFirstPKSig();
         Map<String, Integer> allMinerSoreMap = scoreDaoService.loadAll();
@@ -61,7 +60,7 @@ public class MinerScoreStrategy {
 
     }
 
-    private static void plusScore(Map<String, Integer> allMinerSoreMap, String address, int plusScore) throws RocksDBException {
+    private static void plusScore(Map<String, Integer> allMinerSoreMap, String address, int plusScore) {
         if (StringUtils.isNotEmpty(address) && plusScore != 0) {
             Integer tmpScore = scoreDaoService.get(address);
             int score = tmpScore == null ? INIT_SCORE : tmpScore;

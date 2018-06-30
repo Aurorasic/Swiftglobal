@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.service;
 
-import org.rocksdb.RocksDBException;
 
 import java.util.Map;
 
@@ -14,9 +13,8 @@ public interface IScoreService {
      *
      * @param address
      * @return
-     * @throws RocksDBException
      */
-    Integer get(String address) throws RocksDBException;
+    Integer get(String address);
 
     /**
      * set score
@@ -33,9 +31,8 @@ public interface IScoreService {
      * @param address
      * @param score
      * @return
-     * @throws RocksDBException
      */
-    void putIfAbsent(String address, Integer score) throws RocksDBException;
+    void putIfAbsent(String address, Integer score);
 
     /**
      * remove score
@@ -49,8 +46,7 @@ public interface IScoreService {
      * load all score
      *
      * @return
-     * @throws RocksDBException
      */
-    Map<String, Integer> loadAll() throws RocksDBException;
+    Map<String, Integer> loadAll();
 
 }
