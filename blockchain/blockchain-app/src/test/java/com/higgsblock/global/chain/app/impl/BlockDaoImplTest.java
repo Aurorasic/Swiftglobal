@@ -163,7 +163,7 @@ public class BlockDaoImplTest extends BaseTest {
 
 //    private void findAllWitness(List<BaseDaoEntity> all) {
 //        LOGGER.info("query all witness...");
-//        List<WitnessEntity> values = witnessDao.allValues();
+//        List<WitnessPo> values = witnessDao.allValues();
 //        if (CollectionUtils.isEmpty(values)) {
 //            LOGGER.warn("witness is empty!!!");
 //        }

@@ -4,11 +4,14 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.WitnessEntityDao;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
+import com.higgsblock.global.chain.app.dao.iface.IWitnessEntity;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +38,7 @@ public class WitnessEntityService implements IWitnessEntityService {
 
 
     @Autowired
-    private WitnessEntityDao witnessEntityDao;
+    private IWitnessEntity iWitnessEntity;
 
     @Override
     public List<WitnessEntity> getByHeight(long height) {
@@ -43,7 +46,12 @@ public class WitnessEntityService implements IWitnessEntityService {
 
         List<WitnessEntity> list = WITNESS_CACHE.getIfPresent(key);
         if (list == null) {
-            list = witnessEntityDao.getByHeight(height);
+            List<WitnessPo> byHeight = iWitnessEntity.getByHeight(height);
+            for (WitnessPo witnessPo : byHeight) {
+                WitnessEntity witnessEntity = new WitnessEntity();
+                BeanUtils.copyProperties(witnessPo, witnessEntity);
+                list.add(witnessEntity);
+            }
             if (list != null) {
                 WITNESS_CACHE.put(key, list);
             }
@@ -53,13 +61,15 @@ public class WitnessEntityService implements IWitnessEntityService {
     }
 
     @Override
-    public boolean addAll(List<WitnessEntity> entities) {
-        return witnessEntityDao.addAll(entities);
-    }
-
-    @Override
     public List<WitnessEntity> getAll() {
-        return witnessEntityDao.getAll();
+        List<WitnessPo> witnessPos = iWitnessEntity.findAll();
+        List<WitnessEntity> witnessEntities = new ArrayList<>();
+        for (WitnessPo witnessPo : witnessPos) {
+            WitnessEntity witnessEntity = new WitnessEntity();
+            BeanUtils.copyProperties(witnessPo, witnessEntity);
+            witnessEntities.add(witnessEntity);
+        }
+        return witnessEntities;
     }
 
     private String buildCacheKey(long height) {

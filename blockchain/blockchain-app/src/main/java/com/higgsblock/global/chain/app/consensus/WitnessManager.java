@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import com.higgsblock.global.chain.crypto.ECKey;
-import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Priority;
 import java.util.List;
 
 
@@ -77,7 +75,7 @@ public class WitnessManager implements InitializingBean {
     }
 
     private synchronized void loadWitnessFromDb() {
-        //List<WitnessEntity> entities = witnessService.getAll();
+        //List<WitnessPo> entities = witnessService.getAll();
 //        blockService.initWitness();
         List<WitnessEntity> entities = BlockService.WITNESS_ENTITY_LIST;
         if (CollectionUtils.isNotEmpty(entities)) {

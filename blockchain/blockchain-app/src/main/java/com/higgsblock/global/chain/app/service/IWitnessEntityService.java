@@ -20,14 +20,6 @@ public interface IWitnessEntityService {
     public List<WitnessEntity> getByHeight(long height);
 
     /**
-     * Add all.
-     *
-     * @param entities
-     * @return
-     */
-    public boolean addAll(List<WitnessEntity> entities);
-
-    /**
      * Get all.
      *
      * @return
