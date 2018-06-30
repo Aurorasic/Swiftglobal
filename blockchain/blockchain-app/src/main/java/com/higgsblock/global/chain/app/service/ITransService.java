@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 
 import java.util.List;
 
@@ -17,10 +16,8 @@ public interface ITransService {
      *
      * @param bestBlock the best block
      * @param bestBlockHash the best block hash
-     * @throws  Exception
-     * @return List<BaseDaoEntity>
      */
-    List<BaseDaoEntity> addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
+    void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
 
     /**
      * Remove double spent transaction
