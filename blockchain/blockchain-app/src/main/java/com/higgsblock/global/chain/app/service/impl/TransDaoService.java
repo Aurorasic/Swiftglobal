@@ -167,7 +167,8 @@ public class TransDaoService implements ITransService {
         utxoEntityDao.add(entity);
     }
 
-    private UTXO getUTXO(String utxoKey) {
+    @Override
+    public UTXO getUTXO(String utxoKey) {
         UTXOEntity entity = utxoEntityDao.getByField(utxoKey);
 
         if (entity == null) {

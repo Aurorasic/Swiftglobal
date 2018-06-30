@@ -2,8 +2,9 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.dao.UtxoDao;
+import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
+import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.SizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -58,7 +59,7 @@ public class TransactionFeeService {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private UtxoDao utxoDao;
+    private ITransService transService;
 
     /**
      * count Miner and Witness Rewards
@@ -276,15 +277,15 @@ public class TransactionFeeService {
             String preOutKey = input.getPrevOut().getKey();
 
             UTXO utxo = null;
-            try {
-                utxo = utxoDao.get(preOutKey);
-                if (null == utxo) {
-                    LOGGER.error("get utxo is null " + preOutKey);
-                    throw new RuntimeException("uxto is null " + preOutKey);
-                }
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get utxo error");
+            utxo = transService.getUTXO(preOutKey);
+            if (null == utxo) {
+                LOGGER.error("get utxo is null " + preOutKey);
+                throw new RuntimeException("uxto is null " + preOutKey);
             }
+//            try {
+//            } catch (RocksDBException e) {
+//                throw new IllegalStateException("Get utxo error");
+//            }
 
             TransactionOutput output = utxo.getOutput();
             if (output.isCASCurrency()) {

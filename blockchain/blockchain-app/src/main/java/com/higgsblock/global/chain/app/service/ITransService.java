@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 
 import java.util.List;
 
@@ -26,4 +27,6 @@ public interface ITransService {
      * @return void
      */
     void removeDoubleSpendTx(List<Transaction> cacheTransactions);
+
+    UTXO getUTXO(String utxoKey);
 }

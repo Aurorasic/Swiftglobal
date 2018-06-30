@@ -54,4 +54,11 @@ public class UTXOEntityDao extends BaseDao<UTXOEntity> implements IUTXOEntity {
     public <E> UTXOEntity getByField(E utxoEntity) {
         return null;
     }
+
+    @Override
+    public List<UTXOEntity> selectByAddressCurrency(String address, String currency) {
+        String sql = "select transaction_hash,out_index,amount,currency,script_type,lock_script " +
+                "from t_utxo where lock_script=:lock_script and currency=:currency";
+        return super.findAll(ImmutableMap.of("lock_script", address, "currency", currency), sql);
+    }
 }
