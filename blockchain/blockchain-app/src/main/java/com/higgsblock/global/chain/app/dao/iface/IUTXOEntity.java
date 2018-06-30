@@ -32,4 +32,7 @@ public interface IUTXOEntity extends IDao<UTXOEntity> {
 
     List<UTXOEntity> selectByAddressCurrency(String address, String currency);
 
+
+    List<UTXOEntity> selectByAddress(String address);
+
 }
