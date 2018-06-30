@@ -68,10 +68,9 @@ public class BlockIdxDaoService implements IBlockIndexService {
         insertBatch(block, blockIndex);
         LOGGER.info("persisted block index: " + blockIndex.toString());
 
-        if (!needBuildUTXO) {
-            return;
+        if (needBuildUTXO) {
+            transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
         }
-        transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
     }
 
     @Override
@@ -82,17 +81,17 @@ public class BlockIdxDaoService implements IBlockIndexService {
             blockIndexEntities.forEach(blockIdxEntity -> {
                 blockHashs.add(blockIdxEntity.getBlockHash());
             });
-
+            BlockIndex blockIndex = new BlockIndex();
             blockIndexEntities.forEach(blockIndexEntity -> {
                 if (blockIndexEntity.getIsBest() != -1) {
-                    BlockIndex blockIndex = new BlockIndex();
                     blockIndex.setHeight(blockIndexEntity.getHeight());
                     blockIndex.setBestIndex(blockIndexEntity.getIsBest());
                     blockIndex.setBlockHashs(blockHashs);
                 }
             });
+            return blockIndex;
         }
-        LOGGER.error("get blockIndex is null by height = " + height);
+        LOGGER.info("get blockIndex is null by height = " + height);
         return null;
     }
 
