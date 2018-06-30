@@ -26,9 +26,9 @@ public class ScoreEntityDao extends BaseDao<ScoreEntity> implements IScoreEntity
     }
 
     @Override
-    public <E> int delete(E e) {
-        String sql = "delete from t_score where block_hash=:blockHash";
-        return super.delete(sql, ImmutableMap.of("blockHash", e));
+    public <E> int delete(E address) {
+        String sql = "delete from t_score where address=:address";
+        return super.delete(sql, ImmutableMap.of("address", address));
     }
 
     @Override
