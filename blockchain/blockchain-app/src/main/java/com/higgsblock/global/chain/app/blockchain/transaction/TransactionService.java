@@ -419,8 +419,6 @@ public class TransactionService {
 
             String preTxHash = input.getPrevOut().getHash();
 
-//            TransactionIndex preTxIndex = transDao.get(preTxHash);
-//            if (preTxIndex == null) {
             TransactionIndexEntity preTxIndexEntity = transactionIndexEntityDao.getByField(preTxHash);
             if (preTxIndexEntity == null) {
                 //if the transactionIndex is not exist,
@@ -585,11 +583,6 @@ public class TransactionService {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-
-//        return utxoEntityDao.findAll().stream()
-//                .filter(utxo -> StringUtils.equals(utxo.getOutput().getMoney().getCurrency(), currency)
-//                        && StringUtils.equals(address, utxo.getAddress()))
-//                .collect(Collectors.toList());
         List<UTXOEntity> utxoEntities = utxoEntityDao.selectByAddressCurrency(address, currency);
         List<UTXO> UTXOs = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
