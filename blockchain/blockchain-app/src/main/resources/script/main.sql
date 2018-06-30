@@ -13,20 +13,8 @@ Date: 2018-06-30 18:44:46
 */
 
 PRAGMA foreign_keys = OFF;
-
 -- ----------------------------
 -- Table structure for sqlite_sequence
--- ----------------------------
-DROP TABLE IF EXISTS "main"."sqlite_sequence";
-CREATE TABLE sqlite_sequence(name,seq);
-
--- ----------------------------
--- Records of sqlite_sequence
--- ----------------------------
-INSERT INTO "main"."sqlite_sequence" VALUES ('t_witness', 11);
-
--- ----------------------------
--- Table structure for t_block
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_block";
 CREATE TABLE "t_block" (
