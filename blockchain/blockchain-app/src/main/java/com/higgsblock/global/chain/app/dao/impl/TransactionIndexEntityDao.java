@@ -47,6 +47,6 @@ public class TransactionIndexEntityDao extends BaseDao<TransactionIndexEntity> i
     @Override
     public TransactionIndex get(String transactionHash) {
         TransactionIndexEntity entity = getByField(transactionHash);
-        return new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex());
+        return entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
     }
 }
