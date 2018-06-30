@@ -90,9 +90,7 @@ public class BlockCacheManager {
             if (StringUtils.isEmpty(prevBlockHash) || isContains(prevBlockHash)) {
                 continue;
             }
-            long preHeight = block.getHeight() - 1;
             eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight(), block.getHash(), blockFullInfo.getSourceId()));
-            LOGGER.info("height={}_block={} is orphan block or no best pre block, fetch pre height blocks", block.getHeight(), block.getHash());
         }
     }
 
