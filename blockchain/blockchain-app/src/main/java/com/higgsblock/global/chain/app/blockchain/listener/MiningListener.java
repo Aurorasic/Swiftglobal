@@ -79,16 +79,11 @@ public class MiningListener implements IEventBusListener {
     private void calculateDpos() {
         long maxHeight = blockService.getBestMaxHeight();
         if (maxHeight == 1L) {
-            try {
-                List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
-                if (CollectionUtils.isEmpty(dposGroupBySn)) {
-                    Block block = blockService.getBestBlockByHeight(1L);
-                    List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
-                    nodeManager.persistDposNodes(0L, dposAddresses);
-                }
-            } catch (Exception e) {
-                //TODO yangshenghong 检查抛出的正确的异常
-                LOGGER.info(e.getMessage(), e);
+            List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
+            if (CollectionUtils.isEmpty(dposGroupBySn)) {
+                Block block = blockService.getBestBlockByHeight(1L);
+                List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
+                nodeManager.persistDposNodes(0L, dposAddresses);
             }
         }
     }
