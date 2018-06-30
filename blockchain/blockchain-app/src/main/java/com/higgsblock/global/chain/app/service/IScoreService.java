@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.service;
 
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import org.rocksdb.RocksDBException;
 
 import java.util.Map;
@@ -26,7 +25,7 @@ public interface IScoreService {
      * @param score
      * @return
      */
-    BaseDaoEntity put(String address, Integer score);
+    void put(String address, Integer score);
 
     /**
      * set score if not exist
@@ -36,7 +35,7 @@ public interface IScoreService {
      * @return
      * @throws RocksDBException
      */
-    BaseDaoEntity putIfAbsent(String address, Integer score) throws RocksDBException;
+    void putIfAbsent(String address, Integer score) throws RocksDBException;
 
     /**
      * remove score
@@ -44,7 +43,7 @@ public interface IScoreService {
      * @param address
      * @return
      */
-    BaseDaoEntity remove(String address);
+    void remove(String address);
 
     /**
      * load all score

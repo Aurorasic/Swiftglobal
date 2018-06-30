@@ -19,7 +19,6 @@ import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.SerializationUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -223,7 +222,7 @@ public class BlockDaoService implements IBlockService {
         blockDao.writeBatch(entityList);
 
         //step 6
-        BaseDaoEntity entity = nodeManager.calculateDposNodes(block);
+        nodeManager.calculateDposNodes(block);
         if (entity != null) {
             blockDao.writeBatch(ImmutableList.of(entity));
         }
