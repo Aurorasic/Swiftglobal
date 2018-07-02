@@ -15,7 +15,7 @@ import java.util.List;
 public class UTXOEntityDao extends BaseDao<UTXOEntity> implements IUTXOEntity {
     @Override
     public int add(UTXOEntity utxoEntity) {
-        String sql = "insert into t_utxo values (:transactionHash,:outIndex,:amount,:currency,:scriptType,:lockScript);";
+        String sql = "insert into t_utxo (transaction_hash,out_index,amount,currency,script_type,lock_script)values (:transactionHash,:outIndex,:amount,:currency,:scriptType,:lockScript);";
         return super.add(utxoEntity, sql);
     }
 
@@ -53,5 +53,19 @@ public class UTXOEntityDao extends BaseDao<UTXOEntity> implements IUTXOEntity {
     @Override
     public <E> UTXOEntity getByField(E utxoEntity) {
         return null;
+    }
+
+    @Override
+    public List<UTXOEntity> selectByAddressCurrency(String address, String currency) {
+        String sql = "select transaction_hash,out_index,amount,currency,script_type,lock_script " +
+                "from t_utxo where lock_script=:lock_script and currency=:currency";
+        return super.findAll(ImmutableMap.of("lock_script", address, "currency", currency), sql);
+    }
+
+    @Override
+    public List<UTXOEntity> selectByAddress(String address) {
+        String sql = "select transaction_hash,out_index,amount,currency,script_type,lock_script " +
+                "from t_utxo where lock_script=:lock_script";
+        return super.findAll(ImmutableMap.of("lock_script", address), sql);
     }
 }

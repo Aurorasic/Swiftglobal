@@ -10,8 +10,6 @@ import java.util.List;
  */
 public interface IWitnessEntity extends IDao<WitnessPo>{
 
-    List<WitnessPo> getByHeight(long height);
-
     int[] batchInsert(List<WitnessPo> witnessEntities);
 
 }

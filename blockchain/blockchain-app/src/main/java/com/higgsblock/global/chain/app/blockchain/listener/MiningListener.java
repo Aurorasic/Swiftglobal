@@ -15,7 +15,6 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.RandomUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -80,15 +79,11 @@ public class MiningListener implements IEventBusListener {
     private void calculateDpos() {
         long maxHeight = blockService.getBestMaxHeight();
         if (maxHeight == 1L) {
-            try {
-                List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
-                if (CollectionUtils.isEmpty(dposGroupBySn)) {
-                    Block block = blockService.getBestBlockByHeight(1L);
-                    List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
-                    nodeManager.persistDposNodes(0L, dposAddresses);
-                }
-            } catch (RocksDBException e) {
-                LOGGER.info(e.getMessage(), e);
+            List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
+            if (CollectionUtils.isEmpty(dposGroupBySn)) {
+                Block block = blockService.getBestBlockByHeight(1L);
+                List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
+                nodeManager.persistDposNodes(0L, dposAddresses);
             }
         }
     }

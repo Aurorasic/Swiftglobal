@@ -1,15 +1,21 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.dao.BlockIndexDao;
-import com.higgsblock.global.chain.app.dao.TransDao;
-import com.higgsblock.global.chain.app.dao.UtxoDao;
+import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
+import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
+import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
+import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -17,14 +23,11 @@ import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author baizhengwen
@@ -51,19 +54,25 @@ public class TransactionService {
     private BlockDaoService blockDaoService;
 
     @Autowired
+    private ITransService transService;
+
+    @Autowired
+    private UTXOEntityDao utxoEntityDao;
+
+    @Autowired
+    private TransactionIndexEntityDao transDao;
+
+    @Autowired
     private BlockIdxDaoService blockIdxDaoService;
 
     @Autowired
-    private UtxoDao utxoDao;
-
-    @Autowired
-    private TransDao transDao;
-
-    @Autowired
-    private BlockIndexDao blockIndexDao;
-
-    @Autowired
     private TransactionFeeService transactionFeeService;
+
+    @Autowired
+    private ITransactionIndexEntity transactionIndexEntityDao;
+
+    @Autowired
+    private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
 
     /**
      * validate coin base tx
@@ -371,11 +380,11 @@ public class TransactionService {
         }
 
         UTXO utxo;
-        try {
-            utxo = utxoDao.get(preOutKey);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get utxo error");
-        }
+        utxo = transService.getUTXO(preOutKey);
+//        try {
+//        } catch (RocksDBException e) {
+//            throw new IllegalStateException("Get utxo error");
+//        }
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={}_preOutKey={}", JSONObject.toJSONString(input, true), preOutKey);
@@ -409,44 +418,34 @@ public class TransactionService {
             }
 
             String preTxHash = input.getPrevOut().getHash();
-            TransactionIndex preTxIndex;
 
-            try {
-                preTxIndex = transDao.get(preTxHash);
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get transaction index error");
-            }
-
-            if (preTxIndex == null) {
+            TransactionIndexEntity preTxIndexEntity = transactionIndexEntityDao.getByField(preTxHash);
+            if (preTxIndexEntity == null) {
                 //if the transactionIndex is not exist,
                 //so local data is not right
                 LOGGER.error("the preTxIndex is empty {}", i);
                 return false;
             }
 
-            Map<Short, String> outsSpend = preTxIndex.getOutsSpend();
-            if (MapUtils.isEmpty(outsSpend)) {
+            List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
+
+            if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
                 //if the outsSpend is empty;
                 //this transaction's transactions have not been used
                 continue;
             }
             short index = input.getPrevOut().getIndex();
-            boolean spent = preTxIndex.isSpent(index);
-            String txHash = preTxIndex.getTxHash();
+            boolean spent = isSpent(preTxHash, index);
+            String txHash = preTxIndexEntity.getTransactionHash();
             if (spent) {
-                String blockHash = preTxIndex.getBlockHash();
+                String blockHash = preTxIndexEntity.getBlockHash();
                 Block block = blockDaoService.getBlockByHash(blockHash);
                 if (block == null) {
                     LOGGER.error("the block is empty {}", i);
                     return false;
                 }
 
-                BlockIndex blockIndex = null;
-                try {
-                    blockIndex = blockIndexDao.get(block.getHeight());
-                } catch (RocksDBException e) {
-                    throw new IllegalStateException("Get block index error");
-                }
+                BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
                 if (blockIndex == null) {
                     LOGGER.error("the blockIndex is empty {}", i);
                     //if the blockIndex is not exist,
@@ -492,11 +491,11 @@ public class TransactionService {
             return;
         }
         TransactionIndex transactionIndexEntity = null;
-        try {
-            transactionIndexEntity = transDao.get(hash);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get transaction index error");
-        }
+        transactionIndexEntity = transDao.get(hash);
+//        try {
+//        } catch (RocksDBException e) {
+//            throw new IllegalStateException("Get transaction index error");
+//        }
         if (transactionIndexEntity != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
@@ -523,11 +522,11 @@ public class TransactionService {
 
             String txHash = prevOutPoint.getHash();
             TransactionIndex transactionIndex;
-            try {
-                transactionIndex = transDao.get(txHash);
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get transaction index error");
-            }
+            transactionIndex = transDao.get(txHash);
+//            try {
+//            } catch (RocksDBException e) {
+//                throw new IllegalStateException("Get transaction index error");
+//            }
             if (transactionIndex == null) {
                 continue;
             }
@@ -563,11 +562,11 @@ public class TransactionService {
             }
 
             UTXO utxo = null;
-            try {
-                utxo = utxoDao.get(UTXO.buildKey(tx.getHash(), (short) i));
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get utxo error");
-            }
+            utxo = transService.getUTXO(UTXO.buildKey(tx.getHash(), (short) i));
+//            try {
+//            } catch (RocksDBException e) {
+//                throw new IllegalStateException("Get utxo error");
+//            }
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;
@@ -584,12 +583,25 @@ public class TransactionService {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
+        List<UTXOEntity> utxoEntities = utxoEntityDao.selectByAddressCurrency(address, currency);
+        List<UTXO> UTXOs = Lists.newArrayList();
+        utxoEntities.forEach(entity -> {
+            Money money = new Money(entity.getAmount(), entity.getCurrency());
+            LockScript lockScript = new LockScript();
+            lockScript.setAddress(entity.getLockScript());
+            lockScript.setType((short) entity.getScriptType());
+            TransactionOutput output = new TransactionOutput();
+            output.setMoney(money);
+            output.setLockScript(lockScript);
 
-        return utxoDao.allValues().stream()
-                .filter(utxo -> StringUtils.equals(utxo.getOutput().getMoney().getCurrency(), currency)
-                        && StringUtils.equals(address, utxo.getAddress()))
-                .collect(Collectors.toList());
-
+            UTXO utxo = new UTXO();
+            utxo.setHash(entity.getTransactionHash());
+            utxo.setIndex((short) entity.getOutIndex());
+            utxo.setAddress(entity.getLockScript());
+            utxo.setOutput(output);
+            UTXOs.add(utxo);
+        });
+        return UTXOs;
     }
 
 
@@ -615,6 +627,19 @@ public class TransactionService {
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
         LOGGER.info("broadcast transaction success: " + tx.getHash());
+    }
+
+    private boolean isSpent(String preTxHash, short outIndex) {
+        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
+        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
+            return false;
+        }
+        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
+            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

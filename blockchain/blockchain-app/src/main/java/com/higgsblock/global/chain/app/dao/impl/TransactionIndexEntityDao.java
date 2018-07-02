@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao.impl;
 
 import com.google.common.collect.ImmutableMap;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionIndex;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import org.springframework.stereotype.Repository;
@@ -15,7 +16,7 @@ import java.util.List;
 public class TransactionIndexEntityDao extends BaseDao<TransactionIndexEntity> implements ITransactionIndexEntity {
     @Override
     public int add(TransactionIndexEntity transactionIndexEntity) {
-        String sql = "insert into t_transaction_index values (:transactionHash,:blockHash,:transactionIndex)";
+        String sql = "insert into t_transaction_index (transaction_hash,block_hash,transaction_index)values (:transactionHash,:blockHash,:transactionIndex)";
         return super.add(transactionIndexEntity, sql);
     }
 
@@ -43,4 +44,9 @@ public class TransactionIndexEntityDao extends BaseDao<TransactionIndexEntity> i
         return super.findAll(sql);
     }
 
+    @Override
+    public TransactionIndex get(String transactionHash) {
+        TransactionIndexEntity entity = getByField(transactionHash);
+        return entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+    }
 }

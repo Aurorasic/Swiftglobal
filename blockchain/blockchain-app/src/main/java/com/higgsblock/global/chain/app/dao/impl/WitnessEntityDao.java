@@ -31,24 +31,19 @@ public class WitnessEntityDao extends BaseDao<WitnessPo> implements IWitnessEnti
 
     @Override
     public <E> WitnessPo getByField(E e) {
-        return null;
+        String sql = "select id,pub_key,address,socket_port,http_port from t_witness where pub_key=:pubKey";
+        return super.getByField(sql, ImmutableMap.of("pubKey", e));
     }
 
     @Override
     public List<WitnessPo> findAll() {
-        String sql = "select id,pub_key,ip,socket_port,http_port from t_witness";
+        String sql = "select id,pub_key,address,socket_port,http_port from t_witness;";
         return super.findAll(sql);
     }
 
     @Override
-    public List<WitnessPo> getByHeight(long height) {
-        String sql = "select id,pub_key,ip,socket_port,http_port from t_witness where height=:height";
-        return super.getByFieldList(sql, ImmutableMap.of("height", height));
-    }
-
-    @Override
     public int[] batchInsert(List<WitnessPo> witnessEntities) {
-        String sql = "insert into t_witness values (:id,:pubKey,:ip,:socketPort,:httpPort)";
+        String sql = "insert into t_witness (id,pub_key,address,socket_port,http_port)values (:id,:pubKey,:address,:socketPort,:httpPort)";
         return super.template.batchUpdate(sql, SqlParameterSourceUtils.createBatch(witnessEntities.toArray()));
     }
 }

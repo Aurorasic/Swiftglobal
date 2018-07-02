@@ -16,7 +16,7 @@ public class BlockEntityDao extends BaseDao<BlockEntity> implements IBlockEntity
 
     @Override
     public int add(BlockEntity blockEntity) {
-        String sql = "insert into t_block values (:blockHash, :height,:data)";
+        String sql = "insert into t_block (block_hash,height,data)values (:blockHash,:height,:data)";
         return super.add(blockEntity, sql);
     }
 
@@ -35,7 +35,7 @@ public class BlockEntityDao extends BaseDao<BlockEntity> implements IBlockEntity
     @Override
     public <E> BlockEntity getByField(E blockHash) {
         String sql = "select block_hash,height,data from t_block where block_hash = :blockHash";
-        return super.getByField(sql,ImmutableMap.of("blockHash", blockHash));
+        return super.getByField(sql, ImmutableMap.of("blockHash", blockHash));
     }
 
     @Override
