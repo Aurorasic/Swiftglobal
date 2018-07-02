@@ -5,25 +5,20 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateBlock;
 import com.higgsblock.global.chain.app.blockchain.CandidateBlockHashs;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.consensus.CandidateBlockHandlerTask;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.consensus.vote.VoteTable;
-import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 
 /**
  * @author yangyi
@@ -44,22 +39,15 @@ public class WitnessService {
     private BlockService blockService;
 
     @Autowired
-    private CollectWitnessBlockService collectWitnessBlockService;
-
-    @Autowired
     private MessageCenter messageCenter;
     public static final int MAX_SIZE = 5;
 
-    private Cache<Long, List<Block>> sourceBlockMap = Caffeine.newBuilder()
+    private Cache<Long, Block> sourceBlockMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
     private Cache<Long, List<CandidateBlockHashs>> candidateBlockHashsMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
-
-
-    @Deprecated
-    private CandidateBlockHandlerTask task = null;
 
     private long height;
     private VoteTable selftVoteTable;
@@ -68,103 +56,83 @@ public class WitnessService {
     private Set<String> blockHashAsVersionOne = new HashSet<>();
     private Block blockWithEnoughSign = null;
 
-    private ExecutorService executorService = ExecutorServices.newFixedThreadPool("witnessTask", 1, 5);
-
     public synchronized void initWitnessTask(long height) {
         if (height <= this.height) {
             return;
-        }
-        if (task != null && task.getFuture() != null && task.getFuture().cancel(true)) {
-            LOGGER.info("cancel the task which height is {}", height);
         }
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
             LOGGER.info("start the witness task for height {}", height);
-            task = new CandidateBlockHandlerTask(keyPair, height, blockService, messageCenter, nodeManager, executorService, collectWitnessBlockService);
             this.height = height;
             this.voteTable = HashBasedTable.create(6, 11);
             this.selftVoteTable = new VoteTable(voteTable);
             this.blockMap = new HashMap<>(4);
-            List<Block> blocks = sourceBlockMap.getIfPresent(height);
-            if (CollectionUtils.isNotEmpty(blocks)) {
-                blocks.forEach((block -> addCandidateBlockFromMiner(block)));
-            }
-            List<CandidateBlockHashs> candidateBlockHashsList = candidateBlockHashsMap.getIfPresent(height);
-            if (CollectionUtils.isNotEmpty(candidateBlockHashsList)) {
-                task.setBlockHashsListFromWitness(candidateBlockHashsList);
-            }
+            Block block = sourceBlockMap.getIfPresent(height);
+            addCandidateBlockFromMiner(block);
+            //todo yangyi process voteTable in cache
         }
     }
 
-    public synchronized boolean addCandidateBlockFromMiner(Block block) {
+    public synchronized void addCandidateBlockFromMiner(Block block) {
         if (block == null) {
-            return false;
+            return;
         }
         if (!block.valid()) {
             LOGGER.info("this block is not valid {}", block);
-            return false;
+            return;
+        }
+        if (blockMap.containsKey(block.getHash())) {
+            return;
         }
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), block.getMinerFirstPKSig().getAddress());
-            return false;
+            return;
         }
-        if (task != null && height == block.getHeight()) {
+        if (height == block.getHeight()) {
             LOGGER.info("add candidateBlock from miner to task {}", block);
-            task.addCandidateBlockFromMiner(block);
+            //todo yangyi vote version one
+            return;
         }
-        if (height < block.getHeight()) {
-            LOGGER.info("add candidateBlock from miner to cache {}", block);
-            List<Block> blocks = sourceBlockMap.get(block.getHeight(), (height) -> new LinkedList<>());
-            blocks.add(block);
+        if (height > block.getHeight()) {
+            return;
         }
-        return true;
+        blockMap.put(block.getHash(), block);
+        Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
+        if (voteMap != null && voteMap.size() == 1) {
+            return;
+        }
+        LOGGER.info("add candidateBlock from miner to cache {}", block);
+        Block oldBlock = sourceBlockMap.getIfPresent(block.getHeight());
+        if (oldBlock == null) {
+            sourceBlockMap.put(block.getHeight(), block);
+            return;
+        }
+        String oldBlockHash = oldBlock.getHash();
+        String blockHash = block.getHash();
+        boolean isBetter = blockHash.compareTo(oldBlockHash) > 0;
+        if (isBetter) {
+            sourceBlockMap.put(block.getHeight(), block);
+        }
+        return;
     }
 
-    public List<Block> getCandidateBlocksByHeight(long height) {
-        if (height == this.height && task != null) {
-            return task.getAllCandidateBlocks();
-        }
-        return new LinkedList<>();
-    }
-
-    public List<Block> getCandidateBlocksByHashs(List<String> blockHashs) {
-        if (task != null) {
-            return task.getCandidateBlocksByHash(blockHashs);
-        }
-        return new LinkedList<>();
-    }
-
-    public List<String> getCandidateBlockHashs(long height) {
-        if (height == this.height && task != null) {
-            return task.getCandidateBlockHashs();
-        }
-        return new LinkedList<>();
-    }
 
     public synchronized void setBlockHashsFromWitness(CandidateBlockHashs data) {
         if (data == null) {
             return;
         }
         long height = data.getHeight();
-        if (task != null && this.height == height) {
+        if (this.height == height) {
             List<String> blockHashs = data.getBlockHashs();
             LOGGER.info("add candidateBlockHashs to task {}", data);
-            task.setBlockHashsFromWitness(data.getAddress(), blockHashs);
+            //todo yangyi
         }
         if (this.height < height) {
             LOGGER.info("add candidateBlockHashs to cache {}", data);
             List<CandidateBlockHashs> blockHashsList = candidateBlockHashsMap.get(height, (height1) -> new LinkedList<>());
             blockHashsList.add(data);
-        }
-    }
-
-    public synchronized void setBlocksFromWitness(String address, CandidateBlock data) {
-        if (task != null && this.height == data.getHeight()) {
-            LOGGER.info("the height is {} and the block height is {}", this.height, data.getHeight());
-            LOGGER.info("add CandidateBlock to task address {} data {}", address, data);
-            task.setBlocksFromWitness(address, data);
         }
     }
 
@@ -225,7 +193,7 @@ public class WitnessService {
                             int proofVersion = vote.getProofVersion();
                             String proofPubKey = vote.getProofPubKey();
                             String voteBlockHash = vote.getBlockHash();
-                            int voteVersion = vote.getVersion();
+                            int voteVersion = vote.getVoteVersion();
                             Map<String, Vote> proofVoteMap = voteTable.get(proofVersion, proofPubKey);
                             if (proofVoteMap == null || proofVoteMap.size() != 1) {
                                 continue;
@@ -301,7 +269,7 @@ public class WitnessService {
             Vote vote = new Vote();
             vote.setBlockHash(bestBlockHash);
             vote.setHeight(voteHeight);
-            vote.setVersion(version + 1);
+            vote.setVoteVersion(version + 1);
             vote.setWitnessPubKey(keyPair.getPubKey());
             vote.setProofPubKey(proofPubKey);
             vote.setProofVersion(version);
@@ -316,7 +284,7 @@ public class WitnessService {
     }
 
     private String getSingMessage(Vote vote) {
-        return vote.getHeight() + vote.getBlockHash() + vote.getVersion();
+        return vote.getHeight() + vote.getBlockHash() + vote.getVoteVersion();
     }
 
     private boolean validProof(int proofVersion, String proofBlockHash, String preBlockHash, int voteVersion, String voteBlockHash) {

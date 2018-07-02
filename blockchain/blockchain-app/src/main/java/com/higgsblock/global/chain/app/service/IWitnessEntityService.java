@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 
-import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
 
 import java.util.List;
 
@@ -11,26 +11,19 @@ import java.util.List;
  */
 public interface IWitnessEntityService {
 
-    /**
+   /* *//**
      * Get by height.
      *
      * @param height
      * @return
-     */
-    public List<WitnessEntity> getByHeight(long height);
+     *//*
+    List<WitnessEntity> getByHeight(long height);*/
 
-    /**
-     * Add all.
-     *
-     * @param entities
-     * @return
-     */
-    public boolean addAll(List<WitnessEntity> entities);
 
     /**
      * Get all.
      *
      * @return
      */
-    public List<WitnessEntity> getAll();
+    List<WitnessPo> getAll();
 }

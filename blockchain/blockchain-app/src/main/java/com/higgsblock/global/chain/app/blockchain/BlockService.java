@@ -10,9 +10,10 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
+import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
-import com.higgsblock.global.chain.app.service.impl.DictionaryService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -84,7 +85,7 @@ public class BlockService {
     private TransDaoService transDaoService;
 
     @Autowired
-    private DictionaryService dictionaryService;
+    private IWitnessEntityService witnessService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -96,11 +97,17 @@ public class BlockService {
     private TransactionFeeService transactionFeeService;
 
     public void initWitness() {
-        List<String> witnessAddrList = config.getWitnessAddrList();
-        List<Integer> witnessSocketPortList = config.getWitnessSocketPortList();
-        List<Integer> witnessHttpPortList = config.getWitnessHttpPortList();
-        List<String> witnessPubkeyList = config.getWitnessPubkeyList();
-
+        List<WitnessPo> witnessPos = witnessService.getAll();
+        List<String> witnessAddrList = new ArrayList<>();
+        List<Integer> witnessSocketPortList = new ArrayList<>();
+        List<Integer> witnessHttpPortList = new ArrayList<>();
+        List<String> witnessPubkeyList = new ArrayList<>();
+        for (WitnessPo witnessPo : witnessPos) {
+            witnessAddrList.add(witnessPo.getAddress());
+            witnessSocketPortList.add(witnessPo.getSocketPort());
+            witnessHttpPortList.add(witnessPo.getHttpPort());
+            witnessPubkeyList.add(witnessPo.getPubKey());
+        }
         int size = witnessAddrList.size();
         for (int i = 0; i < size; i++) {
             WitnessEntity entity = getEntity(
@@ -129,7 +136,7 @@ public class BlockService {
     }
 
     public Block packageNewBlock(KeyPair keyPair) {
-        LatestBestBlockIndex bestBlockIndex = dictionaryService.getLatestBestBlockIndex();
+        BlockIndex bestBlockIndex = getLastBestBlockIndex();
         if (bestBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
         }
@@ -193,8 +200,7 @@ public class BlockService {
      * get the max height on the main/best chain
      */
     public long getBestMaxHeight() {
-        LatestBestBlockIndex index = dictionaryService.getLatestBestBlockIndex();
-
+        BlockIndex index = blockIdxDaoService.getLastBlockIndex();
         return index == null ? 0 : index.getHeight();
     }
 
@@ -660,5 +666,25 @@ public class BlockService {
         return null != block && block.isGenesisBlock();
     }
 
-
+    public BlockIndex getLastBestBlockIndex() {
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        if (lastBlockIndex == null) {
+            return null;
+        }
+        long lastHeight = lastBlockIndex.getHeight();
+        String bestBlockHash = lastBlockIndex.getBestBlockHash();
+        if (StringUtils.isNotBlank(bestBlockHash)) {
+            return lastBlockIndex;
+        }
+        BlockIndex blockIndex = null;
+        lastHeight--;
+        while (lastHeight > 0) {
+            blockIndex = blockIdxDaoService.getBlockIndexByHeight(lastHeight);
+            if (blockIndex != null) {
+                return blockIndex;
+            }
+            lastHeight--;
+        }
+        return null;
+    }
 }

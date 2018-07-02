@@ -9,14 +9,11 @@ import com.higgsblock.global.chain.app.Application;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,24 +47,22 @@ public class NodeManager implements InitializingBean {
     private IScoreService scoreDaoService;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
-    @Autowired
     private DposService dposService;
     private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
     private Function<Long, List<String>> function = null;
 
-    public BaseDaoEntity calculateDposNodes(Block block) throws RocksDBException {
+    public void calculateDposNodes(Block block) {
         List<String> dposAddresses = calculateDposAddresses(block);
         if (CollectionUtils.isEmpty(dposAddresses)) {
-            return null;
+            return;
         }
         long sn = getSn(block.getHeight());
-        return persistDposNodes(sn, dposAddresses);
+        persistDposNodes(sn, dposAddresses);
     }
 
-    public List<String> calculateDposAddresses(Block block) throws RocksDBException {
+    public List<String> calculateDposAddresses(Block block) {
         long height = block.getHeight();
         boolean isEndHeight = isEndHeight(height);
         if (!isEndHeight) {
@@ -137,9 +132,9 @@ public class NodeManager implements InitializingBean {
         return select;
     }
 
-    public BaseDaoEntity persistDposNodes(long sn, List<String> dposNodes) {
+    public void persistDposNodes(long sn, List<String> dposNodes) {
         dposNodeMap.put(sn + 2, dposNodes);
-        return dposService.put(sn + 2, dposNodes);
+        dposService.put(sn + 2, dposNodes);
     }
 
     @Override

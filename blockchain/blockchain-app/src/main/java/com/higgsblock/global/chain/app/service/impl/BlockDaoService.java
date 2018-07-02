@@ -1,24 +1,22 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.collect.ImmutableList;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
-import com.higgsblock.global.chain.app.dao.BlockDao;
-import com.higgsblock.global.chain.app.dao.BlockIndexDao;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
-import com.higgsblock.global.chain.app.dao.entity.BlockIndexDaoEntity;
+import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
+import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -33,10 +31,7 @@ import java.util.List;
 public class BlockDaoService implements IBlockService {
 
     @Autowired
-    private BlockDao blockDao;
-
-    @Autowired
-    private BlockIndexDao blockIndexDao;
+    private BlockEntityDao blockDao;
 
     @Autowired
     private BlockCacheManager blockCacheManager;
@@ -56,29 +51,26 @@ public class BlockDaoService implements IBlockService {
     @Autowired
     private PeerManager peerManager;
 
+    @Autowired
+    private BlockFormatter blockFormatter;
+
     @Override
     public boolean isExistInDB(long height, String blockHash) {
-        try {
-            BlockIndex blockIndex = blockIndexDao.get(height);
-            return null != blockIndex
-                    && null != blockIndex.getBestBlockHash()
-                    && blockIndex.getBestBlockHash().equals(blockHash);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block index error");
-        }
+
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+        return null != blockIndex
+                && null != blockIndex.getBestBlockHash()
+                && blockIndex.getBestBlockHash().equals(blockHash);
+
     }
 
     @Override
     public boolean isExist(Block block) {
-        try {
-            BlockIndex blockIndex = blockIndexDao.get(block.getHeight());
-            if (null != blockIndex
-                    && null != blockIndex.getBestBlockHash()
-                    && blockIndex.getBestBlockHash().equals(block.getHash())) {
-                return true;
-            }
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block index error");
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+        if (null != blockIndex
+                && null != blockIndex.getBestBlockHash()
+                && blockIndex.getBestBlockHash().equals(block.getHash())) {
+            return true;
         }
 
         if (blockCacheManager.isContains(block.getHash())) {
@@ -89,30 +81,27 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public boolean preIsExistInDB(Block block) {
-        try {
-            if (blockDao.get(block.getPrevBlockHash()) != null) {
-                return true;
-            }
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block error");
+        if (block == null) {
+            return false;
         }
-        return false;
+        return blockDao.getByField(block.getPrevBlockHash()) != null;
     }
 
     @Override
     public Block getBlockByHash(String blockHash) {
-        try {
-            return blockDao.get(blockHash);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block error");
+        BlockEntity blockEntity = blockDao.getByField(blockHash);
+        if (blockEntity == null) {
+            LOGGER.error("not found the block by blockHash = " + blockHash);
+            return null;
         }
+        return blockFormatter.parse(blockEntity.getData());
     }
 
     @Override
     public List<Block> getBlocksByHeight(long height) {
         BlockIndex blockIndex;
         try {
-            blockIndex = blockIndexDao.get(height);
+            blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
         } catch (Exception e) {
             throw new IllegalStateException("Get block index error");
         }
@@ -122,14 +111,10 @@ public class BlockDaoService implements IBlockService {
             ArrayList<String> blockHashes = blockIndex.getBlockHashs();
 
             blockHashes.forEach(blockHash -> {
-                Block otherBlock;
-                try {
-                    otherBlock = blockDao.get(blockHash);
-                } catch (RocksDBException e) {
-                    throw new IllegalStateException("Get blocks by height error");
+                Block otherBlock = getBlockByHash(blockHash);
+                if (otherBlock != null) {
+                    blocks.add(otherBlock);
                 }
-
-                blocks.add(otherBlock);
             });
         }
 
@@ -138,13 +123,10 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public List<Block> getBlocksExcept(long height, String exceptBlockHash) {
-        BlockIndex blockIndex;
-        try {
-            blockIndex = blockIndexDao.get(height);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block index error");
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+        if (blockIndex == null) {
+            return null;
         }
-
         ArrayList<String> blockHashes = blockIndex.getBlockHashs();
         List<Block> blocks = new LinkedList<>();
 
@@ -152,28 +134,17 @@ public class BlockDaoService implements IBlockService {
             if (StringUtils.equals(blockHash, exceptBlockHash)) {
                 continue;
             }
-
-            Block otherBlock;
-            try {
-                otherBlock = blockDao.get(blockHash);
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get block error");
+            Block otherBlock = getBlockByHash(blockHash);
+            if (otherBlock != null) {
+                blocks.add(otherBlock);
             }
-
-            blocks.add(otherBlock);
         }
         return blocks;
     }
 
     @Override
     public Block getBestBlockByHeight(long height) {
-        BlockIndex blockIndex;
-        try {
-            blockIndex = blockIndexDao.get(height);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block index error");
-        }
-
+        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
         if (blockIndex == null) {
             return null;
         }
@@ -182,12 +153,7 @@ public class BlockDaoService implements IBlockService {
         if (StringUtils.isEmpty(bestBlockHash)) {
             return null;
         }
-
-        try {
-            return blockDao.get(bestBlockHash);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get block error");
-        }
+        return getBlockByHash(bestBlockHash);
     }
 
     /**
@@ -200,32 +166,21 @@ public class BlockDaoService implements IBlockService {
      * 6.save new dpos
      * 7.refresh cache
      **/
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
 
         //step 1
-        BaseDaoEntity blockDaoEntity = blockDao.getEntity(bestBlockHash, block);
-        blockDao.writeBatch(blockDaoEntity);
+        addBlock2BlockEntity(block);
 
         //step 2
-        BlockIndexDaoEntity blockIndexDaoEntity = blockIdxDaoService.addBlockIndex(block, bestBlockHash);
-        blockDao.writeBatch(blockIndexDaoEntity.getBaseDaoEntity());
-
-        //step 3,4
-        if (blockIndexDaoEntity.isCreateUtxo()) {
-            List<BaseDaoEntity> entityList = transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
-            blockDao.writeBatch(entityList);
-        }
+        blockIdxDaoService.addBlockIndex(block, bestBlockHash);
 
         //step 5
-        List<BaseDaoEntity> entityList = MinerScoreStrategy.refreshMinersScore(block);
-        blockDao.writeBatch(entityList);
+        MinerScoreStrategy.refreshMinersScore(block);
 
         //step 6
-        BaseDaoEntity entity = nodeManager.calculateDposNodes(block);
-        if (entity != null) {
-            blockDao.writeBatch(ImmutableList.of(entity));
-        }
+        nodeManager.calculateDposNodes(block);
 
         //step 7
         refreshCache(bestBlockHash, block);
@@ -250,13 +205,13 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public boolean checkBlockNumbers() {
-       /* long blockIndexSize = 0L;
-        long blockMapSize = blockDao.keys().size();
-
-        if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
-            LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
-            return false;
-        }*/
+        //               long blockIndexSize = 0L;
+        //        long blockMapSize = blockDao.keys().size();
+        //
+        //        if (blockMapSize < 0L || blockMapSize > Long.MAX_VALUE) {
+        //            LOGGER.error("blockMapSize is error blockMapSize = {}", blockMapSize);
+        //            return false;
+        //        }
 
         //TODO: zhao xiaogang  should optimize  2018-05-22
 
@@ -269,5 +224,13 @@ public class BlockDaoService implements IBlockService {
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
         });
+    }
+
+    private void addBlock2BlockEntity(Block block) {
+        BlockEntity blockEntity = new BlockEntity();
+        blockEntity.setBlockHash(block.getHash());
+        blockEntity.setHeight(block.getHeight());
+        blockEntity.setData(blockFormatter.format(block));
+        blockDao.add(blockEntity);
     }
 }
