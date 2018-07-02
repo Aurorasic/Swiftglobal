@@ -36,7 +36,7 @@ public class SourceBlockService {
         SourceBlock sourceBlock = new SourceBlock(block);
         messageCenter.dispatchToWitnesses(sourceBlock);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            witnessService.addCandidateBlockFromMiner(sourceBlock.getBlock());
+            witnessService.addSourceBlock(sourceBlock.getBlock());
         }
     }
 
