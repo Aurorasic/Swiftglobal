@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Vote extends BaseBizEntity {
 
-    private int version;
+    private int voteVersion;
 
     private long height;
 
