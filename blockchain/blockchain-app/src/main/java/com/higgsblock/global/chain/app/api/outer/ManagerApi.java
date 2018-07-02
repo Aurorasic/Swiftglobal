@@ -18,7 +18,7 @@ public class ManagerApi {
 
     @RequestMapping("/dataerror")
     public boolean dataError() {
-        dataErrorService.handleError();
+//        dataErrorService.handleError();
         return true;
     }
 }

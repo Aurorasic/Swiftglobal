@@ -2,8 +2,9 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.dao.UtxoDao;
 import com.higgsblock.global.chain.app.script.LockScript;
+import com.higgsblock.global.chain.app.service.ITransService;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.SizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -13,7 +14,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -58,7 +58,10 @@ public class TransactionFeeService {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private UtxoDao utxoDao;
+    private ITransService transService;
+
+    @Autowired
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     /**
      * count Miner and Witness Rewards
@@ -222,7 +225,7 @@ public class TransactionFeeService {
      * @param cacheTransactions cache transactions
      * @return return key is hash and  value is fee
      */
-    public SortResult orderTransaction(List<Transaction> cacheTransactions) {
+    public SortResult orderTransaction(String preBlockHash, List<Transaction> cacheTransactions) {
 
         final Map<String, Money> transactionFees = new HashMap<>(cacheTransactions.size());
         long size = 0L;
@@ -232,7 +235,7 @@ public class TransactionFeeService {
             if (size > LIMITED_SIZE) {
                 break;
             }
-            Money txFee = getOneTransactionFee(tx);
+            Money txFee = getOneTransactionFee(preBlockHash, tx);
 
             transactionFees.put(tx.getHash(), txFee);
         }
@@ -246,14 +249,14 @@ public class TransactionFeeService {
 
             Money tx1Fee = transactionFees.get(tx1.getHash());
             if (tx1Fee == null) {
-                tx1Fee = getOneTransactionFee(tx1);
+                tx1Fee = getOneTransactionFee(preBlockHash, tx1);
             }
             long tx1Size = sizeCounter.calculateSize(tx1);
             Money tx1Weight = tx1Fee.divide(new Money(tx1Size).divide(new Money(ONE_KB_OF_BYTES.toEngineeringString())));
 
             Money tx2Fee = transactionFees.get(tx2.getHash());
             if (tx2Fee == null) {
-                tx2Fee = getOneTransactionFee(tx2);
+                tx2Fee = getOneTransactionFee(preBlockHash, tx2);
             }
             long tx2Size = sizeCounter.calculateSize(tx2);
             Money tx2Weight = tx2Fee.divide(new Money(tx2Size).divide(ONE_KB_OF_BYTES.toEngineeringString()));
@@ -267,7 +270,7 @@ public class TransactionFeeService {
     }
 
 
-    private Money getOneTransactionFee(Transaction transaction) {
+    private Money getOneTransactionFee(String preBlockHash, Transaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         List<TransactionOutput> outputs = transaction.getOutputs();
 
@@ -276,15 +279,15 @@ public class TransactionFeeService {
             String preOutKey = input.getPrevOut().getKey();
 
             UTXO utxo = null;
-            try {
-                utxo = utxoDao.get(preOutKey);
-                if (null == utxo) {
-                    LOGGER.error("get utxo is null " + preOutKey);
-                    throw new RuntimeException("uxto is null " + preOutKey);
-                }
-            } catch (RocksDBException e) {
-                throw new IllegalStateException("Get utxo error");
+            utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
+            if (null == utxo) {
+                LOGGER.error("get utxo is null " + preOutKey);
+                throw new RuntimeException("uxto is null " + preOutKey);
             }
+//            try {
+//            } catch (RocksDBException e) {
+//                throw new IllegalStateException("Get utxo error");
+//            }
 
             TransactionOutput output = utxo.getOutput();
             if (output.isCASCurrency()) {

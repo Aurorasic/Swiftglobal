@@ -86,10 +86,10 @@ public interface IBlockService {
      *
      * @param block     the block
      * @param blockHash the block hash
-     * @return void
+     * @return block
      * @throws Exception
      */
-    void saveBlockCompletely(Block block, String blockHash) throws Exception;
+    Block saveBlockCompletely(Block block, String blockHash) throws Exception;
 
     /**
      * print the blocks

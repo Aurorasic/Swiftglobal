@@ -4,7 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.WitnessEntityDao;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
+import com.higgsblock.global.chain.app.dao.iface.IWitnessEntity;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class WitnessEntityService implements IWitnessEntityService {
      * TODO lwz pre mine block num 2018-05-26
      */
     private static final int PRE_BLOCKS = 13;
+
     /**
      * TODO lwz block num for a round of witness to sign 2018-05-26
      */
@@ -35,31 +37,31 @@ public class WitnessEntityService implements IWitnessEntityService {
 
 
     @Autowired
-    private WitnessEntityDao witnessEntityDao;
+    private IWitnessEntity iWitnessEntity;
 
-    @Override
+   /* @Override
     public List<WitnessEntity> getByHeight(long height) {
         String key = buildCacheKey(height);
 
         List<WitnessEntity> list = WITNESS_CACHE.getIfPresent(key);
         if (list == null) {
-            list = witnessEntityDao.getByHeight(height);
+            List<WitnessPo> byHeight = iWitnessEntity.getByHeight(height);
+            for (WitnessPo witnessPo : byHeight) {
+                WitnessEntity witnessEntity = new WitnessEntity();
+                BeanUtils.copyProperties(witnessPo, witnessEntity);
+                list.add(witnessEntity);
+            }
             if (list != null) {
                 WITNESS_CACHE.put(key, list);
             }
         }
 
         return list;
-    }
+    }*/
 
     @Override
-    public boolean addAll(List<WitnessEntity> entities) {
-        return witnessEntityDao.addAll(entities);
-    }
-
-    @Override
-    public List<WitnessEntity> getAll() {
-        return witnessEntityDao.getAll();
+    public List<WitnessPo> getAll() {
+        return iWitnessEntity.findAll();
     }
 
     private String buildCacheKey(long height) {
