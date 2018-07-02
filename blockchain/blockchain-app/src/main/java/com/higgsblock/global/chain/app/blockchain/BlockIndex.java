@@ -78,6 +78,13 @@ public class BlockIndex extends BaseSerializer {
         return false;
     }
 
+    public String getFirstBlockHash() {
+        if (CollectionUtils.isNotEmpty(blockHashs)) {
+            return blockHashs.get(0);
+        }
+        return null;
+    }
+
     public String getBestBlockHash() {
         if (bestIndex > -1 && bestIndex < blockHashs.size()) {
             return blockHashs.get(bestIndex);

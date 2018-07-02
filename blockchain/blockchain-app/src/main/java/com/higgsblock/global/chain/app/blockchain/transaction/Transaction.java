@@ -17,6 +17,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -163,6 +164,33 @@ public class Transaction extends BaseBizEntity {
             return true;
         }
         return false;
+    }
+
+    @JSONField(serialize = false)
+    public List<String> getSpendUTXOKeys() {
+        List result = new LinkedList();
+        if (!isEmptyInputs()) {
+            for (TransactionInput input : inputs) {
+                result.add(input.getPreUTXOKey());
+            }
+        }
+
+        return result;
+    }
+
+    @JSONField(serialize = false)
+    public List<UTXO> getAddedUTXOs() {
+        List result = new LinkedList();
+        if (CollectionUtils.isNotEmpty(outputs)) {
+            final int outputSize = outputs.size();
+            for (int i = 0; i < outputSize; i++) {
+                TransactionOutput output = outputs.get(i);
+                UTXO utxo = new UTXO(this, (short) i, output);
+                result.add(utxo);
+            }
+        }
+
+        return result;
     }
 
     @JSONField(serialize = false)

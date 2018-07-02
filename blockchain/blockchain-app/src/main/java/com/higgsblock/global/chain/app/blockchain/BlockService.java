@@ -156,7 +156,8 @@ public class BlockService {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeService.orderTransaction(cacheTransactions);
+        String preBlockHash = bestBlockIndex.getFirstBlockHash();
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, cacheTransactions);
         List<Transaction> canPackageTransactionsOfBlock = cacheTransactions;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction

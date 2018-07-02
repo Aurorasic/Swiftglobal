@@ -208,6 +208,26 @@ public class Block extends BaseBizEntity {
     }
 
     @JSONField(serialize = false)
+    public List<String> getSpendUTXOKeys() {
+        List result = new LinkedList();
+        for (Transaction tx : transactions) {
+            result.addAll(tx.getSpendUTXOKeys());
+        }
+
+        return result;
+    }
+
+    @JSONField(serialize = false)
+    public List<UTXO> getAddedUTXOs() {
+        List result = new LinkedList();
+        for (Transaction tx : transactions) {
+            result.addAll(tx.getAddedUTXOs());
+        }
+
+        return result;
+    }
+
+    @JSONField(serialize = false)
     public boolean containsSpendUTXO(String utxoKey) {
         for (Transaction tx : transactions) {
             if (tx.containsSpendUTXO(utxoKey)) {

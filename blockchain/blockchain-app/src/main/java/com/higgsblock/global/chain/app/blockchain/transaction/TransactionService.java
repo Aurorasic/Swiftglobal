@@ -6,16 +6,17 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
-import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
+import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -57,6 +58,9 @@ public class TransactionService {
     private ITransService transService;
 
     @Autowired
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
+
+    @Autowired
     private UTXOEntityDao utxoEntityDao;
 
     @Autowired
@@ -95,6 +99,7 @@ public class TransactionService {
         }
 
         Block preBlock = blockDaoService.getBlockByHash(block.getPrevBlockHash());
+        String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
             LOGGER.error("preBlock == null,tx hash={}_block hash={}", tx.getHash(), block.getHash());
             return false;
@@ -104,7 +109,7 @@ public class TransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeService.orderTransaction(block.getTransactions().subList(1, block.getTransactions().size()));
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
         TransactionFeeService.Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
@@ -281,6 +286,8 @@ public class TransactionService {
         }
 
         String blockHash = block != null ? block.getHash() : null;
+        String preBlockHash = block != null ? block.getPrevBlockHash() :
+                blockIdxDaoService.getLastBlockIndex().getFirstBlockHash();
         Map<String, Money> preMoneyMap = new HashMap<>(8);
         HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
@@ -297,7 +304,7 @@ public class TransactionService {
                         , blockHash);
                 return false;
             }
-            TransactionOutput preOutput = getPreOutput(input);
+            TransactionOutput preOutput = getPreOutput(preBlockHash, input);
             if (preOutput == null) {
                 LOGGER.error("pre-output is empty,input={}_preOutput={}_tx hash={}_block hash={}", input, preOutput, tx.getHash(), blockHash);
                 return false;
@@ -372,7 +379,7 @@ public class TransactionService {
      * @param input tx input
      * @return tx input ref output
      */
-    private TransactionOutput getPreOutput(TransactionInput input) {
+    private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
             LOGGER.warn("ipreOutKey is empty,input={}", JSONObject.toJSONString(input, true));
@@ -380,7 +387,7 @@ public class TransactionService {
         }
 
         UTXO utxo;
-        utxo = transService.getUTXO(preOutKey);
+        utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
 //        try {
 //        } catch (RocksDBException e) {
 //            throw new IllegalStateException("Get utxo error");
@@ -561,7 +568,7 @@ public class TransactionService {
             }
 
             UTXO utxo = null;
-            utxo = transService.getUTXO(UTXO.buildKey(tx.getHash(), (short) i));
+            utxo = utxoDaoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
 //            try {
 //            } catch (RocksDBException e) {
 //                throw new IllegalStateException("Get utxo error");
