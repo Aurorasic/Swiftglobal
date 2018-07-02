@@ -1,25 +1,27 @@
 package com.higgsblock.global.chain.app.consensus.vote;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
+import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+
 /**
  * @author yuanjiantao
- * @date 6/29/2018
+ * @date 6/28/2018
  */
-@Message(EntityType.INITVOTE)
+@Message(EntityType.VOTE_TABLE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class InitVote {
+public class VoteTable extends BaseBizEntity {
 
-    private VoteTable allVote;
+    private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
 
-    private Block block;
 }
