@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -164,6 +165,7 @@ public class Transaction extends BaseBizEntity {
         return false;
     }
 
+    @JSONField(serialize = false)
     public boolean containsSpendUTXO(String utxoKey) {
         if (isEmptyInputs()) {
             return false;
@@ -176,6 +178,7 @@ public class Transaction extends BaseBizEntity {
         return false;
     }
 
+    @JSONField(serialize = false)
     public UTXO getAddedUTXOByKey(String utxoKey) {
         if (CollectionUtils.isNotEmpty(outputs)) {
             final int outputSize = outputs.size();

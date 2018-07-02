@@ -207,6 +207,7 @@ public class Block extends BaseBizEntity {
         return signHash;
     }
 
+    @JSONField(serialize = false)
     public boolean containsSpendUTXO(String utxoKey) {
         for (Transaction tx : transactions) {
             if (tx.containsSpendUTXO(utxoKey)) {
@@ -216,6 +217,7 @@ public class Block extends BaseBizEntity {
         return false;
     }
 
+    @JSONField(serialize = false)
     public UTXO getAddedUTXOByKey(String utxoKey) {
         for (Transaction tx : transactions) {
             UTXO utxo = tx.getAddedUTXOByKey(utxoKey);
