@@ -36,7 +36,7 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         }
         Map<String, Map<String,Vote>> row = voteTable.row(Integer.valueOf(1));
         if (row == null || row.values().size() == 0) {
-            LOGGER.info("the voteTable hasn't vote which version is one from {}", sourceId);
+            LOGGER.info("the voteTable hasn't vote which voteVersion is one from {}", sourceId);
             return;
         }
         Iterator<Map<String,Vote>> iterator = row.values().iterator();

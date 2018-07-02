@@ -5,10 +5,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateBlock;
 import com.higgsblock.global.chain.app.blockchain.CandidateBlockHashs;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.consensus.CandidateBlockHandlerTask;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.consensus.vote.VoteTable;
@@ -41,9 +39,6 @@ public class WitnessService {
     private BlockService blockService;
 
     @Autowired
-    private CollectWitnessBlockService collectWitnessBlockService;
-
-    @Autowired
     private MessageCenter messageCenter;
     public static final int MAX_SIZE = 5;
 
@@ -53,10 +48,6 @@ public class WitnessService {
     private Cache<Long, List<CandidateBlockHashs>> candidateBlockHashsMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
-
-
-    @Deprecated
-    private CandidateBlockHandlerTask task = null;
 
     private long height;
     private VoteTable selftVoteTable;
@@ -127,42 +118,21 @@ public class WitnessService {
         return;
     }
 
-    public List<Block> getCandidateBlocksByHashs(List<String> blockHashs) {
-        if (task != null) {
-            return task.getCandidateBlocksByHash(blockHashs);
-        }
-        return new LinkedList<>();
-    }
-
-    public List<String> getCandidateBlockHashs(long height) {
-        if (height == this.height && task != null) {
-            return task.getCandidateBlockHashs();
-        }
-        return new LinkedList<>();
-    }
 
     public synchronized void setBlockHashsFromWitness(CandidateBlockHashs data) {
         if (data == null) {
             return;
         }
         long height = data.getHeight();
-        if (task != null && this.height == height) {
+        if (this.height == height) {
             List<String> blockHashs = data.getBlockHashs();
             LOGGER.info("add candidateBlockHashs to task {}", data);
-            task.setBlockHashsFromWitness(data.getAddress(), blockHashs);
+            //todo yangyi
         }
         if (this.height < height) {
             LOGGER.info("add candidateBlockHashs to cache {}", data);
             List<CandidateBlockHashs> blockHashsList = candidateBlockHashsMap.get(height, (height1) -> new LinkedList<>());
             blockHashsList.add(data);
-        }
-    }
-
-    public synchronized void setBlocksFromWitness(String address, CandidateBlock data) {
-        if (task != null && this.height == data.getHeight()) {
-            LOGGER.info("the height is {} and the block height is {}", this.height, data.getHeight());
-            LOGGER.info("add CandidateBlock to task address {} data {}", address, data);
-            task.setBlocksFromWitness(address, data);
         }
     }
 
@@ -223,7 +193,7 @@ public class WitnessService {
                             int proofVersion = vote.getProofVersion();
                             String proofPubKey = vote.getProofPubKey();
                             String voteBlockHash = vote.getBlockHash();
-                            int voteVersion = vote.getVersion();
+                            int voteVersion = vote.getVoteVersion();
                             Map<String, Vote> proofVoteMap = voteTable.get(proofVersion, proofPubKey);
                             if (proofVoteMap == null || proofVoteMap.size() != 1) {
                                 continue;
@@ -299,7 +269,7 @@ public class WitnessService {
             Vote vote = new Vote();
             vote.setBlockHash(bestBlockHash);
             vote.setHeight(voteHeight);
-            vote.setVersion(version + 1);
+            vote.setVoteVersion(version + 1);
             vote.setWitnessPubKey(keyPair.getPubKey());
             vote.setProofPubKey(proofPubKey);
             vote.setProofVersion(version);
@@ -314,7 +284,7 @@ public class WitnessService {
     }
 
     private String getSingMessage(Vote vote) {
-        return vote.getHeight() + vote.getBlockHash() + vote.getVersion();
+        return vote.getHeight() + vote.getBlockHash() + vote.getVoteVersion();
     }
 
     private boolean validProof(int proofVersion, String proofBlockHash, String preBlockHash, int voteVersion, String voteBlockHash) {
