@@ -3,12 +3,12 @@ package com.higgsblock.global.chain.app.consensus.vote;
 import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,8 +20,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Data
 @Slf4j
-public class VoteTable {
+public class VoteTable extends BaseBizEntity {
 
-    private HashBasedTable<Integer, String, Map<String,Vote>> voteTable;
+    private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
 
 }
