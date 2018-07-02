@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.dao.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
@@ -16,6 +17,7 @@ import java.util.Map;
  * @author yangshenghong
  * @date 2018-05-08
  */
+@Slf4j
 public abstract class BaseDao<T> {
 
     @Autowired
@@ -65,6 +67,7 @@ public abstract class BaseDao<T> {
         try {
             return template.query(sql, paramMap, new BeanPropertyRowMapper<>(getT()));
         } catch (RuntimeException e) {
+            LOGGER.error("An error occurred querying the corresponding record according to the specified field={}", e.getMessage());
             return null;
         }
     }
@@ -72,7 +75,7 @@ public abstract class BaseDao<T> {
     /**
      * Delete according to the specified field.
      *
-     * @param sql The SQL statement
+     * @param sql      The SQL statement
      * @param paramMap The data Map
      * @return
      */
@@ -92,6 +95,7 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, new BeanPropertySqlParameterSource(t), new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
+            LOGGER.error("get data by field error = {}", e.getMessage());
             return null;
         }
     }
@@ -108,6 +112,7 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, paramMap, new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
+            LOGGER.error("get data by field error = {}", e.getMessage());
             return null;
         }
     }
