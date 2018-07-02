@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.common.enums;
 
+
 import lombok.Getter;
 
 /**

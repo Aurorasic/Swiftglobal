@@ -1,14 +1,11 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.higgsblock.global.chain.app.dao.ScoreDao;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
+import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.dao.iface.IScoreEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
-import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.SerializationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +19,7 @@ import java.util.Map;
 public class ScoreDaoService implements IScoreService {
 
     @Autowired
-    private ScoreDao scoreDao;
+    private IScoreEntity scoreDao;
 
     /**
      * get score by address
@@ -31,8 +28,9 @@ public class ScoreDaoService implements IScoreService {
      * @return
      */
     @Override
-    public Integer get(String address) throws RocksDBException {
-        return scoreDao.get(address);
+    public Integer get(String address) {
+        ScoreEntity scoreEntity = scoreDao.getByField(address);
+        return null == scoreEntity ? null : scoreEntity.getScore();
     }
 
     /**
@@ -42,8 +40,13 @@ public class ScoreDaoService implements IScoreService {
      * @param score
      */
     @Override
-    public BaseDaoEntity put(String address, Integer score) {
-        return scoreDao.getEntity(address, score);
+    public void put(String address, Integer score) {
+        ScoreEntity scoreEntity = new ScoreEntity(address, score);
+        if (null != scoreDao.getByField(address)) {
+            scoreDao.update(scoreEntity);
+        } else {
+            scoreDao.add(scoreEntity);
+        }
     }
 
     /**
@@ -54,12 +57,11 @@ public class ScoreDaoService implements IScoreService {
      * @return
      */
     @Override
-    public BaseDaoEntity putIfAbsent(String address, Integer score) throws RocksDBException {
-        Integer loacalScore = scoreDao.get(address);
-        if (loacalScore != null) {
-            return scoreDao.getEntity(address, loacalScore);
-        } else {
-            return scoreDao.getEntity(address, score);
+    public void putIfAbsent(String address, Integer score) {
+
+        ScoreEntity scoreEntity = scoreDao.getByField(address);
+        if (scoreEntity == null) {
+            scoreDao.add(new ScoreEntity(address, score));
         }
     }
 
@@ -69,31 +71,19 @@ public class ScoreDaoService implements IScoreService {
      * @param address
      */
     @Override
-    public BaseDaoEntity remove(String address) {
-        return scoreDao.getEntity(address, null);
+    public void remove(String address) {
+        scoreDao.delete(address);
     }
 
     /**
      * query all score
      *
      * @return
-     * @throws RocksDBException
      */
     @Override
-    public Map<String, Integer> loadAll() throws RocksDBException {
-        Map<String, Integer> scoreMap = new HashMap<>(1000);
-        RocksIterator iterator = scoreDao.iterator();
-
-        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            String key = (String) SerializationUtils.deserialize(iterator.key());
-            String value = (String) SerializationUtils.deserialize(iterator.value());
-            try {
-                scoreMap.put(key, Integer.valueOf(value));
-            } catch (NumberFormatException e) {
-                LOGGER.error("score data format error from db,{}:{}", key, value);
-                continue;
-            }
-        }
-        return scoreMap;
+    public Map<String, Integer> loadAll() {
+        Map<String, Integer> map = new HashMap<>();
+        scoreDao.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
+        return map;
     }
 }
