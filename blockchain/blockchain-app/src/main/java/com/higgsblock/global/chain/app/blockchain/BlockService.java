@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
@@ -80,6 +81,9 @@ public class BlockService {
 
     @Autowired
     private BlockDaoService blockDaoService;
+
+    @Autowired
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     @Autowired
     private TransDaoService transDaoService;
@@ -282,9 +286,9 @@ public class BlockService {
 
     private boolean saveBlockCompletely(Block block, String blockHash) {
         try {
-            blockDaoService.saveBlockCompletely(block, blockHash);
+            Block newBestBlock = blockDaoService.saveBlockCompletely(block, blockHash);
+            utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new IllegalStateException("Save block completely failed");
         }
 

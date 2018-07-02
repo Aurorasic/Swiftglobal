@@ -58,15 +58,14 @@ public class UTXODaoServiceProxy {
      */
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
         UTXO utxo = transDaoService.getUTXO(utxoKey);
-        //todo open flow code yuguojia
-//        if (utxo == null) {
-//            utxo = getUTXORecurse(preBlockHash, utxoKey);
-//        } else {
-//            boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(preBlockHash, utxoKey);
-//            if (isRemovedOnUnconfirmedChain) {
-//                return null;
-//            }
-//        }
+        if (utxo == null) {
+            utxo = getUTXORecurse(preBlockHash, utxoKey);
+        } else {
+            boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(preBlockHash, utxoKey);
+            if (isRemovedOnUnconfirmedChain) {
+                return null;
+            }
+        }
         return utxo;
     }
 

@@ -168,7 +168,7 @@ public class BlockDaoService implements IBlockService {
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
+    public Block saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
 
         //step 1
         addBlock2BlockEntity(block);
@@ -197,6 +197,8 @@ public class BlockDaoService implements IBlockService {
         }
         peerManager.setMinerAddresses(dposGroupBySn);
 
+        // TODO  huangshengli if confirmed a block as best block, then return this block,else return null
+        return null;
     }
 
     @Override
