@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.consensus.vote;
 
+import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,9 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Data
 @Slf4j
-public class Vote {
+public class Vote extends BaseBizEntity {
 
-    private int version;
+    private int voteVersion;
 
     private long height;
 
@@ -25,7 +26,7 @@ public class Vote {
 
     private String proofPubKey;
 
-    private String proofVersion;
+    private int proofVersion;
 
     private String signature;
 }
