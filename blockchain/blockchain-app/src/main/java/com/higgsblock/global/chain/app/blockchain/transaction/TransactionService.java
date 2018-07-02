@@ -6,9 +6,11 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.iface.IBalanceEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
@@ -77,6 +79,12 @@ public class TransactionService {
 
     @Autowired
     private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
+
+    /**
+     * The Balance entity dao.
+     */
+    @Autowired
+    private IBalanceEntity balanceEntityDao;
 
     /**
      * validate coin base tx
@@ -590,7 +598,7 @@ public class TransactionService {
 
     public List<UTXO> getUTXOList(String address, String currency) {
         List<UTXOEntity> utxoEntities = utxoEntityDao.selectByAddressCurrency(address, currency);
-        List<UTXO> UTXOs = Lists.newArrayList();
+        List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
             LockScript lockScript = new LockScript();
@@ -605,24 +613,18 @@ public class TransactionService {
             utxo.setIndex((short) entity.getOutIndex());
             utxo.setAddress(entity.getLockScript());
             utxo.setOutput(output);
-            UTXOs.add(utxo);
+            utxos.add(utxo);
         });
-        return UTXOs;
+        return utxos;
     }
 
 
     public boolean hasMinerStake(String address) {
         String minerCurrency = SystemCurrencyEnum.MINER.getCurrency();
         Money minerStakeMinMoney = new Money("1", minerCurrency);
-        List<UTXO> result = getUTXOList(address, minerCurrency);
-        Money money = new Money("0", minerCurrency);
-        for (UTXO utxo : result) {
-            money.add(utxo.getOutput().getMoney());
-            if (money.compareTo(minerStakeMinMoney) >= 0) {
-                return true;
-            }
-        }
-        return false;
+        BalanceEntity balance = balanceEntityDao.getBalance(address, minerCurrency);
+        Money money = new Money(null == balance ? "0" : balance.getAmount(), minerCurrency);
+        return money.compareTo(minerStakeMinMoney) >= 0;
     }
 
     /**

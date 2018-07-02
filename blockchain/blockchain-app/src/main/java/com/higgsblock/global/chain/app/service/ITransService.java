@@ -15,7 +15,7 @@ public interface ITransService {
     /**
      * Add transaction index and utxo in database
      *
-     * @param bestBlock the best block
+     * @param bestBlock     the best block
      * @param bestBlockHash the best block hash
      */
     void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
@@ -29,4 +29,11 @@ public interface ITransService {
     void removeDoubleSpendTx(List<Transaction> cacheTransactions);
 
     UTXO getUTXO(String utxoKey);
+
+    /**
+     * Compute miner balance.
+     *
+     * @param block the best block
+     */
+    void computeMinerBalance(Block block);
 }
