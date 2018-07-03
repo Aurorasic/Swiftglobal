@@ -173,8 +173,6 @@ public class BlockDaoService implements IBlockService {
         //step 1
         addBlock2BlockEntity(block);
 
-        transDaoService.computeMinerBalance(block);
-
         //step 2
         blockIdxDaoService.addBlockIndex(block, bestBlockHash);
 
