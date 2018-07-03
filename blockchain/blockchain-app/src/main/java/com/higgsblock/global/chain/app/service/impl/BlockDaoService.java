@@ -191,7 +191,6 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         transDaoService.computeMinerBalance(block);
 
         //step 2
-        blockIdxDaoService.addBlockIndex(block, bestBlockHash);
         Block bestBlock = findBestBlock(block);
         boolean isFirst = putFirstBlockMap(block);
         //step 2 whether this block can be confirmed pre N block
@@ -230,7 +229,6 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         }
         peerManager.setMinerAddresses(dposGroupBySn);
 
-        // TODO  huangshengli if confirmed a block as best block, then return this block,else return null
         return bestBlock;
     }
 
