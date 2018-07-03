@@ -16,6 +16,7 @@ import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -312,6 +313,9 @@ public class BlockService {
 
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
+
+        //add unconfirmed utxos and remove confirmed height blocks in cache
+        utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock);
@@ -707,6 +711,10 @@ public class BlockService {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeManager.getDposGroupByHeihgt(block.getHeight()));
+            if (transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)){
+                LOGGER.info("verify block is candidate miner production true" );
+                return true;
+            }
             return false;
         }
 

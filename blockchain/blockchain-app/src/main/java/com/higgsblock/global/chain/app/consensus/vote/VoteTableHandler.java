@@ -68,7 +68,12 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         }
         LOGGER.info("add voteTable with voteHeight {} ,voteTable {}", voteHeight, voteTable);
 
-        if (null != voteTable.row(1)) {
+        if (voteHeight > witnessService.getHeight()) {
+            witnessService.updateVoteCache(voteHeight, voteTable);
+            LOGGER.info("the height is greater than local , add voteTable to cache");
+        }
+
+        if (null != voteTable.row(1) && voteHeight == witnessService.getHeight()) {
             Set<String> blockHashs = new HashSet<>();
             voteTable.row(1).values().forEach(map -> {
                 map.forEach((k, v) -> {
@@ -78,8 +83,7 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
                 });
             });
             if (blockHashs.size() > 0) {
-//                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
-                // TODO: 7/2/2018 add table to cache
+                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
                 LOGGER.info("source blocks is not enough,add vote table to cache");
             } else {
                 witnessService.dealVoteTable(voteHeight, voteTable);

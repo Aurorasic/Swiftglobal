@@ -2,6 +2,8 @@ package com.higgsblock.global.chain.app.context;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
+import com.higgsblock.global.chain.app.blockchain.WitnessCountTime;
 import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
 import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.consensus.syncblock.SyncBlockService;
@@ -61,6 +63,11 @@ public class AppContext {
         startPeerTimerTasks();
 
         syncBlocks();
+
+        startCandidateCountTime();
+
+        startWitnessCountTime();
+
     }
 
     private void checkAndRecoveryBlockData() {
@@ -98,6 +105,16 @@ public class AppContext {
 
     private void syncBlocks() {
         syncBlockService.startSyncBlock();
+    }
+
+    private void startCandidateCountTime() throws InterruptedException {
+        CandidateMiner candidateMiner = new CandidateMiner();
+        candidateMiner.queryCurrHeightStartTime();
+    }
+
+    private void startWitnessCountTime() throws InterruptedException {
+        WitnessCountTime witnessCountTime = new WitnessCountTime();
+        witnessCountTime.queryCurrHeightStartTime();
     }
 
 }

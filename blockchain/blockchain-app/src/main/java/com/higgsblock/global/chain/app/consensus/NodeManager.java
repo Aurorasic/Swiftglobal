@@ -14,6 +14,7 @@ import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -184,6 +185,9 @@ public class NodeManager implements InitializingBean {
 
     public boolean checkProducer(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
+        if (blockWitness == null || StringUtils.isEmpty(blockWitness.getPubKey())) {
+            return false;
+        }
         String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
         List<String> currentGroup = this.getDposGroupByHeihgt(block.getHeight());
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
