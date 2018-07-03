@@ -552,7 +552,7 @@ public class TransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasMinerStake(address)) {
+            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -581,7 +581,7 @@ public class TransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (hasMinerStake(address)) {
+            if (hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -610,18 +610,17 @@ public class TransactionService {
         return utxos;
     }
 
-
-    public boolean hasMinerStake(String address) {
-        String minerCurrency = SystemCurrencyEnum.MINER.getCurrency();
-        Money minerStakeMinMoney = new Money("1", minerCurrency);
-        List<UTXO> result = getUTXOList(address, minerCurrency);
-        Money money = new Money("0", minerCurrency);
+    public boolean hasStake(String address, SystemCurrencyEnum currency) {
+        Money stakeMinMoney = new Money("1", currency.getCurrency());
+        List<UTXO> result = getUTXOList(address, currency.getCurrency());
+        Money money = new Money("0", currency.getCurrency());
         for (UTXO utxo : result) {
             money.add(utxo.getOutput().getMoney());
-            if (money.compareTo(minerStakeMinMoney) >= 0) {
+            if (money.compareTo(stakeMinMoney) >= 0) {
                 return true;
             }
         }
+
         return false;
     }
 
