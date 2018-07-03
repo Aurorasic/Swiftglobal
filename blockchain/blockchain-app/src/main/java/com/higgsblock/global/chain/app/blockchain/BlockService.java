@@ -202,9 +202,9 @@ public class BlockService {
     }
 
     /**
-     * get the max height on the main/best chain
+     * get the max height
      */
-    public long getBestMaxHeight() {
+    public long getMaxHeight() {
         BlockIndex index = blockIdxDaoService.getLastBlockIndex();
         return index == null ? 0 : index.getHeight();
     }
@@ -255,13 +255,10 @@ public class BlockService {
         }
 
         //Save block and index
-        if (!saveBlockCompletely(block, blockHash)) {
-            LOGGER.error("Save block and block index failed, height=>{} hash=>{}", height, blockHash);
-            return false;
-        }
+        Block newBestBlock = saveBlockCompletely(block, blockHash);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, blockHash);
+        broadBlockPersistedEvent(block, newBestBlock);
 
         //Do last job for the block
         doLastJobForBlock(block, sourceId, version);
@@ -284,15 +281,15 @@ public class BlockService {
         return false;
     }
 
-    private boolean saveBlockCompletely(Block block, String blockHash) {
+    private Block saveBlockCompletely(Block block, String blockHash) {
         try {
             Block newBestBlock = blockDaoService.saveBlockCompletely(block, blockHash);
             utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
+            return newBestBlock;
         } catch (Exception e) {
+            LOGGER.error("Save block and block index failed, height={}_hash={}", block.getHeight(), blockHash);
             throw new IllegalStateException("Save block completely failed");
         }
-
-        return true;
     }
 
     public void doLastJobForBlock(Block block, String sourceId, short version) {
@@ -304,11 +301,11 @@ public class BlockService {
         persistPreOrphanBlock(blockFullInfo);
     }
 
-    public void broadBlockPersistedEvent(Block block, String bestBlockHash) {
+    public void broadBlockPersistedEvent(Block block, Block newBestBlock) {
         BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
         blockPersistedEvent.setHeight(block.getHeight());
         blockPersistedEvent.setBlockHash(block.getHash());
-        blockPersistedEvent.setBestBlockHash(bestBlockHash);
+        blockPersistedEvent.setConfirmedNewBestBlock(newBestBlock == null ? false : true);
         eventBus.post(blockPersistedEvent);
         LOGGER.info("sent broad BlockPersistedEvent,height={}_block={}", block.getHeight(), block.getHash());
     }

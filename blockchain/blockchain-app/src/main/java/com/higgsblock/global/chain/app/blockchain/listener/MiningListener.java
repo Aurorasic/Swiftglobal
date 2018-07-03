@@ -68,7 +68,7 @@ public class MiningListener implements IEventBusListener {
             isMining = true;
             LOGGER.info("The system is ready, start mining");
             process();
-            long maxHeight = blockService.getBestMaxHeight();
+            long maxHeight = blockService.getMaxHeight();
             witnessService.initWitnessTask(maxHeight + 1);
         } else {
             isMining = false;
@@ -77,7 +77,7 @@ public class MiningListener implements IEventBusListener {
     }
 
     private void calculateDpos() {
-        long maxHeight = blockService.getBestMaxHeight();
+        long maxHeight = blockService.getMaxHeight();
         if (maxHeight == 1L) {
             List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
@@ -92,7 +92,7 @@ public class MiningListener implements IEventBusListener {
      * produce a block with a specified height
      */
     private synchronized void process() {
-        long bestMaxHeight = blockService.getBestMaxHeight();
+        long bestMaxHeight = blockService.getMaxHeight();
         long expectHeight = bestMaxHeight + 1;
 
         if (expectHeight < miningHeight) {
@@ -126,7 +126,7 @@ public class MiningListener implements IEventBusListener {
     }
 
     private void mining(long expectHeight) {
-        while ((this.miningHeight == expectHeight) && !doMining(expectHeight)) {
+        while ((miningHeight == expectHeight) && !doMining(expectHeight)) {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
             } catch (Exception e) {

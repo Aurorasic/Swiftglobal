@@ -188,6 +188,10 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         //step 1
         addBlock2BlockEntity(block);
 
+        transDaoService.computeMinerBalance(block);
+
+        //step 2
+        blockIdxDaoService.addBlockIndex(block, bestBlockHash);
         Block bestBlock = findBestBlock(block);
         boolean isFirst = putFirstBlockMap(block);
         //step 2 whether this block can be confirmed pre N block

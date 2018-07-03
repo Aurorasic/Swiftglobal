@@ -34,7 +34,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
         SourceBlock sourceBlock = request.getData();
         if (null != sourceBlock && null != sourceBlock.getBlock()) {
             if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-                witnessService.addCandidateBlockFromMiner(sourceBlock.getBlock());
+                witnessService.addSourceBlock(sourceBlock.getBlock());
             } else {
                 messageCenter.dispatchToWitnesses(sourceBlock);
             }

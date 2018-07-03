@@ -101,10 +101,10 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             LOGGER.error(e.getMessage(), e);
         }
 
-        if (peersMaxHeight.size() == 0 || getPeersMaxHeight() <= blockService.getBestMaxHeight()) {
+        if (peersMaxHeight.size() == 0 || getPeersMaxHeight() <= blockService.getMaxHeight()) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
             LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
-                    , peersMaxHeight.size(), blockService.getBestMaxHeight(), getPeersMaxHeight());
+                    , peersMaxHeight.size(), blockService.getMaxHeight(), getPeersMaxHeight());
             return;
         }
 
@@ -113,7 +113,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     }
 
     private void sendInitRequest() {
-        long initHeight = blockService.getBestMaxHeight();
+        long initHeight = blockService.getMaxHeight();
         for (long i = 1; i <= SYNC_BLOCK_TEMP_SIZE && i + initHeight <= getPeersMaxHeight(); i++) {
             sendGetBlock(initHeight + i);
         }
@@ -148,16 +148,16 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             return;
         }
         LOGGER.info("process event: {}", JSON.toJSONString(event));
-        if (event.hasBestBlock()) {
-            requestRecord.invalidate(event.getHeight());
-            long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
-            if (targetHeight <= getPeersMaxHeight()) {
-                sendGetBlock(targetHeight);
-            }
-            if (isSyncBlockState() && blockService.getBestMaxHeight() >= getPeersMaxHeight()) {
-                systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-                LOGGER.info("sync block finished !");
-            }
+
+        //when there has a persisted block on the height, stop sycn this height.If another one is real best block on the height, its next block maybe orphan block, then fetch the real best block as orphan block.
+        requestRecord.invalidate(event.getHeight());
+        long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
+        if (targetHeight <= getPeersMaxHeight()) {
+            sendGetBlock(targetHeight);
+        }
+        if (isSyncBlockState() && blockService.getMaxHeight() >= getPeersMaxHeight()) {
+            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.info("sync block finished !");
         }
     }
 
@@ -190,13 +190,13 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     }
 
     private void dealTimeOut(long height, String sourceId) {
-        if (height <= blockService.getBestMaxHeight()) {
+        if (height <= blockService.getMaxHeight()) {
             return;
         }
         LOGGER.info("time out, remove it .sourceId:{} ", sourceId);
         removePeer(sourceId);
         if (!sendGetBlock(height)) {
-            if (blockService.getBestMaxHeight() >= getPeersMaxHeight() && isSyncBlockState()) {
+            if (blockService.getMaxHeight() >= getPeersMaxHeight() && isSyncBlockState()) {
                 systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
                 LOGGER.info("sync block finished !");
             }
@@ -223,7 +223,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     }
 
     private long getPeersMaxHeight() {
-        long myHeight = blockService.getBestMaxHeight();
+        long myHeight = blockService.getMaxHeight();
         long height = myHeight > 1L ? myHeight : 1L;
         for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
             long tempHeight = entry.getValue();

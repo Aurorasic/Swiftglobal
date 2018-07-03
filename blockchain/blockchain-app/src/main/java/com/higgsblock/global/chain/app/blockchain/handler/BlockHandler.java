@@ -59,7 +59,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             Set<String> set = new HashSet<>(blockIdxDaoService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
-            witnessService.initWitnessTask(blockService.getBestMaxHeight() + 1);
+            witnessService.initWitnessTask(blockService.getMaxHeight() + 1);
         }
     }
 
