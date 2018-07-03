@@ -6,6 +6,7 @@ import com.google.common.base.Objects;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.constants.EntityType;
@@ -114,17 +115,17 @@ public class Block extends BaseBizEntity {
         if (!pubKey.equals(bws.getPubKey())) {
             return false;
         }
-        if (!ECKey.verifySign(this.getHash(), bws.getSignature(), bws.getPubKey())) {
+        if (!ECKey.verifySign(getHash(), bws.getSignature(), bws.getPubKey())) {
             return false;
         }
-        if (!this.sizeAllowed()) {
+        if (!sizeAllowed()) {
             return false;
         }
         return true;
     }
 
     private Block(short version, long blockTime, String prevBlockHash, List<Transaction> transactions, long height) {
-        this.setVersion(version);
+        setVersion(version);
         this.blockTime = blockTime;
         this.prevBlockHash = prevBlockHash;
         this.transactions = transactions;
@@ -204,6 +205,47 @@ public class Block extends BaseBizEntity {
         String signHash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         LOGGER.info("the block signedHash is {}", signHash);
         return signHash;
+    }
+
+    @JSONField(serialize = false)
+    public List<String> getSpendUTXOKeys() {
+        List result = new LinkedList();
+        for (Transaction tx : transactions) {
+            result.addAll(tx.getSpendUTXOKeys());
+        }
+
+        return result;
+    }
+
+    @JSONField(serialize = false)
+    public List<UTXO> getAddedUTXOs() {
+        List result = new LinkedList();
+        for (Transaction tx : transactions) {
+            result.addAll(tx.getAddedUTXOs());
+        }
+
+        return result;
+    }
+
+    @JSONField(serialize = false)
+    public boolean containsSpendUTXO(String utxoKey) {
+        for (Transaction tx : transactions) {
+            if (tx.containsSpendUTXO(utxoKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @JSONField(serialize = false)
+    public UTXO getAddedUTXOByKey(String utxoKey) {
+        for (Transaction tx : transactions) {
+            UTXO utxo = tx.getAddedUTXOByKey(utxoKey);
+            if (utxo != null) {
+                return utxo;
+            }
+        }
+        return null;
     }
 
     public boolean isPowerHeight(long h) {

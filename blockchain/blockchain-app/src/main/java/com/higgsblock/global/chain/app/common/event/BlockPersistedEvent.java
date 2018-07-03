@@ -4,7 +4,6 @@ import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * @author yuguojia
@@ -25,24 +24,18 @@ public class BlockPersistedEvent extends BaseSerializer {
     private String blockHash;
 
     /**
-     * the best block hash on this height.
-     * if this value is empty, there has no best block on the height.
-     * if this value equals blockHash, then the block is best block, otherwise not best block
+     * the height of the highest best block
      */
-    private String bestBlockHash;
+//    private long highestBestHeight;
 
-    public boolean hasBestBlock() {
-        if (!StringUtils.isEmpty(bestBlockHash)) {
-            return true;
-        }
-        return false;
-    }
+    /**
+     * the best block hash on highest best block.
+     */
+//    private String highestBestBlockHash;
 
-    public boolean isBest() {
-        if (hasBestBlock() &&
-                StringUtils.equals(blockHash, bestBlockHash)) {
-            return true;
-        }
-        return false;
-    }
+    /**
+     * if it is true, that is after persisting this block the "highestBestBlockHash" is newest best block
+     * it is false, that is after persisting this block the "highestBestBlockHash" is old, on newest best block to be confirmed
+     */
+    private boolean isConfirmedNewBestBlock;
 }

@@ -1,10 +1,9 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.higgsblock.global.chain.app.dao.DposDao;
-import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
+import com.higgsblock.global.chain.app.dao.entity.DposEntity;
+import com.higgsblock.global.chain.app.dao.iface.IDposEntity;
 import com.higgsblock.global.chain.app.service.IDposService;
-import org.rocksdb.RocksDBException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,26 +18,17 @@ import java.util.List;
 public class DposService implements IDposService {
 
     @Autowired
-    private DposDao dposDao;
+    private IDposEntity dposDao;
 
     @Override
     public List<String> get(long sn) {
-        try {
-            String s = dposDao.get(sn);
-            return JSONObject.parseArray(s, String.class);
-        } catch (RocksDBException e) {
-            throw new IllegalStateException("Get dpos error while the sn is " + sn);
-        }
+        DposEntity dposEntity = dposDao.getByField(sn);
+        return null == dposEntity ? null : JSONObject.parseArray(dposEntity.getAddresses(), String.class);
     }
 
     @Override
-    public BaseDaoEntity put(long sn, List<String> addresses) {
-        return dposDao.getEntity(sn, JSONObject.toJSONString(addresses));
-    }
-
-    @Override
-    public List<byte[]> keys() {
-        return dposDao.keys();
+    public void put(long sn, List<String> addresses) {
+        dposDao.add(new DposEntity(sn, JSONObject.toJSONString(addresses)));
     }
 
 }

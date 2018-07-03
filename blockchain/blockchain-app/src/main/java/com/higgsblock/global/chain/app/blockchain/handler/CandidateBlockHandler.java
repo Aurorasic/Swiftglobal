@@ -38,13 +38,14 @@ public class CandidateBlockHandler extends BaseEntityHandler<CandidateBlock> {
             LOGGER.warn("Received request data is invalid {}", data);
             return;
         }
+        long height = data.getHeight();
         String witnessAddress = ECKey.pubKey2Base58Address(data.getPubKey());
         if (!BlockService.WITNESS_ADDRESS_LIST.contains(witnessAddress)) {
-            LOGGER.warn("Received request data is not from witness {}", witnessAddress);
+            LOGGER.warn("Received request data is not from witness {},{}", witnessAddress, height);
             return;
         }
         if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            witnessService.setBlocksFromWitness(ECKey.pubKey2Base58Address(data.getPubKey()), data);
+            witnessService.setBlocksFromWitness(data);
         } else {
             messageCenter.dispatchToWitnesses(data);
         }

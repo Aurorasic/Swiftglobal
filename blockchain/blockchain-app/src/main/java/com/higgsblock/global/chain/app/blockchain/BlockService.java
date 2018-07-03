@@ -10,9 +10,11 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
+import com.higgsblock.global.chain.app.service.IWitnessEntityService;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
-import com.higgsblock.global.chain.app.service.impl.DictionaryService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -81,10 +83,13 @@ public class BlockService {
     private BlockDaoService blockDaoService;
 
     @Autowired
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
+
+    @Autowired
     private TransDaoService transDaoService;
 
     @Autowired
-    private DictionaryService dictionaryService;
+    private IWitnessEntityService witnessService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -96,11 +101,17 @@ public class BlockService {
     private TransactionFeeService transactionFeeService;
 
     public void initWitness() {
-        List<String> witnessAddrList = config.getWitnessAddrList();
-        List<Integer> witnessSocketPortList = config.getWitnessSocketPortList();
-        List<Integer> witnessHttpPortList = config.getWitnessHttpPortList();
-        List<String> witnessPubkeyList = config.getWitnessPubkeyList();
-
+        List<WitnessPo> witnessPos = witnessService.getAll();
+        List<String> witnessAddrList = new ArrayList<>();
+        List<Integer> witnessSocketPortList = new ArrayList<>();
+        List<Integer> witnessHttpPortList = new ArrayList<>();
+        List<String> witnessPubkeyList = new ArrayList<>();
+        for (WitnessPo witnessPo : witnessPos) {
+            witnessAddrList.add(witnessPo.getAddress());
+            witnessSocketPortList.add(witnessPo.getSocketPort());
+            witnessHttpPortList.add(witnessPo.getHttpPort());
+            witnessPubkeyList.add(witnessPo.getPubKey());
+        }
         int size = witnessAddrList.size();
         for (int i = 0; i < size; i++) {
             WitnessEntity entity = getEntity(
@@ -129,7 +140,7 @@ public class BlockService {
     }
 
     public Block packageNewBlock(KeyPair keyPair) {
-        LatestBestBlockIndex bestBlockIndex = dictionaryService.getLatestBestBlockIndex();
+        BlockIndex bestBlockIndex = getLastBestBlockIndex();
         if (bestBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
         }
@@ -149,7 +160,8 @@ public class BlockService {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeService.orderTransaction(cacheTransactions);
+        String preBlockHash = bestBlockIndex.getFirstBlockHash();
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, cacheTransactions);
         List<Transaction> canPackageTransactionsOfBlock = cacheTransactions;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
@@ -193,8 +205,7 @@ public class BlockService {
      * get the max height on the main/best chain
      */
     public long getBestMaxHeight() {
-        LatestBestBlockIndex index = dictionaryService.getLatestBestBlockIndex();
-
+        BlockIndex index = blockIdxDaoService.getLastBlockIndex();
         return index == null ? 0 : index.getHeight();
     }
 
@@ -244,13 +255,10 @@ public class BlockService {
         }
 
         //Save block and index
-        if (!saveBlockCompletely(block, blockHash)) {
-            LOGGER.error("Save block and block index failed, height=>{} hash=>{}", height, blockHash);
-            return false;
-        }
+        Block newBestBlock = saveBlockCompletely(block, blockHash);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, blockHash);
+        broadBlockPersistedEvent(block, newBestBlock);
 
         //Do last job for the block
         doLastJobForBlock(block, sourceId, version);
@@ -273,15 +281,15 @@ public class BlockService {
         return false;
     }
 
-    private boolean saveBlockCompletely(Block block, String blockHash) {
+    private Block saveBlockCompletely(Block block, String blockHash) {
         try {
-            blockDaoService.saveBlockCompletely(block, blockHash);
+            Block newBestBlock = blockDaoService.saveBlockCompletely(block, blockHash);
+            utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
+            return newBestBlock;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Save block and block index failed, height={}_hash={}", block.getHeight(), blockHash);
             throw new IllegalStateException("Save block completely failed");
         }
-
-        return true;
     }
 
     public void doLastJobForBlock(Block block, String sourceId, short version) {
@@ -293,11 +301,11 @@ public class BlockService {
         persistPreOrphanBlock(blockFullInfo);
     }
 
-    public void broadBlockPersistedEvent(Block block, String bestBlockHash) {
+    public void broadBlockPersistedEvent(Block block, Block newBestBlock) {
         BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
         blockPersistedEvent.setHeight(block.getHeight());
         blockPersistedEvent.setBlockHash(block.getHash());
-        blockPersistedEvent.setBestBlockHash(bestBlockHash);
+        blockPersistedEvent.setConfirmedNewBestBlock(newBestBlock == null ? false : true);
         eventBus.post(blockPersistedEvent);
         LOGGER.info("sent broad BlockPersistedEvent,height={}_block={}", block.getHeight(), block.getHash());
     }
@@ -386,13 +394,8 @@ public class BlockService {
         }
 
         for (int index = 0; index < size; index++) {
-            if (0 == index) {
-                if (!validTransactions(true, transactions.get(index), block)) {
-                    return false;
-                }
-                continue;
-            }
-            if (!validTransactions(false, transactions.get(index), block)) {
+            boolean isCoinBaseTx = index == 0 ? true : false;
+            if (!validTransactions(isCoinBaseTx, transactions.get(index), block)) {
                 return false;
             }
         }
@@ -413,8 +416,8 @@ public class BlockService {
             }
             return true;
         }
-        HashSet<String> prevOutKey = new HashSet<>();
-        if (!transactionService.verifyTransaction(transaction, prevOutKey, block)) {
+
+        if (!transactionService.verifyTransaction(transaction, block)) {
             LOGGER.error("Invalidate transaction");
             return false;
         }
@@ -665,5 +668,25 @@ public class BlockService {
         return null != block && block.isGenesisBlock();
     }
 
-
+    public BlockIndex getLastBestBlockIndex() {
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        if (lastBlockIndex == null) {
+            return null;
+        }
+        long lastHeight = lastBlockIndex.getHeight();
+        String bestBlockHash = lastBlockIndex.getBestBlockHash();
+        if (StringUtils.isNotBlank(bestBlockHash)) {
+            return lastBlockIndex;
+        }
+        BlockIndex blockIndex = null;
+        lastHeight--;
+        while (lastHeight > 0) {
+            blockIndex = blockIdxDaoService.getBlockIndexByHeight(lastHeight);
+            if (blockIndex != null) {
+                return blockIndex;
+            }
+            lastHeight--;
+        }
+        return null;
+    }
 }

@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Vote extends BaseBizEntity {
 
-    private int version;
+    private int voteVersion;
 
     private long height;
 
@@ -25,6 +25,10 @@ public class Vote extends BaseBizEntity {
     private String blockHash;
 
     private String proofPubKey;
+
+    private String proofBlockHash;
+
+    private String preBlockHash;
 
     private int proofVersion;
 
