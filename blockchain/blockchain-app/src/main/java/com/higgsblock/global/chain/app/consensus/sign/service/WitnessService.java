@@ -58,6 +58,8 @@ public class WitnessService {
 
     private long height;
 
+    private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
+
     private VoteTable selftVoteTable;
 
     @Getter
@@ -79,7 +81,8 @@ public class WitnessService {
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
-            this.selftVoteTable = new VoteTable(HashBasedTable.create(6, 11));
+            this.voteTable = HashBasedTable.create(6, 11);
+            this.selftVoteTable = new VoteTable(voteTable);
             this.blockWithEnoughSign = null;
             this.blockMap = null;
             this.blockHashAsVersionOne = new HashSet<>();
@@ -118,7 +121,7 @@ public class WitnessService {
                 this.blockMap = new HashMap<>();
             }
             this.blockMap.put(block.getHash(), block);
-            Map<String, Vote> voteMap = this.selftVoteTable.getVoteTable().get(1, keyPair.getPubKey());
+            Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
             if (voteMap != null && voteMap.size() == 1) {
                 LOGGER.info("the vote of version one is exist {},{}", this.height, blockHash);
                 return;
@@ -132,7 +135,7 @@ public class WitnessService {
             String proofPubKey = null;
             Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofPubKey);
             voteMap.put(bestBlockHash, vote);
-            this.selftVoteTable.getVoteTable().put(1, keyPair.getPubKey(), voteMap);
+            this.voteTable.put(1, keyPair.getPubKey(), voteMap);
             Object clone = SerializationUtils.clone(selftVoteTable);
             this.messageCenter.dispatchToWitnesses(clone);
             LOGGER.info("send voteTable to witness success {},{}", this.height, clone);
@@ -232,7 +235,7 @@ public class WitnessService {
                     String key = voteMapEntry.getKey();
                     Vote value = voteMapEntry.getValue();
                     if (verifySingleVote(version, pubKey, value)) {
-                        this.selftVoteTable.getVoteTable().get(version, pubKey).put(value.getBlockHash(), value);
+                        this.voteTable.get(version, pubKey).put(value.getBlockHash(), value);
                     } else {
                         return false;
                     }
@@ -244,7 +247,7 @@ public class WitnessService {
     }
 
     private boolean verifySingleVote(int version, String pubKey, Vote vote) {
-        Map<String, Vote> localVoteMap = this.selftVoteTable.getVoteTable().get(version, pubKey);
+        Map<String, Vote> localVoteMap = this.voteTable.get(version, pubKey);
         if (localVoteMap == null) {
             localVoteMap = new HashMap<>();
         }
@@ -264,7 +267,7 @@ public class WitnessService {
             localVoteMap.put(blockHash, vote);
         } else {
             //todo yangyi the version maybe is not consecutive
-            Map<String, Vote> proofVoteMap = this.selftVoteTable.getVoteTable().get(vote.getProofVersion(), vote.getProofPubKey());
+            Map<String, Vote> proofVoteMap = this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey());
             if (proofVoteMap == null) {
                 return false;
             }
@@ -274,7 +277,7 @@ public class WitnessService {
             }
             String proofBlockHash = proofVote.getBlockHash();
 
-            Map<String, Vote> preVoteMap = this.selftVoteTable.getVoteTable().get(version - 1, pubKey);
+            Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, pubKey);
             if (preVoteMap == null || !preVoteMap.containsKey(vote.getPreBlockHash())) {
                 return false;
             }
@@ -289,7 +292,7 @@ public class WitnessService {
             }
             localVoteMap.put(blockHash, vote);
         }
-        this.selftVoteTable.getVoteTable().put(version, pubKey, localVoteMap);
+        this.voteTable.put(version, pubKey, localVoteMap);
         return true;
     }
 
@@ -303,14 +306,13 @@ public class WitnessService {
 
         if (this.height < voteHeight) {
             LOGGER.info("add voteTable to cache with voteHeight {} ,voteTable {}", voteHeight, voteTable);
-            //todo yuanjiantao
             return;
         }
 
         LOGGER.info("add voteTable to task with voteHeight {} ,voteTable {}", voteHeight, voteTable);
         int rowSize = null == voteTable.rowKeySet() ? 0 : voteTable.rowKeySet().size();
         for (int version = 1; version <= rowSize; version++) {
-            if (!voteTable.containsRow(version)) {
+            if (voteTable.containsRow(version)) {
                 return;
             }
             boolean haveNewVote = false;
@@ -338,7 +340,7 @@ public class WitnessService {
                             followerVotes.compute(pubKey, (k, v) ->
                                     null == v ? new HashMap<>() : v
                             ).put(value.getBlockHash(), value);
-                        } else if (value.getProofVersion() == version - 1) {
+                        } else if (value.getProofVersion() == version + 1) {
                             leaderVotes.compute(pubKey, (k, v) ->
                                     null == v ? new HashMap<>() : v
                             ).put(value.getBlockHash(), value);
@@ -373,7 +375,7 @@ public class WitnessService {
     }
 
     private void collectionVoteSign(int version, long voteHeight) {
-        Map<String, Map<String, Vote>> rowVersion = this.selftVoteTable.getVoteTable().row(version);
+        Map<String, Map<String, Vote>> rowVersion = this.voteTable.row(version);
         Map<String, List<String>> voteSignMap = new HashMap<>();
         Set<Map.Entry<String, Map<String, Vote>>> voteEntrySet = rowVersion.entrySet();
         String bestBlockHash = null;
@@ -405,12 +407,12 @@ public class WitnessService {
         if (validVoteCount < 7) {
             return;
         }
-        Map<String, Vote> voteMap = this.selftVoteTable.getVoteTable().get(version + 1, keyPair.getPubKey());
+        Map<String, Vote> voteMap = this.voteTable.get(version + 1, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             Vote vote = createVote(bestBlockHash, voteHeight, version, proofPubKey);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
-            this.selftVoteTable.getVoteTable().put(version + 1, keyPair.getPubKey(), voteMap);
+            this.voteTable.put(version + 1, keyPair.getPubKey(), voteMap);
             messageCenter.broadcast(SerializationUtils.clone(this.selftVoteTable));
         }
     }
