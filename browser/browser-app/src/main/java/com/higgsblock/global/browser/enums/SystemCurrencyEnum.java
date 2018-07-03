@@ -15,6 +15,7 @@ public enum SystemCurrencyEnum {
     COMMUNITY_MANAGER("communityManager"),
     CAS("cas"),
     MINER("miner"),
+    C_MINER("cMiner"),
     ISSUE_TOKEN("issue_tokens");
 
     private String currency;
