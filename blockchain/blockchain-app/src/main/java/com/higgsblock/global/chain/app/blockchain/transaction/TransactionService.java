@@ -622,9 +622,15 @@ public class TransactionService {
     public boolean hasMinerStake(String address) {
         String minerCurrency = SystemCurrencyEnum.MINER.getCurrency();
         Money minerStakeMinMoney = new Money("1", minerCurrency);
-        BalanceEntity balance = balanceEntityDao.getBalance(address, minerCurrency);
-        Money money = new Money(null == balance ? "0" : balance.getAmount(), minerCurrency);
-        return money.compareTo(minerStakeMinMoney) >= 0;
+        List<UTXO> result = getUTXOList(address, minerCurrency);
+        Money money = new Money("0", minerCurrency);
+        for (UTXO utxo : result) {
+            money.add(utxo.getOutput().getMoney());
+            if (money.compareTo(minerStakeMinMoney) >= 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -24,6 +24,6 @@ public class GetMaxHeightHandler extends BaseEntityHandler<GetMaxHeight> {
 
     @Override
     protected void process(SocketRequest<GetMaxHeight> request) {
-        messageCenter.unicast(request.getSourceId(), new MaxHeight(blockService.getBestMaxHeight()));
+        messageCenter.unicast(request.getSourceId(), new MaxHeight(blockService.getMaxHeight()));
     }
 }
