@@ -58,14 +58,14 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
-        if (height == blockService.getBestMaxHeight() + 1L) {
+        if (height == blockService.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
                         GetBlock getBlock = new GetBlock(height, hash);
                         messageCenter.unicast(sourceId, getBlock);
                         return height;
                     })
             );
-        } else if (height > blockService.getBestMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
+        } else if (height > blockService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
             String hash = new ArrayList<>(hashs).get(0);
             eventBus.post(new ReceiveOrphanBlockEvent(height, hash, sourceId));
         }

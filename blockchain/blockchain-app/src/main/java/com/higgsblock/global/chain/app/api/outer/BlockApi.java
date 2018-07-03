@@ -52,7 +52,7 @@ public class BlockApi {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
         }
 
-        long currentHeight = blockService.getBestMaxHeight();
+        long currentHeight = blockService.getMaxHeight();
         if (fromHeight > currentHeight) {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "It's already the longest chain height.");
         }
@@ -108,7 +108,7 @@ public class BlockApi {
         if (limit < 1) {
             return new ResponseData(PARAM_INVALID);
         }
-        long myMaxHeight = blockService.getBestMaxHeight();
+        long myMaxHeight = blockService.getMaxHeight();
         long maxHeight = start + limit - 1 > myMaxHeight ? myMaxHeight : start + limit - 1;
         List<BlockHeader> list = new ArrayList<>();
         for (long height = start; height < maxHeight + 1; height++) {
@@ -129,7 +129,7 @@ public class BlockApi {
         if (limit < 1L) {
             return new ResponseData(PARAM_INVALID);
         }
-        long myMaxHeight = blockService.getBestMaxHeight();
+        long myMaxHeight = blockService.getMaxHeight();
         List<BlockHeader> list = new ArrayList<>();
         for (long height = myMaxHeight; height > myMaxHeight - limit; height--) {
             if (height < 1L) {
@@ -149,7 +149,7 @@ public class BlockApi {
 
     @RequestMapping("/maxHeight")
     public ResponseData<Long> getMaxHeight() {
-        long maxHeight = blockService.getBestMaxHeight();
+        long maxHeight = blockService.getMaxHeight();
         ResponseData<Long> responseData = new ResponseData<Long>(RespCodeEnum.SUCCESS, "success");
         responseData.setData(maxHeight);
         return responseData;

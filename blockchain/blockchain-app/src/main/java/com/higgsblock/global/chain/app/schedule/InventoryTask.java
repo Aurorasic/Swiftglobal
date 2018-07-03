@@ -4,7 +4,6 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
-import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -34,7 +33,7 @@ public class InventoryTask extends BaseTask {
 
     @Override
     protected void task() {
-        long height = blockService.getBestMaxHeight();
+        long height = blockService.getMaxHeight();
         Inventory inventory = new Inventory();
         inventory.setHeight(height);
         BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
