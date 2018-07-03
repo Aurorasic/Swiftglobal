@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
@@ -14,13 +15,12 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Zhao xiaogang
@@ -28,7 +28,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockDaoService implements IBlockService {
+public class BlockDaoService implements IBlockService, InitializingBean {
 
     @Autowired
     private BlockEntityDao blockDao;
@@ -53,6 +53,21 @@ public class BlockDaoService implements IBlockService {
 
     @Autowired
     private BlockFormatter blockFormatter;
+    @Autowired
+    private AppConfig config;
+
+    private int confirmPreHeightNum;
+    private int dposBlocksPerRound;
+
+    private static final int MAIN_CHAIN_START_HEIGHT = 2;
+
+    private Map<Long, Block> firstBlockMap = new HashMap<>(5);
+
+    @Override
+    public void afterPropertiesSet() {
+        confirmPreHeightNum = config.getBestchainConfirmNum();
+        dposBlocksPerRound = config.getDposBlocksPerRound();
+    }
 
     @Override
     public boolean isExistInDB(long height, String blockHash) {
@@ -173,16 +188,30 @@ public class BlockDaoService implements IBlockService {
         //step 1
         addBlock2BlockEntity(block);
 
-        //step 2
-        blockIdxDaoService.addBlockIndex(block, bestBlockHash);
+        Block bestBlock = findBestBlock(block);
+        boolean isFirst = putFirstBlockMap(block);
+        //step 2 whether this block can be confirmed pre N block
+        if (isFirst){
+            blockIdxDaoService.addBlockIndex(block,bestBlock);
+        }else {
+            blockIdxDaoService.addBlockIndex(block,null);
+        }
+
+        if (block.isGenesisBlock()) {
+            //step 3
+            MinerScoreStrategy.refreshMinersScore(block);
+            //step 4
+            nodeManager.calculateDposNodes(block,block.getHeight());
+        }else {
+            if (isFirst && bestBlock != null){
+                MinerScoreStrategy.refreshMinersScore(bestBlock);
+                nodeManager.calculateDposNodes(bestBlock,block.getHeight());
+            }
+        }
+
+
 
         //step 5
-        MinerScoreStrategy.refreshMinersScore(block);
-
-        //step 6
-        nodeManager.calculateDposNodes(block);
-
-        //step 7
         refreshCache(bestBlockHash, block);
 
         List<String> dposGroupBySn = new LinkedList<>();
@@ -198,7 +227,7 @@ public class BlockDaoService implements IBlockService {
         peerManager.setMinerAddresses(dposGroupBySn);
 
         // TODO  huangshengli if confirmed a block as best block, then return this block,else return null
-        return null;
+        return bestBlock;
     }
 
     @Override
@@ -234,5 +263,53 @@ public class BlockDaoService implements IBlockService {
         blockEntity.setHeight(block.getHeight());
         blockEntity.setData(blockFormatter.format(block));
         blockDao.add(blockEntity);
+    }
+
+
+    private synchronized boolean putFirstBlockMap(Block block) {
+        if (block.isGenesisBlock()){
+            return false;
+        }
+        if (firstBlockMap.get(block.getHeight()) == null) {
+            firstBlockMap.put(block.getHeight(), block);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private Block findBestBlock(Block block) {
+        if (block.isGenesisBlock()) {
+            return null;
+        }
+        if (block.getHeight() - confirmPreHeightNum < MAIN_CHAIN_START_HEIGHT) {
+            return null;
+        }
+        Block bestBlock = recurPreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
+        // h-N-1 block has ready be bestchain
+        Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
+        if (preBestBlock == null || !preBestBlock.getHash().equals(getBestBlockByHeight(preBestBlock.getHeight()))) {
+            //todo business error ,failure bypass
+            return null;
+        }
+
+        return bestBlock;
+    }
+
+    private Block recurPreBlock(String preBlockHash, int preHeightNum) {
+
+        Block preBlock = getBlockByHash(preBlockHash);
+        if (preBlock == null) {
+            LOGGER.error("preblock is null,may be db transaction error or sync error,blockhash:{}", preBlockHash);
+            throw new IllegalStateException("can not find block,blockhash:" + preBlockHash);
+        }
+        if (preBlock.getHash().equals(blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight()).getBestBlockHash())) {
+            LOGGER.info("block[blockhash:{},height:{}]has be confirmed on best chain,skip this", preBlock.getHash(), preBlock.getHeight());
+            return null;
+        }
+        if (preHeightNum-- > 0) {
+            return recurPreBlock(preBlock.getPrevBlockHash(), preHeightNum);
+        }
+        return preBlock;
     }
 }

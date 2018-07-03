@@ -27,6 +27,13 @@ public interface IBlockIndexEntity extends IDao<BlockIndexEntity> {
     long getMaxHeight();
 
     /**
+     * load blockIndex by blockHash
+     * @param blockHash
+     * @return
+     */
+    BlockIndexEntity getByBlockHash(String blockHash);
+
+    /**
      * batch insert
      *
      * @param blockIndexEntities
