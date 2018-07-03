@@ -202,9 +202,9 @@ public class BlockService {
     }
 
     /**
-     * get the max height on the main/best chain
+     * get the max height
      */
-    public long getBestMaxHeight() {
+    public long getMaxHeight() {
         BlockIndex index = blockIdxDaoService.getLastBlockIndex();
         return index == null ? 0 : index.getHeight();
     }
