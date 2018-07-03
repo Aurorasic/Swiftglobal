@@ -6,11 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.iface.IBalanceEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
@@ -79,12 +77,6 @@ public class TransactionService {
 
     @Autowired
     private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
-
-    /**
-     * The Balance entity dao.
-     */
-    @Autowired
-    private IBalanceEntity balanceEntityDao;
 
     /**
      * validate coin base tx
@@ -276,8 +268,8 @@ public class TransactionService {
     /**
      * validate tx
      *
-     * @param tx         one tx
-     * @param block      current block
+     * @param tx    one tx
+     * @param block current block
      * @return return result
      */
     public boolean verifyTransaction(Transaction tx, Block block) {

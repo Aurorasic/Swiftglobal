@@ -205,6 +205,8 @@ ON "t_transaction_index" ("transaction_hash" ASC);
 -- ----------------------------
 CREATE UNIQUE INDEX "main"."uniq_utxo_transaction_hash_out_index"
 ON "t_utxo" ("transaction_hash" ASC, "out_index" ASC);
+CREATE INDEX "main"."idx_lock_script_currency"
+ON "t_utxo" ("lock_script" ASC,"currency" ASC);
 
 -- ----------------------------
 -- Indexes structure for table t_witness
