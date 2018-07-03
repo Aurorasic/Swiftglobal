@@ -7,18 +7,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author yuanjiantao
- * @date 6/28/2018
+ * @date 7/2/2018
  */
-@Message(EntityType.VOTE_TABLE)
+@Message(EntityType.SOURCE_BLOCK_REQ)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class AllVote {
+public class SourceBlockReq {
 
-    private List list;
+    private Set<String> blockHashs;
 }
