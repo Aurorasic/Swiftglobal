@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.api.service.UTXORespService;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
@@ -32,11 +33,11 @@ public class WitnessCountTime {
 
 
     @Autowired
-    private UTXORespService utxoRespService;
-    @Autowired
     private BlockService blockService;
     @Autowired
     private PeerManager peerManager;
+    @Autowired
+    private TransactionService transactionService;
 
     public boolean queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
@@ -131,18 +132,6 @@ public class WitnessCountTime {
 
     }
     public boolean verifyBlockBelongCommonMiner(Block block){
-        //todo update CMINER count yezaiyong
-        List<UTXO> list =utxoRespService.getUTXOsByAddress(block.getMinerFirstPKSig().getAddress());
-        boolean isCMINER =false;
-        if (list !=null){
-            for (UTXO utxo : list){
-                String currency=utxo.getOutput().getMoney().getCurrency();
-                if (currency.equals(SystemCurrencyEnum.CMINER)){
-                    isCMINER =true;
-                    continue;
-                }
-            }
-        }
-       return isCMINER;
+        return transactionService.hasStake(block.getMinerFirstPKSig().getAddress(),SystemCurrencyEnum.CMINER);
     }
 }

@@ -1,19 +1,13 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
-import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
-import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -43,20 +37,12 @@ public class CandidateMiner{
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private UTXORespService utxoRespService;
+    private TransactionService transactionService;
 
     public void queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
-        List<UTXO> list =utxoRespService.getUTXOsByAddress(address);
-        if (list !=null){
-            for (UTXO utxo : list){
-                String currency=utxo.getOutput().getMoney().getCurrency();
-                if (currency.equals(SystemCurrencyEnum.CMINER)){
-                    isCMINER =true;
-                    continue;
-                }
-            }
-        }
+
+        isCMINER = transactionService.hasStake(address,SystemCurrencyEnum.CMINER);
         if (isCMINER){
             currHeight =blockService.getMaxHeight();
             startTimer();
