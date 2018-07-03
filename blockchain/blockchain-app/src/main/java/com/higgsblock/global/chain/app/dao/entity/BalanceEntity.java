@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,4 +30,13 @@ public class BalanceEntity {
      * The Currency.
      */
     private String currency;
+
+    /**
+     * Gets money.
+     *
+     * @return the money
+     */
+    public Money getMoney() {
+        return new Money(amount, currency);
+    }
 }

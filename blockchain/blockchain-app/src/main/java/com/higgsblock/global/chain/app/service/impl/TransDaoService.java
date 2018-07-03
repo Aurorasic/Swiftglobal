@@ -167,7 +167,12 @@ public class TransDaoService implements ITransService {
             for (TransactionInput input : transaction.getInputs()) {
                 String spentTxHash = input.getPrevOut().getHash();
                 short spentTxOutIndex = input.getPrevOut().getIndex();
-                UTXO utxo = getUTXO(UTXO.buildKey(spentTxHash, spentTxOutIndex));
+                String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
+                UTXO utxo = getUTXO(utxoKey);
+                if(null == utxo){
+                    throw new IllegalStateException("UTXO not exists : " + utxoKey);
+                }
+
                 if (!utxo.getOutput().isMinerCurrency()) {
                     continue;
                 }

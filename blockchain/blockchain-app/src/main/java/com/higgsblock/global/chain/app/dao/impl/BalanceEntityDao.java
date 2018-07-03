@@ -39,7 +39,7 @@ public class BalanceEntityDao extends BaseDao<BalanceEntity> implements IBalance
      */
     @Override
     public int update(BalanceEntity balanceEntity) {
-        String sql = "update t_balance set currency =:currency,amount=:amount where address=:address limit 1";
+        String sql = "update t_balance set currency =:currency,amount=:amount where address=:address";
         return super.update(balanceEntity, sql);
     }
 
@@ -51,7 +51,7 @@ public class BalanceEntityDao extends BaseDao<BalanceEntity> implements IBalance
      */
     @Override
     public <E> int delete(E address) {
-        String sql = "delete from t_balance where address = :address limit 1";
+        String sql = "delete from t_balance where address = :address";
         return super.delete(sql, ImmutableMap.of("address", address));
     }
 
@@ -91,7 +91,7 @@ public class BalanceEntityDao extends BaseDao<BalanceEntity> implements IBalance
             return balanceMap;
         }
 
-        balanceEntities.forEach(p -> balanceMap.putIfAbsent(p.getAddress(), new Money(p.getAmount(), p.getCurrency())));
+        balanceEntities.forEach(p -> balanceMap.putIfAbsent(p.getAddress(), p.getMoney()));
         return balanceMap;
     }
 
