@@ -51,7 +51,7 @@ public class WitnessCountTime {
     public static boolean isCurrBlockConfirm(Block block) {
         try{
             WitnessCountTime.block = block;
-            TimeUnit.SECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(3);
             return isCurrBlockConfirm;
         }catch (InterruptedException e){
             LOGGER.error("isCurrBlockConfirm error {}",e);
