@@ -13,7 +13,7 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 7/2/2018
  */
-@Message(EntityType.SOURCE_BLOCK)
+@Message(EntityType.SOURCE_BLOCK_REQ)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
