@@ -41,7 +41,7 @@ public class WitnessCountTime {
     public boolean queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
-            currHeight = blockService.getBestMaxHeight();
+            currHeight = blockService.getMaxHeight();
             return startTimer();
         }
         return false;
