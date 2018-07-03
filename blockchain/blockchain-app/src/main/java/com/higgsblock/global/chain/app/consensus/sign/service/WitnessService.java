@@ -3,10 +3,7 @@ package com.higgsblock.global.chain.app.consensus.sign.service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateBlock;
-import com.higgsblock.global.chain.app.blockchain.CandidateBlockHashs;
+import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
@@ -150,6 +147,14 @@ public class WitnessService {
             LOGGER.info("send candidateBlockHashList to witness success {},{}", this.height, candidateBlockHashs);
             return;
         }
+        //todo yezaiyong 20180630 add witnessTimer
+        boolean isWitnessTimer = WitnessCountTime.isCurrBlockConfirm(block);
+        LOGGER.info("verify witness timer block is sure {} block hash {}",isWitnessTimer,block.getHash());
+        if (!isWitnessTimer){
+            LOGGER.info("verify witness timer block is accept {} ",isWitnessTimer);
+            return;
+        }
+
         Map<String, Block> blockMap = sourceBlockCache.get(block.getHeight(), (tempHeight) -> new HashMap<>());
         if (blockMap.containsKey(blockHash)) {
             return;
