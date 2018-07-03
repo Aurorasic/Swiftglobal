@@ -148,16 +148,16 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             return;
         }
         LOGGER.info("process event: {}", JSON.toJSONString(event));
-        if (event.hasBestBlock()) {
-            requestRecord.invalidate(event.getHeight());
-            long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
-            if (targetHeight <= getPeersMaxHeight()) {
-                sendGetBlock(targetHeight);
-            }
-            if (isSyncBlockState() && blockService.getBestMaxHeight() >= getPeersMaxHeight()) {
-                systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-                LOGGER.info("sync block finished !");
-            }
+
+        //when there has a persisted block on the height, stop sycn this height.If another one is real best block on the height, its next block maybe orphan block, then fetch the real best block as orphan block.
+        requestRecord.invalidate(event.getHeight());
+        long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
+        if (targetHeight <= getPeersMaxHeight()) {
+            sendGetBlock(targetHeight);
+        }
+        if (isSyncBlockState() && blockService.getBestMaxHeight() >= getPeersMaxHeight()) {
+            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.info("sync block finished !");
         }
     }
 
