@@ -65,9 +65,9 @@ public class TransDaoService implements ITransService {
     private IBalanceEntity balanceEntityDao;
 
     @Override
-    public void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) {
+    public void addTransIdxAndUtxo(Block toBeBestBlock, String bestBlockHash) {
 
-        List<Transaction> transactionList = bestBlock.getTransactions();
+        List<Transaction> transactionList = toBeBestBlock.getTransactions();
         final int txSize = transactionList.size();
         for (int txCount = 0; txCount < txSize; txCount++) {
             Transaction tx = transactionList.get(txCount);

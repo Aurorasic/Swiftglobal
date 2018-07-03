@@ -20,7 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Zhao xiaogang
@@ -57,16 +59,13 @@ public class BlockDaoService implements IBlockService, InitializingBean {
     private AppConfig config;
 
     private int confirmPreHeightNum;
-    private int dposBlocksPerRound;
 
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
 
-    private Map<Long, Block> firstBlockMap = new HashMap<>(5);
 
     @Override
     public void afterPropertiesSet() {
         confirmPreHeightNum = config.getBestchainConfirmNum();
-        dposBlocksPerRound = config.getDposBlocksPerRound();
     }
 
     @Override
@@ -183,40 +182,59 @@ public class BlockDaoService implements IBlockService, InitializingBean {
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public Block saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
+    public Block saveBlockCompletely(Block block) throws Exception {
 
         //step 1
         addBlock2BlockEntity(block);
 
+
         //step 2
-        Block bestBlock = findBestBlock(block);
-        boolean isFirst = putFirstBlockMap(block);
+        boolean isFirst = hasBlockByHeight(block);
+        Block toBeBestBlock = null;
+        if (isFirst) {
+            toBeBestBlock = getToBeBestBlock(block);
+        } else {
+            LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
+        }
         //step 2 whether this block can be confirmed pre N block
-        if (isFirst){
-            blockIdxDaoService.addBlockIndex(block,bestBlock);
-        }else {
-            blockIdxDaoService.addBlockIndex(block,null);
+        if (isFirst) {
+            blockIdxDaoService.addBlockIndex(block, toBeBestBlock);
+        } else {
+            blockIdxDaoService.addBlockIndex(block, null);
         }
 
         if (block.isGenesisBlock()) {
             //step 3
             MinerScoreStrategy.refreshMinersScore(block);
             //step 4
-            nodeManager.calculateDposNodes(block,block.getHeight());
-        }else {
-            if (isFirst && bestBlock != null){
-                MinerScoreStrategy.refreshMinersScore(bestBlock);
-                nodeManager.calculateDposNodes(bestBlock,block.getHeight());
+            nodeManager.calculateDposNodes(block, block.getHeight());
+        } else {
+            if (isFirst && toBeBestBlock != null) {
+                MinerScoreStrategy.refreshMinersScore(toBeBestBlock);
+                nodeManager.calculateDposNodes(toBeBestBlock, block.getHeight());
+                //step 5
+                refreshCache(toBeBestBlock.getHash(), toBeBestBlock);
+                //step6
+                freshPeerMinerAddr(toBeBestBlock);
             }
         }
 
+        return toBeBestBlock;
+    }
+
+    @Override
+    public void printAllBlockData() {
+    }
 
 
-        //step 5
-        refreshCache(bestBlockHash, block);
-
+    /**
+     * fresh peer's minerAddress to connect ahead
+     *
+     * @param toBeBestBlock
+     */
+    private void freshPeerMinerAddr(Block toBeBestBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
-        long sn = nodeManager.getSn(block.getHeight() + 1);
+        long sn = nodeManager.getSn(toBeBestBlock.getHeight());
         List<String> dpos = nodeManager.getDposGroupBySn(sn);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
@@ -226,13 +244,8 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             dposGroupBySn.addAll(dpos);
         }
         peerManager.setMinerAddresses(dposGroupBySn);
-
-        return bestBlock;
     }
 
-    @Override
-    public void printAllBlockData() {
-    }
 
     @Override
     public boolean checkBlockNumbers() {
@@ -266,26 +279,22 @@ public class BlockDaoService implements IBlockService, InitializingBean {
     }
 
 
-    private synchronized boolean putFirstBlockMap(Block block) {
-        if (block.isGenesisBlock()){
-            return false;
-        }
-        if (firstBlockMap.get(block.getHeight()) == null) {
-            firstBlockMap.put(block.getHeight(), block);
+    private boolean hasBlockByHeight(Block block) {
+        if (block.isGenesisBlock()) {
             return true;
-        } else {
-            return false;
         }
+        return null == blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
     }
 
-    private Block findBestBlock(Block block) {
+
+    private Block getToBeBestBlock(Block block) {
         if (block.isGenesisBlock()) {
             return null;
         }
         if (block.getHeight() - confirmPreHeightNum < MAIN_CHAIN_START_HEIGHT) {
             return null;
         }
-        Block bestBlock = recurPreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
         // h-N-1 block has ready be bestchain
         Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
         if (preBestBlock == null || !preBestBlock.getHash().equals(getBestBlockByHeight(preBestBlock.getHeight()))) {
@@ -296,7 +305,7 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         return bestBlock;
     }
 
-    private Block recurPreBlock(String preBlockHash, int preHeightNum) {
+    private Block recursePreBlock(String preBlockHash, int preHeightNum) {
 
         Block preBlock = getBlockByHash(preBlockHash);
         if (preBlock == null) {
@@ -308,8 +317,13 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             return null;
         }
         if (preHeightNum-- > 0) {
-            return recurPreBlock(preBlock.getPrevBlockHash(), preHeightNum);
+            return recursePreBlock(preBlock.getPrevBlockHash(), preHeightNum);
         }
         return preBlock;
     }
+
+    public int getConfirmPreHeightNum() {
+        return confirmPreHeightNum;
+    }
+
 }

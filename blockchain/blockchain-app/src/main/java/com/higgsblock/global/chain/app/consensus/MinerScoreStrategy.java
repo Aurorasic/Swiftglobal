@@ -36,19 +36,19 @@ public class MinerScoreStrategy {
      * Called by block dao service
      */
 
-    public static void refreshMinersScore(Block bestBlock) {
+    public static void refreshMinersScore(Block toBeBestBlock) {
 
-        BlockWitness minerPKSig = bestBlock.getMinerFirstPKSig();
+        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         Map<String, Integer> allMinerSoreMap = scoreDaoService.loadAll();
 
         //minus miner score
         plusScore(allMinerSoreMap, minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
 
         //handle joined miner and removed miner
-        LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", bestBlock.getHash());
-        List<Transaction> transactions = bestBlock.getTransactions();
+        LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+        List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
-            LOGGER.info("calc removing and adding miner currency,tx={}",tx.getHash());
+            LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
             Set<String> removedMiners = transactionService.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 scoreDaoService.remove(removedMiner);
@@ -59,7 +59,7 @@ public class MinerScoreStrategy {
                 scoreDaoService.putIfAbsent(addedMiner, INIT_SCORE);
             }
         }
-        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", bestBlock.getHash());
+        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
 
     }
 

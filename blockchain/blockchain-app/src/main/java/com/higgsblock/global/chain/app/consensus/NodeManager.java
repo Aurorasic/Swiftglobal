@@ -33,9 +33,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class NodeManager implements InitializingBean {
 
-//    public static final int NODE_SIZE = 7;
-    public static final int MAX_SIZE = 21;
-//    public static final int BATCH_BLOCK_NUM = 5;
+    public static final int NODE_SIZE = 10;
+    public static final int MAX_SIZE = 30;
+    //    public static final int BATCH_BLOCK_NUM = 5;
     public static final long DPOS_START_HEIGHT = 2L;
     public static final long FIRST_HEIGHT_CAL_HEIGHT = 4L;
     private final int maxScore = 1000;
@@ -48,7 +48,6 @@ public class NodeManager implements InitializingBean {
     @Autowired
     private AppConfig config;
 
-    private int confirmPreHeightNum;
     private int dposBlocksPerRound;
 
     @Autowired
@@ -58,35 +57,35 @@ public class NodeManager implements InitializingBean {
             .build();
     private Function<Long, List<String>> function = null;
 
-    public void calculateDposNodes(Block bestBlock, long height) {
-        List<String> dposAddresses = calculateDposAddresses(bestBlock,height);
+    public void calculateDposNodes(Block toBeBestBlock, long maxHeight) {
+        List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         if (CollectionUtils.isEmpty(dposAddresses)) {
             return;
         }
-        long sn = getSn(height);
+        long sn = getSn(maxHeight);
         persistDposNodes(sn, dposAddresses);
     }
 
-    public List<String> calculateDposAddresses(Block bestBlock, long height) {
+    public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
 //        boolean isEndHeight = isEndHeight(height);
 //        if (!isEndHeight) {
 //            return null;
 //        }
-        long sn = getSn(height);
+        long sn = getSn(maxHeight);
         boolean selectedNextGroup = isGroupSeleted(sn + 1L);
-        if (selectedNextGroup){
-            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}",height,(sn+1L));
+        if (selectedNextGroup) {
+            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
             return null;
         }
 
         Map<String, Integer> dposMinerSoreMap = scoreDaoService.loadAll();
-        LOGGER.info("select {} dpos node from dposMinerScore:{}",(sn+1),dposMinerSoreMap);
-        if (dposMinerSoreMap.size() < dposBlocksPerRound) {
+        LOGGER.info("select {} dpos node from dposMinerScore:{}", (sn + 1), dposMinerSoreMap);
+        if (dposMinerSoreMap.size() < NODE_SIZE) {
             return null;
         }
 
-        final String hash = bestBlock.getHash();
-        LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash,bestBlock.getHeight());
+        final String hash = toBeBestBlock.getHash();
+        LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
         List<String> maxScoreList = new ArrayList<>();
@@ -127,7 +126,7 @@ public class NodeManager implements InitializingBean {
         select.addAll(minScoreList.stream().sorted(comparator).limit(minSize).collect(Collectors.toList()));
         int size = maxSize + midSize + minSize - select.size();
         if (size <= 0) {
-            LOGGER.info("the dpos node is {},sn+1:{}", select,(sn+1));
+            LOGGER.info("the dpos node is {},sn+1:{}", select, (sn + 1));
             return select;
         }
         List<String> list = new LinkedList();
@@ -137,9 +136,9 @@ public class NodeManager implements InitializingBean {
         list.addAll(inadequateScoreList);
         list.removeAll(select);
         select.addAll(list.stream().sorted(comparator).limit(size).collect(Collectors.toList()));
-        LOGGER.info("the dpos node is {},sn+1:{}", select,(sn+1));
-        if (select.size() < dposBlocksPerRound) {
-            throw new RuntimeException("can not find enough dpos node,sn+1:" + (sn+1));
+        LOGGER.info("the dpos node is {},sn+1:{}", select, (sn + 1));
+        if (select.size() < NODE_SIZE) {
+            throw new RuntimeException("can not find enough dpos node,sn+1:" + (sn + 1));
         }
         return select;
     }
@@ -152,7 +151,6 @@ public class NodeManager implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         function = (sn) -> dposService.get(sn);
-        confirmPreHeightNum = config.getBestchainConfirmNum();
         dposBlocksPerRound = config.getDposBlocksPerRound();
     }
 
@@ -195,7 +193,7 @@ public class NodeManager implements InitializingBean {
         if (height <= 1) {
             return 1;
         }
-        return (getSn(height)-2) * dposBlocksPerRound + 2L;
+        return (getSn(height) - 2) * dposBlocksPerRound + 2L;
     }
 
     public boolean canPackBlock(long height, String address) {
@@ -223,7 +221,7 @@ public class NodeManager implements InitializingBean {
         return (height - DPOS_START_HEIGHT) / dposBlocksPerRound + 2L;
     }
 
-    public boolean isGroupSeleted(long sn){
+    public boolean isGroupSeleted(long sn) {
         return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
     }
 

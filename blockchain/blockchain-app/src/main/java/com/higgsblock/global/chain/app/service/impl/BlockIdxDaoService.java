@@ -39,7 +39,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
     private BlockFormatter blockFormatter;
 
     @Override
-    public void addBlockIndex(Block block, Block bestBlock) {
+    public void addBlockIndex(Block block, Block toBeBestBlock) {
 //        BlockIndex blockIndex;
 //        ArrayList<String> blockHashes = new ArrayList<String>(1);
 //        if (block.isGenesisBlock()) {
@@ -68,15 +68,15 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
         //modify by Huangshengli 2018-07-02
         insertBlockIndex(block);
-        if (bestBlock != null){
-            updateBestBlockIndex(bestBlock);
+        if (toBeBestBlock != null) {
+            updateBestBlockIndex(toBeBestBlock);
         }
 
         if (block.isGenesisBlock()) {
             transDaoService.addTransIdxAndUtxo(block, block.getHash());
-        }else {
-            if (bestBlock != null){
-                transDaoService.addTransIdxAndUtxo(bestBlock, bestBlock.getHash());
+        } else {
+            if (toBeBestBlock != null) {
+                transDaoService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
     }
@@ -93,8 +93,8 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
     private void updateBestBlockIndex(Block bestBlock) {
         BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
-        for (int i = 0 ; i < blockIndex.getBlockHashs().size(); i++){
-            if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))){
+        for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
+            if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
                 BlockIndexEntity blockIndexEntity = blockIndexDao.getByBlockHash(bestBlock.getHash());
                 blockIndexEntity.setIsBest(i);
                 blockIndexDao.update(blockIndexEntity);
@@ -115,7 +115,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
             blockIndex.setBestIndex(-1);
             blockIndexEntities.forEach(blockIndexEntity -> {
                 blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
-                if (blockIndexEntity.getIsBest() != -1){
+                if (blockIndexEntity.getIsBest() != -1) {
                     blockIndex.setBestIndex(blockIndexEntity.getIsBest());
                 }
             });

@@ -210,6 +210,62 @@ public class BlockService {
     }
 
     /**
+     * get the last height on best chain
+     */
+    public long getLastBestHeight() {
+        return getLastBestBlockIndex().getHeight();
+    }
+
+    /**
+     * get last best BlockIndex
+     *
+     * @return
+     */
+    public BlockIndex getLastBestBlockIndex() {
+        BlockIndex index = blockIdxDaoService.getLastBlockIndex();
+        if (index.hasBestBlock()) {
+            return index;
+        }
+        long maxHeight = index.getHeight();
+        while (maxHeight-- > 0) {
+            BlockIndex preBlockIndex = blockIdxDaoService.getBlockIndexByHeight(maxHeight);
+            if (preBlockIndex.hasBestBlock()) {
+                return preBlockIndex;
+            }
+        }
+        return blockIdxDaoService.getBlockIndexByHeight(1);
+    }
+
+    /**
+     * get the last best block
+     */
+    public Block getLastBestBlock() {
+        BlockIndex lastBestBlockIndex = getLastBestBlockIndex();
+        return blockDaoService.getBlockByHash(lastBestBlockIndex.getBestBlockHash());
+    }
+
+    /**
+     * obtain blocks on main chain from <>fromHeight</> at most <>limit</>
+     *
+     * @param fromHeight
+     * @param limit
+     * @return
+     */
+    public List<Block> getBestBlocksByHeight(long fromHeight, int limit) {
+
+        List<Block> blocks = Lists.newArrayList();
+        while (limit-- > 0) {
+            Block block = getBestBlockByHeight(fromHeight++);
+            if (block == null) {
+                break;
+            } else {
+                blocks.add(block);
+            }
+        }
+        return blocks;
+    }
+
+    /**
      * Persist the block and index data. If it is orphan block, add it to cache and do not persist to db
      * <p>
      * Used by:
@@ -255,7 +311,7 @@ public class BlockService {
         }
 
         //Save block and index
-        Block newBestBlock = saveBlockCompletely(block, blockHash);
+        Block newBestBlock = saveBlockCompletely(block);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock);
@@ -281,13 +337,13 @@ public class BlockService {
         return false;
     }
 
-    private Block saveBlockCompletely(Block block, String blockHash) {
+    private Block saveBlockCompletely(Block block) {
         try {
-            Block newBestBlock = blockDaoService.saveBlockCompletely(block, blockHash);
+            Block newBestBlock = blockDaoService.saveBlockCompletely(block);
             utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
             return newBestBlock;
         } catch (Exception e) {
-            LOGGER.error("Save block and block index failed, height={}_hash={}", block.getHeight(), blockHash);
+            LOGGER.error("Save block and block index failed, height={}_hash={}", block.getHeight(), block.getHash());
             throw new IllegalStateException("Save block completely failed");
         }
     }
@@ -668,25 +724,4 @@ public class BlockService {
         return null != block && block.isGenesisBlock();
     }
 
-    public BlockIndex getLastBestBlockIndex() {
-        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
-        if (lastBlockIndex == null) {
-            return null;
-        }
-        long lastHeight = lastBlockIndex.getHeight();
-        String bestBlockHash = lastBlockIndex.getBestBlockHash();
-        if (StringUtils.isNotBlank(bestBlockHash)) {
-            return lastBlockIndex;
-        }
-        BlockIndex blockIndex = null;
-        lastHeight--;
-        while (lastHeight > 0) {
-            blockIndex = blockIdxDaoService.getBlockIndexByHeight(lastHeight);
-            if (blockIndex != null) {
-                return blockIndex;
-            }
-            lastHeight--;
-        }
-        return null;
-    }
 }

@@ -6,7 +6,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
@@ -276,8 +275,8 @@ public class TransactionService {
     /**
      * validate tx
      *
-     * @param tx         one tx
-     * @param block      current block
+     * @param tx    one tx
+     * @param block current block
      * @return return result
      */
     public boolean verifyTransaction(Transaction tx, Block block) {
