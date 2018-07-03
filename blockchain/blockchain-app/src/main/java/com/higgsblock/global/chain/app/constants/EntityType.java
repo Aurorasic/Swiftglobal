@@ -25,6 +25,7 @@ public enum EntityType {
     GET_BLOCK("203"),
     GET_MAX_HEIGHT("204"),
     SOURCE_BLOCK("205"),
+    SOURCE_BLOCK_REQ("207"),
     CANDIDATE_BLOCK("206"),
     CANDIDATE_BLOCK_HASH("208"),
 
