@@ -58,14 +58,14 @@ public class CandidateMiner{
             }
         }
         if (isCMINER){
-            currHeight =blockService.getBestMaxHeight();
+            currHeight =blockService.getMaxHeight();
             startTimer();
         }
     }
 
     public synchronized void doMingTimer(){
         if(isCMINER){
-            currHeight =blockService.getBestMaxHeight();
+            currHeight =blockService.getMaxHeight();
             blockStatus = false;
         }
     }
@@ -73,7 +73,7 @@ public class CandidateMiner{
     public void instantiationBlock(){
         if(isCMINER) {
             CandidateMiner.blockStatus = true;
-            currHeight = blockService.getBestMaxHeight();
+            currHeight = blockService.getMaxHeight();
         }
     }
 
