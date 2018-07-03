@@ -26,6 +26,8 @@ public class Vote extends BaseBizEntity {
 
     private String proofPubKey;
 
+    private String proofBlockHash;
+
     private int proofVersion;
 
     private String signature;
