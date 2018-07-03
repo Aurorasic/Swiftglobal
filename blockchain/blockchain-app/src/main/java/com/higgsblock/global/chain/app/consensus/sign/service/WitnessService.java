@@ -1,5 +1,7 @@
 package com.higgsblock.global.chain.app.consensus.sign.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.higgsblock.global.chain.app.blockchain.*;
@@ -56,6 +58,11 @@ public class WitnessService {
 //            .maximumSize(MAX_SIZE)
 //            .build();
 
+    private Cache<Long, HashBasedTable<Integer, String, Map<String, Vote>>> voteCache = Caffeine.newBuilder()
+            .maximumSize(MAX_SIZE)
+            .build();
+
+    @Getter
     private long height;
 
     private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
@@ -68,9 +75,6 @@ public class WitnessService {
     private Set<String> blockHashAsVersionOne;
 
     private Block blockWithEnoughSign;
-
-    @Getter
-    private List<HashBasedTable<Integer, String, Map<String, Vote>>> voteCache = new ArrayList<>();
 
     public synchronized void initWitnessTask(long height) {
         if (height <= this.height) {
@@ -153,6 +157,17 @@ public class WitnessService {
             LOGGER.info("send candidateBlockHashList to witness success {},{}", this.height, candidateBlockHashs);
             return;
         }
+    }
+
+    public synchronized void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+        HashBasedTable<Integer, String, Map<String, Vote>> oldCacheVote = voteCache.get(height, k -> voteTable);
+        if (voteTable.rowKeySet().size() < oldCacheVote.rowKeySet().size()) {
+            return;
+        } else if (voteTable.rowKeySet().size() == oldCacheVote.rowKeySet().size()
+                && voteTable.size() < oldCacheVote.size()) {
+            return;
+        }
+        voteCache.put(height, voteTable);
     }
 
     public synchronized void setBlocksFromWitness(CandidateBlock data) {
@@ -288,12 +303,6 @@ public class WitnessService {
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
             LOGGER.info("the voting process of {} is over", height);
-            return;
-        }
-
-        if (this.height < voteHeight) {
-            // TODO: 7/3/2018 yuanjiantao add voteTable to cache
-            LOGGER.info("add voteTable to cache with voteHeight {} ,voteTable {}", voteHeight, voteTable);
             return;
         }
 
