@@ -79,19 +79,6 @@ public class AppConfig {
     @Value("${access.allow.ip.wild.card}")
     private String accessAllowIpWildCard;
 
-    //@Value("${witness.addr}")
-    @Value("#{'${witness.addr}'.split(',')}")
-    private List<String> witnessAddrList;
-
-    @Value("#{'${witness.socketport}'.split(',')}")
-    private List<Integer> witnessSocketPortList;
-
-    @Value("#{'${witness.httpport}'.split(',')}")
-    private List<Integer> witnessHttpPortList;
-
-    @Value("#{'${witness.pubkey}'.split(',')}")
-    private List<String> witnessPubkeyList;
-
     /**
      * confirm bestchain with a constant number when sporked
      *  add by Huangsheng li 2018-06-29
@@ -99,8 +86,7 @@ public class AppConfig {
     @Value("${bestchain.confirm.min.block.num}")
     private int bestchainConfirmNum;
     @Value("${dpos.blocks.per.round}")
-    private int blocksPerRound;
-
+    private int dposBlocksPerRound;
 
     public String getValue(String key) {
         return environment.getProperty(key);

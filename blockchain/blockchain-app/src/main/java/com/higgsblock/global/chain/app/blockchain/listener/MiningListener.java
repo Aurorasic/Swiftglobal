@@ -2,14 +2,18 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.eventbus.Subscribe;
+import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +43,8 @@ public class MiningListener implements IEventBusListener {
     private NodeManager nodeManager;
     @Autowired
     private WitnessService witnessService;
+    @Autowired
+    private UTXORespService utxoRespService;
 
     /**
      * the block height which is produced recently
@@ -113,6 +119,11 @@ public class MiningListener implements IEventBusListener {
 
         // check if my turn now
         String address = peerManager.getSelf().getId();
+
+        //todo yezaiyong 20180629 add CandidateMiner mode
+        CandidateMiner candidateMiner=new CandidateMiner();
+        candidateMiner.doMingTimer();
+
         boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address);
         if (!isMyTurn) {
             LOGGER.info("it is not my turn");

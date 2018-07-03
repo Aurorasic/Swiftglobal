@@ -1,20 +1,23 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.higgsblock.global.chain.app.api.service.UTXORespService;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 /**
  * @author baizhengwen
@@ -39,6 +42,11 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private BlockIdxDaoService blockIdxDaoService;
 
+    @Autowired
+    private PeerManager peerManager;
+    @Autowired
+    private UTXORespService utxoRespService;
+
     @Override
     protected void process(SocketRequest<Block> request) {
         Block data = request.getData();
@@ -54,6 +62,16 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
 
         if (success && !data.isGenesisBlock()) {
+
+            String address = peerManager.getSelf().getId();
+            //todo yezaiyong 20180630 inform candidateMiner  cout cminer coin
+            CandidateMiner candidateMiner = new CandidateMiner();
+            candidateMiner.instantiationBlock();
+            //todo yezaiyong 20180630 infom witiness count time
+            if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
+                WitnessCountTime.instantiationBlock(data);
+            }
+
             Inventory inventory = new Inventory();
             inventory.setHeight(height);
             Set<String> set = new HashSet<>(blockIdxDaoService.getBlockIndexByHeight(height).getBlockHashs());
