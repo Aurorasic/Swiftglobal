@@ -7,6 +7,7 @@ import com.google.common.collect.Table;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.consensus.vote.SourceBlockReq;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.consensus.vote.VoteTable;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -72,7 +73,7 @@ public class WitnessService {
             this.blockMap = new HashMap<>();
             HashBasedTable<Integer, String, Map<String, Vote>> voteTableInCache = voteCache.getIfPresent(height);
             if (voteTableInCache != null) {
-                dealVoteTable(this.height, voteTableInCache);
+                dealVoteTable(null, this.height, voteTableInCache);
             }
             LOGGER.info("height {},init witness task success", this.height);
         }
@@ -134,7 +135,7 @@ public class WitnessService {
         }
     }
 
-    public synchronized void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+    private void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
         HashBasedTable<Integer, String, Map<String, Vote>> oldCacheVote = voteCache.get(height, k -> voteTable);
         if (voteTable.rowKeySet().size() < oldCacheVote.rowKeySet().size()) {
             return;
@@ -275,12 +276,34 @@ public class WitnessService {
     }
 
 
-    public synchronized void dealVoteTable(long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+    public synchronized void dealVoteTable(String sourceId, long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
             LOGGER.info("the voting process of {} is over", height);
             return;
+        }
+        if (voteHeight > this.height) {
+            updateVoteCache(voteHeight, voteTable);
+            LOGGER.info("the height is greater than local , add voteTable to cache");
+            return;
+        }
+
+        if (null != voteTable.row(1)) {
+            Set<String> blockHashs = new HashSet<>();
+            voteTable.row(1).values().forEach(map -> {
+                map.forEach((k, v) -> {
+                    if (!blockMap.containsKey(k)) {
+                        blockHashs.add(k);
+                    }
+                });
+            });
+            if (blockHashs.size() > 0) {
+                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                LOGGER.info("source blocks is not enough,add vote table to cache");
+                return;
+            }
         }
 
         LOGGER.info("add voteTable to task with voteHeight {} ,voteTable {}", voteHeight, voteTable);

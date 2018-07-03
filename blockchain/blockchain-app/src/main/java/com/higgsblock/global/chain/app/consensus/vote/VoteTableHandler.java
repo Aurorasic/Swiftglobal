@@ -10,10 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author yuanjiantao
@@ -68,27 +66,9 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         }
         LOGGER.info("add voteTable with voteHeight {} ,voteTable {}", voteHeight, voteTable);
 
-        if (voteHeight > witnessService.getHeight()) {
-            witnessService.updateVoteCache(voteHeight, voteTable);
-            LOGGER.info("the height is greater than local , add voteTable to cache");
-        }
+        witnessService.dealVoteTable(sourceId, voteHeight, voteTable);
 
-        if (null != voteTable.row(1) && voteHeight == witnessService.getHeight()) {
-            Set<String> blockHashs = new HashSet<>();
-            voteTable.row(1).values().forEach(map -> {
-                map.forEach((k, v) -> {
-                    if (!witnessService.getBlockMap().containsKey(k)) {
-                        blockHashs.add(k);
-                    }
-                });
-            });
-            if (blockHashs.size() > 0) {
-                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
-                LOGGER.info("source blocks is not enough,add vote table to cache");
-            } else {
-                witnessService.dealVoteTable(voteHeight, voteTable);
-            }
-        }
+
 
 
     }
