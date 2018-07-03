@@ -47,7 +47,7 @@ public interface IBlockService {
 //     *
 //     * @return long
 //     */
-//    long getBestMaxHeight();
+//    long getMaxHeight();
 //
 //    /**
 //     * Get last best block
