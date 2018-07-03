@@ -1,10 +1,13 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.iface.IBalanceEntity;
 import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
@@ -19,26 +22,47 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
+ * The type Trans dao service.
+ *
  * @author Zhao xiaogang
- * @date 2018-05-22
+ * @date 2018 -05-22
  */
 @Service
 @Slf4j
 public class TransDaoService implements ITransService {
 
+    /**
+     * The Tx cache manager.
+     */
     @Autowired
     private TransactionCacheManager txCacheManager;
 
+    /**
+     * The Utxo entity dao.
+     */
     @Autowired
     private UTXOEntityDao utxoEntityDao;
 
+    /**
+     * The Transaction index entity dao.
+     */
     @Autowired
     private TransactionIndexEntityDao transactionIndexEntityDao;
 
+    /**
+     * The Spent transaction out index entity dao.
+     */
     @Autowired
     private SpentTransactionOutIndexEntityDao spentTransactionOutIndexEntityDao;
+
+    /**
+     * The Balance entity dao.
+     */
+    @Autowired
+    private IBalanceEntity balanceEntityDao;
 
     @Override
     public void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) {
@@ -130,6 +154,64 @@ public class TransDaoService implements ITransService {
         }
     }
 
+    /**
+     * Compute miner balance. Refresh the miner's amount
+     *
+     * @param block the best block
+     */
+    @Override
+    public void computeMinerBalance(Block block) {
+        Map<String, Money> balanceMap = balanceEntityDao.getAllBalances();
+        Map<String, Money> balanceAddMap = Maps.newHashMap();
+        for (Transaction transaction : block.getTransactions()) {
+            for (String utxoKey : transaction.getSpendUTXOKeys()) {
+                UTXO utxo = getUTXO(utxoKey);
+                if (null == utxo) {
+                    throw new IllegalStateException("UTXO not exists : " + utxoKey);
+                }
+
+                if (!utxo.getOutput().isMinerCurrency()) {
+                    continue;
+                }
+
+                Money present = balanceMap.get(utxo.getAddress());
+                if (null != present) {
+                    balanceMap.put(utxo.getAddress(), present.subtract(utxo.getOutput().getMoney()));
+                }
+            }
+
+            for (UTXO utxo : transaction.getAddedUTXOs()) {
+                if (!utxo.getOutput().isMinerCurrency()) {
+                    continue;
+                }
+
+                Money present = balanceMap.get(utxo.getAddress());
+                if (null != present) {
+                    balanceMap.put(utxo.getAddress(), present.add(utxo.getOutput().getMoney()));
+                } else {
+                    balanceAddMap.put(utxo.getAddress(), utxo.getOutput().getMoney());
+                }
+            }
+        }
+
+        LOGGER.info("compute balance info：{},balanceAddMap:{}", balanceMap, balanceAddMap);
+        balanceMap.forEach((k, v) -> {
+            if (v.lessThan(0)) {
+                balanceEntityDao.delete(k);
+            } else {
+                balanceEntityDao.update(new BalanceEntity(k, v.getValue(), v.getCurrency()));
+            }
+        });
+        balanceAddMap.forEach((k, v) -> balanceEntityDao.add(new BalanceEntity(k, v.getValue(), v.getCurrency())));
+    }
+
+    /**
+     * Save tx index.
+     *
+     * @param tx            the tx
+     * @param bestBlockHash the best block hash
+     * @param txCount       the tx count
+     */
     private void saveTxIndex(Transaction tx, String bestBlockHash, int txCount) {
         TransactionIndex newTxIndex = new TransactionIndex(bestBlockHash, tx.getHash(), (short) txCount);
 
@@ -141,6 +223,12 @@ public class TransDaoService implements ITransService {
         transactionIndexEntityDao.add(transactionIndexEntity);
     }
 
+    /**
+     * Gets transaction index.
+     *
+     * @param spentTxHash the spent tx hash
+     * @return the transaction index
+     */
     private TransactionIndex getTransactionIndex(String spentTxHash) {
         TransactionIndexEntity entity = transactionIndexEntityDao.getByField(spentTxHash);
         if (entity == null) {
@@ -155,6 +243,11 @@ public class TransDaoService implements ITransService {
         return transactionIndex;
     }
 
+    /**
+     * Save utxo.
+     *
+     * @param utxo the utxo
+     */
     private void saveUTXO(UTXO utxo) {
         UTXOEntity entity = new UTXOEntity();
         TransactionOutput output = utxo.getOutput();

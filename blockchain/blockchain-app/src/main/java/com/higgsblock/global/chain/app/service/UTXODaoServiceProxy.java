@@ -54,7 +54,7 @@ public class UTXODaoServiceProxy {
     }
 
     /**
-     * get utxo on confirm block chain and unconfirmed block chain
+     * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
      *
      * @param preBlockHash
      * @param utxoKey

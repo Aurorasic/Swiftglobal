@@ -81,12 +81,15 @@ public class BlockIdxDaoService implements IBlockIndexService {
             blockIndexEntities.forEach(blockIdxEntity -> {
                 blockHashs.add(blockIdxEntity.getBlockHash());
             });
+
             BlockIndex blockIndex = new BlockIndex();
+            blockIndex.setHeight(height);
+            blockIndex.setBlockHashs(blockHashs);
+            blockIndex.setBestIndex(-1);
+
             blockIndexEntities.forEach(blockIndexEntity -> {
                 if (blockIndexEntity.getIsBest() != -1) {
-                    blockIndex.setHeight(blockIndexEntity.getHeight());
                     blockIndex.setBestIndex(blockIndexEntity.getIsBest());
-                    blockIndex.setBlockHashs(blockHashs);
                 }
             });
             return blockIndex;

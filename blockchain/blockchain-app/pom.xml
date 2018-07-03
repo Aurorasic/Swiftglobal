@@ -10,7 +10,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <spring.version>4.3.7.RELEASE</spring.version>
         <powermock.version>1.7.0RC4</powermock.version>
     </properties>
     <artifactId>blockchain-app</artifactId>
@@ -181,11 +180,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <version>5.0.6.RELEASE</version>
         </dependency>
     </dependencies>
 
