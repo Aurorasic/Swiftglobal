@@ -147,6 +147,7 @@ public class NodeManager implements InitializingBean {
     public void persistDposNodes(long sn, List<String> dposNodes) {
         dposNodeMap.put(sn + 1, dposNodes);
         dposService.put(sn + 1, dposNodes);
+        LOGGER.info("persist dposNode,sn+1:{},dposNode:{}", sn + 1, dposNodes);
     }
 
     @Override

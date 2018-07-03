@@ -88,7 +88,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
         blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
         blockIndexDO.setMinerAddress(block.getMinerFirstPKSig().getAddress());
         blockIndexDao.add(blockIndexDO);
-        LOGGER.info("persisted block index: " + blockIndexDO);
+        LOGGER.info("persisted block index: {}", blockIndexDO);
     }
 
     private void updateBestBlockIndex(Block bestBlock) {
@@ -98,6 +98,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
                 BlockIndexEntity blockIndexEntity = blockIndexDao.getByBlockHash(bestBlock.getHash());
                 blockIndexEntity.setIsBest(i);
                 blockIndexDao.update(blockIndexEntity);
+                LOGGER.info("persisted block index: {}", blockIndexEntity);
                 return;
             }
         }

@@ -212,12 +212,12 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             if (isFirst && toBeBestBlock != null) {
                 MinerScoreStrategy.refreshMinersScore(toBeBestBlock);
                 nodeManager.calculateDposNodes(toBeBestBlock, block.getHeight());
-                //step 5
-                refreshCache(toBeBestBlock.getHash(), toBeBestBlock);
-                //step6
+                //step5
                 freshPeerMinerAddr(toBeBestBlock);
             }
         }
+        //step 6
+        refreshCache(block.getHash(), block);
 
         return toBeBestBlock;
     }
@@ -262,8 +262,8 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         return true;
     }
 
-    private void refreshCache(String bestBlockHash, Block block) {
-        blockCacheManager.remove(bestBlockHash);
+    private void refreshCache(String blockHash, Block block) {
+        blockCacheManager.remove(blockHash);
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
