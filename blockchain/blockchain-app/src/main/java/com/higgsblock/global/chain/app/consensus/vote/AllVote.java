@@ -13,7 +13,7 @@ import java.util.List;
  * @author yuanjiantao
  * @date 6/28/2018
  */
-@Message(EntityType.ALLVOTE)
+@Message(EntityType.VOTE_TABLE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
