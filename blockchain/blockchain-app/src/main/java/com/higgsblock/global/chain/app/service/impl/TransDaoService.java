@@ -1,13 +1,10 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.iface.IBalanceEntity;
 import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
@@ -22,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The type Trans dao service.
@@ -57,12 +53,6 @@ public class TransDaoService implements ITransService {
      */
     @Autowired
     private SpentTransactionOutIndexEntityDao spentTransactionOutIndexEntityDao;
-
-    /**
-     * The Balance entity dao.
-     */
-    @Autowired
-    private IBalanceEntity balanceEntityDao;
 
     @Override
     public void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) {
@@ -152,57 +142,6 @@ public class TransDaoService implements ITransService {
                 spentUTXOMap.put(preUTXOKey, tx.getHash());
             }
         }
-    }
-
-    /**
-     * Compute miner balance. Refresh the miner's amount
-     *
-     * @param block the best block
-     */
-    @Override
-    public void computeMinerBalance(Block block) {
-        Map<String, Money> balanceMap = balanceEntityDao.getAllBalances();
-        Map<String, Money> balanceAddMap = Maps.newHashMap();
-        for (Transaction transaction : block.getTransactions()) {
-            for (String utxoKey : transaction.getSpendUTXOKeys()) {
-                UTXO utxo = getUTXO(utxoKey);
-                if (null == utxo) {
-                    throw new IllegalStateException("UTXO not exists : " + utxoKey);
-                }
-
-                if (!utxo.getOutput().isMinerCurrency()) {
-                    continue;
-                }
-
-                Money present = balanceMap.get(utxo.getAddress());
-                if (null != present) {
-                    balanceMap.put(utxo.getAddress(), present.subtract(utxo.getOutput().getMoney()));
-                }
-            }
-
-            for (UTXO utxo : transaction.getAddedUTXOs()) {
-                if (!utxo.getOutput().isMinerCurrency()) {
-                    continue;
-                }
-
-                Money present = balanceMap.get(utxo.getAddress());
-                if (null != present) {
-                    balanceMap.put(utxo.getAddress(), present.add(utxo.getOutput().getMoney()));
-                } else {
-                    balanceAddMap.put(utxo.getAddress(), utxo.getOutput().getMoney());
-                }
-            }
-        }
-
-        LOGGER.info("compute balance info：{},balanceAddMap:{}", balanceMap, balanceAddMap);
-        balanceMap.forEach((k, v) -> {
-            if (v.lessThan(0)) {
-                balanceEntityDao.delete(k);
-            } else {
-                balanceEntityDao.update(new BalanceEntity(k, v.getValue(), v.getCurrency()));
-            }
-        });
-        balanceAddMap.forEach((k, v) -> balanceEntityDao.add(new BalanceEntity(k, v.getValue(), v.getCurrency())));
     }
 
     /**
