@@ -63,10 +63,9 @@ public class AppContext {
         startPeerTimerTasks();
 
         syncBlocks();
-        //todo yezaiyong add Candidate method by 20180703
-        //加一个启动候补矿工计时线程方法
+
         startCandidateCountTime();
-        //加一个启动见证者线程方法
+
         startWitnessCountTime();
 
     }
