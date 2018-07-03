@@ -227,46 +227,44 @@ public class WitnessService {
     }
 
 
-    private boolean verifyVotes(int version, Map<String, Map<String, Vote>> votes) {
+    private boolean verifyVotes(Map<String, Map<String, Vote>> votes) {
         for (Map.Entry<String, Map<String, Vote>> entry : votes.entrySet()) {
-            String pubKey = entry.getKey();
             if (entry.getValue().size() > 0) {
                 for (Map.Entry<String, Vote> voteMapEntry : entry.getValue().entrySet()) {
-                    String key = voteMapEntry.getKey();
                     Vote value = voteMapEntry.getValue();
-                    if (verifySingleVote(version, pubKey, value)) {
-                        this.voteTable.get(version, pubKey).put(value.getBlockHash(), value);
-                    } else {
+                    if (!dealSingleVote(value)) {
                         return false;
                     }
                 }
             }
-
         }
         return true;
     }
 
-    private boolean verifySingleVote(int version, String pubKey, Vote vote) {
+    /**
+     * verify and add to local map
+     *
+     * @param vote
+     * @return
+     */
+    private boolean dealSingleVote(Vote vote) {
+        int version = vote.getVoteVersion();
+        String pubKey = vote.getWitnessPubKey();
+        String blockHash = vote.getBlockHash();
         Map<String, Vote> localVoteMap = this.voteTable.get(version, pubKey);
         if (localVoteMap == null) {
-            localVoteMap = new HashMap<>();
-        }
-        String blockHash = vote.getBlockHash();
-        if (version != vote.getVoteVersion() || !pubKey.equals(vote.getWitnessPubKey())) {
-            return false;
+            localVoteMap = new HashMap<>(2);
         }
         if (localVoteMap.containsKey(blockHash)) {
             //the vote is exist
             return true;
         }
-        if (!validVote(version, pubKey, vote)) {
+        if (!validVoteSignature(vote)) {
             return false;
         }
-
         if (version == 1 && blockMap.containsKey(blockHash)) {
             localVoteMap.put(blockHash, vote);
         } else {
-            //todo yangyi the version maybe is not consecutive
             Map<String, Vote> proofVoteMap = this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey());
             if (proofVoteMap == null) {
                 return false;
@@ -283,13 +281,24 @@ public class WitnessService {
             }
             String preBlockHash = proofVote.getPreBlockHash();
 
+
+            //follower's vote
             if (vote.getProofVersion() == version) {
-                if (blockHash.compareTo(preBlockHash) < 0 || blockHash.compareTo(proofBlockHash) < 0) {
+                boolean isValid = false;
+                if (blockHash.compareTo(proofBlockHash) == 0 && proofBlockHash.compareTo(preBlockHash) >= 0) {
+                    isValid = true;
+                } else if (blockHash.compareTo(preBlockHash) == 0 && preBlockHash.compareTo(proofBlockHash) >= 0) {
+                    isValid = true;
+                }
+                if (!isValid) {
                     return false;
                 }
-            } else if (blockHash.compareTo(proofBlockHash) != 0 || blockHash.compareTo(preBlockHash) <= 0) {
+            }
+            //leader's vote
+            else if (blockHash.compareTo(proofBlockHash) != 0 || blockHash.compareTo(preBlockHash) <= 0) {
                 return false;
             }
+
             localVoteMap.put(blockHash, vote);
         }
         this.voteTable.put(version, pubKey, localVoteMap);
@@ -299,78 +308,88 @@ public class WitnessService {
 
     public synchronized void dealVoteTable(long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
 
-        if (this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null)) {
+        boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
+        if (isOver) {
             LOGGER.info("the voting process of {} is over", height);
             return;
         }
 
         if (this.height < voteHeight) {
+            // TODO: 7/3/2018 yuanjiantao add voteTable to cache
             LOGGER.info("add voteTable to cache with voteHeight {} ,voteTable {}", voteHeight, voteTable);
             return;
         }
 
         LOGGER.info("add voteTable to task with voteHeight {} ,voteTable {}", voteHeight, voteTable);
-        int rowSize = null == voteTable.rowKeySet() ? 0 : voteTable.rowKeySet().size();
+        int rowSize = voteTable.rowKeySet().size();
         for (int version = 1; version <= rowSize; version++) {
-            if (voteTable.containsRow(version)) {
+            if (!voteTable.containsRow(version)) {
                 return;
             }
-            boolean haveNewVote = false;
             Map<String, Map<String, Vote>> newRows = voteTable.row(version);
-            if (newRows.size() <= 0) {
+            if (newRows.size() == 0) {
                 return;
             }
-            Map<String, Map<String, Vote>> leaderVotes = new HashMap<>();
-            Map<String, Map<String, Vote>> followerVotes = new HashMap<>();
+            int startVoteSize = this.voteTable.size();
+            Map<String, Map<String, Vote>> leaderVotes = new HashMap<>(6);
+            Map<String, Map<String, Vote>> followerVotes = new HashMap<>(6);
             for (Map.Entry<String, Map<String, Vote>> entry : newRows.entrySet()) {
                 String pubKey = entry.getKey();
-                // TODO: 7/2/2018 verify the pubkey is witness
+                if (null == pubKey) {
+                    continue;
+                }
                 Map<String, Vote> newVoteMap = entry.getValue();
-                if (newVoteMap != null || newVoteMap.size() > 0) {
-                    for (Map.Entry<String, Vote> voteMapEntry : newVoteMap.entrySet()) {
-                        String key = voteMapEntry.getKey();
-                        Vote value = voteMapEntry.getValue();
-                        if (null == value || null == value.getBlockHash()) {
-                            continue;
-                        }
-                        if (!key.equals(value.getBlockHash())) {
-                            return;
-                        }
-                        if (value.getProofVersion() == version) {
-                            followerVotes.compute(pubKey, (k, v) ->
-                                    null == v ? new HashMap<>() : v
-                            ).put(value.getBlockHash(), value);
-                        } else if (value.getProofVersion() == version + 1) {
-                            leaderVotes.compute(pubKey, (k, v) ->
-                                    null == v ? new HashMap<>() : v
-                            ).put(value.getBlockHash(), value);
-                        }
-
-
+                if (newVoteMap == null || newVoteMap.isEmpty()) {
+                    continue;
+                }
+                for (Map.Entry<String, Vote> voteMapEntry : newVoteMap.entrySet()) {
+                    String blockHash = voteMapEntry.getKey();
+                    Vote vote = voteMapEntry.getValue();
+                    if (null == blockHash || null == vote || null == vote.getBlockHash()) {
+                        continue;
+                    }
+                    if (version != vote.getVoteVersion()
+                            || !pubKey.equals(vote.getWitnessPubKey())
+                            || !blockHash.equals(vote.getBlockHash())
+                            || vote.getHeight() != this.height
+                            || null == vote.getSignature()) {
+                        return;
+                    }
+                    if (version == 1) {
+                        followerVotes.compute(pubKey, (k, v) ->
+                                null == v ? new HashMap<>(3) : v
+                        ).put(vote.getBlockHash(), vote);
+                    } else if (vote.getProofVersion() == version) {
+                        followerVotes.compute(pubKey, (k, v) ->
+                                null == v ? new HashMap<>(3) : v
+                        ).put(vote.getBlockHash(), vote);
+                    } else if (vote.getProofVersion() + 1 == version) {
+                        leaderVotes.compute(pubKey, (k, v) ->
+                                null == v ? new HashMap<>(3) : v
+                        ).put(vote.getBlockHash(), vote);
                     }
                 }
             }
-
             if (leaderVotes.size() == 0) {
                 return;
             }
-
-            if (!verifyVotes(version, leaderVotes)) {
+            if (!verifyVotes(leaderVotes)) {
                 return;
             }
-
-            if (followerVotes.size() == 0 || !verifyVotes(version, leaderVotes)) {
+            if (followerVotes.size() == 0 || !verifyVotes(followerVotes)) {
                 return;
             }
-
-            collectionVoteSign(version, voteHeight);
-            if (blockWithEnoughSign == null) {
-                version++;
-                continue;
+            int endVoteSize = this.voteTable.size();
+            if (endVoteSize > startVoteSize) {
+                collectionVoteSign(version, voteHeight);
+                if (blockWithEnoughSign == null) {
+                    version++;
+                    continue;
+                }
+                //broadcast block with 7 sign
+                messageCenter.broadcast(blockWithEnoughSign);
             }
-            //broadcast block with 7 sign
-            messageCenter.broadcast(blockWithEnoughSign);
-            break;
+
         }
     }
 
@@ -436,13 +455,8 @@ public class WitnessService {
     }
 
 
-    private boolean validVote(int version, String pubKey, Vote vote) {
+    private boolean validVoteSignature(Vote vote) {
         if (vote == null) {
-            return false;
-        }
-        if (this.height != vote.getHeight() ||
-                version != vote.getVoteVersion() ||
-                !pubKey.equals(vote.getWitnessPubKey())) {
             return false;
         }
         String msg = getSingMessage(vote);
