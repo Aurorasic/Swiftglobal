@@ -155,7 +155,7 @@ public class TransDaoService implements ITransService {
     }
 
     /**
-     * Compute miner balance.
+     * Compute miner balance. Refresh the miner's amount
      *
      * @param block the best block
      */
@@ -164,12 +164,9 @@ public class TransDaoService implements ITransService {
         Map<String, Money> balanceMap = balanceEntityDao.getAllBalances();
         Map<String, Money> balanceAddMap = Maps.newHashMap();
         for (Transaction transaction : block.getTransactions()) {
-            for (TransactionInput input : transaction.getInputs()) {
-                String spentTxHash = input.getPrevOut().getHash();
-                short spentTxOutIndex = input.getPrevOut().getIndex();
-                String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
+            for (String utxoKey : transaction.getSpendUTXOKeys()) {
                 UTXO utxo = getUTXO(utxoKey);
-                if(null == utxo){
+                if (null == utxo) {
                     throw new IllegalStateException("UTXO not exists : " + utxoKey);
                 }
 
@@ -183,17 +180,16 @@ public class TransDaoService implements ITransService {
                 }
             }
 
-            for (TransactionOutput output : transaction.getOutputs()) {
-                if (!output.isMinerCurrency()) {
+            for (UTXO utxo : transaction.getAddedUTXOs()) {
+                if (!utxo.getOutput().isMinerCurrency()) {
                     continue;
                 }
 
-                String address = output.getLockScript().getAddress();
-                Money present = balanceMap.get(address);
+                Money present = balanceMap.get(utxo.getAddress());
                 if (null != present) {
-                    balanceMap.put(address, present.add(output.getMoney()));
+                    balanceMap.put(utxo.getAddress(), present.add(utxo.getOutput().getMoney()));
                 } else {
-                    balanceAddMap.put(address, output.getMoney());
+                    balanceAddMap.put(utxo.getAddress(), utxo.getOutput().getMoney());
                 }
             }
         }

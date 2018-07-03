@@ -162,10 +162,9 @@ public class BlockDaoService implements IBlockService {
      * 2.save block index
      * 3.save transaction index
      * 4.save utxo
-     * 5.save balance
-     * 6.save score
-     * 7.save new dpos
-     * 8.refresh cache
+     * 5.save score
+     * 6.save new dpos
+     * 7.refresh cache
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -174,19 +173,18 @@ public class BlockDaoService implements IBlockService {
         //step 1
         addBlock2BlockEntity(block);
 
+        transDaoService.computeMinerBalance(block);
+
         //step 2
         blockIdxDaoService.addBlockIndex(block, bestBlockHash);
 
         //step 5
-        transDaoService.computeMinerBalance(block);
-
-        //step 6
         MinerScoreStrategy.refreshMinersScore(block);
 
-        //step 7
+        //step 6
         nodeManager.calculateDposNodes(block);
 
-        //step 8
+        //step 7
         refreshCache(bestBlockHash, block);
 
         List<String> dposGroupBySn = new LinkedList<>();

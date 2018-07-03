@@ -40,7 +40,7 @@ public interface ITransService {
     UTXO getUTXO(String utxoKey);
 
     /**
-     * Compute miner balance.
+     * Compute miner balance. Refresh the miner's amount
      *
      * @param block the best block
      */
