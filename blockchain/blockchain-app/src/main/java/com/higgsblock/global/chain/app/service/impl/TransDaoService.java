@@ -193,7 +193,7 @@ public class TransDaoService implements ITransService {
             }
         }
 
-        LOGGER.info("compute balance info：{}", balanceMap);
+        LOGGER.info("compute balance info：{},balanceAddMap:{}", balanceMap, balanceAddMap);
         balanceMap.forEach((k, v) -> {
             if (v.lessThan(0)) {
                 balanceEntityDao.delete(k);

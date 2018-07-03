@@ -7,8 +7,10 @@ import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import java.util.List;
 
 /**
+ * The interface Trans service.
+ *
  * @author Zhao xiaogang
- * @date 2018-05-22
+ * @date 2018 -05-22
  */
 public interface ITransService {
 
@@ -17,6 +19,7 @@ public interface ITransService {
      *
      * @param bestBlock     the best block
      * @param bestBlockHash the best block hash
+     * @throws Exception the exception
      */
     void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
 
@@ -28,6 +31,12 @@ public interface ITransService {
      */
     void removeDoubleSpendTx(List<Transaction> cacheTransactions);
 
+    /**
+     * Gets utxo.
+     *
+     * @param utxoKey the utxo key
+     * @return the utxo
+     */
     UTXO getUTXO(String utxoKey);
 
     /**
