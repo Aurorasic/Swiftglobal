@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -47,9 +48,9 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
             Map<String, Map<String, Vote>> value = entry.getValue();
             if (value != null) {
                 value.entrySet().forEach(vote -> {
-                    String votePubke = vote.getKey();
+                    String votePubKye = vote.getKey();
                     Map<String, Vote> voteMap = vote.getValue();
-                    voteTable.put(version, votePubke, voteMap);
+                    voteTable.put(version, votePubKye, voteMap);
                 });
             }
         });
@@ -63,15 +64,18 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         long voteHeight = -1;
         while (iterator.hasNext()) {
             voteMap = iterator.next();
+            LOGGER.info("the vote of version one is {}", voteMap);
             if (voteMap == null || voteMap.size() != 1) {
                 continue;
             }
-            Vote vote = voteMap.get(0);
-            if (vote != null) {
-                voteHeight = vote.getHeight();
-            }
-            if (voteHeight != -1) {
-                break;
+            Collection<Vote> values = voteMap.values();
+            for (Vote vote : values) {
+                if (vote != null) {
+                    voteHeight = vote.getHeight();
+                    if (voteHeight != -1) {
+                        break;
+                    }
+                }
             }
         }
         if (voteHeight == -1) {
