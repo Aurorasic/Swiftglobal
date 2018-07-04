@@ -67,9 +67,5 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         LOGGER.info("add voteTable with voteHeight {} ,voteTable {}", voteHeight, voteTable);
 
         witnessService.dealVoteTable(sourceId, voteHeight, voteTable);
-
-
-
-
     }
 }
