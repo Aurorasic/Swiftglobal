@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit;
  * @create: 2018-06-29 20:32
  **/
 @Service
+@Scope("prototype")
 @Slf4j
 public class WitnessCountTime {
 
