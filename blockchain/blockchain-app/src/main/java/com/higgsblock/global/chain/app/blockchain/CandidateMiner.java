@@ -32,11 +32,11 @@ public class CandidateMiner{
     private volatile boolean isRunning ;
     Block block;
     public volatile static boolean blockStatus = false;
-    public volatile boolean isCMINER =false;
+    public static volatile boolean isCMINER =false;
     public static final long WAIT_MINER_TIME = 600;
 
     @Autowired
-    private BlockService blockService;
+    private static BlockService blockService;
     @Autowired
     private SourceBlockService sourceBlockService;
     @Autowired
@@ -54,17 +54,19 @@ public class CandidateMiner{
         }
     }
 
-    public synchronized void doMingTimer(){
+    public static synchronized void doMingTimer(){
         if(isCMINER){
             currHeight =blockService.getMaxHeight();
             blockStatus = false;
         }
     }
 
-    public void instantiationBlock(){
+    public static void instantiationBlock(){
+        LOGGER.info("isCMINER =" +CandidateMiner.isCMINER);
         if(isCMINER) {
             CandidateMiner.blockStatus = true;
             currHeight = blockService.getMaxHeight();
+            LOGGER.info("currHeight =" +currHeight +"blockStatus ="+CandidateMiner.blockStatus);
         }
     }
 
