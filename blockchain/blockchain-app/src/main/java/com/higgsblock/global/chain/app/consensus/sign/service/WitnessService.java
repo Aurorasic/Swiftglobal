@@ -4,8 +4,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.vote.SourceBlockReq;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
@@ -35,6 +37,10 @@ public class WitnessService {
 
     @Autowired
     private NodeManager nodeManager;
+
+    @Autowired
+    private EventBus eventBus;
+
 
     @Autowired
     private MessageCenter messageCenter;
@@ -286,6 +292,7 @@ public class WitnessService {
         }
         if (voteHeight > this.height) {
             updateVoteCache(voteHeight, voteTable);
+            eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
             LOGGER.info("the height is greater than local , add voteTable to cache");
             return;
         }
