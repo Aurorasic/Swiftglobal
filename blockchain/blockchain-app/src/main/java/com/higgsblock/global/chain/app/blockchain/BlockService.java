@@ -145,10 +145,11 @@ public class BlockService {
     }
 
     public Block packageNewBlock(KeyPair keyPair) {
-        BlockIndex bestBlockIndex = getLastBestBlockIndex();
-        if (bestBlockIndex == null) {
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        if (lastBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
         }
+
 
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
@@ -160,12 +161,12 @@ public class BlockService {
             return null;
         }
 
-        long nextBestBlockHeight = bestBlockIndex.getHeight() + 1;
+        long nextBestBlockHeight = lastBlockIndex.getHeight() + 1;
         LOGGER.info("try to packageNewBlock, height={}", nextBestBlockHeight);
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        String preBlockHash = bestBlockIndex.getFirstBlockHash();
+        String preBlockHash = lastBlockIndex.getFirstBlockHash();
         SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, cacheTransactions);
         List<Transaction> canPackageTransactionsOfBlock = cacheTransactions;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
@@ -178,7 +179,7 @@ public class BlockService {
             }
         }
 
-        if (bestBlockIndex.getHeight() >= 1) {
+        if (lastBlockIndex.getHeight() >= 1) {
             Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
             transactions.add(coinBaseTx);
         }
@@ -188,7 +189,7 @@ public class BlockService {
         Block block = new Block();
         block.setVersion((short) 1);
         block.setBlockTime(System.currentTimeMillis());
-        block.setPrevBlockHash(bestBlockIndex.getBestBlockHash());
+        block.setPrevBlockHash(lastBlockIndex.getBestBlockHash());
         block.setTransactions(transactions);
         block.setHeight(nextBestBlockHeight);
         block.setPubKey(keyPair.getPubKey());

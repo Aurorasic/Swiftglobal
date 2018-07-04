@@ -316,6 +316,7 @@ public class WitnessService {
         }
 
         LOGGER.info("add voteTable to task with voteHeight {} ,voteTable {}", voteHeight, voteTable);
+        int startAllVoteSize = getAllVoteSize();
         int rowSize = voteTable.rowKeySet().size();
         for (int version = 1; version <= rowSize; version++) {
             if (!voteTable.containsRow(version)) {
@@ -329,7 +330,7 @@ public class WitnessService {
                 LOGGER.warn("pre version's vote number < {}", MIN_VOTE);
                 return;
             }
-            int startVoteSize = this.voteTable.size();
+            int startARowVoteSize = getARowVoteSize(version);
             Map<String, Map<String, Vote>> leaderVotes = new HashMap<>(6);
             Map<String, Map<String, Vote>> followerVotes = new HashMap<>(6);
             for (Map.Entry<String, Map<String, Vote>> entry : newRows.entrySet()) {
@@ -380,25 +381,39 @@ public class WitnessService {
                 LOGGER.info("followers' votes are illegal votes : {}", leaderVotes);
                 return;
             }
-            int endVoteSize = this.voteTable.size();
-            if (endVoteSize > startVoteSize) {
-                collectionVoteSign(version, voteHeight);
-                if (blockWithEnoughSign == null) {
-                    version++;
-                    continue;
-                }
-                //broadcast block with 7 sign
-                messageCenter.broadcast(blockWithEnoughSign);
+            if (getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, voteHeight)) {
+                return;
             }
-
+        }
+        if (getAllVoteSize() > startAllVoteSize) {
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
         }
     }
 
-    private void collectionVoteSign(int version, long voteHeight) {
+    private int getAllVoteSize() {
+        int size = 0;
+        for (Map<String, Map<String, Vote>> row : this.voteTable.rowMap().values()) {
+            for (Map<String, Vote> map : row.values()) {
+                size += map.size();
+            }
+        }
+        return size;
+    }
+
+    private int getARowVoteSize(int version) {
+        int size = 0;
+        for (Map<String, Vote> map : this.voteTable.row(version).values()) {
+            size += map.size();
+        }
+        return size;
+    }
+
+
+    private boolean collectionVoteSign(int version, long voteHeight) {
         Map<String, Map<String, Vote>> rowVersion = this.voteTable.row(version);
         if (rowVersion.size() < MIN_VOTE) {
             LOGGER.info("there haven't enough vote to check sign {},current the number of vote is {}", this.height, rowVersion.size());
-            return;
+            return false;
         }
         //row is blockHash,column is pubKey and value is sign
         Table<String, String, String> VoteSignTable = HashBasedTable.create();
@@ -443,7 +458,7 @@ public class WitnessService {
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
                 this.messageCenter.broadcast(blockWithEnoughSign);
-                return;
+                return true;
             }
         }
         LOGGER.info("height {},version {},there haven't enough sign, bestBlockHash is {}", voteHeight, version, bestBlockHash);
@@ -459,12 +474,11 @@ public class WitnessService {
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(new VoteTable(this.voteTable.rowMap()));
-            return;
+            return false;
         }
         String currentVersionVoteBlockHash = voteMap.keySet().iterator().next();
         if (StringUtils.equals(currentVersionVoteBlockHash, bestBlockHash)) {
-            return;
+            return false;
         }
         version++;
         voteMap = this.voteTable.get(version, keyPair.getPubKey());
@@ -475,9 +489,9 @@ public class WitnessService {
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(new VoteTable(voteTable.rowMap()));
-            return;
+            return false;
         }
+        return false;
     }
 
     private Vote createVote(String bestBlockHash, long voteHeight, int version, String proofBlockHash, String proofPubKey, int proofVersion, String preBlockHash) {
