@@ -24,12 +24,12 @@ public interface ITransService {
     void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
 
     /**
-     * Remove double spent transaction
+     * getTxOfUnSpentUtxo
      *
      * @param cacheTransactions cached transactions
      * @return void
      */
-    void removeDoubleSpendTx(List<Transaction> cacheTransactions);
+    List<Transaction> getTxOfUnSpentUtxo(String preBlockHash, List<Transaction> cacheTransactions);
 
     /**
      * Gets utxo.

@@ -121,10 +121,10 @@
 //    }
 //
 //    @Test
-//    public void removeDoubleSpendTx() throws RocksDBException {
+//    public void getTxOfUnSpentUtxo() throws RocksDBException {
 //        //transactions is empty
 //        List<Transaction> cacheTransactions = Lists.newArrayList();
-//        transDaoService.removeDoubleSpendTx(cacheTransactions);
+//        transDaoService.getTxOfUnSpentUtxo(cacheTransactions);
 //        //transactions is not empty
 //        for (int i = 0; i < 5; i++) {
 //            Transaction transaction = new Transaction();
@@ -168,7 +168,7 @@
 //                .thenReturn(utxo)
 //                .thenThrow(new RocksDBException("get utxo error"));
 //        PowerMockito.doNothing().when(txCacheManager).remove(anyString());
-//        transDaoService.removeDoubleSpendTx(cacheTransactions);
+//        transDaoService.getTxOfUnSpentUtxo(cacheTransactions);
 //
 //    }
 //}

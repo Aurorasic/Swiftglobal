@@ -7,7 +7,6 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
@@ -286,8 +285,7 @@ public class TransactionService {
         }
 
         String blockHash = block != null ? block.getHash() : null;
-        String preBlockHash = block != null ? block.getPrevBlockHash() :
-                blockIdxDaoService.getLastBlockIndex().getFirstBlockHash();
+        String preBlockHash = block != null ? block.getPrevBlockHash() : null;
         Map<String, Money> preMoneyMap = new HashMap<>(8);
         HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
@@ -370,7 +368,7 @@ public class TransactionService {
             }
         }
 
-        return verifyInputs(inputs, hash);
+        return verifyInputs(inputs, hash, preBlockHash);
     }
 
     /**
@@ -403,12 +401,12 @@ public class TransactionService {
 
     /**
      * validate inputs
-     *
-     * @param inputs tx inputs
-     * @param hash   tx hash
-     * @return return validate result
+     * @param inputs
+     * @param hash
+     * @param preBlockHash
+     * @return
      */
-    private boolean verifyInputs(List<TransactionInput> inputs, String hash) {
+    private boolean verifyInputs(List<TransactionInput> inputs, String hash, String preBlockHash) {
         int size = inputs.size();
         TransactionInput input = null;
         UnLockScript unLockScript = null;
@@ -424,47 +422,31 @@ public class TransactionService {
                 return false;
             }
 
-            String preTxHash = input.getPrevOut().getHash();
+            String preUTXOKey = input.getPreUTXOKey();
+            boolean existUtxo = false;
+            if (preBlockHash == null) {
+                BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+                ArrayList<String> preBlockHashs = lastBlockIndex.getBlockHashs();
+                if (CollectionUtils.isEmpty(preBlockHashs)) {
+                    throw new RuntimeException("error preBlockHashs" + lastBlockIndex.getHeight());
+                }
+                for (String tmpPreBlockHash : preBlockHashs) {
+                    UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(tmpPreBlockHash, preUTXOKey);
+                    if (utxo != null) {
+                        existUtxo = true;
+                        break;
+                    }
+                }
 
-            TransactionIndexEntity preTxIndexEntity = transactionIndexEntityDao.getByField(preTxHash);
-            if (preTxIndexEntity == null) {
-                //if the transactionIndex is not exist,
-                //so local data is not right
-                LOGGER.error("the preTxIndex is empty {}", i);
+            } else {
+                UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
+                if (utxo != null) {
+                    existUtxo = true;
+                }
+            }
+            if (!existUtxo) {
+                LOGGER.error("there is no such utxokey={}_preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
-            }
-
-            List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
-
-            if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
-                //if the outsSpend is empty;
-                //this transaction's transactions have not been used
-                continue;
-            }
-            short index = input.getPrevOut().getIndex();
-            boolean spent = isSpent(preTxHash, index);
-            String txHash = preTxIndexEntity.getTransactionHash();
-            if (spent) {
-                String blockHash = preTxIndexEntity.getBlockHash();
-                Block block = blockDaoService.getBlockByHash(blockHash);
-                if (block == null) {
-                    LOGGER.error("the block is empty {}", i);
-                    return false;
-                }
-
-                BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
-                if (blockIndex == null) {
-                    LOGGER.error("the blockIndex is empty {}", i);
-                    //if the blockIndex is not exist,
-                    //so local data is not right
-                    return false;
-                }
-                //TODO the line below is wrong despite of never execute ,the param should be block hash rather than trans hash,huangshengli 2018-05-28
-                boolean best = blockIndex.isBest(txHash);
-                if (best) {
-                    LOGGER.error("the blockIndex is empty {}", i);
-                    return false;
-                }
             }
 
             List<String> sigList = unLockScript.getSigList();

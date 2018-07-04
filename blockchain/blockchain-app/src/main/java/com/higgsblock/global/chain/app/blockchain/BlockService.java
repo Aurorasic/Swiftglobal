@@ -144,7 +144,7 @@ public class BlockService {
         return entity;
     }
 
-    public Block packageNewBlock(KeyPair keyPair) {
+    public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
         BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
         if (lastBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
@@ -154,10 +154,10 @@ public class BlockService {
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
 
-        transDaoService.removeDoubleSpendTx(cacheTransactions);
+        List txOfUnSpentUtxos = transDaoService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
 
-        if (cacheTransactions.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
-            LOGGER.warn("There are no enough transactions, less than two, for packaging a block.");
+        if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
+            LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);
             return null;
         }
 
@@ -166,13 +166,12 @@ public class BlockService {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        String preBlockHash = lastBlockIndex.getFirstBlockHash();
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, cacheTransactions);
-        List<Transaction> canPackageTransactionsOfBlock = cacheTransactions;
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
         if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(cacheTransactions);
+            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
             feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
             for (Transaction tx : canPackageTransactionsOfBlock) {
                 feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
@@ -204,7 +203,22 @@ public class BlockService {
     }
 
     public Block packageNewBlock() {
-        return packageNewBlock(peerKeyPair);
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        ArrayList<String> blockHashs = lastBlockIndex.getBlockHashs();
+        if (CollectionUtils.isEmpty(blockHashs)) {
+            throw new RuntimeException("error blockHashs" + lastBlockIndex);
+        }
+        Block block = null;
+        for (String preBlockHash : blockHashs) {
+            block = packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
+            if (block != null) {
+                return block;
+            }
+        }
+        if (block == null) {
+            LOGGER.error("cannot packageNewBlock on all branch of " + lastBlockIndex);
+        }
+        return block;
     }
 
     /**
@@ -628,7 +642,7 @@ public class BlockService {
             }
             String pubKey = pair.getPubKey();
             String signature = pair.getSignature();
-            boolean validSign = this.validSign(height, hash, voteVersion, signature, pubKey);
+            boolean validSign = validSign(height, hash, voteVersion, signature, pubKey);
             if (!validSign) {
                 LOGGER.error("Block hash not match signature from witness");
                 return false;
