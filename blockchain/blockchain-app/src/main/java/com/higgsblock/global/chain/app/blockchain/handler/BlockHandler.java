@@ -13,7 +13,6 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,8 +43,6 @@ public class BlockHandler extends BaseEntityHandler<Block> {
 
     @Autowired
     private PeerManager peerManager;
-    @Autowired
-    private CandidateMiner candidateMiner;
 
 
     @Override
@@ -67,7 +64,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             String address = peerManager.getSelf().getId();
             //todo yezaiyong 20180630 inform candidateMiner  cout cminer coin
 //            CandidateMiner candidateMiner = new CandidateMiner();
-            candidateMiner.instantiationBlock();
+            CandidateMiner.instantiationBlock();
             //todo yezaiyong 20180630 infom witiness count time
             if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
                 WitnessCountTime.instantiationBlock(data);
