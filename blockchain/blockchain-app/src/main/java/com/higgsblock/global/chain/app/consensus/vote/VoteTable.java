@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.consensus.vote;
 
-import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
@@ -22,6 +21,6 @@ import java.util.Map;
 @Slf4j
 public class VoteTable extends BaseBizEntity {
 
-    private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
+    private Map<Integer, Map<String, Map<String, Vote>>> voteTable;
 
 }

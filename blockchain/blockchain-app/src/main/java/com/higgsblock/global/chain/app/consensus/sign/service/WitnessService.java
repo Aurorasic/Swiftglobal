@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.consensus.sign.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
@@ -134,11 +135,21 @@ public class WitnessService {
             Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(1, keyPair.getPubKey(), voteMap);
-            VoteTable voteTable = new VoteTable(this.voteTable);
+            Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteTable.rowMap();
+            VoteTable voteTable = new VoteTable(integerMapMap);
             this.messageCenter.dispatchToWitnesses(voteTable);
             LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
             return;
         }
+    }
+
+
+    public static void main(String[] args) {
+        HashBasedTable table = HashBasedTable.create(6, 11);
+        table.put(1, 2, 4);
+        String s = JSONObject.toJSONString(table);
+        System.out.println(s);
+        JSONObject.parseObject(s, HashBasedTable.class);
     }
 
     private void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
@@ -454,7 +465,7 @@ public class WitnessService {
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(new VoteTable(voteTable));
+            messageCenter.broadcast(new VoteTable(this.voteTable.rowMap()));
             return;
         }
         String currentVersionVoteBlockHash = voteMap.keySet().iterator().next();
@@ -470,7 +481,7 @@ public class WitnessService {
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(new VoteTable(voteTable));
+            messageCenter.broadcast(new VoteTable(voteTable.rowMap()));
             return;
         }
     }
