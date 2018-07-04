@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
@@ -14,6 +15,7 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +30,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockDaoService implements IBlockService {
+public class BlockDaoService implements IBlockService, InitializingBean {
 
     @Autowired
     private BlockEntityDao blockDao;
@@ -53,6 +55,18 @@ public class BlockDaoService implements IBlockService {
 
     @Autowired
     private BlockFormatter blockFormatter;
+    @Autowired
+    private AppConfig config;
+
+    private int confirmPreHeightNum;
+
+    private static final int MAIN_CHAIN_START_HEIGHT = 2;
+
+
+    @Override
+    public void afterPropertiesSet() {
+        confirmPreHeightNum = config.getBestchainConfirmNum();
+    }
 
     @Override
     public boolean isExistInDB(long height, String blockHash) {
@@ -168,25 +182,59 @@ public class BlockDaoService implements IBlockService {
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public Block saveBlockCompletely(Block block, String bestBlockHash) throws Exception {
+    public Block saveBlockCompletely(Block block) throws Exception {
 
         //step 1
         addBlock2BlockEntity(block);
 
+
         //step 2
-        blockIdxDaoService.addBlockIndex(block, bestBlockHash);
+        boolean isFirst = hasBlockByHeight(block);
+        Block toBeBestBlock = null;
+        if (isFirst) {
+            toBeBestBlock = getToBeBestBlock(block);
+        } else {
+            LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
+        }
+        //step 2 whether this block can be confirmed pre N block
+        if (isFirst) {
+            blockIdxDaoService.addBlockIndex(block, toBeBestBlock);
+        } else {
+            blockIdxDaoService.addBlockIndex(block, null);
+        }
 
-        //step 5
-        MinerScoreStrategy.refreshMinersScore(block);
-
+        if (block.isGenesisBlock()) {
+            //step 3
+            MinerScoreStrategy.refreshMinersScore(block);
+            //step 4
+            nodeManager.calculateDposNodes(block, block.getHeight());
+        } else {
+            if (isFirst && toBeBestBlock != null) {
+                MinerScoreStrategy.refreshMinersScore(toBeBestBlock);
+                nodeManager.calculateDposNodes(toBeBestBlock, block.getHeight());
+                //step5
+                freshPeerMinerAddr(toBeBestBlock);
+            }
+        }
         //step 6
-        nodeManager.calculateDposNodes(block);
+        refreshCache(block.getHash(), block);
 
-        //step 7
-        refreshCache(bestBlockHash, block);
+        return toBeBestBlock;
+    }
 
+    @Override
+    public void printAllBlockData() {
+    }
+
+
+    /**
+     * fresh peer's minerAddress to connect ahead
+     *
+     * @param toBeBestBlock
+     */
+    private void freshPeerMinerAddr(Block toBeBestBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
-        long sn = nodeManager.getSn(block.getHeight() + 1);
+        long sn = nodeManager.getSn(toBeBestBlock.getHeight());
         List<String> dpos = nodeManager.getDposGroupBySn(sn);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
@@ -196,14 +244,8 @@ public class BlockDaoService implements IBlockService {
             dposGroupBySn.addAll(dpos);
         }
         peerManager.setMinerAddresses(dposGroupBySn);
-
-        // TODO  huangshengli if confirmed a block as best block, then return this block,else return null
-        return null;
     }
 
-    @Override
-    public void printAllBlockData() {
-    }
 
     @Override
     public boolean checkBlockNumbers() {
@@ -220,8 +262,8 @@ public class BlockDaoService implements IBlockService {
         return true;
     }
 
-    private void refreshCache(String bestBlockHash, Block block) {
-        blockCacheManager.remove(bestBlockHash);
+    private void refreshCache(String blockHash, Block block) {
+        blockCacheManager.remove(blockHash);
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
@@ -235,4 +277,53 @@ public class BlockDaoService implements IBlockService {
         blockEntity.setData(blockFormatter.format(block));
         blockDao.add(blockEntity);
     }
+
+
+    private boolean hasBlockByHeight(Block block) {
+        if (block.isGenesisBlock()) {
+            return true;
+        }
+        return null == blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+    }
+
+
+    private Block getToBeBestBlock(Block block) {
+        if (block.isGenesisBlock()) {
+            return null;
+        }
+        if (block.getHeight() - confirmPreHeightNum < MAIN_CHAIN_START_HEIGHT) {
+            return null;
+        }
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
+        // h-N-1 block has ready be bestchain
+        Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
+        if (preBestBlock == null || !preBestBlock.getHash().equals(getBestBlockByHeight(preBestBlock.getHeight()))) {
+            //todo business error ,failure bypass
+            return null;
+        }
+
+        return bestBlock;
+    }
+
+    private Block recursePreBlock(String preBlockHash, int preHeightNum) {
+
+        Block preBlock = getBlockByHash(preBlockHash);
+        if (preBlock == null) {
+            LOGGER.error("preblock is null,may be db transaction error or sync error,blockhash:{}", preBlockHash);
+            throw new IllegalStateException("can not find block,blockhash:" + preBlockHash);
+        }
+        if (preBlock.getHash().equals(blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight()).getBestBlockHash())) {
+            LOGGER.info("block[blockhash:{},height:{}]has be confirmed on best chain,skip this", preBlock.getHash(), preBlock.getHeight());
+            return null;
+        }
+        if (preHeightNum-- > 0) {
+            return recursePreBlock(preBlock.getPrevBlockHash(), preHeightNum);
+        }
+        return preBlock;
+    }
+
+    public int getConfirmPreHeightNum() {
+        return confirmPreHeightNum;
+    }
+
 }

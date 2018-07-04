@@ -12,7 +12,8 @@ public interface IBlockService {
 
     /**
      * Check if the block with this block hash exist in the database
-     * @param height block height
+     *
+     * @param height    block height
      * @param blockHash the block hash
      * @return boolean
      */
@@ -84,12 +85,11 @@ public interface IBlockService {
     /**
      * Save the block, block index , transaction index, utxo and scores
      *
-     * @param block     the block
-     * @param blockHash the block hash
+     * @param block the block
      * @return block
      * @throws Exception
      */
-    Block saveBlockCompletely(Block block, String blockHash) throws Exception;
+    Block saveBlockCompletely(Block block) throws Exception;
 
     /**
      * print the blocks

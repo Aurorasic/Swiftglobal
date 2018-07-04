@@ -23,7 +23,7 @@ public class BlockIndexEntityDao extends BaseDao<BlockIndexEntity> implements IB
 
     @Override
     public int update(BlockIndexEntity blockIndexEntity) {
-        String sql = "update t_block_index set is_best=:isBest where height=:height ";
+        String sql = "update t_block_index set is_best=:isBest where block_hash=:blockHash";
         return super.update(blockIndexEntity, sql);
     }
 
@@ -49,6 +49,18 @@ public class BlockIndexEntityDao extends BaseDao<BlockIndexEntity> implements IB
     public long getMaxHeight() {
         String sql = "select max(height) from t_block_index";
         return template.getJdbcOperations().queryForObject(sql, Long.class);
+    }
+
+    /**
+     * load blockIndex by blockHash
+     *
+     * @param blockHash
+     * @return
+     */
+    @Override
+    public BlockIndexEntity getByBlockHash(String blockHash) {
+        String sql = "select height,block_hash,is_best,miner_address from t_block_index where block_hash=:blockHash";
+        return super.getByField(sql, ImmutableMap.of("blockHash", blockHash));
     }
 
     @Override

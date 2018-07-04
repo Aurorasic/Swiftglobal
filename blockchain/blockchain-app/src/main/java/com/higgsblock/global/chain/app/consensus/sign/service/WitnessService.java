@@ -1,10 +1,13 @@
 package com.higgsblock.global.chain.app.consensus.sign.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.consensus.vote.SourceBlockReq;
 import com.higgsblock.global.chain.app.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.consensus.vote.VoteTable;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -12,7 +15,6 @@ import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,42 +37,27 @@ public class WitnessService {
     private NodeManager nodeManager;
 
     @Autowired
-    private BlockService blockService;
-
-    @Autowired
     private MessageCenter messageCenter;
 
     public static final int MAX_SIZE = 5;
 
-    private static final int MIN_VOTE = 9;
+    private static final int MIN_VOTE = 8;
 
     private static final int MIN_SAME_SIGN = 7;
 
-//    private Cache<Long, Block> betterSourceBlockCache = Caffeine.newBuilder()
-//            .maximumSize(MAX_SIZE)
-//            .build();
-//    private Cache<Long, Map<String, Block>> sourceBlockCache = Caffeine.newBuilder()
-//            .maximumSize(MAX_SIZE)
-//            .build();
-//    private Cache<Long, List<CandidateBlockHashs>> sourceBlockHashCache = Caffeine.newBuilder()
-//            .maximumSize(MAX_SIZE)
-//            .build();
+    private Cache<Long, HashBasedTable<Integer, String, Map<String, Vote>>> voteCache = Caffeine.newBuilder()
+            .maximumSize(MAX_SIZE)
+            .build();
 
+    @Getter
     private long height;
 
     private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
 
-    private VoteTable selftVoteTable;
-
     @Getter
     private Map<String, Block> blockMap;
 
-    private Set<String> blockHashAsVersionOne;
-
     private Block blockWithEnoughSign;
-
-    @Getter
-    private List<HashBasedTable<Integer, String, Map<String, Vote>>> voteCache = new ArrayList<>();
 
     public synchronized void initWitnessTask(long height) {
         if (height <= this.height) {
@@ -82,16 +69,21 @@ public class WitnessService {
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
             this.voteTable = HashBasedTable.create(6, 11);
-            this.selftVoteTable = new VoteTable(voteTable);
             this.blockWithEnoughSign = null;
             this.blockMap = new HashMap<>();
-            this.blockHashAsVersionOne = new HashSet<>();
-            //todo yuanjiantao process voteTable in cache
+            HashBasedTable<Integer, String, Map<String, Vote>> voteTableInCache = voteCache.getIfPresent(height);
+            if (voteTableInCache != null) {
+                dealVoteTable(null, this.height, voteTableInCache);
+            }
+            LOGGER.info("height {},init witness task success", this.height);
         }
     }
 
     public synchronized void addSourceBlock(Block block) {
         if (block == null) {
+            return;
+        }
+        if (this.height > block.getHeight()) {
             return;
         }
         String blockHash = block.getHash();
@@ -114,16 +106,13 @@ public class WitnessService {
             }
             return;
         }
-        if (this.height > block.getHeight()) {
-            return;
-        }
         if (this.height == block.getHeight()) {
             if (this.blockMap == null) {
                 this.blockMap = new HashMap<>();
             }
             this.blockMap.put(block.getHash(), block);
             Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
-            if (voteMap != null && voteMap.size() == 1) {
+            if (voteMap != null && voteMap.size() > 0) {
                 LOGGER.info("the vote of version one is exist {},{}", this.height, blockHash);
                 return;
             }
@@ -136,25 +125,28 @@ public class WitnessService {
             String proofPubKey = null;
             String proofBlockHash = null;
             int proofVersion = 0;
-            Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion);
+            Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(1, keyPair.getPubKey(), voteMap);
-            Object clone = SerializationUtils.clone(selftVoteTable);
-            this.messageCenter.dispatchToWitnesses(clone);
-            LOGGER.info("send voteTable to witness success {},{}", this.height, clone);
-            Set<String> blockHashs = this.blockMap.keySet();
-            CandidateBlockHashs candidateBlockHashs = new CandidateBlockHashs();
-            candidateBlockHashs.setHeight(this.height);
-            candidateBlockHashs.setBlockHashs(new LinkedList<>(blockHashs));
-            candidateBlockHashs.setPubKey(keyPair.getPubKey());
-            candidateBlockHashs.setAddress(ECKey.pubKey2Base58Address(keyPair.getPubKey()));
-            candidateBlockHashs.setSignature(ECKey.signMessage(candidateBlockHashs.getHash(), keyPair.getPriKey()));
-            this.messageCenter.dispatchToWitnesses(candidateBlockHashs);
-            LOGGER.info("send candidateBlockHashList to witness success {},{}", this.height, candidateBlockHashs);
+            VoteTable voteTable = new VoteTable(this.voteTable);
+            this.messageCenter.dispatchToWitnesses(voteTable);
+            LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
             return;
         }
     }
 
+    private void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+        HashBasedTable<Integer, String, Map<String, Vote>> oldCacheVote = voteCache.get(height, k -> voteTable);
+        if (voteTable.rowKeySet().size() < oldCacheVote.rowKeySet().size()) {
+            return;
+        } else if (voteTable.rowKeySet().size() == oldCacheVote.rowKeySet().size()
+                && voteTable.size() < oldCacheVote.size()) {
+            return;
+        }
+        voteCache.put(height, voteTable);
+    }
+
+    @Deprecated
     public synchronized void setBlocksFromWitness(CandidateBlock data) {
         long height = data.getHeight();
         if (this.height > height) {
@@ -168,6 +160,7 @@ public class WitnessService {
         }
     }
 
+    @Deprecated
     public synchronized void setBlockHashsFromWitness(CandidateBlockHashs data) {
         if (data == null) {
             return;
@@ -283,18 +276,34 @@ public class WitnessService {
     }
 
 
-    public synchronized void dealVoteTable(long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+    public synchronized void dealVoteTable(String sourceId, long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
             LOGGER.info("the voting process of {} is over", height);
             return;
         }
-
-        if (this.height < voteHeight) {
-            // TODO: 7/3/2018 yuanjiantao add voteTable to cache
-            LOGGER.info("add voteTable to cache with voteHeight {} ,voteTable {}", voteHeight, voteTable);
+        if (voteHeight > this.height) {
+            updateVoteCache(voteHeight, voteTable);
+            LOGGER.info("the height is greater than local , add voteTable to cache");
             return;
+        }
+
+        if (null != voteTable.row(1)) {
+            Set<String> blockHashs = new HashSet<>();
+            voteTable.row(1).values().forEach(map -> {
+                map.forEach((k, v) -> {
+                    if (!blockMap.containsKey(k)) {
+                        blockHashs.add(k);
+                    }
+                });
+            });
+            if (blockHashs.size() > 0) {
+                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                LOGGER.info("source blocks is not enough,add vote table to cache");
+                return;
+            }
         }
 
         LOGGER.info("add voteTable to task with voteHeight {} ,voteTable {}", voteHeight, voteTable);
@@ -312,7 +321,7 @@ public class WitnessService {
             Map<String, Map<String, Vote>> followerVotes = new HashMap<>(6);
             for (Map.Entry<String, Map<String, Vote>> entry : newRows.entrySet()) {
                 String pubKey = entry.getKey();
-                if (null == pubKey) {
+                if (StringUtils.isBlank(pubKey)) {
                     continue;
                 }
                 Map<String, Vote> newVoteMap = entry.getValue();
@@ -333,7 +342,7 @@ public class WitnessService {
                         return;
                     }
                     if (version == 1) {
-                        followerVotes.compute(pubKey, (k, v) ->
+                        leaderVotes.compute(pubKey, (k, v) ->
                                 null == v ? new HashMap<>(3) : v
                         ).put(vote.getBlockHash(), vote);
                     } else if (vote.getProofVersion() == version) {
@@ -353,7 +362,7 @@ public class WitnessService {
             if (!verifyVotes(leaderVotes)) {
                 return;
             }
-            if (followerVotes.size() == 0 || !verifyVotes(followerVotes)) {
+            if (!verifyVotes(followerVotes)) {
                 return;
             }
             int endVoteSize = this.voteTable.size();
@@ -415,6 +424,7 @@ public class WitnessService {
                     blockWitness.setSignature(next.getValue());
                     blockWitnesses.add(blockWitness);
                 }
+                blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
                 this.messageCenter.broadcast(blockWithEnoughSign);
@@ -427,12 +437,14 @@ public class WitnessService {
         Map<String, Vote> voteMap = this.voteTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version;
-            Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion);
+            Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, keyPair.getPubKey());
+            String preBlockHash = preVoteMap.keySet().iterator().next();
+            Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion, preBlockHash);
             LOGGER.info("height {},version {},vote the current version {}", voteHeight, version, vote);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(SerializationUtils.clone(this.selftVoteTable));
+            messageCenter.broadcast(new VoteTable(voteTable));
             return;
         }
         String currentVersionVoteBlockHash = voteMap.keySet().iterator().next();
@@ -443,17 +455,17 @@ public class WitnessService {
         voteMap = this.voteTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version - 1;
-            Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion);
+            Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion, currentVersionVoteBlockHash);
             LOGGER.info("height {},version {},vote the next version {}", voteHeight, version, vote);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
-            messageCenter.broadcast(SerializationUtils.clone(this.selftVoteTable));
+            messageCenter.broadcast(new VoteTable(voteTable));
             return;
         }
     }
 
-    private Vote createVote(String bestBlockHash, long voteHeight, int version, String proofBlockHash, String proofPubKey, int proofVersion) {
+    private Vote createVote(String bestBlockHash, long voteHeight, int version, String proofBlockHash, String proofPubKey, int proofVersion, String preBlockHash) {
         Vote vote = new Vote();
         vote.setBlockHash(bestBlockHash);
         vote.setHeight(voteHeight);
@@ -462,6 +474,7 @@ public class WitnessService {
         vote.setProofPubKey(proofPubKey);
         vote.setProofVersion(proofVersion);
         vote.setProofBlockHash(proofBlockHash);
+        vote.setPreBlockHash(preBlockHash);
         String msg = getSingMessage(vote);
         String sign = ECKey.signMessage(msg, keyPair.getPriKey());
         vote.setSignature(sign);
@@ -471,7 +484,6 @@ public class WitnessService {
     private String getSingMessage(Vote vote) {
         return vote.getHeight() + vote.getBlockHash() + vote.getVoteVersion();
     }
-
 
     private boolean validVoteSignature(Vote vote) {
         if (vote == null) {

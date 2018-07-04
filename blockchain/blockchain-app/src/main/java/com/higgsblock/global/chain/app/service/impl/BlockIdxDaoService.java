@@ -39,55 +39,83 @@ public class BlockIdxDaoService implements IBlockIndexService {
     private BlockFormatter blockFormatter;
 
     @Override
-    public void addBlockIndex(Block block, String bestBlockHash) {
-        boolean needBuildUTXO = false;
-        BlockIndex blockIndex;
-        ArrayList<String> blockHashes = new ArrayList<String>(1);
-        if (block.isGenesisBlock()) {
-            blockHashes.add(block.getHash());
-            blockIndex = new BlockIndex(1, blockHashes, 0);
-            needBuildUTXO = true;
-        } else {
-            blockIndex = getBlockIndexByHeight(block.getHeight());
-            boolean hasOldBest = blockIndex == null ? false : blockIndex.hasBestBlock();
-            boolean isBest = StringUtils.equals(bestBlockHash, block.getHash()) ? true : false;
-
-            if (blockIndex == null) {
-                blockHashes.add(block.getHash());
-                blockIndex = new BlockIndex(block.getHeight(), blockHashes, isBest ? 0 : -1);
-            } else {
-                blockIndex.addBlockHash(block.getHash(), isBest);
-                blockIndex.setBestHash(bestBlockHash);
-            }
-
-            boolean hasNewBest = blockIndex.hasBestBlock();
-            needBuildUTXO = !hasOldBest && hasNewBest;
-        }
+    public void addBlockIndex(Block block, Block toBeBestBlock) {
+//        BlockIndex blockIndex;
+//        ArrayList<String> blockHashes = new ArrayList<String>(1);
+//        if (block.isGenesisBlock()) {
+//            blockHashes.add(block.getHash());
+//            blockIndex = new BlockIndex(1, blockHashes, 0);
+//            needBuildUTXO = true;
+//        } else {
+//            blockIndex = getBlockIndexByHeight(block.getHeight());
+//            boolean hasOldBest = blockIndex == null ? false : blockIndex.hasBestBlock();
+//            boolean isBest = StringUtils.equals(bestBlockHash, block.getHash()) ? true : false;
+//
+//            if (blockIndex == null) {
+//                blockHashes.add(block.getHash());
+//                blockIndex = new BlockIndex(block.getHeight(), blockHashes, isBest ? 0 : -1);
+//            } else {
+//                blockIndex.addBlockHash(block.getHash(), isBest);
+//                blockIndex.setBestHash(bestBlockHash);
+//            }
+//
+//            boolean hasNewBest = blockIndex.hasBestBlock();
+//            needBuildUTXO = !hasOldBest && hasNewBest;
+//        }
 
         //insert BlockIndexEntity to sqlite DB
-        insertBatch(block, blockIndex);
-        LOGGER.info("persisted block index: " + blockIndex.toString());
+        //insertBatch(block, blockIndex);
 
-        if (needBuildUTXO) {
-            transDaoService.addTransIdxAndUtxo(block, bestBlockHash);
+        //modify by Huangshengli 2018-07-02
+        insertBlockIndex(block);
+        if (toBeBestBlock != null) {
+            updateBestBlockIndex(toBeBestBlock);
+        }
+
+        if (block.isGenesisBlock()) {
+            transDaoService.addTransIdxAndUtxo(block, block.getHash());
+        } else {
+            if (toBeBestBlock != null) {
+                transDaoService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
+            }
+        }
+    }
+
+    private void insertBlockIndex(Block block) {
+        BlockIndexEntity blockIndexDO = new BlockIndexEntity();
+        blockIndexDO.setBlockHash(block.getHash());
+        blockIndexDO.setHeight(block.getHeight());
+        blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
+        blockIndexDO.setMinerAddress(block.getMinerFirstPKSig().getAddress());
+        blockIndexDao.add(blockIndexDO);
+        LOGGER.info("persisted block index: {}", blockIndexDO);
+    }
+
+    private void updateBestBlockIndex(Block bestBlock) {
+        BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
+        for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
+            if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
+                BlockIndexEntity blockIndexEntity = blockIndexDao.getByBlockHash(bestBlock.getHash());
+                blockIndexEntity.setIsBest(i);
+                blockIndexDao.update(blockIndexEntity);
+                LOGGER.info("persisted block index: {}", blockIndexEntity);
+                return;
+            }
         }
     }
 
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
         List<BlockIndexEntity> blockIndexEntities = blockIndexDao.getAllByHeight(height);
-        ArrayList<String> blockHashs = Lists.newArrayList();
-        if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
-            blockIndexEntities.forEach(blockIdxEntity -> {
-                blockHashs.add(blockIdxEntity.getBlockHash());
-            });
 
+        if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
             BlockIndex blockIndex = new BlockIndex();
-            blockIndex.setHeight(height);
+            blockIndex.setHeight(blockIndexEntities.get(0).getHeight());
+            ArrayList<String> blockHashs = Lists.newArrayList();
             blockIndex.setBlockHashs(blockHashs);
             blockIndex.setBestIndex(-1);
-
             blockIndexEntities.forEach(blockIndexEntity -> {
+                blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
                 if (blockIndexEntity.getIsBest() != -1) {
                     blockIndex.setBestIndex(blockIndexEntity.getIsBest());
                 }

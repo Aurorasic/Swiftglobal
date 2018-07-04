@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
-import java.util.List;
-
 /**
  * system config
  *
@@ -79,6 +77,7 @@ public class AppConfig {
     @Value("${access.allow.ip.wild.card}")
     private String accessAllowIpWildCard;
 
+
     /**
      * confirm bestchain with a constant number when sporked
      *  add by Huangsheng li 2018-06-29
@@ -87,6 +86,7 @@ public class AppConfig {
     private int bestchainConfirmNum;
     @Value("${dpos.blocks.per.round}")
     private int dposBlocksPerRound;
+
 
     public String getValue(String key) {
         return environment.getProperty(key);

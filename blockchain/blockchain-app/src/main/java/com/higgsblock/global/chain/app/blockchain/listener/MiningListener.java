@@ -88,7 +88,7 @@ public class MiningListener implements IEventBusListener {
             List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
                 Block block = blockService.getBestBlockByHeight(1L);
-                List<String> dposAddresses = nodeManager.calculateDposAddresses(block);
+                List<String> dposAddresses = nodeManager.calculateDposAddresses(block,1L);
                 nodeManager.persistDposNodes(0L, dposAddresses);
             }
         }

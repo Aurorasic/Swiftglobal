@@ -8,7 +8,6 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
@@ -83,6 +82,10 @@ public class Block extends BaseBizEntity {
     @Setter
     @Getter
     private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
+
+    @Setter
+    @Getter
+    private int voteVersion;
 
 
     @Override
@@ -281,14 +284,6 @@ public class Block extends BaseBizEntity {
         return Hashing.sha256().hashString(builder.toString(), Charsets.UTF_8).toString();
     }
 
-    @JSONField(serialize = false)
-    public boolean isDPosEndHeight() {
-        long num = NodeManager.BATCH_BLOCK_NUM;
-        if ((height - 1) % num == 0) {
-            return true;
-        }
-        return false;
-    }
 
     @JSONField(serialize = false)
     public List<String> getWitnessBlockHashList() {

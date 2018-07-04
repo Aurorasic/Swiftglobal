@@ -20,9 +20,9 @@ public interface IBlockIndexService {
      * fetch data by rule id
      *
      * @param block         the block
-     * @param bestBlockHash best block hash
+     * @param bestBlock best block hash
      * @return BlockIndexDaoEntity
      */
-    void addBlockIndex(Block block, String bestBlockHash);
+    void addBlockIndex(Block block, Block bestBlock);
 
 }
