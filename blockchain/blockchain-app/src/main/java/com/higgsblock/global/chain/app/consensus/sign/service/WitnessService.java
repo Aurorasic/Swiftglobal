@@ -386,7 +386,7 @@ public class WitnessService {
             }
         }
         if (getAllVoteSize() > startAllVoteSize) {
-            messageCenter.broadcast(new VoteTable(this.voteTable.rowMap()));
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
         }
     }
 
