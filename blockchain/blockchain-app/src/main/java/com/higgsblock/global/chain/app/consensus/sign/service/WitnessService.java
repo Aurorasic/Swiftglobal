@@ -266,11 +266,13 @@ public class WitnessService {
                     isValid = true;
                 }
                 if (!isValid) {
+                    LOGGER.info("follower's vote is illegal vote : {}", vote);
                     return false;
                 }
             }
             //leader's vote
             else if (blockHash.compareTo(proofBlockHash) != 0 || blockHash.compareTo(preBlockHash) <= 0) {
+                LOGGER.info("leader's vote is illegal vote : {}", vote);
                 return false;
             }
 
@@ -323,6 +325,10 @@ public class WitnessService {
             if (newRows.size() == 0) {
                 return;
             }
+            if (version > 1 && voteTable.row(version - 1).size() < MIN_VOTE) {
+                LOGGER.warn("pre version's vote number < {}", MIN_VOTE);
+                return;
+            }
             int startVoteSize = this.voteTable.size();
             Map<String, Map<String, Vote>> leaderVotes = new HashMap<>(6);
             Map<String, Map<String, Vote>> followerVotes = new HashMap<>(6);
@@ -363,15 +369,15 @@ public class WitnessService {
                     }
                 }
             }
-            LOGGER.info("height = {} , version = {}, leaders' votes :{} ", height, version, leaderVotes);
             if (leaderVotes.size() == 0) {
                 return;
             }
             if (!verifyVotes(leaderVotes)) {
+                LOGGER.info("leaders' votes are illegal votes : {}", leaderVotes);
                 return;
             }
-            LOGGER.info("height = {} , version = {}, followers' votes :{} ", height, version, followerVotes);
             if (!verifyVotes(followerVotes)) {
+                LOGGER.info("followers' votes are illegal votes : {}", leaderVotes);
                 return;
             }
             int endVoteSize = this.voteTable.size();
