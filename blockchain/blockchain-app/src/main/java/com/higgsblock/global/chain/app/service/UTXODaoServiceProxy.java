@@ -11,10 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author yuguojia
@@ -55,6 +52,51 @@ public class UTXODaoServiceProxy {
 
     /**
      * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
+     * from the max height first block
+     *
+     * @param address
+     * @return
+     */
+    public List<UTXO> getUnionUTXO(String address) {
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        String firstBlockHash = lastBlockIndex.getFirstBlockHash();
+        if (StringUtils.isEmpty(firstBlockHash)) {
+            throw new RuntimeException("error lastBlockIndex " + lastBlockIndex);
+        }
+
+        Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
+        Map<String, UTXO> unconfirmedAddedUtxos = new HashMap<>();
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, address, false);
+        getUnionUTXOsRecurse(unconfirmedAddedUtxos, address, true);
+
+        List<UTXO> bestAddedUtxoList = transDaoService.getUTXOsByAddress(address);
+
+        Map<String, UTXO> allUtxoMap = new HashMap<>();
+        for (UTXO utxo : bestAddedUtxoList) {
+            if (unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
+                continue;
+            }
+            allUtxoMap.put(utxo.getKey(), utxo);
+        }
+        for (UTXO utxo : unconfirmedAddedUtxos.values()) {
+            if (unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
+                continue;
+            }
+            allUtxoMap.put(utxo.getKey(), utxo);
+        }
+
+        List<UTXO> result = new LinkedList();
+        for (UTXO utxo : allUtxoMap.values()) {
+            if (utxo == null || !StringUtils.equals(address, utxo.getAddress())) {
+                continue;
+            }
+            result.add(utxo);
+        }
+        return result;
+    }
+
+    /**
+     * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
      *
      * @param preBlockHash
      * @param utxoKey
@@ -71,6 +113,40 @@ public class UTXODaoServiceProxy {
             }
         }
         return utxo;
+    }
+
+    private void getUnionUTXOsRecurse(Map result, String blockHash, boolean isToGetAdded) {
+        if (StringUtils.isEmpty(blockHash)) {
+            return;
+        }
+        Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
+        if (utxoMap == null) {
+            //there is no utxo cache, load this block and build new utxo map to cache
+            Block block = blockDaoService.getBlockByHash(blockHash);
+            if (block == null) {
+                return;
+            }
+            BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+            if (blockIndex == null || blockIndex.isBest(blockHash)) {
+                return;
+            }
+            utxoMap = buildUTXOMap(block);
+            unconfirmedUtxoMaps.put(blockHash, utxoMap);
+            blockHashChainMap.put(blockHash, block.getPrevBlockHash());
+        }
+
+        Set<String> keySet = utxoMap.keySet();
+        for (String key : keySet) {
+            UTXO utxo = utxoMap.get(key);
+            if (isToGetAdded && utxo != null) {
+                result.put(key, utxo);
+            } else if (!isToGetAdded && utxo == null) {
+                result.put(key, null);
+            }
+        }
+
+        String preBlockHash = blockHashChainMap.get(blockHash);
+        getUnionUTXOsRecurse(result, preBlockHash, isToGetAdded);
     }
 
     public UTXO getUTXORecurse(String blockHash, String utxoKey) {
@@ -90,6 +166,7 @@ public class UTXODaoServiceProxy {
             }
             utxoMap = buildUTXOMap(block);
             unconfirmedUtxoMaps.put(blockHash, utxoMap);
+            blockHashChainMap.put(blockHash, block.getPrevBlockHash());
         }
         if (utxoMap.containsKey(utxoKey)) {
             return utxoMap.get(utxoKey);

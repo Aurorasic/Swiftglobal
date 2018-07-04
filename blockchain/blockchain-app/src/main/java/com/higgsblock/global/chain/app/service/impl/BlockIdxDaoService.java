@@ -98,7 +98,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
                 BlockIndexEntity blockIndexEntity = blockIndexDao.getByBlockHash(bestBlock.getHash());
                 blockIndexEntity.setIsBest(i);
                 blockIndexDao.update(blockIndexEntity);
-                LOGGER.info("persisted block index: {}", blockIndexEntity);
+                LOGGER.info("persisted bestblock index: {}", blockIndexEntity);
                 return;
             }
         }
