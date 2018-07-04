@@ -189,7 +189,7 @@ public class BlockService {
         Block block = new Block();
         block.setVersion((short) 1);
         block.setBlockTime(System.currentTimeMillis());
-        block.setPrevBlockHash(lastBlockIndex.getBestBlockHash());
+        block.setPrevBlockHash(preBlockHash);
         block.setTransactions(transactions);
         block.setHeight(nextBestBlockHeight);
         block.setPubKey(keyPair.getPubKey());
