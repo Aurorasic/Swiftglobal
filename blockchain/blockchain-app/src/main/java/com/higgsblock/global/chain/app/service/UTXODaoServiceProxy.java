@@ -66,8 +66,8 @@ public class UTXODaoServiceProxy {
 
         Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
         Map<String, UTXO> unconfirmedAddedUtxos = new HashMap<>();
-        getUnionUTXOsRecurse(unconfirmedSpentUtxos, address, false);
-        getUnionUTXOsRecurse(unconfirmedAddedUtxos, address, true);
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, firstBlockHash, false);
+        getUnionUTXOsRecurse(unconfirmedAddedUtxos, firstBlockHash, true);
 
         List<UTXO> bestAddedUtxoList = transDaoService.getUTXOsByAddress(address);
 
