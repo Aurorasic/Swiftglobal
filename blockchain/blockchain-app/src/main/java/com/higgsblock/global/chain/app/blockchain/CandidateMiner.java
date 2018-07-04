@@ -8,6 +8,9 @@ import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Service;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @author: yezaiyong
  * @create: 2018-06-29 14:31
  **/
+@Service
 @Slf4j
 public class CandidateMiner{
 

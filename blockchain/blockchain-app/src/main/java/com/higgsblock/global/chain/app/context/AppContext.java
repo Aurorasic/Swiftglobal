@@ -47,6 +47,12 @@ public class AppContext {
     @Autowired
     private EventBus eventBus;
 
+    @Autowired
+    private CandidateMiner candidateMiner;
+
+    @Autowired
+    private WitnessCountTime witnessCountTime;
+
     public void start() throws Exception {
         checkAndRecoveryBlockData();
 
@@ -108,12 +114,12 @@ public class AppContext {
     }
 
     private void startCandidateCountTime() throws InterruptedException {
-        CandidateMiner candidateMiner = new CandidateMiner();
+//        CandidateMiner candidateMiner = new CandidateMiner();
         candidateMiner.queryCurrHeightStartTime();
     }
 
     private void startWitnessCountTime() throws InterruptedException {
-        WitnessCountTime witnessCountTime = new WitnessCountTime();
+        //WitnessCountTime witnessCountTime = new WitnessCountTime();
         witnessCountTime.queryCurrHeightStartTime();
     }
 
