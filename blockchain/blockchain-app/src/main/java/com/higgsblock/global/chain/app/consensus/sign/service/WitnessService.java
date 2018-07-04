@@ -243,14 +243,10 @@ public class WitnessService {
             localVoteMap.put(blockHash, vote);
         } else {
             Map<String, Vote> proofVoteMap = this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey());
-            if (proofVoteMap == null) {
+            String proofBlockHash = vote.getProofBlockHash();
+            if (proofVoteMap == null || !proofVoteMap.containsKey(proofBlockHash)) {
                 return false;
             }
-            Vote proofVote = proofVoteMap.get(vote.getProofBlockHash());
-            if (null == proofVote) {
-                return false;
-            }
-            String proofBlockHash = proofVote.getBlockHash();
 
             Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, pubKey);
             String preBlockHash = vote.getPreBlockHash();
