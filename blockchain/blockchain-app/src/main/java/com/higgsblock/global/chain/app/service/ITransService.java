@@ -38,4 +38,12 @@ public interface ITransService {
      * @return the utxo
      */
     UTXO getUTXO(String utxoKey);
+
+    /**
+     * Query the all UTXOS according the address
+     *
+     * @param addr
+     * @return
+     */
+    public List<UTXO> getUTXOsByAddress(String addr);
 }
