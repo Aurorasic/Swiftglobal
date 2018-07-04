@@ -491,6 +491,7 @@ public class WitnessService {
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
             return false;
         }
+        return false;
     }
 
     private Vote createVote(String bestBlockHash, long voteHeight, int version, String proofBlockHash, String proofPubKey, int proofVersion, String preBlockHash) {
