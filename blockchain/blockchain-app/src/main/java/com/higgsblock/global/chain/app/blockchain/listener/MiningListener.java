@@ -40,8 +40,6 @@ public class MiningListener implements IEventBusListener {
     private NodeManager nodeManager;
     @Autowired
     private WitnessService witnessService;
-    @Autowired
-    private CandidateMiner candidateMiner;
 
     /**
      * the block height which is produced recently
@@ -118,7 +116,7 @@ public class MiningListener implements IEventBusListener {
         String address = peerManager.getSelf().getId();
 
         //todo yezaiyong 20180629 add CandidateMiner mode
-        candidateMiner.doMingTimer();
+        CandidateMiner.doMingTimer();
 
         boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address);
         if (!isMyTurn) {

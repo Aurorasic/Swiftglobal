@@ -54,7 +54,7 @@ public class CandidateMiner{
         }
     }
 
-    public synchronized void doMingTimer(){
+    public static synchronized void doMingTimer(){
         if(isCMINER){
             currHeight =blockService.getMaxHeight();
             blockStatus = false;
