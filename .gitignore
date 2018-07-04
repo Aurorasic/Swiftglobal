@@ -25,3 +25,14 @@ dependency-reduced-pom.xml
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+/blockchain/blockchain-app/src/main/resources/log4j2-test1.xml
+/blockchain/blockchain-app/src/main/resources/log4j2-test2.xml
+/blockchain/blockchain-app/src/main/resources/log4j2-test3.xml
+/blockchain/blockchain-app/src/main/resources/log4j2-test4.xml
+/blockchain/blockchain-app/src/main/resources/log4j2-test5.xml
+/blockchain/blockchain-app/src/main/resources/application1.properties
+/blockchain/blockchain-app/src/main/resources/application2.properties
+/blockchain/blockchain-app/src/main/resources/application3.properties
+/blockchain/blockchain-app/src/main/resources/application4.properties
+/blockchain/blockchain-app/src/main/resources/application5.properties
+/.gitignore
