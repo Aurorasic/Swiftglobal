@@ -36,7 +36,7 @@ public class CandidateMiner{
     public static final long WAIT_MINER_TIME = 600;
 
     @Autowired
-    private static BlockService blockService;
+    private BlockService blockService;
     @Autowired
     private SourceBlockService sourceBlockService;
     @Autowired
@@ -48,20 +48,21 @@ public class CandidateMiner{
         String address = peerManager.getSelf().getId();
 
         isCMINER = transactionService.hasStake(address,SystemCurrencyEnum.CMINER);
+        LOGGER.info("is cminer =" +isCMINER);
         if (isCMINER){
             currHeight =blockService.getMaxHeight();
             startTimer();
         }
     }
 
-    public static synchronized void doMingTimer(){
+    public synchronized void doMingTimer(){
         if(isCMINER){
             currHeight =blockService.getMaxHeight();
             blockStatus = false;
         }
     }
 
-    public static void instantiationBlock(){
+    public void instantiationBlock(){
         LOGGER.info("isCMINER =" +CandidateMiner.isCMINER);
         if(isCMINER) {
             CandidateMiner.blockStatus = true;
