@@ -301,6 +301,7 @@ public class WitnessService {
             });
             if (blockHashs.size() > 0) {
                 messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                updateVoteCache(voteHeight, voteTable);
                 LOGGER.info("source blocks is not enough,add vote table to cache");
                 return;
             }
@@ -356,12 +357,14 @@ public class WitnessService {
                     }
                 }
             }
+            LOGGER.info("height = {} , version = {}, leaders' votes :{} ", height, version, leaderVotes);
             if (leaderVotes.size() == 0) {
                 return;
             }
             if (!verifyVotes(leaderVotes)) {
                 return;
             }
+            LOGGER.info("height = {} , version = {}, followers' votes :{} ", height, version, followerVotes);
             if (!verifyVotes(followerVotes)) {
                 return;
             }
