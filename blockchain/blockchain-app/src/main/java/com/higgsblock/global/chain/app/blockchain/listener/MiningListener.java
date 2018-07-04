@@ -6,7 +6,6 @@ import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
@@ -44,7 +43,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private WitnessService witnessService;
     @Autowired
-    private UTXORespService utxoRespService;
+    private CandidateMiner candidateMiner;
 
     /**
      * the block height which is produced recently
@@ -121,7 +120,6 @@ public class MiningListener implements IEventBusListener {
         String address = peerManager.getSelf().getId();
 
         //todo yezaiyong 20180629 add CandidateMiner mode
-        CandidateMiner candidateMiner=new CandidateMiner();
         candidateMiner.doMingTimer();
 
         boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address);

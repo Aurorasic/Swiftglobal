@@ -45,7 +45,8 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private UTXORespService utxoRespService;
+    private CandidateMiner candidateMiner;
+
 
     @Override
     protected void process(SocketRequest<Block> request) {
@@ -65,7 +66,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
 
             String address = peerManager.getSelf().getId();
             //todo yezaiyong 20180630 inform candidateMiner  cout cminer coin
-            CandidateMiner candidateMiner = new CandidateMiner();
+//            CandidateMiner candidateMiner = new CandidateMiner();
             candidateMiner.instantiationBlock();
             //todo yezaiyong 20180630 infom witiness count time
             if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {

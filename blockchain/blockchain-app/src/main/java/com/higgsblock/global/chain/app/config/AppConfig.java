@@ -22,15 +22,6 @@ public class AppConfig {
     @Autowired
     private Environment environment;
 
-    @Value("${data.root.path}")
-    private String rootDataPath;
-
-    @Value("${data.blockchain.path}")
-    private String blockChainDataPath;
-
-    @Value("${data.blockchain.file}")
-    private String blockChainDataFile;
-
     @Value("${registry.center.ip}")
     private String registryCenterIp;
 
