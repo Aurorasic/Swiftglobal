@@ -63,6 +63,9 @@ public class WitnessService {
     @Getter
     private Map<String, Block> blockMap;
 
+    @Autowired
+    private BlockService blockService;
+
     private Block blockWithEnoughSign;
 
     public synchronized void initWitnessTask(long height) {
@@ -485,21 +488,16 @@ public class WitnessService {
         vote.setProofVersion(proofVersion);
         vote.setProofBlockHash(proofBlockHash);
         vote.setPreBlockHash(preBlockHash);
-        String msg = getSingMessage(vote);
+        String msg = blockService.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
         String sign = ECKey.signMessage(msg, keyPair.getPriKey());
         vote.setSignature(sign);
         return vote;
-    }
-
-    private String getSingMessage(Vote vote) {
-        return vote.getHeight() + vote.getBlockHash() + vote.getVoteVersion();
     }
 
     private boolean validVoteSignature(Vote vote) {
         if (vote == null) {
             return false;
         }
-        String msg = getSingMessage(vote);
-        return ECKey.verifySign(msg, vote.getSignature(), vote.getWitnessPubKey());
+        return blockService.validSign(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion(), vote.getSignature(), vote.getWitnessPubKey());
     }
 }
