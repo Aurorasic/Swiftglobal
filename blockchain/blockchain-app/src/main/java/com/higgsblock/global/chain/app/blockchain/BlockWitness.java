@@ -53,7 +53,7 @@ public class BlockWitness extends BaseSerializer {
         }
         long height = block.getHeight();
         String hash = block.getHash();
-        String voteVersion = block.getVoteVersion();
+        int voteVersion = block.getVoteVersion();
         String signature = blockWitness.getSignature();
         String pubKey = blockWitness.getPubKey();
         String msg = height + hash + voteVersion;
