@@ -386,10 +386,6 @@ public class TransactionService {
 
         UTXO utxo;
         utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
-//        try {
-//        } catch (RocksDBException e) {
-//            throw new IllegalStateException("Get utxo error");
-//        }
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={}_preOutKey={}", JSONObject.toJSONString(input, true), preOutKey);
@@ -423,28 +419,8 @@ public class TransactionService {
             }
 
             String preUTXOKey = input.getPreUTXOKey();
-            boolean existUtxo = false;
-            if (preBlockHash == null) {
-                BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
-                ArrayList<String> preBlockHashs = lastBlockIndex.getBlockHashs();
-                if (CollectionUtils.isEmpty(preBlockHashs)) {
-                    throw new RuntimeException("error preBlockHashs" + lastBlockIndex.getHeight());
-                }
-                for (String tmpPreBlockHash : preBlockHashs) {
-                    UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(tmpPreBlockHash, preUTXOKey);
-                    if (utxo != null) {
-                        existUtxo = true;
-                        break;
-                    }
-                }
-
-            } else {
-                UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
-                if (utxo != null) {
-                    existUtxo = true;
-                }
-            }
-            if (!existUtxo) {
+            UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
+            if (utxo == null) {
                 LOGGER.error("there is no such utxokey={}_preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
             }

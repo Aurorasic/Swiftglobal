@@ -162,4 +162,12 @@ public class BlockIdxDaoService implements IBlockIndexService {
         long maxHeight = blockIndexDao.getMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
+
+    public List<String> getLastHightBlockHashs() {
+        List<String> result = getLastBlockIndex().getBlockHashs();
+        if (CollectionUtils.isEmpty(result)) {
+            throw new RuntimeException("error getLastHightBlockHashs" + getLastBlockIndex());
+        }
+        return result;
+    }
 }
