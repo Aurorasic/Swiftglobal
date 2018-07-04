@@ -47,6 +47,19 @@ public class BlockWitness extends BaseSerializer {
         return address;
     }
 
+    public static boolean validSign(BlockWitness blockWitness, Block block) {
+        if (block == null || blockWitness == null) {
+            return false;
+        }
+        long height = block.getHeight();
+        String hash = block.getHash();
+        String voteVersion = block.getVoteVersion();
+        String signature = blockWitness.getSignature();
+        String pubKey = blockWitness.getPubKey();
+        String msg = height + hash + voteVersion;
+        return ECKey.verifySign(msg, signature, pubKey);
+    }
+
     public String getBlockWitnessHash() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();

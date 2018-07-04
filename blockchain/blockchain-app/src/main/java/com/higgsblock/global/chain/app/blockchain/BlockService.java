@@ -618,8 +618,8 @@ public class BlockService {
                 LOGGER.error("Invalid signature from witness");
                 return false;
             }
-
-            if (!ECKey.verifySign(block.getHash(), pair.getSignature(), pair.getPubKey())) {
+            if (BlockWitness.validSign(pair, block)) {
+//            if (!ECKey.verifySign(block.getHash(), pair.getSignature(), pair.getPubKey())) {
                 LOGGER.error("Block hash not match signature from witness");
                 return false;
             }
@@ -711,8 +711,8 @@ public class BlockService {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeManager.getDposGroupByHeihgt(block.getHeight()));
-            if (transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)){
-                LOGGER.info("verify block is candidate miner production true" );
+            if (transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
+                LOGGER.info("verify block is candidate miner production true");
                 return true;
             }
             return false;

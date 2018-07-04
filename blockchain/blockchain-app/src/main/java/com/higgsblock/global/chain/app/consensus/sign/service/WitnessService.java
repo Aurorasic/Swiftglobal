@@ -424,6 +424,7 @@ public class WitnessService {
                     blockWitness.setSignature(next.getValue());
                     blockWitnesses.add(blockWitness);
                 }
+                blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
                 this.messageCenter.broadcast(blockWithEnoughSign);
