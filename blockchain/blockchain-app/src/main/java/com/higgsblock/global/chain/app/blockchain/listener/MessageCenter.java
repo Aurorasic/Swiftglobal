@@ -49,7 +49,7 @@ public class MessageCenter {
 
     public boolean dispatchToWitnesses(Object data) {
         Collection<Connection> witnessConnections = connectionManager.getWitnessConnections();
-        LOGGER.error("Witness connections size: {}", witnessConnections.size());
+        LOGGER.info("Witness connections size: {}", witnessConnections.size());
 
         if (witnessConnections.size() >= MIN_WITNESS_NUM) {
             for (Connection connection : witnessConnections) {
