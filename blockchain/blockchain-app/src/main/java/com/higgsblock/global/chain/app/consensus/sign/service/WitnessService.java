@@ -288,7 +288,7 @@ public class WitnessService {
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
-            LOGGER.info("the voting process of {} is over", height);
+            LOGGER.info("the voting process of {} is over , current height : {}", voteHeight, height);
             return;
         }
         if (voteHeight > this.height) {
