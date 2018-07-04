@@ -115,6 +115,10 @@ public class WitnessService {
             }
             return;
         }
+        boolean valid = blockService.validBlockFromProducer(block);
+        if (!valid) {
+            LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
+        }
         if (this.height == block.getHeight()) {
             if (this.blockMap == null) {
                 this.blockMap = new HashMap<>();
