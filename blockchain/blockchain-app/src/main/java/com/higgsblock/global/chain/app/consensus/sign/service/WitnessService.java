@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.consensus.sign.service;
 
-import com.alibaba.fastjson.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
@@ -240,7 +239,7 @@ public class WitnessService {
         if (!validVoteSignature(vote)) {
             return false;
         }
-        if (version == 1 && blockMap.containsKey(blockHash)) {
+        if (version == 1) {
             localVoteMap.put(blockHash, vote);
         } else {
             Map<String, Vote> proofVoteMap = this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey());
@@ -254,11 +253,10 @@ public class WitnessService {
             String proofBlockHash = proofVote.getBlockHash();
 
             Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, pubKey);
-            if (preVoteMap == null || !preVoteMap.containsKey(vote.getPreBlockHash())) {
+            String preBlockHash = vote.getPreBlockHash();
+            if (preVoteMap == null || !preVoteMap.containsKey(preBlockHash)) {
                 return false;
             }
-            String preBlockHash = proofVote.getPreBlockHash();
-
 
             //follower's vote
             if (vote.getProofVersion() == version) {
