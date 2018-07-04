@@ -190,7 +190,7 @@ public class NodeManager implements InitializingBean {
             return false;
         }
         String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
-        List<String> currentGroup = this.getDposGroupByHeihgt(block.getHeight());
+        List<String> currentGroup = getDposGroupByHeihgt(block.getHeight());
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
     }
 
@@ -204,15 +204,17 @@ public class NodeManager implements InitializingBean {
     public boolean canPackBlock(long height, String address) {
         long batchStartHeight = getBatchStartHeight(height);
         if (batchStartHeight > height) {
-            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height " + height);
+            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height=" + height);
         }
-        List<String> dposNodes = this.getDposGroupByHeihgt(height);
+        List<String> dposNodes = getDposGroupByHeihgt(height);
         if (CollectionUtils.isEmpty(dposNodes)) {
-            LOGGER.error("the dpos node is empty with the height {}", height);
+            LOGGER.error("the dpos node is empty with the height={}", height);
             return false;
         }
+        boolean canPackBlock = dposNodes.contains(address);
+        LOGGER.info("canPackBlock?={}_height={}_address={}, the dposNodes={}", canPackBlock, height, address, dposNodes);
+
         if (!dposNodes.contains(address)) {
-            LOGGER.info("the address is not in the dpos nodes,the height {},the address {}, the nodes {}", height, address, dposNodes);
             return false;
         }
         return true;

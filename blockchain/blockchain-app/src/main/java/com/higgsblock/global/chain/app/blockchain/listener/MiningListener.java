@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.eventbus.Subscribe;
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
@@ -12,7 +11,6 @@ import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
-import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +122,6 @@ public class MiningListener implements IEventBusListener {
 
         boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address);
         if (!isMyTurn) {
-            LOGGER.info("it is not my turn");
             return;
         }
         future = executorService.submit(() -> mining(expectHeight));
