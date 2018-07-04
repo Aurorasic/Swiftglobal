@@ -383,16 +383,14 @@ public class WitnessService {
             int endVoteSize = this.voteTable.size();
             if (endVoteSize > startVoteSize) {
                 collectionVoteSign(version, voteHeight);
-                if (blockWithEnoughSign == null) {
-                    version++;
-                    continue;
+                if (blockWithEnoughSign != null) {
+                    return;
                 }
-                //broadcast block with 7 sign
-                messageCenter.broadcast(blockWithEnoughSign);
             }
 
         }
     }
+
 
     private void collectionVoteSign(int version, long voteHeight) {
         Map<String, Map<String, Vote>> rowVersion = this.voteTable.row(version);
