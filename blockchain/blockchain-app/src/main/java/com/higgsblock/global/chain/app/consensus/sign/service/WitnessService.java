@@ -143,15 +143,6 @@ public class WitnessService {
         }
     }
 
-
-    public static void main(String[] args) {
-        HashBasedTable table = HashBasedTable.create(6, 11);
-        table.put(1, 2, 4);
-        String s = JSONObject.toJSONString(table);
-        System.out.println(s);
-        JSONObject.parseObject(s, HashBasedTable.class);
-    }
-
     private void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
         HashBasedTable<Integer, String, Map<String, Vote>> oldCacheVote = voteCache.get(height, k -> voteTable);
         if (voteTable.rowKeySet().size() < oldCacheVote.rowKeySet().size()) {
