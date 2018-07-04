@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author yuanjiantao
@@ -34,11 +35,24 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         VoteTable data = request.getData();
         String sourceId = request.getSourceId();
         LOGGER.info("Received VoteTable from {} with data {}", sourceId, JSON.toJSONString(data));
-        HashBasedTable<Integer, String, Map<String, Vote>> voteTable = data.getVoteTable();
-        if (voteTable == null || voteTable.size() == 0) {
+        Map<Integer, Map<String, Map<String, Vote>>> voteTableMap = data.getVoteTable();
+        if (voteTableMap == null || voteTableMap.size() == 0) {
             LOGGER.info("the voteTable is null from {}", sourceId);
             return;
         }
+        Set<Map.Entry<Integer, Map<String, Map<String, Vote>>>> entries = voteTableMap.entrySet();
+        HashBasedTable<Integer, String, Map<String, Vote>> voteTable = HashBasedTable.create();
+        entries.forEach(entry -> {
+            Integer version = entry.getKey();
+            Map<String, Map<String, Vote>> value = entry.getValue();
+            if (value != null) {
+                value.entrySet().forEach(vote -> {
+                    String votePubke = vote.getKey();
+                    Map<String, Vote> voteMap = vote.getValue();
+                    voteTable.put(version, votePubke, voteMap);
+                });
+            }
+        });
         Map<String, Map<String, Vote>> row = voteTable.row(Integer.valueOf(1));
         if (row == null || row.values().size() == 0) {
             LOGGER.info("the voteTable hasn't vote which voteVersion is one from {}", sourceId);
