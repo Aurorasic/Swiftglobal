@@ -56,7 +56,7 @@ public class CandidateMiner{
         }
     }
 
-    public void instantiationBlock(){
+    public synchronized void instantiationBlock(){
         if(isCMINER) {
             CandidateMiner.blockStatus = true;
             currHeight = blockService.getMaxHeight();
