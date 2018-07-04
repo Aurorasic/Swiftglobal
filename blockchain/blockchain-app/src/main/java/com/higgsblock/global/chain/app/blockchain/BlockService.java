@@ -2,8 +2,11 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
@@ -23,6 +26,7 @@ import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -613,13 +617,18 @@ public class BlockService {
 
         Set<String> pkSet = new HashSet<>();
         String tempAddress;
+        String hash = block.getHash();
+        int voteVersion = block.getVoteVersion();
+        long height = block.getHeight();
         for (BlockWitness pair : otherPKSigs) {
             if (!pair.valid()) {
                 LOGGER.error("Invalid signature from witness");
                 return false;
             }
-            if (BlockWitness.validSign(pair, block)) {
-//            if (!ECKey.verifySign(block.getHash(), pair.getSignature(), pair.getPubKey())) {
+            String pubKey = pair.getPubKey();
+            String signature = pair.getSignature();
+            boolean validSign = this.validSign(height, hash, voteVersion, signature, pubKey);
+            if (!validSign) {
                 LOGGER.error("Block hash not match signature from witness");
                 return false;
             }
@@ -730,6 +739,20 @@ public class BlockService {
     private boolean validateGenesisBlock() {
         Block block = blockDaoService.getBlockByHash(config.getGenesisBlockHash());
         return null != block && block.isGenesisBlock();
+    }
+
+    public String getWitnessSingMessage(long height, String blockHash, int voteVersion) {
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder();
+        builder.append(function.hashLong(height))
+                .append(function.hashString(null == blockHash ? Strings.EMPTY : blockHash, Charsets.UTF_8))
+                .append(function.hashInt(voteVersion));
+        return function.hashString(builder.toString(), Charsets.UTF_8).toString();
+    }
+
+    public boolean validSign(long height, String blockHash, int voteVersion, String sign, String pubKey) {
+        String message = getWitnessSingMessage(height, blockHash, voteVersion);
+        return ECKey.verifySign(message, sign, pubKey);
     }
 
 }
