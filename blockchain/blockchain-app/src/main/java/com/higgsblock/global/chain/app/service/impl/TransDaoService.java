@@ -11,6 +11,7 @@ import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -42,6 +44,9 @@ public class TransDaoService implements ITransService {
      */
     @Autowired
     private UTXOEntityDao utxoEntityDao;
+
+    @Autowired
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     /**
      * The Transaction index entity dao.
@@ -108,9 +113,11 @@ public class TransDaoService implements ITransService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void removeDoubleSpendTx(List<Transaction> cacheTransactions) {
+    public List<Transaction> getTxOfUnSpentUtxo(String preBlockHash, List<Transaction> cacheTransactions) {
+        List<Transaction> result = new LinkedList<>();
+
         if (CollectionUtils.isEmpty(cacheTransactions)) {
-            return;
+            return result;
         }
 
         HashMap<String, String> spentUTXOMap = new HashMap<>(8);
@@ -121,28 +128,31 @@ public class TransDaoService implements ITransService {
             if (CollectionUtils.isEmpty(inputs)) {
                 continue;
             }
+            boolean unspentUtxoTx = true;
             for (TransactionInput input : inputs) {
                 String preUTXOKey = input.getPreUTXOKey();
                 if (spentUTXOMap.containsKey(preUTXOKey)) {
-                    txCacheManager.remove(tx.getHash());
-                    cacheTransactions.remove(i);
+                    unspentUtxoTx = false;
                     LOGGER.warn("there has two or one tx try to spent same uxto={}," +
                                     "old spend tx={}, other spend tx={}", preUTXOKey,
                             spentUTXOMap.get(preUTXOKey), tx.getHash());
                     break;
                 }
 
-                UTXO utxo = getUTXO(preUTXOKey);
+                UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
-                    txCacheManager.remove(tx.getHash());
-                    cacheTransactions.remove(i);
+                    unspentUtxoTx = false;
                     LOGGER.warn("utxo data map has no this uxto={}_tx={}", preUTXOKey, tx.getHash());
                     break;
                 }
 
                 spentUTXOMap.put(preUTXOKey, tx.getHash());
             }
+            if (unspentUtxoTx) {
+                result.add(tx);
+            }
         }
+        return result;
     }
 
     /**
