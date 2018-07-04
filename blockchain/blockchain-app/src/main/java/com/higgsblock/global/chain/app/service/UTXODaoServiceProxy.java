@@ -104,14 +104,33 @@ public class UTXODaoServiceProxy {
      */
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
         UTXO utxo = transDaoService.getUTXO(utxoKey);
-        if (utxo == null) {
-            utxo = getUTXORecurse(preBlockHash, utxoKey);
+        if (preBlockHash == null) {
+            List<String> lastHightBlockHashs = blockIdxDaoService.getLastHightBlockHashs();
+            for (String tmpPreBlockHash : lastHightBlockHashs) {
+                if (utxo == null) {
+                    utxo = getUTXORecurse(tmpPreBlockHash, utxoKey);
+                } else {
+                    boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(tmpPreBlockHash, utxoKey);
+                    if (isRemovedOnUnconfirmedChain) {
+                        utxo = null;
+                    }
+                }
+                if (utxo != null) {
+                    return utxo;
+                }
+            }
+            return utxo;
         } else {
-            boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(preBlockHash, utxoKey);
-            if (isRemovedOnUnconfirmedChain) {
-                return null;
+            if (utxo == null) {
+                utxo = getUTXORecurse(preBlockHash, utxoKey);
+            } else {
+                boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(preBlockHash, utxoKey);
+                if (isRemovedOnUnconfirmedChain) {
+                    return null;
+                }
             }
         }
+
         return utxo;
     }
 
