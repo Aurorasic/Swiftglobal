@@ -1,8 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -11,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -30,9 +27,9 @@ public class WitnessCountTime {
     private static long currHeight = 0;
     private static long curSec;
     private ExecutorService executorService;
-    private volatile boolean isRunning ;
+    private volatile boolean isRunning;
     static Block block;
-    public volatile static boolean isCurrBlockConfirm =false;
+    public volatile static boolean isCurrBlockConfirm = false;
     public static final long WAIT_WITNESS_TIME = 540;
 
 
@@ -53,12 +50,12 @@ public class WitnessCountTime {
     }
 
     public static boolean isCurrBlockConfirm(Block block) {
-        try{
+        try {
             WitnessCountTime.block = block;
             TimeUnit.SECONDS.sleep(3);
             return isCurrBlockConfirm;
-        }catch (InterruptedException e){
-            LOGGER.error("isCurrBlockConfirm error {}",e);
+        } catch (InterruptedException e) {
+            LOGGER.error("isCurrBlockConfirm error {}", e);
         }
         return false;
     }
@@ -67,15 +64,15 @@ public class WitnessCountTime {
         WitnessCountTime.block = null;
         WitnessCountTime.curSec = 0;
         preHeight = block.getHeight();
-        currHeight =block.getHeight();
+        currHeight = block.getHeight();
     }
 
     public boolean startTimer() throws InterruptedException {
         //If the received block is not empty, it is proved to be in the receiving block, and empty indicates that the timer needs to start
-        if(block == null ){
+        if (block == null) {
             preHeight = currHeight;
             WitnessCountTime.curSec = 0;
-            if (executorService == null){
+            if (executorService == null) {
                 this.start(ExecutorServices.newSingleThreadExecutor(getClass().getName(), 1));
             }
         }
@@ -90,40 +87,40 @@ public class WitnessCountTime {
                     try {
                         ++curSec;
                         TimeUnit.SECONDS.sleep(1);
-                        if(block == null){
-                            if (preHeight >= currHeight){
-                                LOGGER.info("block is null  pre >= curr;pre = "+preHeight+" curr =" +currHeight);
-                            }else{
+                        if (block == null) {
+                            if (preHeight >= currHeight) {
+                                LOGGER.info("block is null  pre >= curr;pre = " + preHeight + " curr =" + currHeight);
+                            } else {
                                 preHeight = currHeight;
-                                WitnessCountTime.curSec =0;
-                                LOGGER.info("block is null  pre < curr;pre = "+preHeight+" curr =" +currHeight);
+                                WitnessCountTime.curSec = 0;
+                                LOGGER.info("block is null  pre < curr;pre = " + preHeight + " curr =" + currHeight);
                             }
-                        }else{
-                            if (preHeight >= block.getHeight()){
+                        } else {
+                            if (preHeight >= block.getHeight()) {
                                 //need to wait for the block to come and continue timing. The current block is an invalid block
-                                isCurrBlockConfirm =false;
-                                LOGGER.info("block is not null  pre >= block height ;pre = "+preHeight+" block height =" +block.getHeight());
-                            }else {
-                                if (curSec >= WAIT_WITNESS_TIME){
+                                isCurrBlockConfirm = false;
+                                LOGGER.info("block is not null  pre >= block height ;pre = " + preHeight + " block height =" + block.getHeight());
+                            } else {
+                                if (curSec >= WAIT_WITNESS_TIME) {
                                     LOGGER.info("time of arrival  accept common miner block or candidate miner block");
                                     // can receive either a reserve or a normal reserve
                                     isCurrBlockConfirm = true;
                                     //WitnessCountTime.curSec =0;
                                     //preHeight = block.getHeight();
-                                }else {
+                                } else {
                                     //Only ordinary mining areas can be accepted
-                                    if (verifyBlockBelongCommonMiner(block)){
-                                        isCurrBlockConfirm =false;
+                                    if (verifyBlockBelongCommonMiner(block)) {
+                                        isCurrBlockConfirm = false;
                                         LOGGER.info("time of no arrival,only accept common miner block , but this candidate miner block");
-                                    }else{
-                                        LOGGER.info("time of no arrival,only accept common miner block , this block is common miner {} ",block.getHash());
-                                        isCurrBlockConfirm =true;
+                                    } else {
+                                        LOGGER.info("time of no arrival,only accept common miner block , this block is common miner {} ", block.getHash());
+                                        isCurrBlockConfirm = true;
                                         //WitnessCountTime.curSec =0;
                                         //preHeight = block.getHeight();
                                         //currHeight = preHeight;
                                     }
                                 }
-                                LOGGER.info("block is not null  pre < block height ;pre = "+preHeight+" block height =" +block.getHeight() +"is accept this block ="+isCurrBlockConfirm);
+                                LOGGER.info("block is not null  pre < block height ;pre = " + preHeight + " block height =" + block.getHeight() + "is accept this block =" + isCurrBlockConfirm);
                             }
                         }
                     } catch (InterruptedException e) {
@@ -135,7 +132,8 @@ public class WitnessCountTime {
         }
 
     }
-    public boolean verifyBlockBelongCommonMiner(Block block){
-        return transactionService.hasStake(block.getMinerFirstPKSig().getAddress(),SystemCurrencyEnum.CMINER);
+
+    public boolean verifyBlockBelongCommonMiner(Block block) {
+        return transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER);
     }
 }
