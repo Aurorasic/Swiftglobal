@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.SourceBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
@@ -32,14 +33,16 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
     @Override
     protected void process(SocketRequest<SourceBlock> request) {
         SourceBlock sourceBlock = request.getData();
-        if (null != sourceBlock && null != sourceBlock.getBlock()) {
+        Block block;
+        if (null != sourceBlock && null != (block = sourceBlock.getBlock())) {
+            long height = block.getHeight();
             if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-                witnessService.addSourceBlock(sourceBlock.getBlock());
+                LOGGER.info("Received sourceBlock {} ,{}", height, block.getHash());
+                witnessService.addSourceBlock(block);
             } else {
                 messageCenter.dispatchToWitnesses(sourceBlock);
             }
         }
-
     }
 
 }
