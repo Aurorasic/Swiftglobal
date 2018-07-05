@@ -40,32 +40,6 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
-//        BlockIndex blockIndex;
-//        ArrayList<String> blockHashes = new ArrayList<String>(1);
-//        if (block.isGenesisBlock()) {
-//            blockHashes.add(block.getHash());
-//            blockIndex = new BlockIndex(1, blockHashes, 0);
-//            needBuildUTXO = true;
-//        } else {
-//            blockIndex = getBlockIndexByHeight(block.getHeight());
-//            boolean hasOldBest = blockIndex == null ? false : blockIndex.hasBestBlock();
-//            boolean isBest = StringUtils.equals(bestBlockHash, block.getHash()) ? true : false;
-//
-//            if (blockIndex == null) {
-//                blockHashes.add(block.getHash());
-//                blockIndex = new BlockIndex(block.getHeight(), blockHashes, isBest ? 0 : -1);
-//            } else {
-//                blockIndex.addBlockHash(block.getHash(), isBest);
-//                blockIndex.setBestHash(bestBlockHash);
-//            }
-//
-//            boolean hasNewBest = blockIndex.hasBestBlock();
-//            needBuildUTXO = !hasOldBest && hasNewBest;
-//        }
-
-        //insert BlockIndexEntity to sqlite DB
-        //insertBatch(block, blockIndex);
-
         //modify by Huangshengli 2018-07-02
         insertBlockIndex(block);
         if (toBeBestBlock != null) {
