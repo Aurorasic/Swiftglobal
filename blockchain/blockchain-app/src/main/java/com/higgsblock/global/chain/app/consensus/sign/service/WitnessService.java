@@ -134,6 +134,7 @@ public class WitnessService {
 //            LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
 //            return;
 //        }
+        this.blockMap.compute(blockHeight, (k, v) -> null == v ? new HashMap<>() : v);
         this.blockMap.compute(blockHeight, (k, v) -> {
             v.put(block.getHash(), block);
             return v;
