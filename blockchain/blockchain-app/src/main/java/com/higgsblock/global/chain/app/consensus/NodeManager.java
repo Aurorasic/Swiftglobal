@@ -109,9 +109,9 @@ public class NodeManager implements InitializingBean {
             }
             inadequateScoreList.add(address);
         });
-        int maxSize = 4;
-        int midSize = 4;
-        int minSize = 2;
+        int maxSize = 3;
+        int midSize = 2;
+        int minSize = 1;
         HashFunction function = Hashing.sha256();
         Comparator<String> comparator = (o1, o2) -> {
             o1 = o1 + hash;
