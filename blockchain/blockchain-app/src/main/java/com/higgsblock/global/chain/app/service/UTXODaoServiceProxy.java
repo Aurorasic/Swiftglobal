@@ -47,7 +47,7 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public UTXO getUTXOOnBestChain(String utxoKey) {
-        return transDaoService.getUTXO(utxoKey);
+        return transDaoService.getUTXOOnBestChain(utxoKey);
     }
 
     /**
@@ -103,7 +103,7 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
-        UTXO utxo = transDaoService.getUTXO(utxoKey);
+        UTXO utxo = transDaoService.getUTXOOnBestChain(utxoKey);
         if (preBlockHash == null) {
             List<String> lastHightBlockHashs = blockIdxDaoService.getLastHightBlockHashs();
             for (String tmpPreBlockHash : lastHightBlockHashs) {
