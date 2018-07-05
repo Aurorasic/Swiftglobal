@@ -68,7 +68,7 @@ public class WitnessService {
     private Block blockWithEnoughSign;
 
     public synchronized void initWitnessTask(long height) {
-        if (height <= this.height) {
+        if (height < this.height) {
             return;
         }
         if (height == this.height) {
@@ -81,6 +81,7 @@ public class WitnessService {
                     }
                 });
             }
+            return;
         }
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
