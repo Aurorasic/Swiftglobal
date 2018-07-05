@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.network.socket.handler;
 
-import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -8,13 +7,11 @@ import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.event.ReceivedDataEvent;
 import com.higgsblock.global.chain.network.socket.message.BaseMessage;
-import com.higgsblock.global.chain.network.socket.message.GetPeersMessage;
 import com.higgsblock.global.chain.network.socket.message.PeersMessage;
 import com.higgsblock.global.chain.network.socket.message.StringMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.List;
@@ -61,10 +58,6 @@ public class BaseInboundHandler extends SimpleChannelInboundHandler<BaseMessage>
             processStringMsg((StringMessage) msg);
             return;
         }
-        if (msg instanceof GetPeersMessage) {
-            processGetPeersMsg((GetPeersMessage) msg);
-            return;
-        }
         if (msg instanceof PeersMessage) {
             processPeersMsg((PeersMessage) msg);
             return;
@@ -108,17 +101,6 @@ public class BaseInboundHandler extends SimpleChannelInboundHandler<BaseMessage>
         event.setContent(message.getContent());
 
         eventBus.post(event);
-    }
-
-    private void processGetPeersMsg(GetPeersMessage message) {
-        LOGGER.info("Message: [{}], connection peer id: {}", message, connection.getPeerId());
-        int requestSize = message.getSize();
-        List<Peer> peers = peerManager.shuffle(requestSize);
-
-        if (CollectionUtils.isNotEmpty(peers)) {
-            PeersMessage peersMessage = new PeersMessage(Lists.newLinkedList(peers));
-            connection.sendMessage(peersMessage);
-        }
     }
 
     private void processPeersMsg(PeersMessage message) {
