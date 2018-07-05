@@ -108,34 +108,10 @@ public class WitnessService {
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
         // TODO: 7/5/2018 yuanjiantao modify verify logic
-//        if (!block.valid()) {
-//            LOGGER.info("this block is not valid,height {}, {}", blockHeight, blockHash);
-//            return;
-//        }
-//        this.blockMap.compute(block.getHeight(), (k, v) -> null == v ? new HashMap<>() : v);
-//        if (blockMap.get(height).containsKey(blockHash)) {
-//            LOGGER.info("this block is exist in blockMap,height{},{}", blockHeight, blockHash);
-//            return;
-//        }
-//
-//        boolean minerPermission = nodeManager.checkProducer(block);
-//        if (!minerPermission) {
-//            LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-//            boolean isWitnessTimer = WitnessCountTime.isCurrBlockConfirm(block);
-//            LOGGER.info("verify witness timer block is sure {} block hash {}", isWitnessTimer, block.getHash());
-//            if (!isWitnessTimer) {
-//                LOGGER.info("verify witness timer block is accept {} ", isWitnessTimer);
-//                return;
-//            }
-//            return;
-//        }
-//        boolean valid = blockService.validBlockFromProducer(block);
-//        if (!valid) {
-//            LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
-//            return;
-//        }
-        this.blockMap.compute(blockHeight, (k, v) -> null == v ? new HashMap<>() : v);
         this.blockMap.compute(blockHeight, (k, v) -> {
+            if (null == v) {
+                v = new HashMap<>();
+            }
             v.put(block.getHash(), block);
             return v;
         });
