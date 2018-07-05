@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.api.vo.BlockHeader;
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.higgsblock.global.chain.app.constants.RespCodeEnum.*;
 
@@ -38,36 +41,59 @@ public class BlockApi {
      * @return
      */
     @RequestMapping("/getBlocks")
-    public ResponseData<List<Block>> getBlocksByApiServer(long fromHeight, long limit) {
-        //1.首先判断fromHeight与当前peer节点的最长height的关系
+    public ResponseData<Map<String, Object>> getBlocksByApiServer(long fromHeight, int limit) {
         if (fromHeight <= 0 || fromHeight >= Long.MAX_VALUE) {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "The height does not exist.");
         }
 
-        if (limit <= 0 || limit >= Long.MAX_VALUE) {
+        if (limit <= 0 || limit >= Integer.MAX_VALUE) {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
         }
-
-        if (fromHeight <= 0 || fromHeight >= Long.MAX_VALUE) {
-            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
-        }
-
-        long currentHeight = blockService.getMaxHeight();
-        if (fromHeight > currentHeight) {
+        //curren max block height
+        long currenMaxHeight = blockService.getMaxHeight();
+        if (fromHeight > currenMaxHeight) {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "It's already the longest chain height.");
         }
 
-        List<Block> resultBlocks = Lists.newArrayList();
-        for (long height = fromHeight; height < fromHeight + limit; height++) {
-            List<Block> blocks = blockService.getBlocksByHeight(height);
-            if (CollectionUtils.isNotEmpty(blocks) && null != blocks.get(0)) {
-                resultBlocks.add(blocks.get(0));
-            }
+        //The maximum height index of the main chain has been confirmed
+        BlockIndex bestMaxBlockIndex = blockService.getLastBestBlockIndex();
+        if (bestMaxBlockIndex == null) {
+            return new ResponseData<>(RespCodeEnum.HASH_NOT_EXIST, "not found main chain block height and blockHash");
         }
 
-        ResponseData<List<Block>> responseData = new ResponseData<List<Block>>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(resultBlocks);
-        return responseData;
+        //The maximum height of the main chain has been confirmed
+        long bestMaxHeight = bestMaxBlockIndex.getHeight();
+        //best max blockHash
+        String bestMaxBlockHash = bestMaxBlockIndex.getBestBlockHash();
+        if (bestMaxBlockHash == null) {
+            return new ResponseData<>(RespCodeEnum.HASH_NOT_EXIST, "best max block hash is null");
+        }
+        //return result
+        Map<String, Object> result = new HashMap<String, Object>(2);
+        //The latest height and hash of the main chain have been confirmed
+        Map<String, Object> maxIndex = new HashMap<>(2);
+        maxIndex.put("maxHeight", bestMaxHeight);
+        maxIndex.put("maxHash", bestMaxBlockHash);
+        result.put("maxIndex", maxIndex);
+
+        //Pull block results
+        List<Block> resultBlocks = Lists.newArrayList();
+        if (fromHeight < bestMaxHeight) {
+            List<Block> blocks = blockService.getBestBlocksByHeight(fromHeight, limit);
+            if (CollectionUtils.isNotEmpty(blocks)) {
+                resultBlocks.addAll(blocks);
+            }
+        } else {
+            for (long height = fromHeight; height < fromHeight + limit; height++) {
+                List<Block> blocks = blockService.getBlocksByHeight(height);
+                if (CollectionUtils.isNotEmpty(blocks)) {
+                    resultBlocks.addAll(blocks);
+                }
+            }
+        }
+        //All blocks that need to be pulled include the fork chain block
+        result.put("blocks", resultBlocks);
+        return ResponseData.success(result);
     }
 
     @RequestMapping("/info")
