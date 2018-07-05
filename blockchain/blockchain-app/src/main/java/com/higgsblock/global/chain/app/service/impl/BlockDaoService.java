@@ -295,20 +295,20 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             return null;
         }
         Block bestBlock = recursePreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
-        if (bestBlock == null){
-            LOGGER.info("h-N block has be confirmed,current height:{}",block.getHeight());
+        if (bestBlock == null) {
+            LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
             return null;
         }
         // h-N-1 block has ready be bestchain
         Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
         Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
-        if (preBestBlock == null || bestBlockOfHeight == null ) {
+        if (preBestBlock == null || bestBlockOfHeight == null) {
             //todo business error ,failure bypass
-            LOGGER.error("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}",bestBlock.getHash(),bestBlock.getHeight(),bestBlock.getPrevBlockHash());
+            LOGGER.error("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
             return null;
         }
-        if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())){
-            LOGGER.error("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}",preBestBlock.getHash(),bestBlockOfHeight.getHash(),preBestBlock.getHeight());
+        if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
+            LOGGER.error("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
             return null;
         }
 
@@ -329,7 +329,7 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         if (preHeightNum-- > 1) {
             return recursePreBlock(preBlock.getPrevBlockHash(), preHeightNum);
         }
-        LOGGER.info("found tobeBest block:{} height:{} ",preBlock.getHash(),preBlock.getHeight());
+        LOGGER.info("found tobeBest block:{} height:{} ", preBlock.getHash(), preBlock.getHeight());
         return preBlock;
     }
 
