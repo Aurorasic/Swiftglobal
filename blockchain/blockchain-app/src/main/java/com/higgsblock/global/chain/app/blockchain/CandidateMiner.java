@@ -32,7 +32,7 @@ public class CandidateMiner {
     Block block;
     //public volatile static boolean blockStatus = false;
     public static volatile boolean isCMINER = false;
-    public static final long WAIT_MINER_TIME = 600;
+    public static final long WAIT_MINER_TIME = 180;
 
     @Autowired
     private BlockService blockService;
@@ -64,7 +64,6 @@ public class CandidateMiner {
         LOGGER.info("isCMINER =" + CandidateMiner.isCMINER);
         if (isCMINER) {
             currHeight = blockService.getMaxHeight();
-            preHeight = currHeight;
             this.block = null;
         }
     }
