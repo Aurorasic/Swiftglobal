@@ -147,6 +147,9 @@ public class WitnessService {
     }
 
     private void voteFirstVote(Block block) {
+        if (this.height != block.getHeight()) {
+            return;
+        }
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
         LOGGER.info("start vaild source block,height {}, {}", blockHeight, blockHash);
@@ -171,7 +174,7 @@ public class WitnessService {
             LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
             return;
         }
-        LOGGER.info("start vaild source block,height {}, {}", blockHeight, blockHash);
+        LOGGER.info("start vote first vote,height {}, {}", blockHeight, blockHash);
         Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             voteMap = null == voteMap ? new HashMap<>() : voteMap;
