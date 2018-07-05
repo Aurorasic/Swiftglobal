@@ -144,7 +144,6 @@ public class WitnessService {
                 LOGGER.info("verify witness timer block is accept {} ", isWitnessTimer);
                 return;
             }
-            return;
         }
         boolean valid = blockService.validBlockFromProducer(block);
         if (!valid) {
