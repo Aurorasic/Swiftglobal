@@ -58,7 +58,7 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
-        if (height == blockService.getMaxHeight() + 1L || height == blockService.getMaxHeight()) {
+        if (height <= blockService.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
                         GetBlock getBlock = new GetBlock(height, hash);
                         messageCenter.unicast(sourceId, getBlock);
