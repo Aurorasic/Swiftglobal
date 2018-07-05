@@ -74,7 +74,7 @@ public class WitnessService {
         if (height == this.height) {
             Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
             if (voteTableInCache != null) {
-                voteCache.invalidate(height);
+//                voteCache.invalidate(height);
                 voteTableInCache.values().forEach(list -> {
                     if (null != list) {
                         list.forEach(table -> dealVoteTable(null, this.height, table));
