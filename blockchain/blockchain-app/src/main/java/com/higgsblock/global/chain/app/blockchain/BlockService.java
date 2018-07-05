@@ -366,7 +366,7 @@ public class BlockService {
             utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
             return newBestBlock;
         } catch (Exception e) {
-            LOGGER.error("Save block and block index failed, height={}_hash={}", block.getHeight(), block.getHash());
+            LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
             throw new IllegalStateException("Save block completely failed");
         }
     }
