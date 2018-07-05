@@ -81,7 +81,7 @@ public class TransDaoService implements ITransService {
 
                     TransactionIndex txIndex = getTransactionIndex(spentTxHash);
                     if (txIndex == null) {
-                        throw new IllegalStateException("Spent tx not exits: " + spentTxHash);
+                        throw new IllegalStateException("Spent tx not exits: " + spentTxHash + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     //update the pre-transaction state
                     SpentTransactionOutIndexEntity spentTxOutIndexEntity = new SpentTransactionOutIndexEntity();
@@ -92,7 +92,7 @@ public class TransDaoService implements ITransService {
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
-                        throw new IllegalStateException("UTXO not exists : " + utxoKey);
+                        throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     utxoEntityDao.delete(spentTxHash, spentTxOutIndex);
                 }

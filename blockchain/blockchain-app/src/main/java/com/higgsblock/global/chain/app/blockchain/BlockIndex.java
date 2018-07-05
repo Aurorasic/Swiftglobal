@@ -64,6 +64,13 @@ public class BlockIndex extends BaseSerializer {
         }
     }
 
+    public boolean containsBlockHash(String blockHash) {
+        if (CollectionUtils.isEmpty(blockHashs)) {
+            return blockHashs.contains(blockHash);
+        }
+        return false;
+    }
+
     public boolean isBest(String blockHash) {
         if (StringUtils.isEmpty(blockHash)) {
             return false;

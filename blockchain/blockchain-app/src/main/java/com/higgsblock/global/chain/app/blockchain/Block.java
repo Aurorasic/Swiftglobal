@@ -319,4 +319,11 @@ public class Block extends BaseBizEntity {
         return Objects.hashCode(getHash());
     }
 
+    public String getSimpleInfo() {
+        return "height=" + height + "_" + getHash();
+    }
+
+    public String getSimpleInfoSuffix() {
+        return "for height=" + height + "_" + getHash();
+    }
 }
