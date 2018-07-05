@@ -71,20 +71,21 @@ public class WitnessService {
         if (height < this.height) {
             return;
         }
-        if (height == this.height) {
-            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
-            if (voteTableInCache != null) {
-                voteTableInCache.values().forEach(list -> {
-                    if (null != list) {
-                        list.forEach(table -> dealVoteTable(null, this.height, table));
-                    }
-                });
-            }
-            return;
-        }
+
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
+            if (height == this.height) {
+                Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
+                if (voteTableInCache != null) {
+                    voteTableInCache.values().forEach(list -> {
+                        if (null != list) {
+                            list.forEach(table -> dealVoteTable(null, this.height, table));
+                        }
+                    });
+                }
+                return;
+            }
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
             this.voteTable = HashBasedTable.create(6, 11);
