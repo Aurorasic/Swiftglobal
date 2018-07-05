@@ -16,7 +16,7 @@ public class ConnectionQuery {
     private final static int MAX_NUMBER = 5;
 
     public static void main(String[] args) throws Exception {
-        String ip = "192.168.10.175";
+        String ip = "192.168.1.168";
         int port = 8081;
         for (int i = 0; i < MAX_NUMBER; i++) {
             IConnectionApi api = HttpClient.getApi(ip, port, IConnectionApi.class);
