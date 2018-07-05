@@ -8,7 +8,6 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -34,11 +33,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class NodeManager implements InitializingBean {
 
-    public static final int NODE_SIZE = 10;
+    public static final int NODE_SIZE = 6;
     public static final int MAX_SIZE = 30;
-    //    public static final int BATCH_BLOCK_NUM = 5;
+    public static final int CONFIRM_BEST_BLOCK_MIN_NUM = 3;
+    public static final int DPOS_BLOCKS_PER_ROUND = 5;
     public static final long DPOS_START_HEIGHT = 2L;
-    public static final long FIRST_HEIGHT_CAL_HEIGHT = 4L;
     private final int maxScore = 1000;
     private final int midScore = 800;
     private final int mixScore = 600;
@@ -46,10 +45,6 @@ public class NodeManager implements InitializingBean {
     private BlockService blockService;
     @Autowired
     private IScoreService scoreDaoService;
-    @Autowired
-    private AppConfig config;
-
-    private int dposBlocksPerRound;
 
     @Autowired
     private DposService dposService;
@@ -69,7 +64,7 @@ public class NodeManager implements InitializingBean {
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
 
-        boolean isFirstOfRound = getBatchStartHeight(getSn(toBeBestBlock.getHeight())) == toBeBestBlock.getHeight();
+        boolean isFirstOfRound = getBatchStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
 
         //select the next dpos nodes when toBeBestBlock height is first of round
         if (!isFirstOfRound) {
@@ -156,7 +151,6 @@ public class NodeManager implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         function = (sn) -> dposService.get(sn);
-        dposBlocksPerRound = config.getDposBlocksPerRound();
     }
 
     public List<String> getDposGroupBySn(long sn) {
@@ -201,14 +195,14 @@ public class NodeManager implements InitializingBean {
         if (height <= 1) {
             return 1;
         }
-        return (getSn(height) - 2) * dposBlocksPerRound + 2L;
+        return (getSn(height) - 2) * DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
     public long getEndHeightBySn(long sn) {
         if (sn < 1) {
             throw new IllegalArgumentException("get end height by sn error:" + sn);
         }
-        return (sn - 1) * dposBlocksPerRound + 1;
+        return (sn - 1) * DPOS_BLOCKS_PER_ROUND + 1;
     }
 
     public boolean canPackBlock(long height, String address) {
@@ -235,7 +229,7 @@ public class NodeManager implements InitializingBean {
         if (height == 1L) {
             return 1L;
         }
-        return (height - DPOS_START_HEIGHT) / dposBlocksPerRound + 2L;
+        return (height - DPOS_START_HEIGHT) / DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
     public boolean isGroupSeleted(long sn) {
@@ -243,7 +237,7 @@ public class NodeManager implements InitializingBean {
     }
 
     public boolean isEndHeight(long height) {
-        return height % dposBlocksPerRound == 1;
+        return height % DPOS_BLOCKS_PER_ROUND == 1;
     }
 
 }

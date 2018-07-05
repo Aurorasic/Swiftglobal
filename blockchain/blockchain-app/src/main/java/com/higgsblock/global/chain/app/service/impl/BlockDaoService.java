@@ -1,11 +1,10 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
-import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
@@ -15,7 +14,6 @@ import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +28,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockDaoService implements IBlockService, InitializingBean {
+public class BlockDaoService implements IBlockService {
 
     @Autowired
     private BlockEntityDao blockDao;
@@ -55,18 +53,9 @@ public class BlockDaoService implements IBlockService, InitializingBean {
 
     @Autowired
     private BlockFormatter blockFormatter;
-    @Autowired
-    private AppConfig config;
 
-    private int confirmPreHeightNum;
 
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
-
-
-    @Override
-    public void afterPropertiesSet() {
-        confirmPreHeightNum = config.getBestchainConfirmNum();
-    }
 
     @Override
     public boolean isExistInDB(long height, String blockHash) {
@@ -278,10 +267,10 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         if (block.isGenesisBlock()) {
             return null;
         }
-        if (block.getHeight() - confirmPreHeightNum < MAIN_CHAIN_START_HEIGHT) {
+        if (block.getHeight() - NodeManager.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
             return null;
         }
-        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), confirmPreHeightNum);
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeManager.CONFIRM_BEST_BLOCK_MIN_NUM);
         if (bestBlock == null) {
             LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
             return null;
@@ -318,10 +307,6 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         }
         LOGGER.info("found tobeBest block:{} height:{} ", preBlock.getHash(), preBlock.getHeight());
         return preBlock;
-    }
-
-    public int getConfirmPreHeightNum() {
-        return confirmPreHeightNum;
     }
 
 }
