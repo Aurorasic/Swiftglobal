@@ -68,11 +68,19 @@ public class NodeManager implements InitializingBean {
     }
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
-        boolean isEndHeight = isEndHeight(toBeBestBlock.getHeight());
-        //select the next dpos nodes when toBeBestBlock height is end
+
+        boolean isSecondBlock = toBeBestBlock.getHeight() == 2;
+        boolean isEndHeight = isEndHeight(toBeBestBlock.getHeight()) || isSecondBlock;
         if (!isEndHeight) {
             return null;
         }
+
+        String seedHash = toBeBestBlock.getHash();
+        if (isSecondBlock){
+            seedHash = blockService.getBestBlockByHeight(1).getHash();
+        }
+        //select the next dpos nodes when toBeBestBlock height is end
+
         LOGGER.info("toBeBestBlcok:{} is the end of pre round,select next dpos nodes",toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
         boolean selectedNextGroup = isGroupSeleted(sn + 1L);
@@ -86,7 +94,6 @@ public class NodeManager implements InitializingBean {
         if (dposMinerSoreMap.size() < NODE_SIZE) {
             return null;
         }
-
         final String hash = toBeBestBlock.getHash();
         LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
