@@ -12,8 +12,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-
 /**
  * @author yuanjiantao
  * @date 7/2/2018
@@ -37,7 +35,7 @@ public class SourceBlockReqHandler extends BaseEntityHandler<SourceBlockReq> {
         }
         LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
         data.getBlockHashs().forEach(hash -> {
-            Block block = witnessService.getBlockCache().get(witnessService.getHeight(), k -> new HashMap<>()).get(hash);
+            Block block = witnessService.getBlockMap().get(witnessService.getHeight()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new SourceBlock(block));
             }
