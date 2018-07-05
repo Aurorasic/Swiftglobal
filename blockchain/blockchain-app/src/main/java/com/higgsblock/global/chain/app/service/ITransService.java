@@ -37,7 +37,7 @@ public interface ITransService {
      * @param utxoKey the utxo key
      * @return the utxo
      */
-    UTXO getUTXO(String utxoKey);
+    UTXO getUTXOOnBestChain(String utxoKey);
 
     /**
      * Query the all UTXOS according the address

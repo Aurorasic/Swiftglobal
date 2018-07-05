@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,83 +14,88 @@ import java.util.concurrent.TimeUnit;
  * @create: 2018-07-02 12:53
  **/
 @Slf4j
-public class Timer2 {
-    private static long preHeight =0;
+public class CandidateMinerTest {
+    private static long preHeight = 0;
     private static long currHeight = 0;
     private long curSec;
     private ExecutorService executorService;
-    private volatile boolean isRunning ;
+    private volatile boolean isRunning;
     static Block block;
     public volatile static boolean blockStatus = false;
-    public volatile boolean isCMINER =true;
+    public volatile boolean isCMINER = true;
 
     public void queryCurrHeight() throws InterruptedException {
         //是否是候补矿工
-        if(isCMINER){
-            currHeight =this.currHeight;
+        if (isCMINER) {
+            currHeight = this.currHeight;
             startTimer();
         }
     }
-    public void doMingTimer(){
-        if(isCMINER){
-            currHeight=currHeight;//blockService.getBestMaxHeight();
+
+    public void doMingTimer() {
+        if (isCMINER) {
+            currHeight = currHeight;//blockService.getBestMaxHeight();
             blockStatus = false;
         }
     }
 
-    public void instantiationBlock(){
-        if(isCMINER) {
-            CandidateMiner.blockStatus = true;
+    public void instantiationBlock() {
+        if (isCMINER) {
+            blockStatus = true;
             currHeight = currHeight;//blockService.getBestMaxHeight();
+
         }
     }
+
     public void startTimer() throws InterruptedException {
-        if (executorService == null){
+        if (executorService == null) {
             this.start(ExecutorServices.newSingleThreadExecutor(getClass().getName(), 1));
         }
     }
-    public static void doMing(){
+
+    public static void doMing() {
         System.out.println("打了一个区块了");
         Block block = new Block();
-        block.setHeight(currHeight+1);
-        System.out.println("打出区块的高度"+block.getHeight());
-        Timer2.block =block;
+        block.setHeight(currHeight + 1);
+        System.out.println("打出区块的高度" + block.getHeight());
+        CandidateMinerTest.block = block;
     }
 
-    public static void sendBlock(){
+    public static void sendBlock() {
 
         System.out.println("再发送区块给见证这");
 
-        currHeight =block.getHeight();
+        currHeight = block.getHeight();
     }
 
     public final synchronized void start(ExecutorService executorService) {
-        if (!isRunning){
+        if (!isRunning) {
             this.executorService = executorService;
             this.executorService.execute(() -> {
-                while(isRunning){
+                while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec ="+curSec);
+                        LOGGER.info("curSec =" + curSec);
                         TimeUnit.SECONDS.sleep(1);
-                        if (preHeight >= currHeight){
-                            if (curSec >50){
+                        if (preHeight >= currHeight) {
+                            if (curSec > 50) {
                                 //判断是否已经打出区块，如果已经打出，再发送给见证
-                                if (block != null){
+                                if (block != null) {
                                     sendBlock();
                                     TimeUnit.SECONDS.sleep(10);
-                                }else{
+                                } else {
                                     doMing();
                                     //TimeUnit.SECONDS.sleep(10);
                                 }
                             }
                         }
-                        LOGGER.info("preHeight ="+preHeight+"currHeight"+currHeight);
-                        if (preHeight < currHeight){
+                        LOGGER.info("preHeight =" + preHeight + "currHeight" + currHeight);
+                        LOGGER.info("=====blockStatus = " + blockStatus);
+                        if (preHeight < currHeight && blockStatus) {
                             this.preHeight = currHeight;
-                            this.curSec =0;
+                            this.curSec = 0;
                             this.block = null;
-                            blockStatus =false;
+                            blockStatus = false;
                         }
                     } catch (InterruptedException e) {
                         LOGGER.error("startCountTime InterruptedException", e);
@@ -103,20 +107,20 @@ public class Timer2 {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Timer2 s = new Timer2();
+        CandidateMinerTest s = new CandidateMinerTest();
         //矿机启动
-        s.currHeight =100;
+        s.currHeight = 100;
         s.queryCurrHeight();
 
         TimeUnit.SECONDS.sleep(40);
 
+//
+//        Timer2 s1 = new Timer2();
+//        s1.doMingTimer();
 
-        Timer2 s1 = new Timer2();
-        s1.doMingTimer();
 
-
-        TimeUnit.SECONDS.sleep(40);
-        Timer2 s2 = new Timer2();
+        CandidateMinerTest s2 = new CandidateMinerTest();
+        currHeight = 101;
         s2.instantiationBlock();
 //
 //        Timer2.blockStatus =true;

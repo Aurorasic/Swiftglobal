@@ -91,7 +91,7 @@ public class TransDaoService implements ITransService {
                     spentTransactionOutIndexEntityDao.add(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
-                    if (getUTXO(utxoKey) == null) {
+                    if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey);
                     }
                     utxoEntityDao.delete(spentTxHash, spentTxOutIndex);
@@ -213,7 +213,7 @@ public class TransDaoService implements ITransService {
     }
 
     @Override
-    public UTXO getUTXO(String utxoKey) {
+    public UTXO getUTXOOnBestChain(String utxoKey) {
         String[] keys = utxoKey.split("_");
         UTXOEntity entity = utxoEntityDao.getByField(keys[0], Short.valueOf(keys[1]));
 

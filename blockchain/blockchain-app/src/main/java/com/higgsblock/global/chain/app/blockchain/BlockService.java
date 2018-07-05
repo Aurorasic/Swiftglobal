@@ -363,7 +363,6 @@ public class BlockService {
     private Block saveBlockCompletely(Block block) {
         try {
             Block newBestBlock = blockDaoService.saveBlockCompletely(block);
-            utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
             return newBestBlock;
         } catch (Exception e) {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);

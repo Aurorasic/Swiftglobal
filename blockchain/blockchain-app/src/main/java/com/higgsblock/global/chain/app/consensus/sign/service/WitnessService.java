@@ -41,7 +41,6 @@ public class WitnessService {
     @Autowired
     private EventBus eventBus;
 
-
     @Autowired
     private MessageCenter messageCenter;
 
@@ -461,6 +460,7 @@ public class WitnessService {
                 blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
+                messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
                 this.messageCenter.broadcast(blockWithEnoughSign);
                 return true;
             }
