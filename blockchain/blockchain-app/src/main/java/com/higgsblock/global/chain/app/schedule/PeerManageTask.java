@@ -1,12 +1,14 @@
 package com.higgsblock.global.chain.app.schedule;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.connection.ConnectionManager;
+import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
-import com.higgsblock.global.chain.network.api.IRegistryApi;
 import com.higgsblock.global.chain.network.config.PeerConstant;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
-import com.higgsblock.global.chain.network.socket.message.GetPeersMessage;
+import com.higgsblock.global.chain.network.socket.message.PeersMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,9 +37,14 @@ public class PeerManageTask extends BaseTask {
             peerManager.getSeedPeers();
         }
 
+        List<Peer> peers = peerManager.shuffle(10);
+        if (CollectionUtils.isEmpty(peers)) {
+            return;
+        }
+        PeersMessage peersMessage = new PeersMessage(Lists.newLinkedList(peers));
         List<Connection> connections = connectionManager.getActivatedConnections();
         for (Connection connection : connections) {
-            connection.sendMessage(new GetPeersMessage());
+            connection.sendMessage(peersMessage);
         }
     }
 
