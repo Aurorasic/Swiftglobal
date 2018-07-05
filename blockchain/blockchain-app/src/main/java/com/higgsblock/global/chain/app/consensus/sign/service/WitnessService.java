@@ -71,20 +71,21 @@ public class WitnessService {
         if (height < this.height) {
             return;
         }
-        if (height == this.height) {
-            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
-            if (voteTableInCache != null) {
-                voteTableInCache.values().forEach(list -> {
-                    if (null != list) {
-                        list.forEach(table -> dealVoteTable(null, this.height, table));
-                    }
-                });
-            }
-            return;
-        }
+
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
+            if (height == this.height) {
+                Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
+                if (voteTableInCache != null) {
+                    voteTableInCache.values().forEach(list -> {
+                        if (null != list) {
+                            list.forEach(table -> dealVoteTable(null, this.height, table));
+                        }
+                    });
+                }
+                return;
+            }
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
             this.voteTable = HashBasedTable.create(6, 11);
@@ -146,18 +147,17 @@ public class WitnessService {
     }
 
     private void voteFirstVote(Block block) {
+        if (this.height != block.getHeight()) {
+            return;
+        }
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
+        LOGGER.info("start vaild source block,height {}, {}", blockHeight, blockHash);
         if (!block.valid()) {
             LOGGER.info("this block is not valid,height {}, {}", blockHeight, blockHash);
             return;
         }
         this.blockMap.compute(block.getHeight(), (k, v) -> null == v ? new HashMap<>() : v);
-        if (blockMap.get(height).containsKey(blockHash)) {
-            LOGGER.info("this block is exist in blockMap,height{},{}", blockHeight, blockHash);
-            return;
-        }
-
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
@@ -174,6 +174,7 @@ public class WitnessService {
             LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
             return;
         }
+        LOGGER.info("start vote first vote,height {}, {}", blockHeight, blockHash);
         Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             voteMap = null == voteMap ? new HashMap<>() : voteMap;
