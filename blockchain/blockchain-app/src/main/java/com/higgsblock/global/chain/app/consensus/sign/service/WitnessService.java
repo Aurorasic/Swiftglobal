@@ -138,37 +138,38 @@ public class WitnessService {
     }
 
     private void initVote(Block block) {
-        String blockHash = block.getHash();
-        if (this.height == block.getHeight()) {
-            Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
-            if (voteMap != null && voteMap.size() > 0) {
-                LOGGER.info("the vote of version one is exist {},{}", this.height, blockHash);
-                Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> map = voteCache.get(height, k -> null);
-                if (null != map && map.containsKey(blockHash)) {
-                    List<HashBasedTable<Integer, String, Map<String, Vote>>> list = map.get(blockHash);
-                    map.remove(blockHash);
-                    list.forEach(table -> dealVoteTable(null, height, table));
-                    voteCache.put(height, map);
-                }
-                return;
-            }
-            if (voteMap == null) {
-                voteMap = new HashMap<>();
-            }
-            LOGGER.info("add source block from miner and vote {},{}", this.height, blockHash);
-            String bestBlockHash = block.getHash();
-            int voteVersion = 1;
-            String proofPubKey = null;
-            String proofBlockHash = null;
-            int proofVersion = 0;
-            Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
-            voteMap.put(bestBlockHash, vote);
-            this.voteTable.put(1, keyPair.getPubKey(), voteMap);
-            Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteTable.rowMap();
-            VoteTable voteTable = new VoteTable(integerMapMap);
-            this.messageCenter.dispatchToWitnesses(voteTable);
-            LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
+        if (this.height != block.getHeight()) {
+            return;
         }
+        String blockHash = block.getHash();
+        Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
+        if (voteMap != null && voteMap.size() > 0) {
+            LOGGER.info("the vote of version one is exist {},{}", this.height, blockHash);
+            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> map = voteCache.get(height, k -> null);
+            if (null != map && map.containsKey(blockHash)) {
+                List<HashBasedTable<Integer, String, Map<String, Vote>>> list = map.get(blockHash);
+                map.remove(blockHash);
+                list.forEach(table -> dealVoteTable(null, height, table));
+                voteCache.put(height, map);
+            }
+            return;
+        }
+        if (voteMap == null) {
+            voteMap = new HashMap<>();
+        }
+        LOGGER.info("add source block from miner and vote {},{}", this.height, blockHash);
+        String bestBlockHash = block.getHash();
+        int voteVersion = 1;
+        String proofPubKey = null;
+        String proofBlockHash = null;
+        int proofVersion = 0;
+        Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
+        voteMap.put(bestBlockHash, vote);
+        this.voteTable.put(1, keyPair.getPubKey(), voteMap);
+        Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteTable.rowMap();
+        VoteTable voteTable = new VoteTable(integerMapMap);
+        this.messageCenter.dispatchToWitnesses(voteTable);
+        LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
 
     }
 
