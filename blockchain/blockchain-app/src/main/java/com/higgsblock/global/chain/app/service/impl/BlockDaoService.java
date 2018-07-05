@@ -326,9 +326,10 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             LOGGER.info("block[blockhash:{},height:{}]has be confirmed on best chain,skip this", preBlock.getHash(), preBlock.getHeight());
             return null;
         }
-        if (preHeightNum-- > 0) {
+        if (preHeightNum-- > 1) {
             return recursePreBlock(preBlock.getPrevBlockHash(), preHeightNum);
         }
+        LOGGER.info("found tobeBest block:{} height:{} ",preBlock.getHash(),preBlock.getHeight());
         return preBlock;
     }
 
