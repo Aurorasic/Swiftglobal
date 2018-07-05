@@ -76,12 +76,12 @@ public class NodeManager implements InitializingBean {
         }
 
         String seedHash = toBeBestBlock.getHash();
-        if (isSecondBlock){
+        if (isSecondBlock) {
             seedHash = blockService.getBestBlockByHeight(1).getHash();
         }
         //select the next dpos nodes when toBeBestBlock height is end
 
-        LOGGER.info("toBeBestBlcok:{} is the end of pre round,select next dpos nodes",toBeBestBlock.getSimpleInfo());
+        LOGGER.info("toBeBestBlcok:{} is the end of pre round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
         boolean selectedNextGroup = isGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
@@ -248,7 +248,7 @@ public class NodeManager implements InitializingBean {
         return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
     }
 
-    public boolean isEndHeight(long height){
+    public boolean isEndHeight(long height) {
         return height % dposBlocksPerRound == 1;
     }
 
