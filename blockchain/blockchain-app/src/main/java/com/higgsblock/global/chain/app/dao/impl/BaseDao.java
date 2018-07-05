@@ -67,9 +67,9 @@ public abstract class BaseDao<T> {
         try {
             return template.query(sql, paramMap, new BeanPropertyRowMapper<>(getT()));
         } catch (RuntimeException e) {
-            LOGGER.error("An error occurred querying the corresponding record according to the specified field={}", e.getMessage());
-            return null;
+            LOGGER.error(e.getMessage(), e);
         }
+        return null;
     }
 
     /**
@@ -95,9 +95,9 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, new BeanPropertySqlParameterSource(t), new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
-            LOGGER.error("get data by field error = {}", e.getMessage());
-            return null;
+            LOGGER.error(e.getMessage(), e);
         }
+        return null;
     }
 
     /**
@@ -112,9 +112,9 @@ public abstract class BaseDao<T> {
             T t1 = (T) template.queryForObject(sql, paramMap, new BeanPropertyRowMapper<>(getT()));
             return t1;
         } catch (RuntimeException e) {
-            LOGGER.error("get data by field error = {}", e.getMessage());
-            return null;
+            LOGGER.error(e.getMessage(), e);
         }
+        return null;
     }
 
     /**
