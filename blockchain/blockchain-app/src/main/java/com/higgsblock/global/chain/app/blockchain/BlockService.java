@@ -588,22 +588,22 @@ public class BlockService {
         }
 
         if (!verifySize(block)) {
-            LOGGER.error("Size of the block is illegal.");
+            LOGGER.info("Size of the block is illegal.height={}, hash={}", block.getHeight(), block.getHash());
             return false;
         }
 
         if (!block.isGenesisBlock() && !verifyTransactionNumber(block)) {
-            LOGGER.error("Number of transaction in the block is illegal.");
+            LOGGER.info("Number of transaction in the block is illegal. height={}, hash={}", block.getHeight(), block.getHash());
             return false;
         }
 
         if (isExistInDB(block.getHeight(), blockHash)) {
-            LOGGER.error("The block is exist in db");
+            LOGGER.info("The block is exist in db, height={}, hash={}", block.getHeight(), block.getHash());
             return false;
         }
 
         if (!validProducerSignature(block)) {
-            LOGGER.error("Validate signatures from producer failed");
+            LOGGER.info("Validate signatures from producer failed, height={}, hash={}", block.getHeight(), block.getHash());
             return false;
         }
 
