@@ -319,10 +319,12 @@ public class Block extends BaseBizEntity {
         return Objects.hashCode(getHash());
     }
 
+    @JSONField(serialize = false)
     public String getSimpleInfo() {
         return "height=" + height + "_" + getHash();
     }
 
+    @JSONField(serialize = false)
     public String getSimpleInfoSuffix() {
         return "for height=" + height + "_" + getHash();
     }
