@@ -46,7 +46,7 @@ public class WitnessService {
 
     public static final int MAX_SIZE = 5;
 
-    private static final int MIN_VOTE = 8;
+    private static final int MIN_VOTE = 7;
 
     private static final int MIN_SAME_SIGN = 7;
 
