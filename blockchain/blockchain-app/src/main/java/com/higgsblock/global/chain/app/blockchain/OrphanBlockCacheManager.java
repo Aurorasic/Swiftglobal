@@ -21,7 +21,7 @@ import java.util.*;
 @Service
 @Data
 @Slf4j
-public class BlockCacheManager {
+public class OrphanBlockCacheManager {
     private static final int MAX_CACHE_SIZE = 50;
 
     private final Map<String, BlockFullInfo> orphanBlockMap;
@@ -33,7 +33,7 @@ public class BlockCacheManager {
     @Autowired
     private EventBus eventBus;
 
-    public BlockCacheManager() {
+    public OrphanBlockCacheManager() {
         Comparator<BlockFullInfo> comparator = new ResultsComparator();
         orphanBlockMap = new ValueSortedMap(comparator);
 

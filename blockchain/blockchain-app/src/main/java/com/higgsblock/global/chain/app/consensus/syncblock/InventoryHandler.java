@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.consensus.syncblock;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -34,7 +34,7 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
     private BlockService blockService;
 
     @Autowired
-    private BlockCacheManager blockCacheManager;
+    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
     private MessageCenter messageCenter;

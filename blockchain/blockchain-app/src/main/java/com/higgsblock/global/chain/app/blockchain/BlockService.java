@@ -64,7 +64,7 @@ public class BlockService {
     private TransactionCacheManager txCacheManager;
 
     @Autowired
-    private BlockCacheManager blockCacheManager;
+    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
     private KeyPair peerKeyPair;
@@ -336,6 +336,9 @@ public class BlockService {
         //add unconfirmed utxos and remove confirmed height blocks in cache
         utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
 
+        //refresh cache
+        blockDaoService.refreshCache(block.getHash(), block);
+
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock);
 
@@ -351,7 +354,7 @@ public class BlockService {
 
         if (!isGenesisBlock && !preIsExistInDB(block)) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
-            blockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+            orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
 
             LOGGER.warn("Cannot get pre best block, height={} hash={}", height, block.getHash());
             return true;
@@ -671,7 +674,7 @@ public class BlockService {
         Block block = blockFullInfo.getBlock();
         long height = block.getHeight();
         String blockHash = block.getHash();
-        List<BlockFullInfo> nextConnectionBlocks = blockCacheManager.getNextConnectionBlocks(block.getHash());
+        List<BlockFullInfo> nextConnectionBlocks = orphanBlockCacheManager.getNextConnectionBlocks(block.getHash());
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
                 Block nextBlock = nextBlockFullInfo.getBlock();
@@ -683,7 +686,7 @@ public class BlockService {
                         height, blockHash, nextHeight, nextBlockHash);
                 if (!validBlock(nextBlock)) {
                     LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
-                    blockCacheManager.remove(nextBlock.getHash());
+                    orphanBlockCacheManager.remove(nextBlock.getHash());
                     continue;
                 }
                 persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);

@@ -466,8 +466,8 @@ public class WitnessService {
 
     private boolean collectionVoteSign(int version, long voteHeight) {
         Map<String, Map<String, Vote>> rowVersion = this.voteTable.row(version);
-        if (rowVersion.size() < MIN_VOTE) {
-            LOGGER.info("there haven't enough vote to check sign {},current the number of vote is {}", this.height, rowVersion.size());
+        if (rowVersion == null || rowVersion.size() == 0) {
+            LOGGER.info("there haven't enough vote to check sign {},{},current the number of vote is {}", this.height, version, rowVersion.size());
             return false;
         }
         //row is blockHash,column is pubKey and value is sign
@@ -492,8 +492,14 @@ public class WitnessService {
                 bestBlockHash = voteBlockHash;
                 LOGGER.info("height {},version {},the version is {},set the bestBlockHash to {}", voteHeight, version, bestBlockHash);
             } else {
-                bestBlockHash = bestBlockHash.compareTo(voteBlockHash) < 0 ? voteBlockHash : bestBlockHash;
-                LOGGER.info("height {},version {},change the bestBlockHash to {}", voteHeight, version, bestBlockHash);
+                if (bestBlockHash.compareTo(voteBlockHash) < 0) {
+                    bestBlockHash = voteBlockHash;
+                    LOGGER.info("height {},version {},change the bestBlockHash to {}", voteHeight, version, bestBlockHash);
+                } else if (bestBlockHash.compareTo(voteBlockHash) == 0) {
+                    LOGGER.info("height {},version {},the voteBlockHash is equals the bestBlockHash {}", voteHeight, version, bestBlockHash);
+                } else {
+                    LOGGER.info("height {},version {},the bestBlockHash do'nt change {},{}", voteHeight, version, bestBlockHash, voteBlockHash);
+                }
             }
             VoteSignTable.put(voteBlockHash, votePubKey, voteSign);
             Map<String, String> voteRow = VoteSignTable.row(voteBlockHash);
@@ -519,17 +525,26 @@ public class WitnessService {
         }
         LOGGER.info("height {},version {},there haven't enough sign, bestBlockHash is {}", voteHeight, version, bestBlockHash);
         String proofBlockHash = bestBlockHash;
+        if (StringUtils.isBlank(bestBlockHash)) {
+            LOGGER.info("height {},version {},the bestBlockHash is blank{}", voteHeight, version);
+            return false;
+        }
         String proofPubKey = VoteSignTable.row(bestBlockHash).keySet().iterator().next();
         Map<String, Vote> voteMap = this.voteTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version;
             Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, keyPair.getPubKey());
             String preBlockHash = preVoteMap.keySet().iterator().next();
+            bestBlockHash = bestBlockHash.compareTo(preBlockHash) < 0 ? preBlockHash : bestBlockHash;
             Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion, preBlockHash);
             LOGGER.info("height {},version {},vote the current version {}", voteHeight, version, vote);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
             this.voteTable.put(version, keyPair.getPubKey(), voteMap);
+            return false;
+        }
+        if (rowVersion.size() < MIN_VOTE) {
+            LOGGER.info("there haven't enough vote to check sign {},{},current the number of vote is {}", this.height, version, rowVersion.size());
             return false;
         }
         String currentVersionVoteBlockHash = voteMap.keySet().iterator().next();

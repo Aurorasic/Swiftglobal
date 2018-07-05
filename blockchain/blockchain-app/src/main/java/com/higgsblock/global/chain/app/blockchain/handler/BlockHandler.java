@@ -2,13 +2,11 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
-import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.List;
 
 /**
  * @author baizhengwen
@@ -30,7 +27,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     private BlockService blockService;
 
     @Autowired
-    private BlockCacheManager blockCacheManager;
+    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -53,7 +50,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         String hash = data.getHash();
         String sourceId = request.getSourceId();
 
-        if (blockCacheManager.isContains(hash)) {
+        if (orphanBlockCacheManager.isContains(hash)) {
             return;
         }
 
