@@ -150,7 +150,6 @@ public class BlockService {
             throw new IllegalStateException("The best block index can not be null");
         }
 
-
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
 
@@ -193,12 +192,11 @@ public class BlockService {
         block.setHeight(nextBestBlockHeight);
         block.setPubKey(keyPair.getPubKey());
 
-
         //Before collecting signs from witnesses just cache the block firstly.
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
         block.initMinerPkSig(keyPair.getPubKey(), sig);
         blockCache.put(block.getHash(), block);
-
+        LOGGER.info("The block was successfully punched out, block height={}, block hash={}", block.getHeight(), block.getHash());
         return block;
     }
 
