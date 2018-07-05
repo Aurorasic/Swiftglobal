@@ -29,8 +29,6 @@ public class CandidateMiner {
     private long curSec;
     private ExecutorService executorService;
     private volatile boolean isRunning;
-    Block block;
-    //public volatile static boolean blockStatus = false;
     public static volatile boolean isCMINER = false;
     public static final long WAIT_MINER_TIME = 180;
 
@@ -64,7 +62,6 @@ public class CandidateMiner {
         LOGGER.info("isCMINER =" + CandidateMiner.isCMINER);
         if (isCMINER) {
             currHeight = blockService.getMaxHeight();
-            this.block = null;
         }
     }
 
@@ -79,7 +76,7 @@ public class CandidateMiner {
         long expectHeight = bestMaxHeight + 1;
         try {
             LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
-            block = blockService.packageNewBlock();
+            Block block = blockService.packageNewBlock();
             if (block == null) {
                 LOGGER.info("can not produce a new block,height={}", expectHeight);
                 return false;
@@ -96,12 +93,6 @@ public class CandidateMiner {
         return false;
     }
 
-    public void sendBlock() {
-        if (null != block) {
-            sourceBlockService.sendBlockToWitness(block);
-        }
-    }
-
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
@@ -113,20 +104,14 @@ public class CandidateMiner {
                         TimeUnit.SECONDS.sleep(1);
                         if (preHeight >= currHeight) {
                             if (curSec > WAIT_MINER_TIME) {
-                                //Determine whether the block has been hit, and if so, send it to the witness
-                                if (block != null) {
-                                    sendBlock();
-                                    TimeUnit.SECONDS.sleep(50);
-                                } else {
-                                    doMing();
-                                }
+                                doMing();
+                                TimeUnit.SECONDS.sleep(50);
                             }
                         }
                         LOGGER.info("preHeight =" + preHeight + "currHeight" + currHeight);
                         if (preHeight < currHeight) {
                             preHeight = currHeight;
                             this.curSec = 0;
-                            this.block = null;
                         }
 
                     } catch (InterruptedException e) {
