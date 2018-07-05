@@ -94,7 +94,7 @@ public class NodeManager implements InitializingBean {
         if (dposMinerSoreMap.size() < NODE_SIZE) {
             return null;
         }
-        final String hash = toBeBestBlock.getHash();
+        final String hash = seedHash;
         LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
