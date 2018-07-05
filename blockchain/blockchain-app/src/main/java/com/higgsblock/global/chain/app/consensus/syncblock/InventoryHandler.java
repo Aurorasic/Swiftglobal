@@ -66,8 +66,7 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
                     return height;
                 }
                 return null;
-                    })
-            );
+            }));
         } else if (height > blockService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
             String hash = new ArrayList<>(hashs).get(0);
             eventBus.post(new ReceiveOrphanBlockEvent(height, hash, sourceId));
