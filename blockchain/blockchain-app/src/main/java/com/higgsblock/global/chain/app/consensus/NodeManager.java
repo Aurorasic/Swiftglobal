@@ -68,10 +68,12 @@ public class NodeManager implements InitializingBean {
     }
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
-//        boolean isEndHeight = isEndHeight(height);
-//        if (!isEndHeight) {
-//            return null;
-//        }
+        boolean isEndHeight = isEndHeight(toBeBestBlock.getHeight());
+        //select the next dpos nodes when toBeBestBlock height is end
+        if (!isEndHeight) {
+            return null;
+        }
+        LOGGER.info("toBeBestBlcok:{} is the end of pre round,select next dpos nodes",toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
         boolean selectedNextGroup = isGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
@@ -201,6 +203,13 @@ public class NodeManager implements InitializingBean {
         return (getSn(height) - 2) * dposBlocksPerRound + 2L;
     }
 
+    public long getEndHeightBySn(long sn) {
+        if (sn < 1) {
+            throw new IllegalArgumentException("get end height by sn error:" + sn);
+        }
+        return (sn - 1) * dposBlocksPerRound + 1;
+    }
+
     public boolean canPackBlock(long height, String address) {
         long batchStartHeight = getBatchStartHeight(height);
         if (batchStartHeight > height) {
@@ -230,6 +239,10 @@ public class NodeManager implements InitializingBean {
 
     public boolean isGroupSeleted(long sn) {
         return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
+    }
+
+    public boolean isEndHeight(long height){
+        return height % dposBlocksPerRound == 1;
     }
 
 }
