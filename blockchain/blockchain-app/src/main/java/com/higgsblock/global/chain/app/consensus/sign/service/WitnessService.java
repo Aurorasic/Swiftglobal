@@ -438,10 +438,14 @@ public class WitnessService {
             String voteSign = vote.getSignature();
             if (StringUtils.isBlank(bestBlockHash)) {
                 bestBlockHash = voteBlockHash;
-                LOGGER.info("height {},version {},the version is {},set the bestBlockHash to {}", voteHeight, version, bestBlockHash);
+                LOGGER.info("height {},version {} ,set the bestBlockHash to {}", voteHeight, version, bestBlockHash);
             } else {
-                bestBlockHash = bestBlockHash.compareTo(voteBlockHash) < 0 ? voteBlockHash : bestBlockHash;
-                LOGGER.info("height {},version {},change the bestBlockHash to {}", voteHeight, version, bestBlockHash);
+                if (bestBlockHash.compareTo(voteBlockHash) < 0) {
+                    bestBlockHash = voteBlockHash;
+                    LOGGER.info("height {},version {},change the bestBlockHash to {}", voteHeight, version, bestBlockHash);
+                } else {
+                    LOGGER.info("height {},version {},the bestBlockHash do'nt change {},{}", voteHeight, version, bestBlockHash, voteBlockHash);
+                }
             }
             VoteSignTable.put(voteBlockHash, votePubKey, voteSign);
             Map<String, String> voteRow = VoteSignTable.row(voteBlockHash);
