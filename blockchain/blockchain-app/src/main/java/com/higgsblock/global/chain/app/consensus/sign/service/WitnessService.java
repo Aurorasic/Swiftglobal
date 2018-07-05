@@ -74,7 +74,6 @@ public class WitnessService {
         if (height == this.height) {
             Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
             if (voteTableInCache != null) {
-                voteCache.invalidate(height);
                 voteTableInCache.values().forEach(list -> {
                     if (null != list) {
                         list.forEach(table -> dealVoteTable(null, this.height, table));
@@ -92,7 +91,8 @@ public class WitnessService {
             this.blockWithEnoughSign = null;
             this.blockMap.compute(height, (k, v) -> null == v ? new HashMap<>() : v);
             this.blockMap.get(height).values().forEach(this::voteFirstVote);
-            this.blockMap.remove(height - 2);
+            this.blockMap.remove(height - 3);
+            voteCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
         }
     }
@@ -394,7 +394,12 @@ public class WitnessService {
                 });
             });
             if (blockHashs.size() > 0) {
-                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                if (null != sourceId) {
+                    messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                } else {
+                    messageCenter.broadcast(new SourceBlockReq(blockHashs));
+                }
+
                 LOGGER.info("source blocks is not enough,add vote table to cache");
                 return;
             }

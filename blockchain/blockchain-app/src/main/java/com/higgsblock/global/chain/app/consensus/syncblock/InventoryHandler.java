@@ -3,8 +3,8 @@ package com.higgsblock.global.chain.app.consensus.syncblock;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -58,7 +58,7 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
-        if (height == blockService.getMaxHeight() + 1L) {
+        if (height <= blockService.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
                         GetBlock getBlock = new GetBlock(height, hash);
                         messageCenter.unicast(sourceId, getBlock);
