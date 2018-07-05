@@ -72,22 +72,16 @@ public class BlockDaoService implements IBlockService, InitializingBean {
     public boolean isExistInDB(long height, String blockHash) {
 
         BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
-        return null != blockIndex
-                && null != blockIndex.getBestBlockHash()
-                && blockIndex.getBestBlockHash().equals(blockHash);
+        return blockIndex != null && blockIndex.containsBlockHash(blockHash);
 
     }
 
     @Override
     public boolean isExist(Block block) {
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
-        if (null != blockIndex
-                && null != blockIndex.getBestBlockHash()
-                && blockIndex.getBestBlockHash().equals(block.getHash())) {
+        if (blockCacheManager.isContains(block.getHash())) {
             return true;
         }
-
-        if (blockCacheManager.isContains(block.getHash())) {
+        if (isExistInDB(block.getHeight(), block.getHash())) {
             return true;
         }
         return false;
@@ -197,11 +191,7 @@ public class BlockDaoService implements IBlockService, InitializingBean {
             LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
         }
         //step 2 whether this block can be confirmed pre N block
-        if (isFirst) {
-            blockIdxDaoService.addBlockIndex(block, toBeBestBlock);
-        } else {
-            blockIdxDaoService.addBlockIndex(block, null);
-        }
+        blockIdxDaoService.addBlockIndex(block, toBeBestBlock);
 
         if (block.isGenesisBlock()) {
             //step 3
