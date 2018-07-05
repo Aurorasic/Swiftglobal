@@ -9,7 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.LinkedList;
 
 /**
- * Peer message as the response message for {@link GetPeersMessage}.
+ * send peers to other peers
  *
  * @author zhaoxiaogang
  * @date 2018-05-21
