@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
@@ -36,7 +36,7 @@ public class BlockDaoService implements IBlockService, InitializingBean {
     private BlockEntityDao blockDao;
 
     @Autowired
-    private BlockCacheManager blockCacheManager;
+    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
     private BlockIdxDaoService blockIdxDaoService;
@@ -78,7 +78,7 @@ public class BlockDaoService implements IBlockService, InitializingBean {
 
     @Override
     public boolean isExist(Block block) {
-        if (blockCacheManager.isContains(block.getHash())) {
+        if (orphanBlockCacheManager.isContains(block.getHash())) {
             return true;
         }
         if (isExistInDB(block.getHeight(), block.getHash())) {
@@ -172,7 +172,6 @@ public class BlockDaoService implements IBlockService, InitializingBean {
      * 4.save utxo
      * 5.save score
      * 6.save new dpos
-     * 7.refresh cache
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -206,8 +205,6 @@ public class BlockDaoService implements IBlockService, InitializingBean {
                 freshPeerMinerAddr(toBeBestBlock);
             }
         }
-        //step 6
-        refreshCache(block.getHash(), block);
 
         return toBeBestBlock;
     }
@@ -252,8 +249,8 @@ public class BlockDaoService implements IBlockService, InitializingBean {
         return true;
     }
 
-    private void refreshCache(String blockHash, Block block) {
-        blockCacheManager.remove(blockHash);
+    public void refreshCache(String blockHash, Block block) {
+        orphanBlockCacheManager.remove(blockHash);
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
