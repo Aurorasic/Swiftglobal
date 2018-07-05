@@ -35,10 +35,12 @@ public class SourceBlockReqHandler extends BaseEntityHandler<SourceBlockReq> {
         }
         LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
         data.getBlockHashs().forEach(hash -> {
-            Block block = witnessService.getBlockMap().get(hash);
+            Block block = witnessService.getBlockMap().get(witnessService.getHeight()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new SourceBlock(block));
             }
         });
+
+
     }
 }

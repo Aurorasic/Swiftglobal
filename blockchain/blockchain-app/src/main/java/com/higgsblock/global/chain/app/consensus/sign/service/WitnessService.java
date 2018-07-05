@@ -50,7 +50,7 @@ public class WitnessService {
 
     private static final int MIN_SAME_SIGN = 7;
 
-    private Cache<Long, HashBasedTable<Integer, String, Map<String, Vote>>> voteCache = Caffeine.newBuilder()
+    private Cache<Long, Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>>> voteCache = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
 
@@ -60,12 +60,25 @@ public class WitnessService {
     private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
 
     @Getter
-    private Map<String, Block> blockMap;
+    private Map<Long, Map<String, Block>> blockMap = new HashMap<>();
 
     @Autowired
     private BlockService blockService;
 
     private Block blockWithEnoughSign;
+
+    public static void main(String[] args) {
+        Cache<Long, Map<String, List<String>>> cache = Caffeine.newBuilder()
+                .maximumSize(4)
+                .build();
+        Map<String, List<String>> map = new HashMap<>();
+        List<String> list = new ArrayList<>();
+        list.add("1");
+        map.put("map1", list);
+        cache.put(1L, map);
+        cache.get(1L, k -> null).get("map1").add("111");
+        System.out.println(cache.asMap().get(1L).values().size());
+    }
 
     public synchronized void initWitnessTask(long height) {
         if (height <= this.height) {
@@ -78,11 +91,18 @@ public class WitnessService {
             this.height = height;
             this.voteTable = HashBasedTable.create(6, 11);
             this.blockWithEnoughSign = null;
-            this.blockMap = new HashMap<>();
-            HashBasedTable<Integer, String, Map<String, Vote>> voteTableInCache = voteCache.getIfPresent(height);
-            if (voteTableInCache != null) {
-                dealVoteTable(null, this.height, voteTableInCache);
-            }
+            this.blockMap.compute(height, (k, v) -> null == v ? new HashMap<>() : v);
+            this.blockMap.get(height).values().forEach(block -> initVote(block));
+            this.blockMap.remove(height - 2);
+//            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
+//            if (voteTableInCache != null) {
+//                voteCache.invalidate(height);
+//                voteTableInCache.values().forEach(list -> {
+//                    if (null != list) {
+//                        list.forEach(table -> dealVoteTable(null, this.height, table));
+//                    }
+//                });
+//            }
             LOGGER.info("height {},init witness task success", this.height);
         }
     }
@@ -95,14 +115,22 @@ public class WitnessService {
             return;
         }
         String blockHash = block.getHash();
+        long blockHeight = block.getHeight();
         if (!block.valid()) {
-            LOGGER.info("this block is not valid,height {}, {}", block.getHeight(), blockHash);
+            LOGGER.info("this block is not valid,height {}, {}", blockHeight, blockHash);
             return;
         }
-        if (blockMap != null && blockMap.containsKey(block.getHash())) {
-            LOGGER.info("this block is exist in blockMap,height{},{}", block.getHeight(), blockHash);
+        this.blockMap.compute(block.getHeight(), (k, v) -> null == v ? new HashMap<>() : v);
+        if (blockMap.get(height).containsKey(blockHash)) {
+            LOGGER.info("this block is exist in blockMap,height{},{}", blockHeight, blockHash);
             return;
         }
+        initVote(block);
+
+    }
+
+    private void initVote(Block block) {
+        String blockHash = block.getHash();
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
@@ -122,10 +150,20 @@ public class WitnessService {
             if (this.blockMap == null) {
                 this.blockMap = new HashMap<>();
             }
-            this.blockMap.put(block.getHash(), block);
+            this.blockMap.compute(height, (k, v) -> {
+                v.put(block.getHash(), block);
+                return v;
+            });
             Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
             if (voteMap != null && voteMap.size() > 0) {
                 LOGGER.info("the vote of version one is exist {},{}", this.height, blockHash);
+                Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> map = voteCache.get(height, k -> null);
+                if (null != map && map.containsKey(blockHash)) {
+                    List<HashBasedTable<Integer, String, Map<String, Vote>>> list = map.get(blockHash);
+                    map.remove(blockHash);
+                    list.forEach(table -> dealVoteTable(null, height, table));
+                    voteCache.put(height, map);
+                }
                 return;
             }
             if (voteMap == null) {
@@ -144,19 +182,47 @@ public class WitnessService {
             VoteTable voteTable = new VoteTable(integerMapMap);
             this.messageCenter.dispatchToWitnesses(voteTable);
             LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
-            return;
         }
+
     }
 
-    private void updateVoteCache(long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
-        HashBasedTable<Integer, String, Map<String, Vote>> oldCacheVote = voteCache.get(height, k -> voteTable);
-        if (voteTable.rowKeySet().size() < oldCacheVote.rowKeySet().size()) {
-            return;
-        } else if (voteTable.rowKeySet().size() == oldCacheVote.rowKeySet().size()
-                && voteTable.size() < oldCacheVote.size()) {
-            return;
+    private void updateVoteCache(String blockHash, long height, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
+//        if (null == blockHash) {
+//            for (Map<String, Vote> map : voteTable.row(1).values()) {
+//                for (Vote vote : map.values()) {
+//                    if (null != vote && null != vote.getBlockHash()) {
+//                        blockHash = vote.getBlockHash();
+//                        break;
+//                    }
+//                }
+//                if (null != blockHash) {
+//                    break;
+//                }
+//            }
+//            if (null == blockHash) {
+//                return;
+//            }
+//        }
+        if (null != voteCache.getIfPresent(height)) {
+            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> oldCacheVote = voteCache.getIfPresent(height);
+            if (oldCacheVote.containsKey(blockHash)) {
+                List<HashBasedTable<Integer, String, Map<String, Vote>>> list = oldCacheVote.get(blockHash);
+                list.add(voteTable);
+                oldCacheVote.put(blockHash, list);
+                voteCache.put(height, oldCacheVote);
+            } else {
+                List<HashBasedTable<Integer, String, Map<String, Vote>>> list = new ArrayList<>();
+                list.add(voteTable);
+                oldCacheVote.put(blockHash, list);
+                voteCache.put(height, oldCacheVote);
+            }
+        } else {
+            Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> map = new HashMap<>();
+            List<HashBasedTable<Integer, String, Map<String, Vote>>> list = new ArrayList<>();
+            list.add(voteTable);
+            map.put(blockHash, list);
+            voteCache.put(height, map);
         }
-        voteCache.put(height, voteTable);
     }
 
     @Deprecated
@@ -190,7 +256,7 @@ public class WitnessService {
             }
             HashSet<String> blockHashSet = new HashSet<>(blockHashs);
             List<Block> moreBlockList = new LinkedList<>();
-            Set<Map.Entry<String, Block>> entrySet = this.blockMap.entrySet();
+            Set<Map.Entry<String, Block>> entrySet = this.blockMap.get(height).entrySet();
             entrySet.forEach((entry) -> {
                 String key = entry.getKey();
                 if (!blockHashSet.contains(key)) {
@@ -208,7 +274,6 @@ public class WitnessService {
             }
         }
     }
-
 
     private boolean verifyVotes(Map<String, Map<String, Vote>> votes) {
         for (Map.Entry<String, Map<String, Vote>> entry : votes.entrySet()) {
@@ -288,14 +353,13 @@ public class WitnessService {
 
     public synchronized void dealVoteTable(String sourceId, long voteHeight, HashBasedTable<Integer, String, Map<String, Vote>> voteTable) {
 
-
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
             LOGGER.info("the voting process of {} is over , current height : {}", voteHeight, height);
             return;
         }
         if (voteHeight > this.height) {
-            updateVoteCache(voteHeight, voteTable);
+//            updateVoteCache(null, voteHeight, voteTable);
             eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
             LOGGER.info("the height is greater than local , add voteTable to cache");
             return;
@@ -303,16 +367,17 @@ public class WitnessService {
 
         if (null != voteTable.row(1)) {
             Set<String> blockHashs = new HashSet<>();
+
             voteTable.row(1).values().forEach(map -> {
                 map.forEach((k, v) -> {
-                    if (!blockMap.containsKey(k)) {
+                    if (!blockMap.get(height).containsKey(k)) {
+                        updateVoteCache(k, voteHeight, voteTable);
                         blockHashs.add(k);
                     }
                 });
             });
             if (blockHashs.size() > 0) {
                 messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
-                updateVoteCache(voteHeight, voteTable);
                 LOGGER.info("source blocks is not enough,add vote table to cache");
                 return;
             }
@@ -446,7 +511,7 @@ public class WitnessService {
             VoteSignTable.put(voteBlockHash, votePubKey, voteSign);
             Map<String, String> voteRow = VoteSignTable.row(voteBlockHash);
             if (voteRow.size() >= MIN_SAME_SIGN) {
-                blockWithEnoughSign = blockMap.get(voteBlockHash);
+                blockWithEnoughSign = blockMap.get(height).get(voteBlockHash);
                 LOGGER.info("height {},version {},there have enough sign for block {}", voteHeight, version, voteBlockHash);
                 List<BlockWitness> blockWitnesses = new LinkedList<>();
                 Iterator<Map.Entry<String, String>> iterator = voteRow.entrySet().iterator();
