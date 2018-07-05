@@ -74,7 +74,7 @@ public class WitnessService {
         if (height == this.height) {
             Map<String, List<HashBasedTable<Integer, String, Map<String, Vote>>>> voteTableInCache = voteCache.getIfPresent(height);
             if (voteTableInCache != null) {
-//                voteCache.invalidate(height);
+//
                 voteTableInCache.values().forEach(list -> {
                     if (null != list) {
                         list.forEach(table -> dealVoteTable(null, this.height, table));
@@ -83,6 +83,7 @@ public class WitnessService {
             }
             return;
         }
+        voteCache.invalidate(height - 2);
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
