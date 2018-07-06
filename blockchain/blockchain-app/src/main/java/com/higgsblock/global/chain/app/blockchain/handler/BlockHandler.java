@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
-import com.higgsblock.global.chain.app.consensus.syncblock.GetBlock;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -54,13 +53,6 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         if (orphanBlockCacheManager.isContains(hash)) {
             return;
         }
-        if (!blockService.preIsExistInDB(data) && height <= blockService.getMaxHeight() + 1L && height > 2L) {
-            BlockFullInfo blockFullInfo = new BlockFullInfo(data.getVersion(), sourceId, data);
-            orphanBlockCacheManager.putPreBlocks(blockFullInfo);
-            messageCenter.unicast(sourceId, new GetBlock(height - 1));
-            LOGGER.error("receive block from a fork , height:{}, hash : {}, preHash : {}", height, hash, data.getPrevBlockHash());
-            return;
-        }
 
         boolean success = blockService.persistBlockAndIndex(data, sourceId, data.getVersion());
         LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
@@ -84,57 +76,4 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             witnessService.initWitnessTask(blockService.getMaxHeight() + 1);
         }
     }
-
-
-    /**
-     * Steps:
-     * 1.Roughly check the witness signatures' count;
-     * 2.Check if the block is an orphan block;
-     * 3.Thoroughly validate the block;
-     * 4.Save the block and block index;
-     * 5.Broadcast the persist event;
-     * 6.Update the block producer's score;
-     * 7.Parse dpos;
-     * 8.Chaining the orphan block to the chain;
-     */
-//    private synchronized boolean processBlock(Block block, String sourceId, short version) {
-//        long height = block.getHeight();
-//        String blockHash = block.getHash();
-//        int sigCount = block.getWitnessSigCount();
-//
-//        //Check the signature count roughly
-//        if (!block.isPreMiningBlock() && sigCount < BlockService.MIN_WITNESS) {
-//            LOGGER.warn("The witness number is not enough : sigCount=>{}", sigCount);
-//            return false;
-//        }
-//
-//        //Check if orphan block
-//        if (blockService.checkOrphanBlock(block, sourceId, version)) {
-//            LOGGER.warn("The block is an orphan block: height=>{} hash=>{}", height, blockHash);
-//            //If the block was an orphan block always return false.
-//            return false;
-//        }
-//
-//        //Valid block thoroughly
-//        if (!blockService.validBlock(block)) {
-//            LOGGER.error("Validate block failed, height=>{} hash=>{}", height, blockHash);
-//            return false;
-//        }
-//
-//        //Save block and index
-//        if (!blockService.saveBlockAndIndex(block, blockHash)) {
-//            LOGGER.error("Save block and block index failed, height=>{} hash=>{}", height, blockHash);
-//            return false;
-//        }
-//
-//        //Broadcast persisted event
-//        if (!block.isPreMiningBlock()) {
-//            blockService.broadBlockPersistedEvent(block, blockHash);
-//        }
-//
-//        //Do finishing job for the block
-//        blockService.finishingJobForBlock(block, sourceId, version);
-//
-//        return true;
-//    }
 }
