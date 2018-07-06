@@ -40,6 +40,12 @@ public class OrphanBlockCacheManager {
     }
 
     public boolean putAndRequestPreBlocks(BlockFullInfo blockInfo) {
+        putPreBlocks(blockInfo);
+        requestPreBlocks();
+        return true;
+    }
+
+    public void putPreBlocks(BlockFullInfo blockInfo) {
         long blockHeight = blockInfo.getBlock().getHeight();
         LOGGER.info("Orphan block cache, map size: {}, height: {}", orphanBlockMap.size(), blockHeight);
 
@@ -47,11 +53,7 @@ public class OrphanBlockCacheManager {
         while (orphanBlockMap.size() > MAX_CACHE_SIZE) {
             orphanBlockMap.remove(iterator.next());
         }
-
         orphanBlockMap.put(blockInfo.getBlock().getHash(), blockInfo);
-        requestPreBlocks();
-
-        return true;
     }
 
     public BlockFullInfo remove(final String blockHash) {
