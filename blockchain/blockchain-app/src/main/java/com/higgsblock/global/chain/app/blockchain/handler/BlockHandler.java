@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.syncblock.GetBlock;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -51,6 +52,13 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         String sourceId = request.getSourceId();
 
         if (orphanBlockCacheManager.isContains(hash)) {
+            return;
+        }
+        if (!blockService.preIsExistInDB(data) && height <= blockService.getMaxHeight() + 1L && height > 2L) {
+            BlockFullInfo blockFullInfo = new BlockFullInfo(data.getVersion(), sourceId, data);
+            orphanBlockCacheManager.putPreBlocks(blockFullInfo);
+            messageCenter.unicast(sourceId, new GetBlock(height - 1));
+            LOGGER.error("receive block from a fork , height:{}, hash : {}, preHash : {}", height, hash, data.getPrevBlockHash());
             return;
         }
 
