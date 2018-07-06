@@ -192,7 +192,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             }
         });
 
-        //get block by hash
         if (height <= blockService.getMaxHeight()) {
             requestRecord.get(height, v -> {
                 messageCenter.unicast(sourceId, new GetBlock(height, hash));
