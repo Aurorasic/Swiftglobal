@@ -82,8 +82,8 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
             LOGGER.info("the voteHeight is wrong");
             return;
         }
-        LOGGER.info("add voteTable with voteHeight {} ,voteTable {}", voteHeight, voteTable);
+        LOGGER.info("add voteTable with voteHeight {} ,voteTable size: {}", voteHeight, voteTable.size());
 
-        witnessService.dealVoteTable(sourceId, voteHeight, voteTable);
+        witnessService.dealVoteMap(sourceId, voteHeight, voteTableMap);
     }
 }
