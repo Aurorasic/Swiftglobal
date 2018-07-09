@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +30,18 @@ import static com.higgsblock.global.chain.app.constants.RespCodeEnum.*;
 @RestController
 public class BlockApi {
 
+    /**
+     * The maximum number of single pull blocks
+     */
+    private static final int MAX_LIMIT = 200;
+
     @Autowired
     private BlockService blockService;
 
     @Autowired
     private BlockDaoService blockDaoService;
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
 
     /**
      * @param fromHeight
@@ -46,8 +54,9 @@ public class BlockApi {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "The height does not exist.");
         }
 
-        if (limit <= 0 || limit >= Integer.MAX_VALUE) {
-            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "Wrong incoming parameter.");
+        if (limit <= 0 || limit > MAX_LIMIT) {
+            return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "The maximum number of single " +
+                    "pull blocks is " + MAX_LIMIT + "," + " starting from 1");
         }
         //curren max block height
         long currenMaxHeight = blockService.getMaxHeight();
@@ -78,19 +87,15 @@ public class BlockApi {
 
         //Pull block results
         List<Block> resultBlocks = Lists.newArrayList();
-        if (fromHeight < bestMaxHeight) {
-            List<Block> blocks = blockService.getBestBlocksByHeight(fromHeight, limit);
+        //This variable is equal to fromHeight plus limit
+        long resultHeight = fromHeight + limit;
+        for (long height = fromHeight; height < resultHeight; height++) {
+            List<Block> blocks = blockService.getBlocksByHeight(height);
             if (CollectionUtils.isNotEmpty(blocks)) {
                 resultBlocks.addAll(blocks);
             }
-        } else {
-            for (long height = fromHeight; height < fromHeight + limit; height++) {
-                List<Block> blocks = blockService.getBlocksByHeight(height);
-                if (CollectionUtils.isNotEmpty(blocks)) {
-                    resultBlocks.addAll(blocks);
-                }
-            }
         }
+
         //All blocks that need to be pulled include the fork chain block
         result.put("blocks", resultBlocks);
         return ResponseData.success(result);
@@ -197,9 +202,17 @@ public class BlockApi {
 
     @RequestMapping("/buildBlock")
     public ResponseData<Block> buildBlock() {
-        Block blocks = blockService.packageNewBlock();
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        ArrayList<String> blockHashs = lastBlockIndex.getBlockHashs();
+        Block block = null;
+        for (String preBlockHash : blockHashs) {
+            block = blockService.packageNewBlock(preBlockHash);
+            if (block != null) {
+                break;
+            }
+        }
         ResponseData<Block> responseData = new ResponseData<Block>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(blocks);
+        responseData.setData(block);
         return responseData;
     }
 }

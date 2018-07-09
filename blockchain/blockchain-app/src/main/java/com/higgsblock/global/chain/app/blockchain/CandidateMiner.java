@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -40,6 +41,8 @@ public class CandidateMiner {
     private PeerManager peerManager;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
 
     public void queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
@@ -75,21 +78,28 @@ public class CandidateMiner {
         long bestMaxHeight = currHeight;
         long expectHeight = bestMaxHeight + 1;
         try {
-            LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
-            Block block = blockService.packageNewBlock();
-            if (block == null) {
-                LOGGER.info("can not produce a new block,height={}", expectHeight);
-                return false;
+            BlockIndex maxBlockIndex = blockIdxDaoService.getBlockIndexByHeight(currHeight);
+            if (maxBlockIndex == null) {
+                throw new IllegalArgumentException("the blockIndex not found ,current height:" + currHeight);
             }
-            if (expectHeight != block.getHeight()) {
-                LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
+            for (String blockHash : maxBlockIndex.getBlockHashs()) {
+                LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
+                Block block = blockService.packageNewBlock(blockHash);
+                if (block == null) {
+                    LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
+                    continue;
+                }
+                if (expectHeight != block.getHeight()) {
+                    LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
+                    return true;
+                }
+                sourceBlockService.sendBlockToWitness(block);
                 return true;
             }
-            sourceBlockService.sendBlockToWitness(block);
-            return true;
         } catch (Exception e) {
             LOGGER.error("domining exception,height=" + expectHeight, e);
         }
+        LOGGER.warn("can not produce a new block,height={}", expectHeight);
         return false;
     }
 

@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class NodeManager implements InitializingBean {
     private BlockService blockService;
     @Autowired
     private IScoreService scoreDaoService;
+    @Autowired
+    private BlockDaoService blockDaoService;
 
     @Autowired
     private DposService dposService;
@@ -162,21 +165,26 @@ public class NodeManager implements InitializingBean {
         return result;
     }
 
-    public List<String> getDposGroupByHeihgt(long height) {
+    /**
+     * find dpos miners by height,exceed miners which have produced blocks at the branch
+     *
+     * @param height
+     * @param preBlockHash
+     * @return
+     */
+    public List<String> getDposGroupByHeihgt(long height, String preBlockHash) {
         long sn = getSn(height);
         List<String> dposGroupBySn = getDposGroupBySn(sn);
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
             return new ArrayList<>();
         }
         long startHeight = getBatchStartHeight(height);
-        for (long i = startHeight; i < height; i++) {
-            Block block = blockService.getBestBlockByHeight(i);
-            if (block == null) {
-                continue;
-            }
-            BlockWitness minerFirstPKSig = block.getMinerFirstPKSig();
+        while (height-- > startHeight) {
+            Block preBlock = blockDaoService.getBlockByHash(preBlockHash);
+            BlockWitness minerFirstPKSig = preBlock.getMinerFirstPKSig();
             String address = minerFirstPKSig.getAddress();
             dposGroupBySn.remove(address);
+            preBlockHash = preBlock.getPrevBlockHash();
         }
         return dposGroupBySn;
     }
@@ -187,7 +195,7 @@ public class NodeManager implements InitializingBean {
             return false;
         }
         String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
-        List<String> currentGroup = getDposGroupByHeihgt(block.getHeight());
+        List<String> currentGroup = getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash());
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
     }
 
@@ -205,12 +213,12 @@ public class NodeManager implements InitializingBean {
         return (sn - 1) * DPOS_BLOCKS_PER_ROUND + 1;
     }
 
-    public boolean canPackBlock(long height, String address) {
+    public boolean canPackBlock(long height, String address, String preBlockHash) {
         long batchStartHeight = getBatchStartHeight(height);
         if (batchStartHeight > height) {
             throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height=" + height);
         }
-        List<String> dposNodes = getDposGroupByHeihgt(height);
+        List<String> dposNodes = getDposGroupByHeihgt(height, preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.error("the dpos node is empty with the height={}", height);
             return false;
