@@ -161,6 +161,9 @@ public class WitnessService {
             leaderVotes.forEach(vote -> {
                 if (vote.getVoteVersion() == 1) {
                     if (!blockCache.get(this.height, k -> new HashMap<>()).containsKey(vote.getBlockHash())) {
+                        Set<String> set1 = new HashSet<>();
+                        set1.add(vote.getBlockHash());
+                        messageCenter.broadcast(new SourceBlockReq(set1));
                         setTemp.add(vote);
                         return;
                     }
