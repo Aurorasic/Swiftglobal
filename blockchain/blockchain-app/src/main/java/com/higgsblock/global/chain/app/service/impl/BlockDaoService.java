@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Zhao xiaogang
@@ -244,6 +246,18 @@ public class BlockDaoService implements IBlockService {
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
         });
+        //remove by utxo key
+        //todo yuguojia 2018-7-9 add new utxo when confirmed a best block on other blocks of the same height
+        Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
+        List<String> spendUTXOKeys = block.getSpendUTXOKeys();
+        for (Transaction tx : transactionMap.values()) {
+            for (String spendUTXOKey : spendUTXOKeys) {
+                if (tx.containsSpendUTXO(spendUTXOKey)) {
+                    txCacheManager.remove(tx.getHash());
+                    break;
+                }
+            }
+        }
     }
 
     private void addBlock2BlockEntity(Block block) {
