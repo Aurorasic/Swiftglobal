@@ -30,19 +30,38 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
     @Autowired
     private KeyPair keyPair;
 
+    @Autowired
+    private BlockService blockService;
+
     @Override
     protected void process(SocketRequest<SourceBlock> request) {
         SourceBlock sourceBlock = request.getData();
         Block block;
-        if (null != sourceBlock && null != (block = sourceBlock.getBlock())) {
-            long height = block.getHeight();
-            if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-                LOGGER.info("Received sourceBlock {} ,{}", height, block.getHash());
-                witnessService.addSourceBlock(block);
-            } else {
-                messageCenter.dispatchToWitnesses(sourceBlock);
-            }
+        String sourceId = request.getSourceId();
+
+        if (null == sourceBlock || null == (block = sourceBlock.getBlock())) {
+            return;
         }
+
+        long height = block.getHeight();
+        if (!BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+            messageCenter.dispatchToWitnesses(sourceBlock);
+            return;
+        }
+
+        if (witnessService.isExistInBlockCache(height, block.getHash())) {
+            return;
+        }
+
+        if (!blockService.validSourceBlock(block, sourceId)) {
+            LOGGER.info("the block is not valid {} {}", height, block.getHash());
+            return;
+        }
+        LOGGER.info("Received sourceBlock {} ,{}", height, block.getHash());
+        witnessService.addSourceBlock(block);
+        messageCenter.dispatchToWitnesses(sourceBlock);
+
     }
+
 
 }

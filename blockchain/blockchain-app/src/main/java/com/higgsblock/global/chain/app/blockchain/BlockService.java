@@ -11,6 +11,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
@@ -756,7 +757,7 @@ public class BlockService {
         return null != block && block.isGenesisBlock();
     }
 
-    public String getWitnessSingMessage(long height, String blockHash, int voteVersion) {
+    public static String getWitnessSingMessage(long height, String blockHash, int voteVersion) {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(height))
@@ -765,9 +766,40 @@ public class BlockService {
         return function.hashString(builder.toString(), Charsets.UTF_8).toString();
     }
 
-    public boolean validSign(long height, String blockHash, int voteVersion, String sign, String pubKey) {
+    public static boolean validSign(long height, String blockHash, int voteVersion, String sign, String pubKey) {
         String message = getWitnessSingMessage(height, blockHash, voteVersion);
         return ECKey.verifySign(message, sign, pubKey);
+    }
+
+    public boolean validSourceBlock(Block block, String sourceId) {
+        String blockHash = block.getHash();
+        long blockHeight = block.getHeight();
+        LOGGER.info("start valid source block,height {}, {}", blockHeight, blockHash);
+        if (!block.valid()) {
+            LOGGER.info("this block is not valid,height {}, {}", blockHeight, blockHash);
+            return false;
+        }
+        if (!preIsExistInDB(block)) {
+            // get pre block
+            eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), sourceId));
+            return false;
+        }
+        boolean minerPermission = nodeManager.checkProducer(block);
+        if (!minerPermission) {
+            LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
+            boolean isWitnessTimer = WitnessCountTime.isCurrBlockConfirm(block);
+            LOGGER.info("verify witness timer block is sure {} block hash {}", isWitnessTimer, block.getHash());
+            if (!isWitnessTimer) {
+                LOGGER.info("verify witness timer block is accept {} ", isWitnessTimer);
+                return false;
+            }
+        }
+        boolean valid = validBlockFromProducer(block);
+        if (!valid) {
+            LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
+            return false;
+        }
+        return true;
     }
 
 }

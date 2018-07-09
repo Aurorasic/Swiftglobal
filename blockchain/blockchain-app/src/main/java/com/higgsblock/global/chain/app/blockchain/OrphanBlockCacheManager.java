@@ -92,7 +92,8 @@ public class OrphanBlockCacheManager {
             if (StringUtils.isEmpty(prevBlockHash) || isContains(prevBlockHash)) {
                 continue;
             }
-            eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight(), block.getHash(), blockFullInfo.getSourceId()));
+            // get pre block
+            eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), blockFullInfo.getSourceId()));
         }
     }
 

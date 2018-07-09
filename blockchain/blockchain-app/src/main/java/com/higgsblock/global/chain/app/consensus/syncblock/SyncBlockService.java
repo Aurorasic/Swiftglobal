@@ -176,9 +176,14 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         LOGGER.info("process ReceiveOrphanBlockEvent: {}", JSON.toJSONString(event));
         long height = event.getHeight();
         String sourceId = event.getSourceId();
+        String hash = event.getBlockHash();
+
+        //if peer's connection is lost
         if (null == connectionManager.getConnectionByPeerId(sourceId)) {
             return;
         }
+
+        //update peer's max height
         peersMaxHeight.compute(sourceId, (k, v) -> {
             if (null == v) {
                 return height;
@@ -186,7 +191,19 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
                 return height > v ? height : v;
             }
         });
+
+        if (height <= blockService.getMaxHeight()) {
+            requestRecord.get(height, v -> {
+                messageCenter.unicast(sourceId, new GetBlock(height, hash));
+                LOGGER.info("send block request! height:{},hash:{} ", height, hash);
+                return sourceId;
+            });
+            return;
+        }
+
+        //get all blocks by height
         sendInitRequest();
+
     }
 
     private void dealTimeOut(long height, String sourceId) {
