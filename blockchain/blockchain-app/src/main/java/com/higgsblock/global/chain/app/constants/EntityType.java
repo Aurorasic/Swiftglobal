@@ -26,8 +26,6 @@ public enum EntityType {
     GET_MAX_HEIGHT("204"),
     SOURCE_BLOCK("205"),
     SOURCE_BLOCK_REQ("207"),
-    CANDIDATE_BLOCK("206"),
-    CANDIDATE_BLOCK_HASH("208"),
 
     // ================ type 300-399: transaction related ==============
     TRANSACTION("300"),

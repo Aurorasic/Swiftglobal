@@ -230,56 +230,6 @@ public class WitnessService {
         });
     }
 
-    @Deprecated
-    public synchronized void setBlocksFromWitness(CandidateBlock data) {
-        long height = data.getHeight();
-        if (this.height > height) {
-            LOGGER.info("set blocks from witness late {} ,{},{}", height, this.height, data);
-            return;
-        }
-        LOGGER.info("set blocks from witness {} ,{}", height, data);
-        List<Block> blocks = data.getBlocks();
-        if (blocks == null || blocks.size() == 0) {
-            blocks.forEach(block -> addSourceBlock(block));
-        }
-    }
-
-    @Deprecated
-    public synchronized void setBlockHashsFromWitness(CandidateBlockHashs data) {
-        if (data == null) {
-            return;
-        }
-        long height = data.getHeight();
-        if (this.height > height) {
-            return;
-        }
-        if (this.height == height) {
-            List<String> blockHashs = data.getBlockHashs();
-            LOGGER.info("add candidateBlockHashs height {},{}", this.height, blockHashs);
-            if (CollectionUtils.isEmpty(blockHashs)) {
-                return;
-            }
-            HashSet<String> blockHashSet = new HashSet<>(blockHashs);
-            List<Block> moreBlockList = new LinkedList<>();
-            Set<Map.Entry<String, Block>> entrySet = this.blockCache.get(height, k -> new HashMap<>()).entrySet();
-            entrySet.forEach((entry) -> {
-                String key = entry.getKey();
-                if (!blockHashSet.contains(key)) {
-                    moreBlockList.add(entry.getValue());
-                }
-            });
-            if (moreBlockList.size() > 0) {
-                CandidateBlock candidateBlock = new CandidateBlock();
-                candidateBlock.setPubKey(keyPair.getPubKey());
-                candidateBlock.setBlocks(moreBlockList);
-                candidateBlock.setHeight(this.height);
-                candidateBlock.setSignature(ECKey.signMessage(candidateBlock.getHash(), keyPair.getPriKey()));
-                this.messageCenter.unicast(data.getAddress(), candidateBlock);
-                LOGGER.info("unicast candidateBlock to {} {}", data.getAddress(), this.height);
-            }
-        }
-    }
-
     public synchronized void dealVoteMap(String sourceId, long voteHeight, Map<Integer, Map<String, Map<String, Vote>>> voteMap) {
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
