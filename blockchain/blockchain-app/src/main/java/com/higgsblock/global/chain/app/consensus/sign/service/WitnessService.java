@@ -82,8 +82,8 @@ public class WitnessService {
             this.voteTable = HashBasedTable.create(6, 11);
             this.blockWithEnoughSign = null;
             this.blockCache.get(height, k -> new HashMap<>()).values().forEach(this::voteFirstVote);
-            voteCache.invalidate(height - 2);
-            blockCache.invalidate(height - 2);
+            voteCache.invalidate(height - 3);
+            blockCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
         }
     }
@@ -163,7 +163,7 @@ public class WitnessService {
                     if (!blockCache.get(this.height, k -> new HashMap<>()).containsKey(vote.getBlockHash())) {
                         Set<String> set1 = new HashSet<>();
                         set1.add(vote.getBlockHash());
-                        messageCenter.broadcast(new SourceBlockReq(set1));
+                        messageCenter.dispatchToWitnesses(new SourceBlockReq(set1));
                         setTemp.add(vote);
                         return;
                     }
@@ -280,7 +280,7 @@ public class WitnessService {
             if (null != sourceId) {
                 messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
             } else {
-                messageCenter.broadcast(new SourceBlockReq(blockHashs));
+                messageCenter.dispatchToWitnesses(new SourceBlockReq(blockHashs));
             }
             LOGGER.info("source blocks is not enough,add vote table to cache");
             return false;
