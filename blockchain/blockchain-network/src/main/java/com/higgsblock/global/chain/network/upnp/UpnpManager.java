@@ -164,7 +164,7 @@ public class UpnpManager {
      */
     public String getIp() {
         if (peerConfig.getNetworkType() == NetworkType.DEV_NET) {
-            return NetworkUtil.getLocalIp();
+            return NetworkUtil.getIpByName(peerConfig.getIp());
         }
 
         String publicIP = null;

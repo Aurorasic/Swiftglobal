@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -57,6 +58,24 @@ public final class NetworkUtil {
         }
 
         return "";
+    }
+
+    /**
+     * Gets ip by name.
+     *
+     * @param hostName the host name
+     * @return the ip by name
+     */
+    public static String getIpByName(String hostName) {
+        String ip;
+        try {
+            InetAddress inetAddress = InetAddress.getByName(hostName);
+            ip = inetAddress.getHostAddress();
+        } catch (UnknownHostException e) {
+            ip = getLocalIp();
+        }
+
+        return ip;
     }
 
     /**
