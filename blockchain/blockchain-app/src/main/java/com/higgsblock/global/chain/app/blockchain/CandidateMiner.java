@@ -79,27 +79,27 @@ public class CandidateMiner {
         long expectHeight = bestMaxHeight + 1;
         try {
             BlockIndex maxBlockIndex = blockIdxDaoService.getBlockIndexByHeight(currHeight);
-            String blockHash;
-            if (maxBlockIndex.hasBestBlock()) {
-                blockHash = maxBlockIndex.getBestBlockHash();
-            } else {
-                blockHash = maxBlockIndex.getFirstBlockHash();
+            if (maxBlockIndex == null) {
+                throw new IllegalArgumentException("the blockIndex not found ,current height:" + currHeight);
             }
-            LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
-            Block block = blockService.packageNewBlock(blockHash);
-            if (block == null) {
-                LOGGER.info("can not produce a new block,height={}", expectHeight);
-                return false;
-            }
-            if (expectHeight != block.getHeight()) {
-                LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
+            for (String blockHash : maxBlockIndex.getBlockHashs()) {
+                LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
+                Block block = blockService.packageNewBlock(blockHash);
+                if (block == null) {
+                    LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
+                    continue;
+                }
+                if (expectHeight != block.getHeight()) {
+                    LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
+                    return true;
+                }
+                sourceBlockService.sendBlockToWitness(block);
                 return true;
             }
-            sourceBlockService.sendBlockToWitness(block);
-            return true;
         } catch (Exception e) {
             LOGGER.error("domining exception,height=" + expectHeight, e);
         }
+        LOGGER.warn("can not produce a new block,height={}", expectHeight);
         return false;
     }
 
