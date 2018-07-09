@@ -73,7 +73,7 @@ public class NodeManager implements InitializingBean {
         if (!isFirstOfRound) {
             return null;
         }
-        LOGGER.info("toBeBestBlcok:{} is the end of pre round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
+        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
         boolean selectedNextGroup = isGroupSeleted(sn + 1L);
         if (selectedNextGroup) {

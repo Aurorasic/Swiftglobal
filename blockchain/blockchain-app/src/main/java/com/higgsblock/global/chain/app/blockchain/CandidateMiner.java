@@ -56,13 +56,16 @@ public class CandidateMiner {
     }
 
     public synchronized void doMingTimer() {
+        String address = peerManager.getSelf().getId();
+        isCMINER = transactionService.hasStake(address, SystemCurrencyEnum.CMINER);
         if (isCMINER) {
             currHeight = blockService.getMaxHeight();
         }
     }
 
     public void instantiationBlock() {
-        LOGGER.info("isCMINER =" + CandidateMiner.isCMINER);
+        String address = peerManager.getSelf().getId();
+        isCMINER = transactionService.hasStake(address, SystemCurrencyEnum.CMINER);
         if (isCMINER) {
             currHeight = blockService.getMaxHeight();
         }
