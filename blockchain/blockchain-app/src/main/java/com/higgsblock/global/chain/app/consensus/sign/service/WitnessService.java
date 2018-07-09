@@ -328,16 +328,6 @@ public class WitnessService {
         }
     }
 
-    private boolean canCollectionVoteSign(int version) {
-        int size = 0;
-        for (Map<String, Vote> map : this.voteTable.row(version).values()) {
-            if (null != map && map.size() == 1) {
-                size += 1;
-            }
-        }
-        return size >= MIN_VOTE;
-    }
-
     private void dealVotes(int version, Set<Vote> set) {
         set.forEach(vote -> {
             if (version != vote.getVoteVersion()) {
