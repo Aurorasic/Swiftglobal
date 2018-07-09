@@ -192,7 +192,7 @@ public class WitnessService {
                 this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
             });
             this.voteCache.get(this.height, k -> new HashMap<>()).put(version, setTemp);
-            if (getARowVoteSize(version) > startARowVoteSize && canCollectionVoteSign(version) && collectionVoteSign(version, height)) {
+            if (getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, height)) {
                 return;
             }
         }
