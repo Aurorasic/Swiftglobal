@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.alibaba.fastjson.JSON;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -11,6 +12,7 @@ import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,9 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private CandidateMiner candidateMiner;
 
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
+
     /**
      * the block height which is produced recently
      */
@@ -59,7 +64,7 @@ public class MiningListener implements IEventBusListener {
             LOGGER.info("The system is not ready, cannot mining");
             return;
         }
-        process();
+        process(event.getBlockHash(), event.getHeight());
     }
 
     @Subscribe
@@ -69,10 +74,15 @@ public class MiningListener implements IEventBusListener {
         calculateDpos();
         if (SystemStatus.RUNNING == state) {
             isMining = true;
-            LOGGER.info("The system is ready, start mining");
-            process();
-            long maxHeight = blockService.getMaxHeight();
-            witnessService.initWitnessTask(maxHeight + 1);
+            //add by huangshengli  input pre blockhash when try to produce new block 2018-07-09
+            BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+            LOGGER.info("The system is ready, start mining,max height={}", lastBlockIndex.getHeight());
+            if (lastBlockIndex.hasBestBlock()) {
+                process(lastBlockIndex.getBestBlockHash(), lastBlockIndex.getHeight());
+            } else {
+                process(lastBlockIndex.getFirstBlockHash(), lastBlockIndex.getHeight());
+            }
+            witnessService.initWitnessTask(lastBlockIndex.getHeight() + 1);
         } else {
             isMining = false;
             LOGGER.info("The system state is changed to {}, stop mining", state);
@@ -85,7 +95,7 @@ public class MiningListener implements IEventBusListener {
             List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
                 Block block = blockService.getBestBlockByHeight(1L);
-                List<String> dposAddresses = nodeManager.calculateDposAddresses(block,1L);
+                List<String> dposAddresses = nodeManager.calculateDposAddresses(block, 1L);
                 nodeManager.persistDposNodes(0L, dposAddresses);
             }
         }
@@ -94,9 +104,8 @@ public class MiningListener implements IEventBusListener {
     /**
      * produce a block with a specified height
      */
-    private synchronized void process() {
-        long bestMaxHeight = blockService.getMaxHeight();
-        long expectHeight = bestMaxHeight + 1;
+    private synchronized void process(String persistBlockHash, long maxHeight) {
+        long expectHeight = maxHeight + 1;
 
         if (expectHeight < miningHeight) {
             LOGGER.info("block is produced, height={}", expectHeight);
@@ -120,33 +129,33 @@ public class MiningListener implements IEventBusListener {
         //todo yezaiyong 20180629 add CandidateMiner mode
         candidateMiner.doMingTimer();
 
-        boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address);
+        boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address, persistBlockHash);
         if (!isMyTurn) {
             return;
         }
-        future = executorService.submit(() -> mining(expectHeight));
+        future = executorService.submit(() -> mining(expectHeight, persistBlockHash));
         int queueSize = ((ThreadPoolExecutor) executorService).getQueue().size();
         int poolSize = ((ThreadPoolExecutor) executorService).getPoolSize();
 
-        LOGGER.info("try to produce block, height={},queueSize={},poolSize={}", expectHeight,queueSize,poolSize);
+        LOGGER.info("try to produce block, height={},preBlockHash={},queueSize={},poolSize={}", expectHeight, persistBlockHash, queueSize, poolSize);
     }
 
-    private void mining(long expectHeight) {
-        while ((miningHeight == expectHeight) && !doMining(expectHeight)) {
+    private void mining(long expectHeight, String blockHash) {
+        while ((miningHeight == expectHeight) && !doMining(expectHeight, blockHash)) {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
             } catch (Exception e) {
-                LOGGER.error("mining exception,height="+expectHeight, e);
+                LOGGER.error("mining exception,height=" + expectHeight, e);
             }
         }
     }
 
-    private boolean doMining(long expectHeight) {
+    private boolean doMining(long expectHeight, String blockHash) {
         try {
-            LOGGER.info("begin to packageNewBlock,height={}",expectHeight);
-            Block block = blockService.packageNewBlock();
+            LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
+            Block block = blockService.packageNewBlock(blockHash);
             if (block == null) {
-                LOGGER.info("can not produce a new block,height={}",expectHeight);
+                LOGGER.info("can not produce a new block,height={}", expectHeight);
                 return false;
             }
             if (expectHeight != block.getHeight()) {
@@ -156,7 +165,7 @@ public class MiningListener implements IEventBusListener {
             sourceBlockService.sendBlockToWitness(block);
             return true;
         } catch (Exception e) {
-            LOGGER.error("domining exception,height="+expectHeight, e);
+            LOGGER.error("domining exception,height=" + expectHeight, e);
         }
         return false;
     }

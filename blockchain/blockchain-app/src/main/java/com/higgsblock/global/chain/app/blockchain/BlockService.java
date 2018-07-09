@@ -203,21 +203,10 @@ public class BlockService {
         return block;
     }
 
-    public Block packageNewBlock() {
-        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
-        ArrayList<String> blockHashs = lastBlockIndex.getBlockHashs();
-        if (CollectionUtils.isEmpty(blockHashs)) {
-            throw new RuntimeException("error blockHashs" + lastBlockIndex);
-        }
-        Block block = null;
-        for (String preBlockHash : blockHashs) {
-            block = packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
-            if (block != null) {
-                return block;
-            }
-        }
+    public Block packageNewBlock(String preBlockHash) {
+        Block block = packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
         if (block == null) {
-            LOGGER.error("cannot packageNewBlock on all branch of " + lastBlockIndex);
+            LOGGER.error("cannot packageNewBlock on preBlockHash:{} " + preBlockHash);
         }
         return block;
     }
@@ -737,7 +726,7 @@ public class BlockService {
             LOGGER.error("the height {}, this block miner is {}, the miners is {}"
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
-                    , nodeManager.getDposGroupByHeihgt(block.getHeight()));
+                    , nodeManager.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
             if (transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
                 LOGGER.info("verify block is candidate miner production true");
                 return true;

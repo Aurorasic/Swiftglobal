@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,8 @@ public class BlockApi {
 
     @Autowired
     private BlockDaoService blockDaoService;
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
 
     /**
      * @param fromHeight
@@ -197,9 +200,17 @@ public class BlockApi {
 
     @RequestMapping("/buildBlock")
     public ResponseData<Block> buildBlock() {
-        Block blocks = blockService.packageNewBlock();
+        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        ArrayList<String> blockHashs = lastBlockIndex.getBlockHashs();
+        Block block = null;
+        for (String preBlockHash : blockHashs) {
+            block = blockService.packageNewBlock(preBlockHash);
+            if (block != null) {
+                break;
+            }
+        }
         ResponseData<Block> responseData = new ResponseData<Block>(RespCodeEnum.SUCCESS, "success");
-        responseData.setData(blocks);
+        responseData.setData(block);
         return responseData;
     }
 }

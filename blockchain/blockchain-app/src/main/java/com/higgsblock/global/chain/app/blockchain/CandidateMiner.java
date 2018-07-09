@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
+import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -40,6 +41,8 @@ public class CandidateMiner {
     private PeerManager peerManager;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private BlockIdxDaoService blockIdxDaoService;
 
     public void queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
@@ -75,8 +78,15 @@ public class CandidateMiner {
         long bestMaxHeight = currHeight;
         long expectHeight = bestMaxHeight + 1;
         try {
-            LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
-            Block block = blockService.packageNewBlock();
+            BlockIndex maxBlockIndex = blockIdxDaoService.getBlockIndexByHeight(currHeight);
+            String blockHash;
+            if (maxBlockIndex.hasBestBlock()) {
+                blockHash = maxBlockIndex.getBestBlockHash();
+            } else {
+                blockHash = maxBlockIndex.getFirstBlockHash();
+            }
+            LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
+            Block block = blockService.packageNewBlock(blockHash);
             if (block == null) {
                 LOGGER.info("can not produce a new block,height={}", expectHeight);
                 return false;
