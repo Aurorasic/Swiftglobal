@@ -118,6 +118,12 @@ public class MiningListener implements IEventBusListener {
 
         //todo yezaiyong 20180629 add CandidateMiner mode
         candidateMiner.doMingTimer();
+        // cancel running task
+        if (null != future) {
+            future.cancel(true);
+            future = null;
+            LOGGER.info("cancel mining task, height={}", miningHeight);
+        }
         // check if my turn now
         String address = peerManager.getSelf().getId();
         boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address, persistBlockHash);
@@ -126,12 +132,6 @@ public class MiningListener implements IEventBusListener {
         }
 
         miningHeight = expectHeight;
-        // cancel running task
-        if (null != future) {
-            future.cancel(true);
-            future = null;
-            LOGGER.info("cancel mining task, height={}", miningHeight);
-        }
 
         future = executorService.submit(() -> mining(expectHeight, persistBlockHash));
         int queueSize = ((ThreadPoolExecutor) executorService).getQueue().size();
