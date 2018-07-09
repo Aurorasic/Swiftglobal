@@ -5,7 +5,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.consensus.vote.SourceBlockReq;
@@ -15,7 +17,6 @@ import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -321,7 +322,7 @@ public class WitnessService {
             }
             dealVotes(version, leaderVotes);
             dealVotes(version, followerVotes);
-            if (getARowVoteSize(version) > startARowVoteSize && canCollectionVoteSign(version) && collectionVoteSign(version, voteHeight)) {
+            if (getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, voteHeight)) {
                 return;
             }
         }

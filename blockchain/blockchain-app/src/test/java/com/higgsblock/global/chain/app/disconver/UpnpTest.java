@@ -53,7 +53,7 @@ public class UpnpTest extends BaseTest {
      */
     @Test
     public void socketPortTest(){
-        String publicIp = this.upnpManager.getPublicIp();
+        String publicIp = this.upnpManager.getIp();
         int port = upnpManager.getHttpPort();
         System.out.println("port = " + port);
     }
@@ -65,7 +65,7 @@ public class UpnpTest extends BaseTest {
      */
     @Test
     public void publicIpTest() throws Exception {
-        String publicIp = this.upnpManager.getPublicIp();
+        String publicIp = this.upnpManager.getIp();
         System.out.println("publicIp=" + publicIp);
         Assert.assertNotEquals(null, publicIp);
     }
