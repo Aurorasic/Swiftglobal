@@ -23,7 +23,7 @@ public class PublicPeerConnectionInfoDiscovery implements IPeerConnectionInfoDis
 
     @Override
     public String getIp() {
-        return upnpManager.getPublicIp();
+        return upnpManager.getIp();
     }
 
     @Override

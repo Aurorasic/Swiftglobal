@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.network.upnp.exception.NotDiscoverUpnpGateway
 import com.higgsblock.global.chain.network.upnp.exception.UpnpException;
 import com.higgsblock.global.chain.network.upnp.model.PortMappingInfo;
 import com.higgsblock.global.chain.network.upnp.model.UpnpConstant;
+import com.higgsblock.global.chain.network.utils.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +82,7 @@ public class UpnpManager {
         } else {
             Peer peer = new Peer();
             peer.setPubKey(peerConfig.getPubKey());
-            peer.setIp(getPublicIp());
+            peer.setIp(getIp());
             peer.setHttpServerPort(addMappingHttpPort(discover, peerConfig.getHttpPort()));
             peer.setSocketServerPort(addMappingSocketPort(discover, peerConfig.getSocketPort()));
             peer.signature(peerConfig.getPriKey());
@@ -157,13 +158,13 @@ public class UpnpManager {
     }
 
     /**
-     * Gets public ip.
+     * Gets ip.
      *
-     * @return the public ip
+     * @return ip
      */
-    public String getPublicIp() {
+    public String getIp() {
         if (peerConfig.getNetworkType() == NetworkType.DEV_NET) {
-            return peerConfig.getIp();
+            return NetworkUtil.getLocalIp();
         }
 
         String publicIP = null;
@@ -205,7 +206,8 @@ public class UpnpManager {
     /**
      * Check the IP format and scope.
      *
-     * @param addr: IP address
+     * @param addr : IP address
+     * @return the boolean
      */
     private boolean isIP(String addr) {
         if (addr.length() < 7 || addr.length() > 15 || "".equals(addr)) {
@@ -253,7 +255,7 @@ public class UpnpManager {
         Peer peer = new Peer();
         try {
             peer.setPubKey(peerConfig.getPubKey());
-            peer.setIp(getPublicIp());
+            peer.setIp(getIp());
 
             if (null == discover) {
                 return peer;
