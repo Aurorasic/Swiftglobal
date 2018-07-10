@@ -305,6 +305,11 @@ public class BlockService {
             return false;
         }
 
+        if (!validBasic(block)) {
+            LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
+            return false;
+        }
+
         //Check if orphan block
         if (checkOrphanBlock(block, sourceId, version)) {
             LOGGER.warn("The block is an orphan block: height=>{} hash=>{}", height, blockHash);
@@ -312,9 +317,8 @@ public class BlockService {
             return false;
         }
 
-        //Valid block thoroughly
-        if (!validBlock(block)) {
-            LOGGER.error("Validate block failed, height=>{} hash=>{}", height, blockHash);
+        if (!validBlockTransactions(block)) {
+            LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
             return false;
         }
 
@@ -425,21 +429,6 @@ public class BlockService {
 
     public boolean preIsExistInDB(Block block) {
         return blockDaoService.preIsExistInDB(block);
-    }
-
-    public boolean validBlock(Block block) {
-        long height = block.getHeight();
-        String blockHash = block.getHash();
-        if (!validBasic(block)) {
-            LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
-            return false;
-        }
-
-        if (!validBlockTransactions(block)) {
-            LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
-            return false;
-        }
-        return true;
     }
 
     public boolean validBlockTransactions(Block block) {
@@ -672,7 +661,14 @@ public class BlockService {
                 short nextVersion = nextBlockFullInfo.getVersion();
                 LOGGER.info("persisted height={}_block={}, find orphan next block height={}_block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
-                if (!validBlock(nextBlock)) {
+                if (!validBasic(block)) {
+                    LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
+                    LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
+                    orphanBlockCacheManager.remove(nextBlock.getHash());
+                    continue;
+                }
+                if (!validBlockTransactions(block)) {
+                    LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
                     LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
                     orphanBlockCacheManager.remove(nextBlock.getHash());
                     continue;

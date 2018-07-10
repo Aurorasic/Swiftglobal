@@ -50,6 +50,9 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         String hash = data.getHash();
         String sourceId = request.getSourceId();
 
+        if (height <= 1) {
+            return;
+        }
         if (orphanBlockCacheManager.isContains(hash)) {
             return;
         }
