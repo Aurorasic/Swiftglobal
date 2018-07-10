@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +42,11 @@ public class MinerScoreStrategy {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         Map<String, Integer> allMinerSoreMap = scoreDaoService.loadAll();
 
-        //minus miner score
-        plusScore(allMinerSoreMap, minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+        //if the block is only mined by  miner, plus score
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+            //minus miner score
+            plusScore(allMinerSoreMap, minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+        }
 
         //handle joined miner and removed miner
         LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
