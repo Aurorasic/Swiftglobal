@@ -110,11 +110,7 @@ public class WitnessCountTime {
                                 LOGGER.info("time of arrival  accept common miner block or candidate miner block");
                                 continue;
                             }
-                            if (verifyBlockBelongCommonMiner(block)) {
-                                isCurrBlockConfirm = false;
-                            } else {
-                                isCurrBlockConfirm = true;
-                            }
+                            isCurrBlockConfirm = false;
                         }
                     } catch (InterruptedException e) {
                         LOGGER.error("startCountTime InterruptedException", e);
