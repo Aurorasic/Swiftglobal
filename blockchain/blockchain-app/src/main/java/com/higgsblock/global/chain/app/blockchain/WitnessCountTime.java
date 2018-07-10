@@ -98,30 +98,22 @@ public class WitnessCountTime {
                             }
                         } else {
                             if (preHeight >= block.getHeight()) {
-                                //need to wait for the block to come and continue timing. The current block is an invalid block
                                 isCurrBlockConfirm = false;
                                 LOGGER.info("block is not null  pre >= block height ;pre = " + preHeight + " block height =" + block.getHeight());
-                            } else {
-                                if (curSec >= WAIT_WITNESS_TIME) {
-                                    LOGGER.info("time of arrival  accept common miner block or candidate miner block");
-                                    // can receive either a reserve or a normal reserve
+                                continue;
+                            }
+                            if (curSec >= WAIT_WITNESS_TIME) {
+                                isCurrBlockConfirm = false;
+                                if (verifyBlockBelongCommonMiner(block)) {
                                     isCurrBlockConfirm = true;
-                                    //WitnessCountTime.curSec =0;
-                                    //preHeight = block.getHeight();
-                                } else {
-                                    //Only ordinary mining areas can be accepted
-                                    if (verifyBlockBelongCommonMiner(block)) {
-                                        isCurrBlockConfirm = false;
-                                        LOGGER.info("time of no arrival,only accept common miner block , but this candidate miner block");
-                                    } else {
-                                        LOGGER.info("time of no arrival,only accept common miner block , this block is common miner {} ", block.getHash());
-                                        isCurrBlockConfirm = true;
-                                        //WitnessCountTime.curSec =0;
-                                        //preHeight = block.getHeight();
-                                        //currHeight = preHeight;
-                                    }
                                 }
-                                LOGGER.info("block is not null  pre < block height ;pre = " + preHeight + " block height =" + block.getHeight() + "is accept this block =" + isCurrBlockConfirm);
+                                LOGGER.info("time of arrival  accept common miner block or candidate miner block");
+                                continue;
+                            }
+                            if (verifyBlockBelongCommonMiner(block)) {
+                                isCurrBlockConfirm = false;
+                            } else {
+                                isCurrBlockConfirm = true;
                             }
                         }
                     } catch (InterruptedException e) {
