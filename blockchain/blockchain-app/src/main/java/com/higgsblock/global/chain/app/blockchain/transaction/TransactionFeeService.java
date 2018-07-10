@@ -35,7 +35,7 @@ public class TransactionFeeService {
 
     public static final Money WITNESS_REWARDS_RATION = new Money("0.2");
 
-    public static final Money BLOCK_REWARDS = new Money("100");
+    public static final Money BLOCK_REWARDS = new Money("3");
 
     public static final Money BLOCK_REWARDS_MINER = new Money("0.8");
 
