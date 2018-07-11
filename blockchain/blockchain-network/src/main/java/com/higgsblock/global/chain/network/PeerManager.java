@@ -81,6 +81,12 @@ public class PeerManager {
      */
     @Getter
     private List<Peer> witnessPeers = Lists.newArrayList();
+    /**
+     * List of miners.
+     */
+    @Getter
+    @Setter
+    private List<String> minerAddresses = Lists.newArrayList();
 
     /**
      * Sets witness peers.
@@ -97,14 +103,6 @@ public class PeerManager {
             this.witnessPeers.add(peer);
         }
     }
-
-    /**
-     * List of miners.
-     */
-    @Getter
-    @Setter
-    private List<String> minerAddresses = Lists.newArrayList();
-
 
     /**
      * Add peers to the peer queue.
@@ -450,7 +448,7 @@ public class PeerManager {
             boolean result = this.registryApi.report(getSelf()).execute().body();
             LOGGER.info("report self info to register({}) {}", registryConfig.toString(), result);
         } catch (Exception e) {
-            LOGGER.error("report peer info to register error:" + e.getMessage(), e);
+            LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }
     }
 }

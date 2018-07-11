@@ -7,13 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
+ * The type Local peer connection info discovery.
+ *
  * @author zhao xiaogang
- * @date 2018/4/11
+ * @date 2018 /4/11
  */
 @Slf4j
 @Component
 public class LocalPeerConnectionInfoDiscovery implements IPeerConnectionInfoDiscovery {
 
+    /**
+     * The Peer config.
+     */
     @Autowired
     private PeerConfig peerConfig;
 
