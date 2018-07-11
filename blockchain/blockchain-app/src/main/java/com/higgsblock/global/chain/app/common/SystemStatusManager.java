@@ -36,7 +36,7 @@ public class SystemStatusManager {
         SystemStatusEvent systemStatusEvent = new SystemStatusEvent();
         systemStatusEvent.setSystemStatus(systemStatus);
         eventBus.post(systemStatusEvent);
-        LOGGER.info("sent system status {}", systemStatus);
+        LOGGER.info("sent system status:" + systemStatus);
     }
 
     public SystemStatus getSystemStatus() {
