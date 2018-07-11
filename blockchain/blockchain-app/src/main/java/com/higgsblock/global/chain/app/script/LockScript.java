@@ -36,20 +36,4 @@ public class LockScript extends BaseSerializer {
         return true;
     }
 
-    //TODO:  zhao xiaogang add valid
-    public boolean validLock(List<String> pubKeys) {
-        if (type == ScriptTypeEnum.P2PKH.getType()) {
-            if (CollectionUtils.isEmpty(pubKeys)) {
-                LOGGER.warn("pubKeys is empty");
-                return false;
-            }
-
-            String tempAddress = ECKey.pubKey2Base58Address(pubKeys.get(0));
-            if (StringUtils.equals(address, tempAddress)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

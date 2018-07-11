@@ -26,7 +26,6 @@ import java.util.List;
  * The P2P layer messages processed at the P2P layer at receiving. But the business messages be
  * transmit only, the P2P layer wont process them.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-22
  */

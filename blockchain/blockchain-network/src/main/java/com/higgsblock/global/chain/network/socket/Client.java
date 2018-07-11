@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
  * which connected with peers already or the peer is self or the out bound connections reach to the maximum. All the
  * connections are long-period connections.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-21
  */

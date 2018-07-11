@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 /**
  * Initialize the channel configuration.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-22
  */
