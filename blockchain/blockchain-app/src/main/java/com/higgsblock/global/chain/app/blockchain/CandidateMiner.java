@@ -48,7 +48,6 @@ public class CandidateMiner {
         String address = peerManager.getSelf().getId();
 
         isCMINER = transactionService.hasStake(address, SystemCurrencyEnum.CMINER);
-        LOGGER.info("is cminer =" + isCMINER);
         if (isCMINER) {
             currHeight = blockService.getMaxHeight();
             startTimer();
@@ -121,7 +120,6 @@ public class CandidateMiner {
                                 TimeUnit.SECONDS.sleep(50);
                             }
                         }
-                        LOGGER.info("preHeight =" + preHeight + "currHeight" + currHeight);
                         if (preHeight < currHeight) {
                             preHeight = currHeight;
                             this.curSec = 0;
