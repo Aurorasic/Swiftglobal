@@ -46,11 +46,6 @@ public class BlockService {
     private static final int MINIMUM_TRANSACTION_IN_BLOCK = 2;
 
     /**
-     * the max distance that miner got signatures
-     */
-    private static short MAX_DISTANCE_SIG = 50;
-
-    /**
      * Minimal witness number
      */
     public final static int MIN_WITNESS = 7;
