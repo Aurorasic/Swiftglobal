@@ -4,7 +4,6 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.blockchain.PubKeyAndSignPair;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
@@ -46,10 +45,6 @@ public class Transaction extends BaseBizEntity {
      */
     protected String extra;
     /**
-     * sign of this transaction
-     */
-    protected PubKeyAndSignPair pubKeyAndSignPair;
-    /**
      * the sources of current spending
      */
     private List<TransactionInput> inputs;
@@ -67,45 +62,36 @@ public class Transaction extends BaseBizEntity {
 
 
     @Override
-    public  boolean valid(){
+    public boolean valid() {
 
-        if(StringUtils.isEmpty(hash)){
+        if (StringUtils.isEmpty(hash)) {
             return false;
         }
 
-        if (StringUtils.isEmpty(creatorPubKey)){
+        if (StringUtils.isEmpty(creatorPubKey)) {
             return false;
         }
 
-        if (lockTime < 0){
+        if (lockTime < 0) {
             return false;
         }
 
-        //todo yezaiyong check this only if the input is empty
-//        if (pubKeyAndSignPair != null){
-//            //valid Sign
-//            if (!ECKey.verifySign(hash,pubKeyAndSignPair.getSignature(),pubKeyAndSignPair.getPubKey())){
-//                LOGGER.error("Transaction signature is error ");
-//                return false;
-//            }
-//        }
-
-        if (CollectionUtils.isNotEmpty(inputs)){
-            for (TransactionInput input: inputs) {
-                if (!input.valid()){
+        if (CollectionUtils.isNotEmpty(inputs)) {
+            for (TransactionInput input : inputs) {
+                if (!input.valid()) {
                     return false;
                 }
             }
         }
 
-        if (CollectionUtils.isNotEmpty(outputs)){
-            for (TransactionOutput out: outputs) {
-                if (!out.valid()){
+        if (CollectionUtils.isNotEmpty(outputs)) {
+            for (TransactionOutput out : outputs) {
+                if (!out.valid()) {
                     return false;
                 }
             }
         }
-        return  true;
+        return true;
     }
 
 
