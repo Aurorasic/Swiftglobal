@@ -33,11 +33,6 @@ import java.util.List;
 @Slf4j
 public class TransDaoService implements ITransService {
 
-    /**
-     * The Tx cache manager.
-     */
-    @Autowired
-    private TransactionCacheManager txCacheManager;
 
     /**
      * The Utxo entity dao.

@@ -31,8 +31,7 @@ public enum EntityType {
     TRANSACTION("300"),
 
     // ================ type 400-499: consensus related ================
-    VOTE_TABLE("400"),
-    INITVOTE("401"),;
+    VOTE_TABLE("400");
 
     private String code;
 

@@ -1,7 +1,5 @@
 package com.higgsblock.global.chain.app.consensus.syncblock;
 
-import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +15,7 @@ import org.springframework.stereotype.Component;
 public class MaxHeightHandler extends BaseEntityHandler<MaxHeight> {
 
     @Autowired
-    private BlockService blockService;
-
-    @Autowired
     private SyncBlockService syncBlockService;
-
-    @Autowired
-    private MessageCenter messageCenter;
 
     @Override
     protected void process(SocketRequest<MaxHeight> request) {

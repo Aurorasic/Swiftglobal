@@ -9,12 +9,10 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
-import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
-import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
@@ -37,9 +35,6 @@ import java.util.*;
 @Slf4j
 public class TransactionService {
 
-
-//    public final static List<String> WITNESS_ADDRESS_LIST = BlockService.WITNESS_ADDRESS_LIST;
-//    private static final int WITNESS_SIZE = WITNESS_ADDRESS_LIST.size();
     /**
      * 11+1
      */
@@ -52,9 +47,6 @@ public class TransactionService {
 
     @Autowired
     private BlockDaoService blockDaoService;
-
-    @Autowired
-    private ITransService transService;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -70,9 +62,6 @@ public class TransactionService {
 
     @Autowired
     private TransactionFeeService transactionFeeService;
-
-    @Autowired
-    private ITransactionIndexEntity transactionIndexEntityDao;
 
     @Autowired
     private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
@@ -397,6 +386,7 @@ public class TransactionService {
 
     /**
      * validate inputs
+     *
      * @param inputs
      * @param hash
      * @param preBlockHash

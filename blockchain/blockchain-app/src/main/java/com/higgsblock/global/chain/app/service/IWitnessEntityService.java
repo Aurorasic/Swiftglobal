@@ -11,15 +11,6 @@ import java.util.List;
  */
 public interface IWitnessEntityService {
 
-   /* *//**
-     * Get by height.
-     *
-     * @param height
-     * @return
-     *//*
-    List<WitnessEntity> getByHeight(long height);*/
-
-
     /**
      * Get all.
      *

@@ -14,8 +14,6 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
-import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
-import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
@@ -94,8 +92,6 @@ public class BlockService {
     @Autowired
     private TransDaoService transDaoService;
 
-    @Autowired
-    private IWitnessEntityService witnessService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -106,44 +102,7 @@ public class BlockService {
     @Autowired
     private TransactionFeeService transactionFeeService;
 
-    public void initWitness() {
-        List<WitnessPo> witnessPos = witnessService.getAll();
-        List<String> witnessAddrList = new ArrayList<>();
-        List<Integer> witnessSocketPortList = new ArrayList<>();
-        List<Integer> witnessHttpPortList = new ArrayList<>();
-        List<String> witnessPubkeyList = new ArrayList<>();
-        for (WitnessPo witnessPo : witnessPos) {
-            witnessAddrList.add(witnessPo.getAddress());
-            witnessSocketPortList.add(witnessPo.getSocketPort());
-            witnessHttpPortList.add(witnessPo.getHttpPort());
-            witnessPubkeyList.add(witnessPo.getPubKey());
-        }
-        int size = witnessAddrList.size();
-        for (int i = 0; i < size; i++) {
-            WitnessEntity entity = getEntity(
-                    witnessAddrList.get(i),
-                    witnessSocketPortList.get(i),
-                    witnessHttpPortList.get(i),
-                    witnessPubkeyList.get(i));
 
-            WITNESS_ENTITY_LIST.add(entity);
-        }
-
-        WITNESS_ENTITY_LIST.stream().forEach(entity -> {
-            WITNESS_ADDRESS_LIST.add(ECKey.pubKey2Base58Address(entity.getPubKey()));
-        });
-        LOGGER.info("the witness list is {}", WITNESS_ENTITY_LIST);
-    }
-
-    private static WitnessEntity getEntity(String ip, int socketPort, int httpPort, String pubKey) {
-        WitnessEntity entity = new WitnessEntity();
-        entity.setSocketPort(socketPort);
-        entity.setIp(ip);
-        entity.setPubKey(pubKey);
-        entity.setHttpPort(httpPort);
-
-        return entity;
-    }
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
         BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();

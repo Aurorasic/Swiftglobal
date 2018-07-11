@@ -68,7 +68,6 @@ public class WitnessCountTime {
     }
 
     public boolean startTimer() throws InterruptedException {
-        //If the received block is not empty, it is proved to be in the receiving block, and empty indicates that the timer needs to start
         if (block == null) {
             preHeight = currHeight;
             WitnessCountTime.curSec = 0;
@@ -94,12 +93,10 @@ public class WitnessCountTime {
                             } else {
                                 preHeight = currHeight;
                                 WitnessCountTime.curSec = 0;
-                                LOGGER.info("block is null  pre < curr;pre = " + preHeight + " curr =" + currHeight);
                             }
                         } else {
                             if (preHeight >= block.getHeight()) {
                                 isCurrBlockConfirm = false;
-                                LOGGER.info("block is not null  pre >= block height ;pre = " + preHeight + " block height =" + block.getHeight());
                                 continue;
                             }
                             if (curSec >= WAIT_WITNESS_TIME) {
@@ -107,7 +104,6 @@ public class WitnessCountTime {
                                 if (verifyBlockBelongCommonMiner(block)) {
                                     isCurrBlockConfirm = true;
                                 }
-                                LOGGER.info("time of arrival  accept common miner block or candidate miner block");
                                 continue;
                             }
                             isCurrBlockConfirm = false;

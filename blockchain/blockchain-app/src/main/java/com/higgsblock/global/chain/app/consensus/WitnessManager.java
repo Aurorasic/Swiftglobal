@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.consensus;
 
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
-import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -31,11 +30,6 @@ public class WitnessManager implements InitializingBean {
     @Autowired
     private PeerManager peerManager;
 
-    @Autowired
-    private BlockService blockService;
-
-    @Autowired
-    private AppConfig config;
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -83,15 +77,9 @@ public class WitnessManager implements InitializingBean {
     }
 
     private synchronized void loadWitnessFromDb() {
-        //List<WitnessEntity> entities = witnessService.getAll();
-        //        blockService.initWitness();
         List<WitnessEntity> entities = BlockService.WITNESS_ENTITY_LIST;
         if (CollectionUtils.isNotEmpty(entities)) {
             peerManager.setWitnessPeers(WitnessEntity.witnessEntity2Peer(entities));
         }
-    }
-
-    public synchronized void refresh(List<WitnessEntity> witnessEntities) {
-        //witnessService.addAll(witnessEntities);
     }
 }

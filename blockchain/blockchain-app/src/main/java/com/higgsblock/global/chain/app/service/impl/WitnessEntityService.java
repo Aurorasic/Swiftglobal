@@ -39,26 +39,6 @@ public class WitnessEntityService implements IWitnessEntityService {
     @Autowired
     private IWitnessEntity iWitnessEntity;
 
-   /* @Override
-    public List<WitnessEntity> getByHeight(long height) {
-        String key = buildCacheKey(height);
-
-        List<WitnessEntity> list = WITNESS_CACHE.getIfPresent(key);
-        if (list == null) {
-            List<WitnessPo> byHeight = iWitnessEntity.getByHeight(height);
-            for (WitnessPo witnessPo : byHeight) {
-                WitnessEntity witnessEntity = new WitnessEntity();
-                BeanUtils.copyProperties(witnessPo, witnessEntity);
-                list.add(witnessEntity);
-            }
-            if (list != null) {
-                WITNESS_CACHE.put(key, list);
-            }
-        }
-
-        return list;
-    }*/
-
     @Override
     public List<WitnessPo> getAll() {
         return iWitnessEntity.findAll();
