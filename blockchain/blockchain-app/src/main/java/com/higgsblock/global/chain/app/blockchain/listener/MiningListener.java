@@ -59,7 +59,7 @@ public class MiningListener implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
-        LOGGER.info("process event: {}", JSON.toJSONString(event));
+        LOGGER.info("process event: {}", event);
         if (!isMining) {
             LOGGER.info("The system is not ready, cannot mining");
             return;
@@ -69,7 +69,7 @@ public class MiningListener implements IEventBusListener {
 
     @Subscribe
     public void process(SystemStatusEvent event) {
-        LOGGER.info("process event: {}", JSON.toJSONString(event));
+        LOGGER.info("process event: {}", event);
         SystemStatus state = event.getSystemStatus();
         calculateDpos();
         if (SystemStatus.RUNNING == state) {
