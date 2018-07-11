@@ -3,6 +3,8 @@ package com.higgsblock.global.chain.crypto.utils;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
 
 /**
+ * Hash160 interface detects auxiliary classes
+ *
  * @author kongyu
  * @date 2018-02-24 11:23
  */

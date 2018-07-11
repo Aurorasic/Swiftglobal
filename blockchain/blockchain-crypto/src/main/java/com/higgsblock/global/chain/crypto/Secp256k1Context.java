@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.security.AccessControlException;
 
 /**
+ * Elliptic curve algorithm context loading class
+ *
  * @author kongyu
  * @create 2018-02-24 14:34
  */

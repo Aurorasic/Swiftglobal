@@ -6,6 +6,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
+ * base58 encoder
+ *
  * @author kongyu
  * @create 2018-02-22
  */

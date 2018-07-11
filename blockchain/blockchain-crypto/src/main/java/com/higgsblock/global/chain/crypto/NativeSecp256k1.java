@@ -12,6 +12,8 @@ import static com.higgsblock.global.chain.crypto.NativeSecp256k1Util.assertEqual
 
 
 /**
+ * Local elliptic curve dynamic library call
+ *
  * @author kongyu
  * @create 2018-02-24 11:24
  */

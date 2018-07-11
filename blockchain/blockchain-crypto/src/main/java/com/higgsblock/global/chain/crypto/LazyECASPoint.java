@@ -8,6 +8,8 @@ import java.util.Arrays;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
+ * Node entity class in elliptic curve encryption algorithm
+ *
  * @author kongyu
  * @create 2018-02-24 10:20
  */

@@ -6,6 +6,8 @@ import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
 /**
+ * Public/private key pair entity class
+ *
  * @author kongyu
  * @create 2018-02-26 14:22
  */

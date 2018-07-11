@@ -42,6 +42,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
+ * Public and private key and address generation classes,Public and private keys and addresses can be generated randomly,
+ * the corresponding public and address can be generated according to the specified private key, or the corresponding
+ * address can be generated according to the specified public key
+ *
  * @author kongyu
  * @create 2018-02-23 15:38
  */

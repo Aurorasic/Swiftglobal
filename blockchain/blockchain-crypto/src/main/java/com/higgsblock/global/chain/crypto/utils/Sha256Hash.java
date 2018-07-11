@@ -16,6 +16,8 @@ import java.util.Arrays;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
+ * Hash256 tool class
+ *
  * @author kongyu
  * @date 2018-02-23 15:42
  */

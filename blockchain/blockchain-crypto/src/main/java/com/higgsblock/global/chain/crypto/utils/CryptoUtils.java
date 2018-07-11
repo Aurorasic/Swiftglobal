@@ -13,6 +13,8 @@ import java.util.Date;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
+ * Encryption algorithm helper tool class
+ *
  * @author kongyu
  * @create 2018-02-23 16:24
  */

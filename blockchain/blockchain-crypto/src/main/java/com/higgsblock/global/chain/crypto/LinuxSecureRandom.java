@@ -10,6 +10,8 @@ import java.security.SecureRandomSpi;
 import java.security.Security;
 
 /**
+ * Linux secure random generator
+ *
  * @author kongyu
  * @create 2018-02-23 15:24
  */

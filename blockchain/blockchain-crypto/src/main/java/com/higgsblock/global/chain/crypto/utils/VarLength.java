@@ -1,6 +1,8 @@
 package com.higgsblock.global.chain.crypto.utils;
 
 /**
+ * Elliptic curve encryption algorithm calculation auxiliary class
+ *
  * @author kongyu
  * @create 2018-02-23 15:42
  */

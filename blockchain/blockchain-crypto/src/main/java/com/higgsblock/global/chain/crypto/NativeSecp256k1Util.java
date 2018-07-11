@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * The local elliptic curve dynamic library invokes the tool class
+ *
  * @author kongyu
  * @create 2018-02-24 11:24
  */
