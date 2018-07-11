@@ -88,10 +88,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         return syncState == 1;
     }
 
-    private boolean isRunningState() {
-        return syncState == 2;
-    }
-
     public void startSyncBlock() {
         messageCenter.broadcast(new GetMaxHeight());
 
