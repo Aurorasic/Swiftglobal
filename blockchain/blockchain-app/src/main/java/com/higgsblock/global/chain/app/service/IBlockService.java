@@ -79,13 +79,6 @@ public interface IBlockService {
     Block saveBlockCompletely(Block block) throws Exception;
 
     /**
-     * print the blocks
-     *
-     * @return void
-     */
-    void printAllBlockData();
-
-    /**
      * Check the block numbers
      *
      * @return boolean

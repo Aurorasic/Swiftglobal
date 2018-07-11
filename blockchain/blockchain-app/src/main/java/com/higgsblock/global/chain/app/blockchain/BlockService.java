@@ -359,10 +359,6 @@ public class BlockService {
         return blockDaoService.getBlocksByHeight(height);
     }
 
-    public void printAllBlockData() {
-        blockDaoService.printAllBlockData();
-    }
-
     private boolean verifySize(Block block) {
         return block.sizeAllowed();
     }

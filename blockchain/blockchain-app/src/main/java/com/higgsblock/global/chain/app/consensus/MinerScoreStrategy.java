@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.consensus;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,29 +21,26 @@ import java.util.Set;
 @Component
 @Slf4j
 public class MinerScoreStrategy {
-    public static int INIT_SCORE = 1000;
+    public int INIT_SCORE = 1000;
+    public int MINUS_SCORE_PACKAGED_BEST = -20;
 
-    public static int MINUS_SCORE_PACKAGED_BEST = -20;
-
-    private static IScoreService scoreDaoService;
-    private static BlockService blockService;
-    private static TransactionService transactionService;
-    private static NodeManager nodeManager;
-
+    @Autowired
+    private IScoreService scoreDaoService;
+    @Autowired
+    private TransactionService transactionService;
 
     /**
      * Called by block dao service
      */
 
-    public static void refreshMinersScore(Block toBeBestBlock) {
+    public void refreshMinersScore(Block toBeBestBlock) {
 
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
-        Map<String, Integer> allMinerSoreMap = scoreDaoService.loadAll();
 
         //if the block is only mined by  miner, plus score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             //minus miner score
-            plusScore(allMinerSoreMap, minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
             LOGGER.info("miner:{}, score plus:{}", minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         }
 
@@ -68,7 +63,7 @@ public class MinerScoreStrategy {
 
     }
 
-    private static void plusScore(Map<String, Integer> allMinerSoreMap, String address, int plusScore) {
+    private void plusScore(String address, int plusScore) {
         if (StringUtils.isNotEmpty(address) && plusScore != 0) {
             Integer tmpScore = scoreDaoService.get(address);
             int score = tmpScore == null ? INIT_SCORE : tmpScore;
@@ -76,26 +71,4 @@ public class MinerScoreStrategy {
             scoreDaoService.put(address, score);
         }// else it is empty address, do not handle
     }
-
-
-    @Autowired(required = true)
-    public void setScoreDaoService(IScoreService scoreDaoService) {
-        MinerScoreStrategy.scoreDaoService = scoreDaoService;
-    }
-
-    @Autowired(required = true)
-    public void setBlockService(BlockService blockService) {
-        MinerScoreStrategy.blockService = blockService;
-    }
-
-    @Autowired(required = true)
-    public void setTransactionService(TransactionService transactionService) {
-        MinerScoreStrategy.transactionService = transactionService;
-    }
-
-    @Autowired(required = true)
-    public void setBlockService(NodeManager nodeManager) {
-        MinerScoreStrategy.nodeManager = nodeManager;
-    }
-
 }
