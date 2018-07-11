@@ -1,10 +1,12 @@
 package com.higgsblock.global.chain.app.utils;
 
 /**
+ * Provide a facade to calculate size of an object.
+ *
  * @author chenjiawei
  * @date 2018-03-28
  */
-public interface SizeCounter {
+public interface ISizeCounter {
     /**
      * Calculate size of an object.
      *

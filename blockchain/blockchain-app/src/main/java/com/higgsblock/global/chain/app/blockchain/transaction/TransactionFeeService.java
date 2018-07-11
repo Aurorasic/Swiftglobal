@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
-import com.higgsblock.global.chain.app.utils.SizeCounter;
+import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -46,7 +46,7 @@ public class TransactionFeeService {
 
     public static final BigDecimal ONE_KB_OF_BYTES = new BigDecimal("1024");
 
-    final SizeCounter sizeCounter = new JsonSizeCounter();
+    final ISizeCounter sizeCounter = new JsonSizeCounter();
 
     /**
      * block transactions limit exclude coinBase

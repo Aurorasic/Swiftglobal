@@ -8,7 +8,7 @@ import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
-import com.higgsblock.global.chain.app.utils.SizeCounter;
+import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -135,7 +135,7 @@ public class Transaction extends BaseBizEntity {
     }
 
     public boolean sizeAllowed() {
-        SizeCounter sizeCounter = new JsonSizeCounter();
+        ISizeCounter sizeCounter = new JsonSizeCounter();
         if (sizeCounter.calculateSize(extra) > EXTRA_LIMITED_SIZE_UNIT) {
             return false;
         }

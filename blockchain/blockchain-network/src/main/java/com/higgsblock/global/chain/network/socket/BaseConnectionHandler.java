@@ -3,6 +3,8 @@ package com.higgsblock.global.chain.network.socket;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 
 /**
+ * Common handler methods for either connection side.
+ *
  * @author chenjiawei
  * @date 2018-05-26
  */
