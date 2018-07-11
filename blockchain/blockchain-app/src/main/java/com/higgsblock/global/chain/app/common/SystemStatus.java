@@ -21,14 +21,6 @@ public enum SystemStatus implements Serializable {
         this.desc = desc;
     }
 
-    public int getState() {
-        return state;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
     public boolean equals(SystemStatus otherState) {
         if (this.state == otherState.state) {
             return true;

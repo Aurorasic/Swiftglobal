@@ -26,12 +26,8 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
     @Autowired
     private WitnessService witnessService;
 
-    @Autowired
-    private MessageCenter messageCenter;
-
     @Override
     protected void process(SocketRequest<VoteTable> request) {
-
 
         VoteTable data = request.getData();
         String sourceId = request.getSourceId();
