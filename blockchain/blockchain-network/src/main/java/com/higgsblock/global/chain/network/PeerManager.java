@@ -115,7 +115,6 @@ public class PeerManager {
 
         List<Peer> peers = Lists.newArrayList(collection);
 
-        //todo kongyu 2018-4-25 20:03
         /*
         1.Need to empty all the peer nodes and try to connect retries to 0
         2.it is necessary to determine whether the obtained peer node has already existed in the local area,
@@ -130,7 +129,6 @@ public class PeerManager {
             }
 
             peer.setRetries(0);
-            //todo kongyu 2018-04-26 17:03 check cache 是否已经存在被删除的peer节点
             if (peerCache.isCached(peer)) {
                 continue;
             }
