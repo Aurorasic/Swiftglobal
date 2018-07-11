@@ -5,8 +5,10 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 
 /**
+ * Provide the latest height of the HTTP interface query node externally
+ *
  * @author kongyu
- * @date 2018-5-30 11:16
+ * @date 2018-5-30
  */
 public interface IBlockApi {
 
