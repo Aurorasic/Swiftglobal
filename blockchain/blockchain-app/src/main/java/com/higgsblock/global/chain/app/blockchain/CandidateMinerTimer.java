@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Scope("prototype")
 @Slf4j
-public class CandidateMiner {
+public class CandidateMinerTimer {
 
     private static long preHeight = 0;
     private static long currHeight = 0;

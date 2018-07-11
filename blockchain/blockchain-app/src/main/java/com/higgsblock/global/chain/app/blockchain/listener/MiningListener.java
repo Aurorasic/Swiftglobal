@@ -5,7 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
+import com.higgsblock.global.chain.app.blockchain.CandidateMinerTimer;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
@@ -43,7 +43,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private WitnessService witnessService;
     @Autowired
-    private CandidateMiner candidateMiner;
+    private CandidateMinerTimer candidateMinerTimer;
 
     @Autowired
     private BlockIdxDaoService blockIdxDaoService;
@@ -116,7 +116,7 @@ public class MiningListener implements IEventBusListener {
             return;
         }
 
-        candidateMiner.doMingTimer();
+        candidateMinerTimer.doMingTimer();
         // cancel running task
         if (null != future) {
             future.cancel(true);

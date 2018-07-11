@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Scope("prototype")
 @Slf4j
-public class WitnessCountTime {
+public class WitnessTimer {
 
     private static long preHeight = 0;
     private static long currHeight = 0;
@@ -50,7 +50,7 @@ public class WitnessCountTime {
 
     public static boolean isCurrBlockConfirm(Block block) {
         try {
-            WitnessCountTime.block = block;
+            WitnessTimer.block = block;
             TimeUnit.SECONDS.sleep(3);
             return isCurrBlockConfirm;
         } catch (InterruptedException e) {
@@ -60,8 +60,8 @@ public class WitnessCountTime {
     }
 
     public static void instantiationBlock(Block block) {
-        WitnessCountTime.block = null;
-        WitnessCountTime.curSec = 0;
+        WitnessTimer.block = null;
+        WitnessTimer.curSec = 0;
         preHeight = block.getHeight();
         currHeight = block.getHeight();
     }
@@ -69,7 +69,7 @@ public class WitnessCountTime {
     public boolean startTimer() throws InterruptedException {
         if (block == null) {
             preHeight = currHeight;
-            WitnessCountTime.curSec = 0;
+            WitnessTimer.curSec = 0;
             if (executorService == null) {
                 this.start(ExecutorServices.newSingleThreadExecutor(getClass().getName(), 1));
             }
@@ -91,7 +91,7 @@ public class WitnessCountTime {
                                 LOGGER.info("block is null  pre >= curr;pre {} curr {} ", preHeight, currHeight);
                             } else {
                                 preHeight = currHeight;
-                                WitnessCountTime.curSec = 0;
+                                WitnessTimer.curSec = 0;
                             }
                         } else {
                             if (preHeight >= block.getHeight()) {

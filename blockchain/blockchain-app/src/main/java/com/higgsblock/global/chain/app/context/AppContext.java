@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.context;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateMiner;
-import com.higgsblock.global.chain.app.blockchain.WitnessCountTime;
+import com.higgsblock.global.chain.app.blockchain.CandidateMinerTimer;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
 import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.consensus.syncblock.SyncBlockService;
@@ -48,10 +48,10 @@ public class AppContext {
     private EventBus eventBus;
 
     @Autowired
-    private CandidateMiner candidateMiner;
+    private CandidateMinerTimer candidateMinerTimer;
 
     @Autowired
-    private WitnessCountTime witnessCountTime;
+    private WitnessTimer witnessTimer;
 
     public void start() throws Exception {
         checkAndRecoveryBlockData();
@@ -70,9 +70,9 @@ public class AppContext {
 
         syncBlocks();
 
-        startCandidateCountTime();
+        startCandidateTimer();
 
-        startWitnessCountTime();
+        startWitnessTimer();
 
     }
 
@@ -113,14 +113,12 @@ public class AppContext {
         syncBlockService.startSyncBlock();
     }
 
-    private void startCandidateCountTime() throws InterruptedException {
-//        CandidateMiner candidateMiner = new CandidateMiner();
-        candidateMiner.queryCurrHeightStartTime();
+    private void startCandidateTimer() throws InterruptedException {
+        candidateMinerTimer.queryCurrHeightStartTime();
     }
 
-    private void startWitnessCountTime() throws InterruptedException {
-        //WitnessCountTime witnessCountTime = new WitnessCountTime();
-        witnessCountTime.queryCurrHeightStartTime();
+    private void startWitnessTimer() throws InterruptedException {
+        witnessTimer.queryCurrHeightStartTime();
     }
 
 }
