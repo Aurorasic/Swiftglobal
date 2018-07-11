@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.consensus.vote;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.HashBasedTable;
-import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
