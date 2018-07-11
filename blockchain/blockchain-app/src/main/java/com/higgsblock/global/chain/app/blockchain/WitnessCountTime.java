@@ -13,7 +13,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @program: HiggsGlobal
  * @description:
  * @author: yezaiyong
  * @create: 2018-06-29 20:32
@@ -89,7 +88,7 @@ public class WitnessCountTime {
                         TimeUnit.SECONDS.sleep(1);
                         if (block == null) {
                             if (preHeight >= currHeight) {
-                                LOGGER.info("block is null  pre >= curr;pre = " + preHeight + " curr =" + currHeight);
+                                LOGGER.info("block is null  pre >= curr;pre {} curr {} ", preHeight, currHeight);
                             } else {
                                 preHeight = currHeight;
                                 WitnessCountTime.curSec = 0;

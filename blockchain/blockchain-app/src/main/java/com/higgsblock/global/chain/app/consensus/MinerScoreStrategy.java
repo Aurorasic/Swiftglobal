@@ -46,6 +46,7 @@ public class MinerScoreStrategy {
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             //minus miner score
             plusScore(allMinerSoreMap, minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+            LOGGER.info("miner:{}, score plus:{}", minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         }
 
         //handle joined miner and removed miner

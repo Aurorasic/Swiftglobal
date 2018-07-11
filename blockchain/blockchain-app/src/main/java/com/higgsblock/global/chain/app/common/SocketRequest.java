@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.common;
 
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SocketRequest<T> {
+public class SocketRequest<T> extends BaseSerializer {
 
     private String sourceId;
     private T data;

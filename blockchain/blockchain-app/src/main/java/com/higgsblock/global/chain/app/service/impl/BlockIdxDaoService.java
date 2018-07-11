@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
 import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
@@ -29,9 +28,6 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
     @Autowired
     private TransDaoService transDaoService;
-
-    @Autowired
-    private BlockFormatter blockFormatter;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -91,7 +87,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
             });
             return blockIndex;
         }
-        LOGGER.info("get blockIndex is null by height = " + height);
+        LOGGER.info("get blockIndex is null by height={}", height);
         return null;
     }
 
