@@ -4,14 +4,11 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
-import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
-import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +23,6 @@ import java.util.List;
 @Slf4j
 public class BlockIdxDaoService implements IBlockIndexService {
 
-    @Autowired
-    private BlockEntityDao blockDao;
 
     @Autowired
     private BlockIndexEntityDao blockIndexDao;
@@ -100,37 +95,6 @@ public class BlockIdxDaoService implements IBlockIndexService {
         return null;
     }
 
-    private void insertBatch(Block block, BlockIndex blockIndex) {
-        long blockHeight = blockIndex.getHeight();
-        String minerAddress = block.getMinerFirstPKSig().getAddress();
-        ArrayList<String> blockHashs = blockIndex.getBlockHashs();
-        String bestBlockHash = blockIndex.getBestBlockHash();
-        List<BlockIndexEntity> blockIndexEntities = Lists.newArrayList();
-        for (int i = 0; i < blockHashs.size(); i++) {
-            String blockHash = blockHashs.get(i);
-            BlockIndexEntity blockIndexEntity = new BlockIndexEntity();
-            blockIndexEntity.setHeight(blockHeight);
-            blockIndexEntity.setBlockHash(blockHash);
-            if (StringUtils.equals(blockHash, bestBlockHash)) {
-                blockIndexEntity.setIsBest(i);
-                blockIndexEntity.setMinerAddress(minerAddress);
-            } else {
-                blockIndexEntity.setIsBest(-1);
-                Block block1 = getBlockEntity2Block(blockHash);
-                blockIndexEntity.setMinerAddress(block1.getMinerFirstPKSig().getAddress());
-            }
-            blockIndexEntities.add(blockIndexEntity);
-        }
-        blockIndexDao.insertBatch(blockIndexEntities);
-    }
-
-    private Block getBlockEntity2Block(String blockHash) {
-        BlockEntity blockEntity = blockDao.getByField(blockHash);
-        if (blockEntity == null) {
-            return null;
-        }
-        return blockFormatter.parse(blockEntity.getData());
-    }
 
     public BlockIndex getLastBlockIndex() {
         long maxHeight = blockIndexDao.getMaxHeight();
