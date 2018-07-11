@@ -87,7 +87,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
             });
             return blockIndex;
         }
-        LOGGER.info("get blockIndex is null by height = " + height);
+        LOGGER.info("get blockIndex is null by height={}", height);
         return null;
     }
 
