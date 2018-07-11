@@ -388,7 +388,7 @@ public class WitnessService {
             return false;
         }
         //row is blockHash,column is pubKey and value is sign
-        Table<String, String, String> VoteSignTable = HashBasedTable.create();
+        Table<String, String, String> votesigntable = HashBasedTable.create();
         Set<Map.Entry<String, Map<String, Vote>>> voteEntrySet = rowVersion.entrySet();
         LOGGER.info("the version is {},the voteHeight is {} and the votes are {}", version, voteHeight, voteEntrySet);
         String bestBlockHash = null;
@@ -418,8 +418,8 @@ public class WitnessService {
                     LOGGER.info("height {},version {},the bestBlockHash do'nt change {},{}", voteHeight, version, bestBlockHash, voteBlockHash);
                 }
             }
-            VoteSignTable.put(voteBlockHash, votePubKey, voteSign);
-            Map<String, String> voteRow = VoteSignTable.row(voteBlockHash);
+            votesigntable.put(voteBlockHash, votePubKey, voteSign);
+            Map<String, String> voteRow = votesigntable.row(voteBlockHash);
             if (voteRow.size() >= MIN_SAME_SIGN) {
                 blockWithEnoughSign = blockCache.get(height, k -> new HashMap<>()).get(voteBlockHash);
                 if (null == blockWithEnoughSign) {
@@ -450,7 +450,7 @@ public class WitnessService {
             LOGGER.info("height {},version {},the bestBlockHash is blank{}", voteHeight, version);
             return false;
         }
-        String proofPubKey = VoteSignTable.row(bestBlockHash).keySet().iterator().next();
+        String proofPubKey = votesigntable.row(bestBlockHash).keySet().iterator().next();
         Map<String, Vote> voteMap = this.voteTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version;
