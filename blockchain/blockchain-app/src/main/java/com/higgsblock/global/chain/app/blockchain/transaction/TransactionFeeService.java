@@ -22,7 +22,6 @@ import java.math.RoundingMode;
 import java.util.*;
 
 /**
- * @program: HiggsGlobal
  * @description:
  * @author: yezaiyong
  * @create: 2018-05-21 10:18

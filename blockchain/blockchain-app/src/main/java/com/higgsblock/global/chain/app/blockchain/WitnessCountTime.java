@@ -13,7 +13,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @program: HiggsGlobal
  * @description:
  * @author: yezaiyong
  * @create: 2018-06-29 20:32
