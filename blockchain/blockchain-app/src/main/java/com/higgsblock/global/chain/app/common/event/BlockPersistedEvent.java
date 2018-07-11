@@ -24,16 +24,6 @@ public class BlockPersistedEvent extends BaseSerializer {
     private String blockHash;
 
     /**
-     * the height of the highest best block
-     */
-//    private long highestBestHeight;
-
-    /**
-     * the best block hash on highest best block.
-     */
-//    private String highestBestBlockHash;
-
-    /**
      * if it is true, that is after persisting this block the "highestBestBlockHash" is newest best block
      * it is false, that is after persisting this block the "highestBestBlockHash" is old, on newest best block to be confirmed
      */
