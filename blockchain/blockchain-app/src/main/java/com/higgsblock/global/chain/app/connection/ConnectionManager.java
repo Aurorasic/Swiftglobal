@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
+ * Connection manager among peers.
+ *
  * @author chenjiawei
  * @date 2018-05-26
  */

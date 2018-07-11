@@ -70,7 +70,7 @@ public class Client {
             }
             if (channelFuture.cause() != null) {
                 handler.onCause(peer);
-                LOGGER.error("Failed to connect to peer {}, address {}. Exception: {}",
+                LOGGER.info("Failed to connect to peer {}, address {}. Exception: {}",
                         peer.getId(), peer.getSocketAddress(), channelFuture.cause().getMessage());
                 return;
             }

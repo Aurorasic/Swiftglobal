@@ -10,6 +10,8 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * A periodic task for connection management.
+ *
  * @author chenjiawei
  * @date 2018-05-23
  */

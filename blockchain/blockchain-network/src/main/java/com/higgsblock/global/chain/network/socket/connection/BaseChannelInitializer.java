@@ -4,6 +4,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
+ * Channel Initializer
+ *
  * @author chenjiawei
  * @date 2018-05-23
  */

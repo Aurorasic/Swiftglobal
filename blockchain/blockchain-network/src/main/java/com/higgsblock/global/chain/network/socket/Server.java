@@ -74,7 +74,7 @@ public class Server {
                     return;
                 }
                 if (channelFuture.cause() != null) {
-                    LOGGER.error("Failed to bind port : {}. Exception : {}", socketServerPort, channelFuture.cause().getMessage());
+                    LOGGER.info("Failed to bind port : {}. Exception : {}", socketServerPort, channelFuture.cause().getMessage());
                 }
             }).sync().channel();
         } catch (Exception e) {

@@ -11,7 +11,7 @@ import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
-import com.higgsblock.global.chain.app.utils.SizeCounter;
+import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.Data;
 import lombok.Getter;
@@ -295,7 +295,7 @@ public class Block extends BaseBizEntity {
     }
 
     public boolean sizeAllowed() {
-        SizeCounter sizeCounter = new JsonSizeCounter();
+        ISizeCounter sizeCounter = new JsonSizeCounter();
         return sizeCounter.calculateSize(this) <= LIMITED_SIZE;
     }
 
