@@ -79,7 +79,7 @@ public class NodeManager implements InitializingBean {
         }
 
         Map<String, Integer> dposMinerSoreMap = scoreDaoService.loadAll();
-        LOGGER.info("select {} dpos node from dposMinerScore:{}", (sn + 1), dposMinerSoreMap);
+        LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), dposMinerSoreMap);
         if (dposMinerSoreMap.size() < NODE_SIZE) {
             return null;
         }

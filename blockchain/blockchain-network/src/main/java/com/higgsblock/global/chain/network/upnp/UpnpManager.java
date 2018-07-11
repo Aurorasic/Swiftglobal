@@ -30,11 +30,18 @@ import java.util.regex.Pattern;
 @Slf4j
 public class UpnpManager {
     /**
+     * The constant ADDR_MIN_LEN.
+     */
+    private static final int ADDR_MIN_LEN = 7;
+    /**
+     * The constant ADDR_MAX_LEN.
+     */
+    private static final int ADDR_MAX_LEN = 15;
+    /**
      * The App config.
      */
     @Autowired
     private PeerConfig peerConfig;
-
     /**
      * The Peer manager.
      */
@@ -160,7 +167,7 @@ public class UpnpManager {
     /**
      * Gets ip.
      *
-     * @return ip
+     * @return ip ip
      */
     public String getIp() {
         if (peerConfig.getNetworkType() == NetworkType.DEV_NET) {
@@ -172,7 +179,7 @@ public class UpnpManager {
             try {
                 publicIP = HttpClient.get(api);
             } catch (Exception e) {
-                LOGGER.error("get public ip error={},api={}", e.getMessage(), api);
+                LOGGER.error(String.format("get public ip error=%s,api=%s", e.getMessage(), api), e);
             }
 
             if (StringUtils.isNotEmpty(publicIP)) {
@@ -187,7 +194,7 @@ public class UpnpManager {
                     publicIP = discover.getUpnpService().getExternalIPAddress();
                 }
             } catch (NotDiscoverUpnpGatewayException | UpnpException e) {
-                LOGGER.error("try to get public ip by upnp protocol error=" + e.getMessage());
+                LOGGER.error(e.getMessage(), e);
             }
         }
 
@@ -210,7 +217,7 @@ public class UpnpManager {
      * @return the boolean
      */
     private boolean isIP(String addr) {
-        if (addr.length() < 7 || addr.length() > 15 || "".equals(addr)) {
+        if (StringUtils.isEmpty(addr) || addr.length() < ADDR_MIN_LEN || addr.length() > ADDR_MAX_LEN) {
             return false;
         }
 
@@ -224,7 +231,6 @@ public class UpnpManager {
 
         Pattern pat = Pattern.compile(rexp);
         Matcher mat = pat.matcher(addr);
-
         return mat.find();
     }
 
@@ -238,7 +244,7 @@ public class UpnpManager {
         try {
             discover.getUpnpService().discover();
         } catch (NotDiscoverUpnpGatewayException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage(), e);
             return null;
         }
 
