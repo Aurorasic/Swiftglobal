@@ -254,6 +254,7 @@ public class BlockDaoService implements IBlockService {
         blockEntity.setHeight(block.getHeight());
         blockEntity.setData(blockFormatter.format(block));
         blockDao.add(blockEntity);
+        LOGGER.info("saved block:{}", block.getSimpleInfo());
     }
 
 

@@ -210,7 +210,7 @@ public class NodeManager implements InitializingBean {
         }
         List<String> dposNodes = getDposGroupByHeihgt(height, preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
-            LOGGER.error("the dpos node is empty with the height={}", height);
+            LOGGER.warn("the dpos node is empty with the height={}", height);
             return false;
         }
         boolean canPackBlock = dposNodes.contains(address);

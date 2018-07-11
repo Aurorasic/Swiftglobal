@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.consensus.vote;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.HashBasedTable;
-import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
@@ -26,12 +25,8 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
     @Autowired
     private WitnessService witnessService;
 
-    @Autowired
-    private MessageCenter messageCenter;
-
     @Override
     protected void process(SocketRequest<VoteTable> request) {
-
 
         VoteTable data = request.getData();
         String sourceId = request.getSourceId();

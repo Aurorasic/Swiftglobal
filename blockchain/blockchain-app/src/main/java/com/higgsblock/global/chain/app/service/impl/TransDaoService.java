@@ -137,7 +137,7 @@ public class TransDaoService implements ITransService {
                 UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
                     unspentUtxoTx = false;
-                    LOGGER.warn("utxo data map has no this uxto={}_tx={}", preUTXOKey, tx.getHash());
+                    LOGGER.warn("utxo data map has no this uxto={},tx={}", preUTXOKey, tx.getHash());
                     break;
                 }
 

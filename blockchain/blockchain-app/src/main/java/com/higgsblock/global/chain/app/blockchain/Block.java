@@ -321,11 +321,11 @@ public class Block extends BaseBizEntity {
 
     @JSONField(serialize = false)
     public String getSimpleInfo() {
-        return "height=" + height + "_" + getHash();
+        return "height=" + height + ",hash=" + getHash();
     }
 
     @JSONField(serialize = false)
     public String getSimpleInfoSuffix() {
-        return "for height=" + height + "_" + getHash();
+        return "for height=" + height + ",hash=" + getHash();
     }
 }

@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -32,9 +31,6 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
 
     @Autowired
     private BlockService blockService;
-
-    @Autowired
-    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
     private MessageCenter messageCenter;
