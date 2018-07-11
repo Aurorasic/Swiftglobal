@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
+ * The browser accesses the whitelist filter
+ *
  * @author kongyu
  * @date 2018-5-21 16:20
  */

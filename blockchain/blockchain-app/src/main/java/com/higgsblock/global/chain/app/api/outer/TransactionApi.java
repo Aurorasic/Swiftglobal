@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
+ * Provides the transaction sending tool class externally
+ *
  * @author kongyu
  * @date 2018-03-19
  */
