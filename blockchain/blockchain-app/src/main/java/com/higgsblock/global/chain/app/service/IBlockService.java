@@ -43,19 +43,6 @@ public interface IBlockService {
      */
     Block getBlockByHash(String blockHash);
 
-//    /**
-//     * Get the max height of the block
-//     *
-//     * @return long
-//     */
-//    long getMaxHeight();
-//
-//    /**
-//     * Get last best block
-//     *
-//     * @return Block
-//     */
-//    Block getLastBestBlock();
 
     /**
      * Get blocks by height
