@@ -6,7 +6,6 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
@@ -42,8 +41,6 @@ public class NodeManager implements InitializingBean {
     private final int maxScore = 1000;
     private final int midScore = 800;
     private final int mixScore = 600;
-    @Autowired
-    private BlockService blockService;
     @Autowired
     private IScoreService scoreDaoService;
     @Autowired
@@ -206,13 +203,6 @@ public class NodeManager implements InitializingBean {
         return (getSn(height) - 2) * DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
-    public long getEndHeightBySn(long sn) {
-        if (sn < 1) {
-            throw new IllegalArgumentException("get end height by sn error:" + sn);
-        }
-        return (sn - 1) * DPOS_BLOCKS_PER_ROUND + 1;
-    }
-
     public boolean canPackBlock(long height, String address, String preBlockHash) {
         long batchStartHeight = getBatchStartHeight(height);
         if (batchStartHeight > height) {
@@ -224,7 +214,7 @@ public class NodeManager implements InitializingBean {
             return false;
         }
         boolean canPackBlock = dposNodes.contains(address);
-        LOGGER.info("canPackBlock?={}_height={}_address={}, the dposNodes={}", canPackBlock, height, address, dposNodes);
+        LOGGER.info("canPackBlock?={},height={},address={}, the dposNodes={}", canPackBlock, height, address, dposNodes);
 
         if (!dposNodes.contains(address)) {
             return false;
@@ -242,10 +232,6 @@ public class NodeManager implements InitializingBean {
 
     public boolean isGroupSeleted(long sn) {
         return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
-    }
-
-    public boolean isEndHeight(long height) {
-        return height % DPOS_BLOCKS_PER_ROUND == 1;
     }
 
 }
