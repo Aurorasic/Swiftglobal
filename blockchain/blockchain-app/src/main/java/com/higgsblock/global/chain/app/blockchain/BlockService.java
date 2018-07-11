@@ -259,7 +259,6 @@ public class BlockService {
         }
 
         if (!validBasic(block)) {
-            LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
             return false;
         }
 
