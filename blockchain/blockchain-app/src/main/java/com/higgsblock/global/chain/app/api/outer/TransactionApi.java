@@ -1,11 +1,12 @@
 package com.higgsblock.global.chain.app.api.outer;
 
-import com.higgsblock.global.chain.app.api.service.TransactionRespService;
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
+import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,32 +20,33 @@ import java.util.List;
  */
 @RequestMapping("/v1.0.0/transactions")
 @RestController
+@Slf4j
 public class TransactionApi {
 
     @Autowired
-    private UTXORespService utxoRespService;
+    private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     @Autowired
-    private TransactionRespService transactionRespService;
+    private MessageCenter messageCenter;
 
     @RequestMapping("/send")
     public ResponseData<Boolean> sendTx(@RequestBody Transaction tx) {
         if (null == tx) {
-            return new ResponseData<Boolean>(RespCodeEnum.PARAM_INVALID, "transaction params is null");
+            return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
         }
-        Boolean result = transactionRespService.sendTransaction(tx);
-        return (result) ? new ResponseData<Boolean>(RespCodeEnum.SUCCESS, "success") : new ResponseData<Boolean>(RespCodeEnum.FAILED, "failed");
+
+        boolean result = messageCenter.dispatch(tx);
+        LOGGER.info("transaction is = {}", tx);
+        return result ? ResponseData.success(null) : ResponseData.failure(RespCodeEnum.FAILED);
     }
 
     @RequestMapping("/queryUTXO")
     public ResponseData<List<UTXO>> queryUTXO(String address) {
         if (null == address) {
-            return new ResponseData<List<UTXO>>(RespCodeEnum.PARAM_INVALID, "address params is null");
+            return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
         }
 
-        List<UTXO> list = utxoRespService.getUTXOsByAddress(address);
-        ResponseData<List<UTXO>> responseData = new ResponseData<List<UTXO>>(RespCodeEnum.SUCCESS, "return data");
-        responseData.setData(list);
-        return responseData;
+        List<UTXO> list = utxoDaoServiceProxy.getUnionUTXO(address);
+        return ResponseData.success(list);
     }
 }

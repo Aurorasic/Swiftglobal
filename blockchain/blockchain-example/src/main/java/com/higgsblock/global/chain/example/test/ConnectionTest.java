@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * @author baizhengwen
  * @date 2018/4/9
  */
-public class ConnectionQuery {
+public class ConnectionTest {
     private final static int MAX_NUMBER = 5;
 
     public static void main(String[] args) throws Exception {

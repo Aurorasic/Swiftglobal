@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app;
 
-import com.higgsblock.global.chain.app.api.service.UTXORespService;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
@@ -26,9 +25,6 @@ public class WitnessCountTimeTest {
     private volatile boolean isRunning;
     static Block block;
     public volatile static boolean isCurrBlockConfirm = false;
-
-    @Autowired
-    private UTXORespService utxoRespService;
 
     @Autowired
     private BlockService blockService;

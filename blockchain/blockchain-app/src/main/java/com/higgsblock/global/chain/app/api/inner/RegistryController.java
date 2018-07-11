@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.api.inner;
 
-import com.higgsblock.global.chain.app.api.service.PeerRespService;
 import com.higgsblock.global.chain.network.Peer;
+import com.higgsblock.global.chain.network.PeerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,12 +17,15 @@ import java.util.List;
 @RequestMapping("/registry")
 @RestController
 public class RegistryController {
+
+    private static int DEFAULT_PEER_SEEDS = 30;
+
     @Autowired
-    private PeerRespService peerRespService;
+    private PeerManager peerManager;
 
     @RequestMapping("/peers")
     public List<Peer> peers() {
-        return peerRespService.getSeedPeerList();
+        return peerManager.shuffle(DEFAULT_PEER_SEEDS);
     }
 
     /**
@@ -32,13 +35,21 @@ public class RegistryController {
      * @return the boolean
      */
     @RequestMapping("/report")
-    public Boolean report(@RequestBody Peer peer) {
-        return this.peerRespService.report(peer);
+    public boolean report(@RequestBody Peer peer) {
+        if (null == peer) {
+            return false;
+        }
+
+        if (!peer.valid()) {
+            return false;
+        }
+
+        peerManager.addOrUpdate(peer);
+        return true;
     }
 
     @RequestMapping("/query")
     public Peer query(@RequestParam String address) {
-        Peer peer = peerRespService.getPeer(address);
-        return peer == null ? new Peer() : peer;
+        return peerManager.getById(address);
     }
 }
