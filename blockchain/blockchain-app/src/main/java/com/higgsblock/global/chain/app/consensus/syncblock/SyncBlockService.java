@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.consensus.syncblock;
 
-import com.alibaba.fastjson.JSON;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
@@ -143,7 +142,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         if (getPeersMaxHeight() < event.getHeight()) {
             return;
         }
-        LOGGER.info("process event: {}", JSON.toJSONString(event));
+        LOGGER.info("process event: {}", event);
 
         //when there has a persisted block on the height, stop sycn this height.If another one is real best block on the height, its next block maybe orphan block, then fetch the real best block as orphan block.
         requestRecord.invalidate(event.getHeight());
@@ -160,7 +159,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Subscribe
     public void process(SystemStatusEvent event) {
-        LOGGER.info("process SystemStatusEvent: {}", JSON.toJSONString(event));
+        LOGGER.info("process SystemStatusEvent: {}", event);
         SystemStatus state = event.getSystemStatus();
         if (SystemStatus.RUNNING == state) {
             syncState = 2;
@@ -169,7 +168,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Subscribe
     public void process(ReceiveOrphanBlockEvent event) {
-        LOGGER.info("process ReceiveOrphanBlockEvent: {}", JSON.toJSONString(event));
+        LOGGER.info("process ReceiveOrphanBlockEvent: {}", event);
         long height = event.getHeight();
         String sourceId = event.getSourceId();
         String hash = event.getBlockHash();
