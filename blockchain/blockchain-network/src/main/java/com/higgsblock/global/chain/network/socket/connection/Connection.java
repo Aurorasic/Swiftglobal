@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutorService;
 /**
  * A connection object stores the basic information and state of a connection between this node and another remote node.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-22
  */

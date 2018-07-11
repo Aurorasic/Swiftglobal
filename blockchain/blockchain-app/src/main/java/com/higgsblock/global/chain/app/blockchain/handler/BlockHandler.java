@@ -41,7 +41,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private CandidateMiner candidateMiner;
+    private CandidateMinerTimer candidateMinerTimer;
 
     @Override
     protected void process(SocketRequest<Block> request) {
@@ -63,9 +63,9 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         if (success && !data.isGenesisBlock()) {
 
             String address = peerManager.getSelf().getId();
-            candidateMiner.instantiationBlock();
+            candidateMinerTimer.instantiationBlock();
             if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
-                WitnessCountTime.instantiationBlock(data);
+                WitnessTimer.instantiationBlock(data);
             }
 
             Inventory inventory = new Inventory();

@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
  * Initialize the channel configuration: Set the handlers for the pipeline and reset the
  * {@link SocketChannelConfig} for the {@link NioSocketChannel}
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-21
  */

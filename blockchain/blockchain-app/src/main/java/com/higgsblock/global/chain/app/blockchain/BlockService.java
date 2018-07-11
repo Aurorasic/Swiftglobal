@@ -98,7 +98,6 @@ public class BlockService {
     private TransactionFeeService transactionFeeService;
 
 
-
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
         BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
         if (lastBlockIndex == null) {
@@ -726,7 +725,7 @@ public class BlockService {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isWitnessTimer = WitnessCountTime.isCurrBlockConfirm(block);
+            boolean isWitnessTimer = WitnessTimer.isCurrBlockConfirm(block);
             LOGGER.info("verify witness timer block is sure {} block hash {}", isWitnessTimer, block.getHash());
             if (!isWitnessTimer) {
                 LOGGER.info("verify witness timer block is accept {} ", isWitnessTimer);

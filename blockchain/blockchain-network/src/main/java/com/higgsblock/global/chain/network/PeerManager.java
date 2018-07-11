@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 /**
  * The peer manager provides basic methods to add peers into database or to find peers from database.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018 -05-22
  */
