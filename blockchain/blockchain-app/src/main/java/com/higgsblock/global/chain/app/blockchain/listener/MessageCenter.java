@@ -1,11 +1,9 @@
 package com.higgsblock.global.chain.app.blockchain.listener;
 
-import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.message.MessageFormatter;
 import com.higgsblock.global.chain.app.common.message.MessageHandler;
 import com.higgsblock.global.chain.app.connection.ConnectionManager;
-import com.higgsblock.global.chain.app.consensus.WitnessManager;
 import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.message.StringMessage;
@@ -27,13 +25,9 @@ public class MessageCenter {
     private static final int MIN_WITNESS_NUM = 2;
 
     @Autowired
-    private EventBus eventBus;
-    @Autowired
     private MessageFormatter formatter;
     @Autowired
     private MessageHandler handler;
-    @Autowired
-    private WitnessManager witnessManager;
     @Autowired
     private ConnectionManager connectionManager;
     @Autowired
