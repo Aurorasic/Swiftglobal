@@ -318,7 +318,7 @@ public class UpnpManager {
             PortMappingInfo mappingInfo = discover.autoMapPort(initPort, peerConfig.getSocketPort(), UpnpConstant.SOCKET_PORT_MAPPING_NAME);
             if (null != mappingInfo) {
                 port = mappingInfo.getExternalPort();
-                LOGGER.info("upnp socket port mapping info successful:{}", mappingInfo.toString());
+                LOGGER.info("upnp socket port mapping info successful:{}", mappingInfo);
             }
         } catch (NotDiscoverUpnpGatewayException | UpnpException e) {
             port = peerConfig.getSocketPort();
@@ -345,7 +345,7 @@ public class UpnpManager {
             PortMappingInfo mappingInfo = discover.autoMapPort(initPort, peerConfig.getHttpPort(), UpnpConstant.HTTP_PORT_MAPPING_NAME);
             if (null != mappingInfo) {
                 port = mappingInfo.getExternalPort();
-                LOGGER.info("upnp http port mapping info successful: {}", mappingInfo.toString());
+                LOGGER.info("upnp http port mapping info successful: {}", mappingInfo);
             }
         } catch (NotDiscoverUpnpGatewayException | UpnpException e) {
             port = peerConfig.getHttpPort();
