@@ -61,9 +61,6 @@ public class WitnessService {
             .maximumSize(MAX_SIZE)
             .build();
 
-    @Autowired
-    private BlockService blockService;
-
     private Block blockWithEnoughSign;
 
     public synchronized void initWitnessTask(long height) {
