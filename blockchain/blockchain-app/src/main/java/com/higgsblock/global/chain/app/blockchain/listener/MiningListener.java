@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.blockchain.listener;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
@@ -144,7 +143,7 @@ public class MiningListener implements IEventBusListener {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
             } catch (Exception e) {
-                LOGGER.error("mining exception,height=" + expectHeight, e);
+                LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);
             }
         }
     }
@@ -158,13 +157,13 @@ public class MiningListener implements IEventBusListener {
                 return false;
             }
             if (expectHeight != block.getHeight()) {
-                LOGGER.error("the expect height={}, but {}", expectHeight, block.getHeight());
+                LOGGER.warn("the expect height={}, but {}", expectHeight, block.getHeight());
                 return true;
             }
             sourceBlockService.sendBlockToWitness(block);
             return true;
         } catch (Exception e) {
-            LOGGER.error("domining exception,height=" + expectHeight, e);
+            LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);
         }
         return false;
     }
