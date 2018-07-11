@@ -116,7 +116,6 @@ public class MiningListener implements IEventBusListener {
             return;
         }
 
-        //todo yezaiyong 20180629 add CandidateMiner mode
         candidateMiner.doMingTimer();
         // cancel running task
         if (null != future) {

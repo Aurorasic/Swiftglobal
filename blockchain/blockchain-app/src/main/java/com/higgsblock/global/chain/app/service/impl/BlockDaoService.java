@@ -281,12 +281,12 @@ public class BlockDaoService implements IBlockService {
         Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
         Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
         if (preBestBlock == null || bestBlockOfHeight == null) {
-            //todo business error ,failure bypass
-            LOGGER.error("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
+            //todo huangshengli business error ,failure bypass 2018-06-30
+            LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
             return null;
         }
         if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
-            LOGGER.error("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
+            LOGGER.warn("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
             return null;
         }
 
@@ -297,7 +297,7 @@ public class BlockDaoService implements IBlockService {
 
         Block preBlock = getBlockByHash(preBlockHash);
         if (preBlock == null) {
-            LOGGER.error("preblock is null,may be db transaction error or sync error,blockhash:{}", preBlockHash);
+            LOGGER.warn("preblock is null,may be db transaction error or sync error,blockhash:{}", preBlockHash);
             throw new IllegalStateException("can not find block,blockhash:" + preBlockHash);
         }
         if (preBlock.getHash().equals(blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight()).getBestBlockHash())) {
