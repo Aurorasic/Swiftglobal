@@ -24,7 +24,6 @@ public enum SystemCurrencyEnum {
      * the stack currency who could be selected to mine/produce block
      */
     MINER("miner"),
-    //todo yezaiyong 20180630 add CandidateMiner coin
     /**
      * add CandidateMiner coin
      */

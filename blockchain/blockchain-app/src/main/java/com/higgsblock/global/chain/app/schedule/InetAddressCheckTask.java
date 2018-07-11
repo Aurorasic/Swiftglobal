@@ -74,7 +74,6 @@ public class InetAddressCheckTask extends BaseTask {
         peer.setHttpServerPort(httpPort);
         peer.setPubKey(peerConfig.getPubKey());
         peer.signature(peerConfig.getPriKey());
-
         peerManager.setSelf(peer);
     }
 }

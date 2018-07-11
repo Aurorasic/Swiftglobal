@@ -63,10 +63,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         if (success && !data.isGenesisBlock()) {
 
             String address = peerManager.getSelf().getId();
-            //todo yezaiyong 20180630 inform candidateMiner  cout cminer coin
-//            CandidateMiner candidateMiner = new CandidateMiner();
             candidateMiner.instantiationBlock();
-            //todo yezaiyong 20180630 infom witiness count time
             if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
                 WitnessCountTime.instantiationBlock(data);
             }

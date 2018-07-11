@@ -55,7 +55,7 @@ public abstract class BaseEntityHandler<T> implements IEntityHandler<T> {
                 while (isRunning) {
                     try {
                         SocketRequest request = takeRequest();
-                        LOGGER.info("task request for processing; {}", JSON.toJSONString(request));
+                        LOGGER.info("task request for processing; {}", request);
                         process(request);
                     } catch (Exception e) {
                         LOGGER.error(e.getMessage(), e);
