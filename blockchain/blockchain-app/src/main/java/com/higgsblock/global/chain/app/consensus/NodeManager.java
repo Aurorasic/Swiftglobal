@@ -64,7 +64,7 @@ public class NodeManager implements InitializingBean {
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
 
-        boolean isFirstOfRound = getBatchStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
+        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
 
         //select the next dpos nodes when toBeBestBlock height is first of round
         if (!isFirstOfRound) {
@@ -72,7 +72,7 @@ public class NodeManager implements InitializingBean {
         }
         LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
-        boolean selectedNextGroup = isGroupSeleted(sn + 1L);
+        boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
             LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
             return null;
@@ -175,7 +175,7 @@ public class NodeManager implements InitializingBean {
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
             return new ArrayList<>();
         }
-        long startHeight = getBatchStartHeight(height);
+        long startHeight = getStartHeight(height);
         while (height-- > startHeight) {
             Block preBlock = blockDaoService.getBlockByHash(preBlockHash);
             BlockWitness minerFirstPKSig = preBlock.getMinerFirstPKSig();
@@ -196,7 +196,7 @@ public class NodeManager implements InitializingBean {
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
     }
 
-    public long getBatchStartHeight(long height) {
+    public long getStartHeight(long height) {
         if (height <= 1) {
             return 1;
         }
@@ -204,9 +204,9 @@ public class NodeManager implements InitializingBean {
     }
 
     public boolean canPackBlock(long height, String address, String preBlockHash) {
-        long batchStartHeight = getBatchStartHeight(height);
-        if (batchStartHeight > height) {
-            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + batchStartHeight + ",the height=" + height);
+        long startHeight = getStartHeight(height);
+        if (startHeight > height) {
+            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + startHeight + ",the height=" + height);
         }
         List<String> dposNodes = getDposGroupByHeihgt(height, preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
@@ -230,7 +230,7 @@ public class NodeManager implements InitializingBean {
         return (height - DPOS_START_HEIGHT) / DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
-    public boolean isGroupSeleted(long sn) {
+    public boolean isDposGroupSeleted(long sn) {
         return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
     }
 
