@@ -20,7 +20,6 @@ import java.util.concurrent.ThreadFactory;
 /**
  * The server get started to listen specific port, and accept incoming connections.
  *
- * @author zhaoxiaogang
  * @author chenjiawei
  * @date 2018-05-21
  */
