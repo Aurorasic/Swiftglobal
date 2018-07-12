@@ -15,7 +15,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -64,8 +63,7 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
                 return null;
             }));
         } else if (height > blockService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
-            String hash = new ArrayList<>(hashs).get(0);
-            eventBus.post(new ReceiveOrphanBlockEvent(height, hash, sourceId));
+            eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
         }
 
 
