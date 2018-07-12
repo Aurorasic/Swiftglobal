@@ -2,10 +2,7 @@ package com.higgsblock.global.chain.app.dao.entity;
 
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * @author Su Jiulong
@@ -16,10 +13,17 @@ import javax.persistence.Table;
 @Table(name = "t_spent_transaction_out_index")
 public class SpentTransactionOutIndexEntity {
     @Id
-    @Column(name = "pre_transaction_hash")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", columnDefinition = "INTEGER")
+    private long id;
+
+    @Column(name = "pre_transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String preTransactionHash;
-    @Column(name = "out_index")
+
+    @Column(name = "out_index", nullable = false, columnDefinition = "INTEGER")
     private short outIndex;
-    @Column(name = "now_transaction_hash")
+
+    @Column(name = "now_transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String nowTransactionHash;
 }
+

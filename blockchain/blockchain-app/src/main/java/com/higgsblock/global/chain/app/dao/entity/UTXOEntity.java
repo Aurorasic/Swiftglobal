@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  * @author Su Jiulong
@@ -20,16 +17,26 @@ import javax.persistence.Table;
 @Table(name = "t_utxo")
 public class UTXOEntity {
     @Id
-    @Column(name = "transaction_hash")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", columnDefinition = "INTEGER")
+    private long id;
+
+    @Column(name = "transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String transactionHash;
-    @Column(name = "out_index")
+
+    @Column(name = "out_index", nullable = false, columnDefinition = "INTEGER")
     private short outIndex;
-    @Column(name = "amount")
+
+    @Column(name = "amount", nullable = false, columnDefinition = "VARCHAR", length = 16)
     private String amount;
-    @Column(name = "currency")
+
+    @Column(name = "currency", nullable = false, columnDefinition = "VARCHAR", length = 8)
     private String currency;
-    @Column(name = "script_type")
+
+    @Column(name = "script_type", nullable = false, columnDefinition = "INTEGER")
     private int scriptType;
-    @Column(name = "lock_script")
+
+    @Column(name = "lock_script", nullable = false, columnDefinition = "VARCHAR")
     private String lockScript;
 }
+

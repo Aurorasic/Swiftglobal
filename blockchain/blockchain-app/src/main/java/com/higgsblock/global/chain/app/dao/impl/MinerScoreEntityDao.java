@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.dao.impl;
 
 import com.google.common.collect.ImmutableMap;
-import com.higgsblock.global.chain.app.dao.entity.MinerScoreEntity;
 import com.higgsblock.global.chain.app.dao.iface.IMinerScoreEntity;
 import org.springframework.jdbc.core.namedparam.SqlParameterSourceUtils;
 import org.springframework.stereotype.Repository;

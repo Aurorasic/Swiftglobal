@@ -17,12 +17,20 @@ import javax.persistence.*;
 @Table(name = "t_dpos")
 public class DposEntity {
 
+    public DposEntity(long sn, String addresses) {
+        this.sn = sn;
+        this.addresses = addresses;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "sn")
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "sn", columnDefinition = "INTEGER", nullable = false)
     private long sn;
 
-    @Column(name = "addresses", nullable = false, length = 100, columnDefinition = "TEXT")
+    @Column(name = "addresses", nullable = false, length = 100, columnDefinition = "VARCHAR")
     private String addresses;
 
 }

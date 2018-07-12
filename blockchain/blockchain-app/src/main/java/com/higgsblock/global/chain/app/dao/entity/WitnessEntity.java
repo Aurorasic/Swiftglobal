@@ -11,16 +11,21 @@ import javax.persistence.*;
 @Data
 @Entity
 @Table(name = "t_witness")
-public class WitnessPo {
+public class WitnessEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", columnDefinition = "INTEGER")
     private int id;
-    @Column(name = "pub_key")
+
+    @Column(name = "pub_key", length = 90, columnDefinition = "VARCHAR")
     private String pubKey;
-    @Column(name = "address")
+
+    @Column(name = "address", length = 50, columnDefinition = "VARCHAR")
     private String address;
-    @Column(name = "socket_port")
+
+    @Column(name = "socket_port", columnDefinition = "INTEGER")
     private int socketPort;
-    @Column(name = "http_port")
+
+    @Column(name = "http_port", columnDefinition = "INTEGER")
     private int httpPort;
 }

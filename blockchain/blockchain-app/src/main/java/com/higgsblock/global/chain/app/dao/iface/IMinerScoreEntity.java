@@ -1,8 +1,6 @@
 package com.higgsblock.global.chain.app.dao.iface;
 
 
-import com.higgsblock.global.chain.app.dao.entity.MinerScoreEntity;
-
 import java.util.List;
 
 /**

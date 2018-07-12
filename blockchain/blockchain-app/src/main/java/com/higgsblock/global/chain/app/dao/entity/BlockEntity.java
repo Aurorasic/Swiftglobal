@@ -14,10 +14,10 @@ import javax.persistence.*;
 public class BlockEntity {
 
     @Id
-    @Column(name = "block_hash", nullable = false, length = 64, columnDefinition = "TEXT")
+    @Column(name = "block_hash", nullable = false, columnDefinition = "VARCHAR", length = 64)
     private String blockHash;
 
-    @Column(name = "height", nullable = false)
+    @Column(name = "height", nullable = false, columnDefinition = "INTEGER")
     private long height;
 
     @Column(name = "data", nullable = false, columnDefinition = "TEXT")
