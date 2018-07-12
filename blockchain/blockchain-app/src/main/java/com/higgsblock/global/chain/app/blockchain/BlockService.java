@@ -359,10 +359,6 @@ public class BlockService {
         return blockDaoService.getBlocksByHeight(height);
     }
 
-    public void printAllBlockData() {
-        blockDaoService.printAllBlockData();
-    }
-
     private boolean verifySize(Block block) {
         return block.sizeAllowed();
     }
@@ -568,6 +564,7 @@ public class BlockService {
         long height = block.getHeight();
         for (BlockWitness pair : otherPKSigs) {
             if (!pair.valid()) {
+                //todo kongyu 2018-7-12 日志打印需要补充区块高度和hash
                 LOGGER.error("Invalid signature from witness");
                 return false;
             }
@@ -575,6 +572,7 @@ public class BlockService {
             String signature = pair.getSignature();
             boolean validSign = validSign(height, hash, voteVersion, signature, pubKey);
             if (!validSign) {
+                //todo kongyu 2018-7-12 日志打印需要补充区块高度和hash
                 LOGGER.error("Block hash not match signature from witness");
                 return false;
             }
@@ -582,6 +580,7 @@ public class BlockService {
             tempAddress = ECKey.pubKey2Base58Address(pair.getPubKey());
             //Check if in the witness list
             if (!WITNESS_ADDRESS_LIST.contains(tempAddress)) {
+                //todo kongyu 2018-7-12 日志打印需要补充区块高度和hash
                 LOGGER.error("The witness is invalid");
                 return false;
             }

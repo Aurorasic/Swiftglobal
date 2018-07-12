@@ -48,6 +48,9 @@ public class BlockDaoService implements IBlockService {
     private NodeManager nodeManager;
 
     @Autowired
+    private MinerScoreStrategy minerScoreStrategy;
+
+    @Autowired
     private PeerManager peerManager;
 
     @Autowired
@@ -182,12 +185,12 @@ public class BlockDaoService implements IBlockService {
 
         if (block.isGenesisBlock()) {
             //step 3
-            MinerScoreStrategy.refreshMinersScore(block);
+            minerScoreStrategy.refreshMinersScore(block);
             //step 4
             nodeManager.calculateDposNodes(block, block.getHeight());
         } else {
             if (isFirst && toBeBestBlock != null) {
-                MinerScoreStrategy.refreshMinersScore(toBeBestBlock);
+                minerScoreStrategy.refreshMinersScore(toBeBestBlock);
                 nodeManager.calculateDposNodes(toBeBestBlock, block.getHeight());
                 //step5
                 freshPeerMinerAddr(toBeBestBlock);
@@ -196,11 +199,6 @@ public class BlockDaoService implements IBlockService {
 
         return toBeBestBlock;
     }
-
-    @Override
-    public void printAllBlockData() {
-    }
-
 
     /**
      * fresh peer's minerAddress to connect ahead
