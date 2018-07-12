@@ -31,8 +31,8 @@ public class KeyPair extends BaseSerializer {
     }
 
     public KeyPair(String privateKey, String publicKey) {
-        this.priKey = privateKey;
-        this.pubKey = publicKey;
+        priKey = privateKey;
+        pubKey = publicKey;
     }
 
     @Override
@@ -57,5 +57,9 @@ public class KeyPair extends BaseSerializer {
         int result = priKey != null ? priKey.hashCode() : 0;
         result = 31 * result + (pubKey != null ? pubKey.hashCode() : 0);
         return result;
+    }
+
+    public String getAddress() {
+        return ECKey.pubKey2Base58Address(pubKey);
     }
 }
