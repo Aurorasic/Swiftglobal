@@ -6,9 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
 import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
-import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -32,13 +32,8 @@ import java.util.List;
 @Service
 @Slf4j
 public class TransDaoService implements ITransService {
-
-
-    /**
-     * The Utxo entity dao.
-     */
     @Autowired
-    private UTXOEntityDao utxoEntityDao;
+    private IUTXOEntityRepository iutxoEntityRepository;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -89,7 +84,7 @@ public class TransDaoService implements ITransService {
                     if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    utxoEntityDao.delete(spentTxHash, spentTxOutIndex);
+                    iutxoEntityRepository.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
                 }
             }
 
@@ -204,13 +199,13 @@ public class TransDaoService implements ITransService {
         entity.setCurrency(output.getMoney().getCurrency());
         entity.setLockScript(output.getLockScript().getAddress());
 
-        utxoEntityDao.add(entity);
+        iutxoEntityRepository.save(entity);
     }
 
     @Override
     public UTXO getUTXOOnBestChain(String utxoKey) {
         String[] keys = utxoKey.split("_");
-        UTXOEntity entity = utxoEntityDao.getByField(keys[0], Short.valueOf(keys[1]));
+        UTXOEntity entity = iutxoEntityRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
 
         if (entity == null) {
             return null;
@@ -240,7 +235,7 @@ public class TransDaoService implements ITransService {
             throw new RuntimeException("addr is null");
         }
 
-        List<UTXOEntity> entityList = utxoEntityDao.selectByAddress(addr);
+        List<UTXOEntity> entityList = iutxoEntityRepository.findByLockScript(addr);
         if (CollectionUtils.isEmpty(entityList)) {
             return null;
         }

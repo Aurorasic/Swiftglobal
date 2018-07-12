@@ -9,8 +9,8 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
-import com.higgsblock.global.chain.app.dao.impl.UTXOEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -42,6 +42,7 @@ public class TransactionService {
 
     @Autowired
     private TransactionCacheManager txCacheManager;
+
     @Autowired
     private MessageCenter messageCenter;
 
@@ -52,7 +53,7 @@ public class TransactionService {
     private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     @Autowired
-    private UTXOEntityDao utxoEntityDao;
+    private IUTXOEntityRepository iutxoEntityRepository;
 
     @Autowired
     private TransactionIndexEntityDao transDao;
@@ -448,10 +449,10 @@ public class TransactionService {
         }
         TransactionIndex transactionIndexEntity = null;
         transactionIndexEntity = transDao.get(hash);
-//        try {
-//        } catch (RocksDBException e) {
-//            throw new IllegalStateException("Get transaction index error");
-//        }
+        //        try {
+        //        } catch (RocksDBException e) {
+        //            throw new IllegalStateException("Get transaction index error");
+        //        }
         if (transactionIndexEntity != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
@@ -478,10 +479,10 @@ public class TransactionService {
             String txHash = prevOutPoint.getHash();
             TransactionIndex transactionIndex;
             transactionIndex = transDao.get(txHash);
-//            try {
-//            } catch (RocksDBException e) {
-//                throw new IllegalStateException("Get transaction index error");
-//            }
+            //            try {
+            //            } catch (RocksDBException e) {
+            //                throw new IllegalStateException("Get transaction index error");
+            //            }
             if (transactionIndex == null) {
                 continue;
             }
@@ -518,10 +519,10 @@ public class TransactionService {
 
             UTXO utxo = null;
             utxo = utxoDaoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
-//            try {
-//            } catch (RocksDBException e) {
-//                throw new IllegalStateException("Get utxo error");
-//            }
+            //            try {
+            //            } catch (RocksDBException e) {
+            //                throw new IllegalStateException("Get utxo error");
+            //            }
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;
@@ -538,7 +539,7 @@ public class TransactionService {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-        List<UTXOEntity> utxoEntities = utxoEntityDao.selectByAddressCurrency(address, currency);
+        List<UTXOEntity> utxoEntities = iutxoEntityRepository.findByLockScriptAndCurrency(address, currency);
         List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
