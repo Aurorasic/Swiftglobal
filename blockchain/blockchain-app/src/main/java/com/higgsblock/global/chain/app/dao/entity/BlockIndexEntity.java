@@ -12,14 +12,11 @@ import javax.persistence.*;
 @Entity
 @Table(name = "t_block_index")
 public class BlockIndexEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
-    private long id;
 
     @Column(name = "height", nullable = false)
     private long height;
 
+    @Id
     @Column(name = "block_hash", nullable = false, length = 64, columnDefinition = "TEXT")
     private String blockHash;
 

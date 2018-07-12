@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
@@ -18,6 +19,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "t_score")
 public class ScoreEntity {
+    @Id
     @Column(name = "address")
     private String address;
     @Column(name = "score")

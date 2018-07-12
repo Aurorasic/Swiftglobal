@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
@@ -18,6 +19,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "t_transaction_index")
 public class TransactionIndexEntity {
+    @Id
     @Column(name = "transaction_hash")
     private String transactionHash;
     @Column(name = "block_hash")

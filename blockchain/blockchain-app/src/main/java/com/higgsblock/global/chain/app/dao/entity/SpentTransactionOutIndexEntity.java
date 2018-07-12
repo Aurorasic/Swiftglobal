@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
@@ -14,6 +15,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "t_spent_transaction_out_index")
 public class SpentTransactionOutIndexEntity {
+    @Id
     @Column(name = "pre_transaction_hash")
     private String preTransactionHash;
     @Column(name = "out_index")

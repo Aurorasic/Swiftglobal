@@ -12,11 +12,8 @@ import javax.persistence.*;
 @Entity
 @Table(name = "t_block")
 public class BlockEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
-    private long id;
 
+    @Id
     @Column(name = "block_hash", nullable = false, length = 64, columnDefinition = "TEXT")
     private String blockHash;
 

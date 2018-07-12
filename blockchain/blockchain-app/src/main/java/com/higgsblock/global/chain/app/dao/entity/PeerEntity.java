@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.dao.entity;
 import lombok.Data;
 
 import javax.persistence.Column;
+import javax.persistence.Id;
 
 /**
  * @author yangshenghong
@@ -10,6 +11,7 @@ import javax.persistence.Column;
  */
 @Data
 public class PeerEntity {
+    @Id
     @Column(name = "pub_key")
     private String pubKey;
     @Column(name = "id")
