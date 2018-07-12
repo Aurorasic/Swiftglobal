@@ -29,7 +29,7 @@ public class ScoreEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "address", columnDefinition = "VARCHAR", length = 34, nullable = false)
     private String address;

@@ -15,7 +15,7 @@ public class PeerEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "p_id")
-    private long pid;
+    private Long pid;
 
     @Column(name = "pub_key", nullable = false, columnDefinition = "VARCHAR", length = 66)
     private String pubKey;

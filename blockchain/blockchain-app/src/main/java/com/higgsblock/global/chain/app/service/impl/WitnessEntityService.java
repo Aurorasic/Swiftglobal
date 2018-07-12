@@ -3,9 +3,8 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
-import com.higgsblock.global.chain.app.blockchain.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.entity.WitnessPo;
-import com.higgsblock.global.chain.app.dao.iface.IWitnessEntity;
+import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
+import com.higgsblock.global.chain.app.dao.iface.IWitnessRepository;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,18 +29,18 @@ public class WitnessEntityService implements IWitnessEntityService {
      */
     private static final int BATCH = 200;
 
-    private static final Cache<String, List<WitnessEntity>> WITNESS_CACHE = Caffeine.newBuilder()
+    private static final Cache<String, List<com.higgsblock.global.chain.app.blockchain.WitnessEntity>> WITNESS_CACHE = Caffeine.newBuilder()
             .maximumSize(100)
             .expireAfterAccess(30, TimeUnit.MINUTES)
             .build();
 
 
     @Autowired
-    private IWitnessEntity iWitnessEntity;
+    private IWitnessRepository iWitnessRepository;
 
     @Override
-    public List<WitnessPo> getAll() {
-        return iWitnessEntity.findAll();
+    public List<WitnessEntity> getAll() {
+        return iWitnessRepository.findAll();
     }
 
     private String buildCacheKey(long height) {

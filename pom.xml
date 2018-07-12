@@ -20,6 +20,7 @@
 
     <properties>
         <module.version>1.0-SNAPSHOT</module.version>
+        <powermock.version>1.7.0RC4</powermock.version>
         <spring.version>4.3.7.RELEASE</spring.version>
         <spring.boot.version>1.5.10.RELEASE</spring.boot.version>
         <java.version>1.8</java.version>

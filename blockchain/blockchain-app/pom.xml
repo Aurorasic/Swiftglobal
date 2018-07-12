@@ -9,9 +9,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <properties>
-        <powermock.version>1.7.0RC4</powermock.version>
-    </properties>
     <artifactId>blockchain-app</artifactId>
 
     <dependencies>

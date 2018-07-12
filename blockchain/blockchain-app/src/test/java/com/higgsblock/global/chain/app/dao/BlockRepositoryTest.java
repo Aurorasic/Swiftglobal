@@ -26,8 +26,6 @@ public class BlockRepositoryTest extends BaseTest {
 
     @Test
     public void testGetOne() {
-        BlockEntity blockEntity = blockRepository.findOne("614c2de5d11d90acfe86fda9e6e10df90c9904973b82123955431647e735c63e");
-        LOGGER.info("find one result: {}", blockEntity);
     }
 
     @Test
@@ -40,8 +38,6 @@ public class BlockRepositoryTest extends BaseTest {
         BlockEntity result = blockRepository.save(blockEntity);
         LOGGER.info("save result: {}", result);
 
-        BlockEntity findBlock = blockRepository.findOne("123");
-        LOGGER.info("find one result : {}", findBlock);
     }
 
 }

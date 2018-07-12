@@ -15,7 +15,7 @@ public class BlockIndexEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "height", nullable = false, columnDefinition = "INTEGER")
     private long height;
