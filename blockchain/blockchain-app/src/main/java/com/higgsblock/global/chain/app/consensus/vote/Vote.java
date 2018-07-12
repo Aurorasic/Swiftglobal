@@ -52,7 +52,7 @@ public class Vote extends BaseBizEntity {
     private String proofPubKey;
 
     /**
-     * this block hash the proof vote witness vote for
+     * the block hash that the proofVote's witness vote for
      */
     private String proofBlockHash;
 
