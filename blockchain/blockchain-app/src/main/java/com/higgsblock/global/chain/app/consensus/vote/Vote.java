@@ -20,22 +20,51 @@ import org.apache.commons.lang.StringUtils;
 public class Vote extends BaseBizEntity {
 
 
+    /**
+     * current version
+     */
     private int voteVersion;
 
+    /**
+     * the block's height the witness vote for in current version
+     */
     private long height;
 
+    /**
+     * the witness's pubKey
+     */
     private String witnessPubKey;
 
+    /**
+     * the blockHash the witness vote for in current version
+     */
     private String blockHash;
 
+    /**
+     * the witness's signature
+     */
     private String signature;
 
+    /**
+     * the proof vote witness's pubKey
+     * the proof vote is the basis of this vote
+     */
     private String proofPubKey;
 
+    /**
+     * the block hash which the proofVote's witness vote for
+     */
     private String proofBlockHash;
 
+    /**
+     * the blockHash the witness vote for in previous version
+     */
     private String preBlockHash;
 
+    /**
+     * if proofVersion ==voteVersion, this is a follow vote;
+     * if proofVersion + 1 ==voteVersion, this is a leader vote
+     */
     private int proofVersion;
 
     @Override
