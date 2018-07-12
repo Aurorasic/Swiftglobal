@@ -738,4 +738,7 @@ public class BlockService {
         return true;
     }
 
+    public boolean isWitness(String address) {
+        return WITNESS_ADDRESS_LIST.contains(address);
+    }
 }
