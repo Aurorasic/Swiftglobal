@@ -295,7 +295,7 @@ public class Block extends BaseBizEntity {
     }
 
     public boolean sizeAllowed() {
-        ISizeCounter sizeCounter = new JsonSizeCounter();
+        ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
         return sizeCounter.calculateSize(this) <= LIMITED_SIZE;
     }
 

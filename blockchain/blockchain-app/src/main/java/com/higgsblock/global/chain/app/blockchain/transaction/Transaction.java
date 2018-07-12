@@ -135,7 +135,7 @@ public class Transaction extends BaseBizEntity {
     }
 
     public boolean sizeAllowed() {
-        ISizeCounter sizeCounter = new JsonSizeCounter();
+        ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
         if (sizeCounter.calculateSize(extra) > EXTRA_LIMITED_SIZE_UNIT) {
             return false;
         }

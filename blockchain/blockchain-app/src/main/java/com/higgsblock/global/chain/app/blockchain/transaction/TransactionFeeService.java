@@ -46,7 +46,7 @@ public class TransactionFeeService {
 
     public static final BigDecimal ONE_KB_OF_BYTES = new BigDecimal("1024");
 
-    final ISizeCounter sizeCounter = new JsonSizeCounter();
+    final ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
 
     /**
      * block transactions limit exclude coinBase
