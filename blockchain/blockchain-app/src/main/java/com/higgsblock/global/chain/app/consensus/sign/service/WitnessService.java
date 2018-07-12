@@ -54,7 +54,7 @@ public class WitnessService {
     @Getter
     private long height;
 
-    private HashBasedTable<Integer, String, Map<String, Vote>> voteTable;
+    private HashBasedTable<Integer, String, Map<String, Vote>> voteHashTable;
 
     @Getter
     private Cache<Long, Map<String, Block>> blockCache = Caffeine.newBuilder()
@@ -76,7 +76,7 @@ public class WitnessService {
             }
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
-            this.voteTable = HashBasedTable.create(6, 11);
+            this.voteHashTable = HashBasedTable.create(6, 11);
             this.blockWithEnoughSign = null;
             this.blockCache.get(height, k -> new HashMap<>()).values().forEach(this::voteFirstVote);
             voteCache.invalidate(height - 3);
@@ -102,7 +102,7 @@ public class WitnessService {
         if (this.height != block.getHeight()) {
             return;
         }
-        Map<String, Vote> voteMap = this.voteTable.get(1, keyPair.getPubKey());
+        Map<String, Vote> voteMap = this.voteHashTable.get(1, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             String blockHash = block.getHash();
             long blockHeight = block.getHeight();
@@ -116,11 +116,11 @@ public class WitnessService {
             int proofVersion = 0;
             Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
             voteMap.put(bestBlockHash, vote);
-            this.voteTable.put(1, keyPair.getPubKey(), voteMap);
-            Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteTable.rowMap();
+            this.voteHashTable.put(1, keyPair.getPubKey(), voteMap);
+            Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteHashTable.rowMap();
             VoteTable voteTable = new VoteTable(integerMapMap);
             this.messageCenter.dispatchToWitnesses(voteTable);
-            LOGGER.info("send voteTable to witness success {},{}", this.height, voteTable);
+            LOGGER.info("send voteHashTable to witness success {},{}", this.height, voteTable);
         }
     }
 
@@ -133,7 +133,7 @@ public class WitnessService {
         int rowSize = cache.size();
         int startAllVoteSize = getAllVoteSize();
         for (int version = 1; version <= rowSize; version++) {
-            if (version > 1 && this.voteTable.row(version - 1).size() < MIN_VOTE) {
+            if (version > 1 && this.voteHashTable.row(version - 1).size() < MIN_VOTE) {
                 return;
             }
             int startARowVoteSize = getARowVoteSize(version);
@@ -142,12 +142,12 @@ public class WitnessService {
             Set<Vote> leaderVotes = new HashSet<>(11);
             Set<Vote> followerVotes = new HashSet<>(11);
             set.forEach(vote -> {
-                if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
+                if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
                         .map(map -> map.containsKey(vote.getBlockHash())).orElse(false)) {
                     return;
                 }
-                if (null == this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey())) {
-                    this.voteTable.put(vote.getVoteVersion(), vote.getWitnessPubKey(), new HashMap<>());
+                if (null == this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey())) {
+                    this.voteHashTable.put(vote.getVoteVersion(), vote.getWitnessPubKey(), new HashMap<>());
                 }
                 if (vote.isLeaderVote()) {
                     leaderVotes.add(vote);
@@ -165,31 +165,31 @@ public class WitnessService {
                         return;
                     }
                 } else if (vote.getVoteVersion() > 1) {
-                    if (Optional.ofNullable(this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey()))
+                    if (Optional.ofNullable(this.voteHashTable.get(vote.getProofVersion(), vote.getProofPubKey()))
                             .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
                         setTemp.add(vote);
                         return;
                     }
-                    if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
+                    if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
                             .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
                         setTemp.add(vote);
                         return;
                     }
                 }
-                this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
+                this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
             });
             followerVotes.forEach(vote -> {
-                if (Optional.ofNullable(this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey()))
+                if (Optional.ofNullable(this.voteHashTable.get(vote.getProofVersion(), vote.getProofPubKey()))
                         .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
                     setTemp.add(vote);
                     return;
                 }
-                if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
+                if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
                         .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
                     setTemp.add(vote);
                     return;
                 }
-                this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
+                this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
             });
             this.voteCache.get(this.height, k -> new HashMap<>()).put(version, setTemp);
             if (getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, height)) {
@@ -197,8 +197,8 @@ public class WitnessService {
             }
         }
         if (getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteTable with height {} ,is : {}", height, voteTable);
-            messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
+            LOGGER.info("local voteHashTable with height {} ,is : {}", height, voteHashTable);
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
         }
     }
 
@@ -215,7 +215,7 @@ public class WitnessService {
                     if (null == vote || !vote.valid()) {
                         return;
                     }
-                    if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
+                    if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
                             .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false)) {
                         return;
                     }
@@ -251,8 +251,8 @@ public class WitnessService {
         int startAllVoteSize = getAllVoteSize();
         dealVoteMap(voteHeight, voteMap);
         if (getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteTable with height {} ,is : {}", voteHeight, voteTable);
-            messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
+            LOGGER.info("local voteHashTable with height {} ,is : {}", voteHeight, voteHashTable);
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
         }
     }
 
@@ -333,30 +333,30 @@ public class WitnessService {
             if (version != vote.getVoteVersion()) {
                 return;
             }
-            if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
+            if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey()))
                     .map(map -> map.containsKey(vote.getBlockHash())).orElse(false)) {
                 return;
             }
             if (version > 1) {
-                if (Optional.ofNullable(this.voteTable.get(vote.getProofVersion(), vote.getProofPubKey()))
+                if (Optional.ofNullable(this.voteHashTable.get(vote.getProofVersion(), vote.getProofPubKey()))
                         .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
                     return;
                 }
-                if (Optional.ofNullable(this.voteTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
+                if (Optional.ofNullable(this.voteHashTable.get(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
                         .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
                     return;
                 }
             }
-            if (null == this.voteTable.get(vote.getVoteVersion(), vote.getWitnessPubKey())) {
-                this.voteTable.put(vote.getVoteVersion(), vote.getWitnessPubKey(), new HashMap<>());
+            if (null == this.voteHashTable.get(vote.getVoteVersion(), vote.getWitnessPubKey())) {
+                this.voteHashTable.put(vote.getVoteVersion(), vote.getWitnessPubKey(), new HashMap<>());
             }
-            this.voteTable.get(version, vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
+            this.voteHashTable.get(version, vote.getWitnessPubKey()).put(vote.getBlockHash(), vote);
         });
     }
 
     private int getAllVoteSize() {
         int size = 0;
-        for (Map<String, Map<String, Vote>> row : this.voteTable.rowMap().values()) {
+        for (Map<String, Map<String, Vote>> row : this.voteHashTable.rowMap().values()) {
             if (null == row) {
                 continue;
             }
@@ -372,7 +372,7 @@ public class WitnessService {
 
     private int getARowVoteSize(int version) {
         int size = 0;
-        for (Map<String, Vote> map : this.voteTable.row(version).values()) {
+        for (Map<String, Vote> map : this.voteHashTable.row(version).values()) {
             if (null != map && !map.isEmpty()) {
                 size += 1;
             }
@@ -382,9 +382,9 @@ public class WitnessService {
 
 
     private boolean collectionVoteSign(int version, long voteHeight) {
-        Map<String, Map<String, Vote>> rowVersion = this.voteTable.row(version);
+        Map<String, Map<String, Vote>> rowVersion = this.voteHashTable.row(version);
         if (rowVersion == null || rowVersion.size() == 0) {
-            LOGGER.info("there haven't enough vote to check sign {},{},current the number of vote is {}", this.height, version, rowVersion.size());
+            LOGGER.info("the vote is empty {},{}", this.height, version);
             return false;
         }
         //row is blockHash,column is pubKey and value is sign
@@ -439,7 +439,7 @@ public class WitnessService {
                 blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
-                messageCenter.dispatchToWitnesses(new VoteTable(this.voteTable.rowMap()));
+                messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
                 this.messageCenter.broadcast(blockWithEnoughSign);
                 return true;
             }
@@ -451,17 +451,17 @@ public class WitnessService {
             return false;
         }
         String proofPubKey = votesigntable.row(bestBlockHash).keySet().iterator().next();
-        Map<String, Vote> voteMap = this.voteTable.get(version, keyPair.getPubKey());
+        Map<String, Vote> voteMap = this.voteHashTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version;
-            Map<String, Vote> preVoteMap = this.voteTable.get(version - 1, keyPair.getPubKey());
+            Map<String, Vote> preVoteMap = this.voteHashTable.get(version - 1, keyPair.getPubKey());
             String preBlockHash = preVoteMap.keySet().iterator().next();
             bestBlockHash = bestBlockHash.compareTo(preBlockHash) < 0 ? preBlockHash : bestBlockHash;
             Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion, preBlockHash);
             LOGGER.info("height {},version {},vote the current version {}", voteHeight, version, vote);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
-            this.voteTable.put(version, keyPair.getPubKey(), voteMap);
+            this.voteHashTable.put(version, keyPair.getPubKey(), voteMap);
             return false;
         }
         if (rowVersion.size() < MIN_VOTE) {
@@ -473,14 +473,14 @@ public class WitnessService {
             return false;
         }
         version++;
-        voteMap = this.voteTable.get(version, keyPair.getPubKey());
+        voteMap = this.voteHashTable.get(version, keyPair.getPubKey());
         if (voteMap == null || voteMap.size() == 0) {
             int proofVersion = version - 1;
             Vote vote = createVote(bestBlockHash, voteHeight, version, proofBlockHash, proofPubKey, proofVersion, currentVersionVoteBlockHash);
             LOGGER.info("height {},version {},vote the next version {}", voteHeight, version, vote);
             voteMap = new HashMap<>();
             voteMap.put(bestBlockHash, vote);
-            this.voteTable.put(version, keyPair.getPubKey(), voteMap);
+            this.voteHashTable.put(version, keyPair.getPubKey(), voteMap);
             return false;
         }
         return false;
