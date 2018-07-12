@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.IBlockIndexRepository;
 import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
 
     @Autowired
-    private BlockIndexEntityDao blockIndexDao;
+    private IBlockIndexRepository blockIndexRepository;
 
     @Autowired
     private TransDaoService transDaoService;
@@ -52,7 +53,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
         blockIndexDO.setHeight(block.getHeight());
         blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
         blockIndexDO.setMinerAddress(block.getMinerFirstPKSig().getAddress());
-        blockIndexDao.add(blockIndexDO);
+        blockIndexRepository.save(blockIndexDO);
         LOGGER.info("persisted block index: {}", blockIndexDO);
     }
 
@@ -60,9 +61,9 @@ public class BlockIdxDaoService implements IBlockIndexService {
         BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
         for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
             if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
-                BlockIndexEntity blockIndexEntity = blockIndexDao.getByBlockHash(bestBlock.getHash());
+                BlockIndexEntity blockIndexEntity = blockIndexRepository.queryByBlockHash(bestBlock.getHash());
                 blockIndexEntity.setIsBest(i);
-                blockIndexDao.update(blockIndexEntity);
+                blockIndexRepository.save(blockIndexEntity);
                 LOGGER.info("persisted bestblock index: {}", blockIndexEntity);
                 return;
             }
@@ -71,7 +72,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
-        List<BlockIndexEntity> blockIndexEntities = blockIndexDao.getAllByHeight(height);
+        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.queryAllByHeight(height);
 
         if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
             BlockIndex blockIndex = new BlockIndex();
@@ -93,7 +94,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
 
     public BlockIndex getLastBlockIndex() {
-        long maxHeight = blockIndexDao.getMaxHeight();
+        long maxHeight = blockIndexRepository.queryMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
 

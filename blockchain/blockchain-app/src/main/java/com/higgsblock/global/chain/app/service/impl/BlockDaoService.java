@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheMa
 import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
+import com.higgsblock.global.chain.app.dao.iface.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -33,7 +34,7 @@ import java.util.Map;
 public class BlockDaoService implements IBlockService {
 
     @Autowired
-    private BlockEntityDao blockDao;
+    private IBlockRepository blockRepository;
 
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
@@ -83,12 +84,12 @@ public class BlockDaoService implements IBlockService {
         if (block == null) {
             return false;
         }
-        return blockDao.getByField(block.getPrevBlockHash()) != null;
+        return blockRepository.queryByBlockHash(block.getPrevBlockHash()) != null;
     }
 
     @Override
     public Block getBlockByHash(String blockHash) {
-        BlockEntity blockEntity = blockDao.getByField(blockHash);
+        BlockEntity blockEntity = blockRepository.queryByBlockHash(blockHash);
         if (blockEntity == null) {
             LOGGER.error("not found the block by blockHash = " + blockHash);
             return null;
@@ -251,7 +252,7 @@ public class BlockDaoService implements IBlockService {
         blockEntity.setBlockHash(block.getHash());
         blockEntity.setHeight(block.getHeight());
         blockEntity.setData(blockFormatter.format(block));
-        blockDao.add(blockEntity);
+        blockRepository.save(blockEntity);
         LOGGER.info("saved block:{}", block.getSimpleInfo());
     }
 
