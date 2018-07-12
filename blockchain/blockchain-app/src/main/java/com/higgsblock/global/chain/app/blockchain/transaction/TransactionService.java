@@ -106,6 +106,7 @@ public class TransactionService {
         }
 
         //verify producer coinbase output
+        //todo kongyu 2018-7-12 挖矿奖励逻辑已经改动，奖励给当前区块的矿工，应该将preBlock换成block
         if (!validateProducerOutput(outputs.get(0), preBlock, rewards.getMinerTotal())) {
             LOGGER.error("verify miner coinbase output failed,tx hash={}_block hash={}", tx.getHash(), block.getHash());
             return false;
