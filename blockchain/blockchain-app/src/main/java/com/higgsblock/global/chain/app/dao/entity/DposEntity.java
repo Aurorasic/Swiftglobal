@@ -17,11 +17,6 @@ import javax.persistence.*;
 @Table(name = "t_dpos")
 public class DposEntity {
 
-    public DposEntity(long sn, String addresses) {
-        this.sn = sn;
-        this.addresses = addresses;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
@@ -32,5 +27,10 @@ public class DposEntity {
 
     @Column(name = "addresses", nullable = false, length = 100, columnDefinition = "VARCHAR")
     private String addresses;
+
+    public DposEntity(long sn, String addresses) {
+        this.sn = sn;
+        this.addresses = addresses;
+    }
 
 }
