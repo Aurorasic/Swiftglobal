@@ -16,7 +16,7 @@ public class BlockEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column
-    private long id;
+    private Long id;
 
     @Column(name = "block_hash", nullable = false, columnDefinition = "VARCHAR", length = 64)
     private String blockHash;

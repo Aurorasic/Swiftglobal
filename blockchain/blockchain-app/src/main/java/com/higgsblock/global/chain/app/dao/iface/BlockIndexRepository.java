@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @author wangxiangyi
  * @date 2018/7/12
  */
-public interface BlockIndexRepository extends JpaRepository<BlockIndexEntity, String> {
+public interface BlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
 }

@@ -25,7 +25,7 @@ public class DposEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "sn", columnDefinition = "INTEGER", nullable = false)
     private long sn;

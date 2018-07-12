@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.iface.IWitnessEntity;
+import com.higgsblock.global.chain.app.dao.iface.IWitnessRepository;
 import com.higgsblock.global.chain.app.service.IWitnessEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,11 +36,11 @@ public class WitnessEntityService implements IWitnessEntityService {
 
 
     @Autowired
-    private IWitnessEntity iWitnessEntity;
+    private IWitnessRepository iWitnessRepository;
 
     @Override
     public List<WitnessEntity> getAll() {
-        return iWitnessEntity.findAll();
+        return iWitnessRepository.findAll();
     }
 
     private String buildCacheKey(long height) {

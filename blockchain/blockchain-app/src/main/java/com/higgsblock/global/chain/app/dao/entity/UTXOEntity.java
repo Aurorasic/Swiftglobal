@@ -19,7 +19,7 @@ public class UTXOEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", columnDefinition = "INTEGER")
-    private long id;
+    private Long id;
 
     @Column(name = "transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String transactionHash;
