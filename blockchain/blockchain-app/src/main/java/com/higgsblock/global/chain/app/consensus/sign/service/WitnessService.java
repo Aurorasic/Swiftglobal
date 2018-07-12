@@ -54,6 +54,10 @@ public class WitnessService {
     @Getter
     private long height;
 
+    /**
+     * the row is version of vote,the column is the pubKey of vote,
+     * the inner key of Map is the blockHash of the vote
+     * */
     private HashBasedTable<Integer, String, Map<String, Vote>> voteHashTable;
 
     @Getter
