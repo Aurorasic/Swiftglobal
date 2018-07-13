@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
  * @author baizhengwen
  * @date 2018/3/16
  */
+@Deprecated
 @RestController
 @RequestMapping("/connections")
 public class ConnectionController {
