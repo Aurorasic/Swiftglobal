@@ -15,6 +15,8 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
     /**
      * find BlockIndexEntity by blockHash
      *
+     * @param blockHash
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */
@@ -23,6 +25,8 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
     /**
      * find all BlockIndexEntities by height
      *
+     * @param height
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */
@@ -31,6 +35,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
     /**
      * query BlockIndexEntity records max height
      *
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */

@@ -12,6 +12,8 @@ public interface IDposRepository extends JpaRepository<DposEntity, Long> {
     /**
      * find DposEntity by sn
      *
+     * @param sn
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */

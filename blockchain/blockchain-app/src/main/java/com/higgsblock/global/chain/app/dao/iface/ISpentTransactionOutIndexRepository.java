@@ -14,6 +14,8 @@ public interface ISpentTransactionOutIndexRepository extends JpaRepository<Spent
     /**
      * find SpentTransactionOutIndexEntity list by preTransactionHash
      *
+     * @param preTransactionHash
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */

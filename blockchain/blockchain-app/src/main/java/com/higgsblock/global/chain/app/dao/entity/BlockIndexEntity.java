@@ -10,7 +10,9 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-@Table(name = "t_block_index")
+@Table(name = "t_block_index", indexes = {@Index(name = "idx_block_index_height", columnList = "height"),
+        @Index(name = "idx_block_index_miner_address", columnList = "miner_address"),
+        @Index(name = "uniq_block_index_block_hash", columnList = "block_hash", unique = true)})
 public class BlockIndexEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

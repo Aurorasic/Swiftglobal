@@ -12,6 +12,8 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
     /**
      * find ScoreEntity by address
      *
+     * @param address
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */
@@ -20,6 +22,8 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
     /**
      * delete ScoreEntity by address
      *
+     * @param address
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */

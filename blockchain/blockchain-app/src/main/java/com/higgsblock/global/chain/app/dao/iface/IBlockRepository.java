@@ -12,6 +12,8 @@ public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
     /**
      * find BlockEntity by blockHash
      *
+     * @param blockHash
+     * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */

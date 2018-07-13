@@ -10,7 +10,8 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-@Table(name = "t_block")
+@Table(name = "t_block", indexes = {@Index(name = "idx_block_height", columnList = "height"),
+        @Index(name = "uniq_block_hash", columnList = "block_hash", unique = true)})
 public class BlockEntity {
 
     @Id

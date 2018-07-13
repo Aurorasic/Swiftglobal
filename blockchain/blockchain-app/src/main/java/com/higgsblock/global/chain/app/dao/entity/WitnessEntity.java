@@ -10,7 +10,7 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-@Table(name = "t_witness")
+@Table(name = "t_witness", indexes = @Index(name = "index_pub_key", columnList = "pub_key", unique = true))
 public class WitnessEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
