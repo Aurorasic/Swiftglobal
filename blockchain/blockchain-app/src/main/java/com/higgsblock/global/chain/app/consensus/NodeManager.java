@@ -56,13 +56,14 @@ public class NodeManager implements InitializingBean {
             .build();
     private Function<Long, List<String>> function = null;
 
-    public void calculateDposNodes(Block toBeBestBlock, long maxHeight) {
+    public List<String> calculateDposNodes(Block toBeBestBlock, long maxHeight) {
         List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         if (CollectionUtils.isEmpty(dposAddresses)) {
-            return;
+            return null;
         }
         long sn = getSn(maxHeight);
         persistDposNodes(sn, dposAddresses);
+        return dposAddresses;
     }
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {

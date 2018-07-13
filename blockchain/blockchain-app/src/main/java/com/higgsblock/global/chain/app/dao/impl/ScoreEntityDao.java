@@ -32,6 +32,12 @@ public class ScoreEntityDao extends BaseDao<ScoreEntity> implements IScoreEntity
     }
 
     @Override
+    public int updateAll(int score) {
+        String sql = "update t_score set score=score+:score";
+        return template.update(sql, ImmutableMap.of("score", score));
+    }
+
+    @Override
     public <E> int delete(E address) {
         String sql = "delete from t_score where address=:address";
         return super.delete(sql, ImmutableMap.of("address", address));
@@ -47,11 +53,5 @@ public class ScoreEntityDao extends BaseDao<ScoreEntity> implements IScoreEntity
     public List<ScoreEntity> findAll() {
         String sql = "select address, score from t_score";
         return super.findAll(sql);
-    }
-
-    @Override
-    public int plusScore(int score) {
-        String sql = "update t_score set score=score+:score";
-        return template.update(sql, ImmutableMap.of("score", score));
     }
 }

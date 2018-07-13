@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,24 +23,43 @@ import java.util.Set;
 @Slf4j
 public class MinerScoreStrategy {
     public static int INIT_SCORE = 1000;
+
+    //old score strategy
     public static int MINUS_SCORE_PACKAGED_BEST = -20;
 
-    private static IScoreService scoreDaoService;
-    private static TransactionService transactionService;
+    //new score strategy
+    public static int SELECTED_DPOS_SET_SCORE = 0;
+    public static int MINED_BLOCK_SET_SCORE = 600;
+    public static int INC_ONEBLOCK_ADD_SCORE = 1;
 
+    public static long updateHigh = 150;
+
+    @Autowired
+    private IScoreService scoreDaoService;
+    @Autowired
+    private TransactionService transactionService;
+
+    public boolean shouldExecuteOldStrategy(long height) {
+        return height <= updateHigh ? true : false;
+    }
+
+    public void resetSelectedDposScore(Block toBeBestBlock, List<String> addressList) {
+        if (CollectionUtils.isEmpty(addressList) ||
+                shouldExecuteOldStrategy(toBeBestBlock.getHeight())) {
+            return;
+        }
+        scoreDaoService.updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
+    }
 
     /**
      * Called by block dao service
      */
+    public void refreshMinersScore(Block toBeBestBlock) {
 
-    public static void refreshMinersScore(Block toBeBestBlock) {
-
-        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
-
-        //if the block is only mined by  miner, plus score
-        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
-            //minus miner score
-            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+        if (shouldExecuteOldStrategy(toBeBestBlock.getHeight())) {
+            oldScoreStrategy(toBeBestBlock);
+        } else {
+            newScoreStrategy(toBeBestBlock);
         }
 
         //handle joined miner and removed miner
@@ -58,10 +78,27 @@ public class MinerScoreStrategy {
             }
         }
         LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
-
     }
 
-    private static void plusScore(String address, int plusScore) {
+    private void oldScoreStrategy(Block toBeBestBlock) {
+        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
+        //if the block is only mined by  miner
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+            //set miner score to 600
+            plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
+        }
+    }
+
+    private void newScoreStrategy(Block toBeBestBlock) {
+        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
+        //if the block is only mined by  miner, plus score
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+            setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
+        }
+        scoreDaoService.updateAll(INC_ONEBLOCK_ADD_SCORE);
+    }
+
+    private void plusScore(String address, int plusScore) {
         if (StringUtils.isNotEmpty(address) && plusScore != 0) {
             Integer tmpScore = scoreDaoService.get(address);
             int score = tmpScore == null ? INIT_SCORE : tmpScore;
@@ -70,14 +107,9 @@ public class MinerScoreStrategy {
         }// else it is empty address, do not handle
     }
 
-
-    @Autowired(required = true)
-    public void setScoreDaoService(IScoreService scoreDaoService) {
-        MinerScoreStrategy.scoreDaoService = scoreDaoService;
-    }
-
-    @Autowired(required = true)
-    public void setTransactionService(TransactionService transactionService) {
-        MinerScoreStrategy.transactionService = transactionService;
+    private void setScore(String address, int score) {
+        if (StringUtils.isNotEmpty(address)) {
+            scoreDaoService.put(address, score);
+        }
     }
 }

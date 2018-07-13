@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,6 +25,20 @@ public interface IScoreService {
      * @return
      */
     void put(String address, Integer score);
+
+    /**
+     * @param addressList
+     * @param score
+     * @return
+     */
+    int updateBatch(List<String> addressList, int score);
+
+    /**
+     * add or sub score
+     *
+     * @param score
+     */
+    int updateAll(Integer score);
 
     /**
      * set score if not exist
