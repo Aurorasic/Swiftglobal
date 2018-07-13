@@ -56,7 +56,7 @@ public class NodeManager implements InitializingBean {
             .build();
     private Function<Long, List<String>> function = null;
 
-    public List<String> calculateDposNodes(Block toBeBestBlock, long maxHeight) {
+    public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
         List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         if (CollectionUtils.isEmpty(dposAddresses)) {
             return null;

@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,10 @@ public class MinerScoreStrategy {
     @Autowired
     private NodeManager nodeManager;
 
-    public void resetSelectedDposScore(Block toBeBestBlock, List<String> addressList) {
+    public void setSelectedDposScore(List<String> addressList) {
+        if (CollectionUtils.isEmpty(addressList)) {
+            return;
+        }
         scoreDaoService.updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
     }
 
