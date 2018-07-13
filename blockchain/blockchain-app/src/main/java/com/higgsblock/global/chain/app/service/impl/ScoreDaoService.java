@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.dao.iface.IScoreEntity;
+import com.higgsblock.global.chain.app.dao.iface.IScoreRepository;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import java.util.Map;
 public class ScoreDaoService implements IScoreService {
 
     @Autowired
-    private IScoreEntity scoreDao;
+    private IScoreRepository scoreRepository;
 
     /**
      * get score by address
@@ -29,7 +30,7 @@ public class ScoreDaoService implements IScoreService {
      */
     @Override
     public Integer get(String address) {
-        ScoreEntity scoreEntity = scoreDao.getByField(address);
+        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
         return null == scoreEntity ? null : scoreEntity.getScore();
     }
 
@@ -41,11 +42,13 @@ public class ScoreDaoService implements IScoreService {
      */
     @Override
     public void put(String address, Integer score) {
-        ScoreEntity scoreEntity = new ScoreEntity(address, score);
-        if (null != scoreDao.getByField(address)) {
-            scoreDao.update(scoreEntity);
+        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
+        if (null != scoreEntity) {
+            scoreEntity.setScore(score);
+            scoreRepository.save(scoreEntity);
         } else {
-            scoreDao.add(scoreEntity);
+            ScoreEntity saveEntity = new ScoreEntity(address, score);
+            scoreRepository.save(saveEntity);
         }
     }
 
@@ -59,9 +62,9 @@ public class ScoreDaoService implements IScoreService {
     @Override
     public void putIfAbsent(String address, Integer score) {
 
-        ScoreEntity scoreEntity = scoreDao.getByField(address);
+        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
         if (scoreEntity == null) {
-            scoreDao.add(new ScoreEntity(address, score));
+            scoreRepository.save(new ScoreEntity(address, score));
         }
     }
 
@@ -72,7 +75,7 @@ public class ScoreDaoService implements IScoreService {
      */
     @Override
     public void remove(String address) {
-        scoreDao.delete(address);
+        scoreRepository.deleteByAddress(address);
     }
 
     /**
@@ -83,7 +86,7 @@ public class ScoreDaoService implements IScoreService {
     @Override
     public Map<String, Integer> loadAll() {
         Map<String, Integer> map = new HashMap<>();
-        scoreDao.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
+        scoreRepository.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
         return map;
     }
 }

@@ -10,7 +10,6 @@ import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.dao.iface.IBlockRepository;
-import com.higgsblock.global.chain.app.dao.impl.BlockEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -84,12 +83,12 @@ public class BlockDaoService implements IBlockService {
         if (block == null) {
             return false;
         }
-        return blockRepository.queryByBlockHash(block.getPrevBlockHash()) != null;
+        return blockRepository.findByBlockHash(block.getPrevBlockHash()) != null;
     }
 
     @Override
     public Block getBlockByHash(String blockHash) {
-        BlockEntity blockEntity = blockRepository.queryByBlockHash(blockHash);
+        BlockEntity blockEntity = blockRepository.findByBlockHash(blockHash);
         if (blockEntity == null) {
             LOGGER.error("not found the block by blockHash = " + blockHash);
             return null;

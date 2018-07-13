@@ -9,6 +9,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
 
-    BlockEntity queryByBlockHash(String blockHash);
+    /**
+     * find BlockEntity by blockHash
+     *
+     * @author wangxiangyi
+     * @date 2018/7/13
+     */
+    BlockEntity findByBlockHash(String blockHash);
 
 }

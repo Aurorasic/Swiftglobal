@@ -9,6 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface IDposRepository extends JpaRepository<DposEntity, Long> {
 
-    DposEntity queryBySn(long sn);
+    DposEntity findBySn(long sn);
 
 }

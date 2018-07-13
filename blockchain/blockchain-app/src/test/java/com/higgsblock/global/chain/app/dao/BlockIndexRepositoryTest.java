@@ -34,14 +34,14 @@ public class BlockIndexRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryByBlockHash() {
-        BlockIndexEntity indexEntity = blockIndexRepository.queryByBlockHash("123");
+        BlockIndexEntity indexEntity = blockIndexRepository.findByBlockHash("123");
         LOGGER.info("--->>find one result : {}", indexEntity);
     }
 
     @Test
     @Transactional
     public void testUpdate() {
-        BlockIndexEntity indexEntity = blockIndexRepository.queryByBlockHash("123");
+        BlockIndexEntity indexEntity = blockIndexRepository.findByBlockHash("123");
         indexEntity.setIsBest(0);
         BlockIndexEntity savedEntity = blockIndexRepository.save(indexEntity);
         LOGGER.info("--->>save or update ? save by id ：{}", savedEntity);
@@ -49,7 +49,7 @@ public class BlockIndexRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryAllByHeight() {
-        List<BlockIndexEntity> indexEntities = blockIndexRepository.queryAllByHeight(12);
+        List<BlockIndexEntity> indexEntities = blockIndexRepository.findAllByHeight(12);
         LOGGER.info("query all by height size : {}", indexEntities.size());
     }
 

@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.IBlockIndexRepository;
-import com.higgsblock.global.chain.app.dao.impl.BlockIndexEntityDao;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -61,7 +60,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
         BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
         for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
             if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
-                BlockIndexEntity blockIndexEntity = blockIndexRepository.queryByBlockHash(bestBlock.getHash());
+                BlockIndexEntity blockIndexEntity = blockIndexRepository.findByBlockHash(bestBlock.getHash());
                 blockIndexEntity.setIsBest(i);
                 blockIndexRepository.save(blockIndexEntity);
                 LOGGER.info("persisted bestblock index: {}", blockIndexEntity);
@@ -72,7 +71,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
 
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
-        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.queryAllByHeight(height);
+        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
 
         if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
             BlockIndex blockIndex = new BlockIndex();
