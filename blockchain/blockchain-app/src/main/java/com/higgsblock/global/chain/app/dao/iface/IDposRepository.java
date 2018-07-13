@@ -9,6 +9,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface IDposRepository extends JpaRepository<DposEntity, Long> {
 
+    /**
+     * find DposEntity by sn
+     *
+     * @author wangxiangyi
+     * @date 2018/7/13
+     */
     DposEntity findBySn(long sn);
 
 }

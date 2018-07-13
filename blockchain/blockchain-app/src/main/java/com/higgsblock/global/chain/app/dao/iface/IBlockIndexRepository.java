@@ -12,10 +12,28 @@ import java.util.List;
  */
 public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
 
+    /**
+     * find BlockIndexEntity by blockHash
+     *
+     * @author wangxiangyi
+     * @date 2018/7/13
+     */
     BlockIndexEntity findByBlockHash(String blockHash);
 
+    /**
+     * find all BlockIndexEntities by height
+     *
+     * @author wangxiangyi
+     * @date 2018/7/13
+     */
     List<BlockIndexEntity> findAllByHeight(long height);
 
+    /**
+     * query BlockIndexEntity records max height
+     *
+     * @author wangxiangyi
+     * @date 2018/7/13
+     */
     @Query("select max (height) from BlockIndexEntity")
     long queryMaxHeight();
 
