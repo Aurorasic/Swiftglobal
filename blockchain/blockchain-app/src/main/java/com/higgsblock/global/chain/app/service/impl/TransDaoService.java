@@ -6,9 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
+import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexRepository;
+import com.higgsblock.global.chain.app.dao.iface.IUTXORepository;
 import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
-import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -33,7 +33,7 @@ import java.util.List;
 @Slf4j
 public class TransDaoService implements ITransService {
     @Autowired
-    private IUTXOEntityRepository iutxoEntityRepository;
+    private IUTXORepository iutxoRepository;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -42,7 +42,7 @@ public class TransDaoService implements ITransService {
      * The Transaction index entity dao.
      */
     @Autowired
-    private TransactionIndexEntityDao transactionIndexEntityDao;
+    private ITransactionIndexRepository iTransactionIndexRepository;
 
     /**
      * The Spent transaction out index entity dao.
@@ -160,7 +160,7 @@ public class TransDaoService implements ITransService {
         transactionIndexEntity.setTransactionHash(newTxIndex.getTxHash());
         transactionIndexEntity.setTransactionIndex(newTxIndex.getTxIndex());
 
-        transactionIndexEntityDao.add(transactionIndexEntity);
+        iTransactionIndexRepository.save(transactionIndexEntity);
     }
 
     /**
@@ -170,7 +170,7 @@ public class TransDaoService implements ITransService {
      * @return the transaction index
      */
     private TransactionIndex getTransactionIndex(String spentTxHash) {
-        TransactionIndexEntity entity = transactionIndexEntityDao.getByField(spentTxHash);
+        TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(spentTxHash);
         if (entity == null) {
             return null;
         }
@@ -199,13 +199,13 @@ public class TransDaoService implements ITransService {
         entity.setCurrency(output.getMoney().getCurrency());
         entity.setLockScript(output.getLockScript().getAddress());
 
-        iutxoEntityRepository.save(entity);
+        iutxoRepository.save(entity);
     }
 
     @Override
     public UTXO getUTXOOnBestChain(String utxoKey) {
         String[] keys = utxoKey.split("_");
-        UTXOEntity entity = iutxoEntityRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
+        UTXOEntity entity = iutxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
 
         if (entity == null) {
             return null;
@@ -235,7 +235,7 @@ public class TransDaoService implements ITransService {
             throw new RuntimeException("addr is null");
         }
 
-        List<UTXOEntity> entityList = iutxoEntityRepository.findByLockScript(addr);
+        List<UTXOEntity> entityList = iutxoRepository.findByLockScript(addr);
         if (CollectionUtils.isEmpty(entityList)) {
             return null;
         }
@@ -263,6 +263,6 @@ public class TransDaoService implements ITransService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
-        iutxoEntityRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
+        iutxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
     }
 }

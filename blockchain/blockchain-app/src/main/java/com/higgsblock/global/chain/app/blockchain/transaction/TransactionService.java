@@ -7,11 +7,11 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexRepository;
-import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
-import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
+import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexRepository;
+import com.higgsblock.global.chain.app.dao.iface.IUTXORepository;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -54,10 +54,10 @@ public class TransactionService {
     private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     @Autowired
-    private IUTXOEntityRepository iutxoEntityRepository;
+    private IUTXORepository iutxoRepository;
 
     @Autowired
-    private TransactionIndexEntityDao transDao;
+    private ITransactionIndexRepository iTransactionIndexRepository;
 
     @Autowired
     private BlockIdxDaoService blockIdxDaoService;
@@ -448,13 +448,14 @@ public class TransactionService {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        TransactionIndex transactionIndexEntity = null;
-        transactionIndexEntity = transDao.get(hash);
+        TransactionIndex transactionIndex = null;
+        TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(hash);
+        transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
         //        try {
         //        } catch (RocksDBException e) {
         //            throw new IllegalStateException("Get transaction index error");
         //        }
-        if (transactionIndexEntity != null) {
+        if (transactionIndex != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
         }
@@ -479,7 +480,8 @@ public class TransactionService {
 
             String txHash = prevOutPoint.getHash();
             TransactionIndex transactionIndex;
-            transactionIndex = transDao.get(txHash);
+            TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(txHash);
+            transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
             //            try {
             //            } catch (RocksDBException e) {
             //                throw new IllegalStateException("Get transaction index error");
@@ -540,7 +542,7 @@ public class TransactionService {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-        List<UTXOEntity> utxoEntities = iutxoEntityRepository.findByLockScriptAndCurrency(address, currency);
+        List<UTXOEntity> utxoEntities = iutxoRepository.findByLockScriptAndCurrency(address, currency);
         List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
