@@ -44,4 +44,15 @@ public class ScoreRepositoryTest extends BaseTest {
         Assert.assertNull(scoreEntity);
     }
 
+    @Test
+    @Transactional
+    public void testSaveAndFlush() {
+        ScoreEntity scoreEntity = scoreRepository.findByAddress("123");
+        LOGGER.info("--->>find by address result : {}", scoreEntity);
+
+        scoreEntity.setScore(22);
+        ScoreEntity savedEntity = scoreRepository.saveAndFlush(scoreEntity);
+        LOGGER.info("--->>saved ScoreEntity : {}", savedEntity);
+    }
+
 }
