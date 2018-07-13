@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexRepository;
 import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
 import com.higgsblock.global.chain.app.dao.impl.TransactionIndexEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
@@ -65,7 +66,7 @@ public class TransactionService {
     private TransactionFeeService transactionFeeService;
 
     @Autowired
-    private ISpentTransactionOutIndexEntity spentTxOutIndexEntityDao;
+    private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
 
     /**
      * validate coin base tx
@@ -585,7 +586,7 @@ public class TransactionService {
     }
 
     private boolean isSpent(String preTxHash, short outIndex) {
-        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTxOutIndexEntityDao.getByPreHash(preTxHash);
+        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTransactionOutIndexRepository.findByPreTransactionHash(preTxHash);
         if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
             return false;
         }
