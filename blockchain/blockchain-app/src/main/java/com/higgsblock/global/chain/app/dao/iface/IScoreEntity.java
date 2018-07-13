@@ -11,5 +11,5 @@ import java.util.List;
 public interface IScoreEntity extends IDao<ScoreEntity> {
     int updateBatch(List<String> addressList, int score);
 
-    int updateAll(int score);
+    int plusAll(int score);
 }

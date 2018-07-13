@@ -56,8 +56,8 @@ public class ScoreDaoService implements IScoreService {
     }
 
     @Override
-    public int updateAll(Integer score) {
-        return scoreDao.updateAll(score);
+    public int plusAll(Integer score) {
+        return scoreDao.plusAll(score);
     }
 
     /**

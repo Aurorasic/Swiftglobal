@@ -7,7 +7,6 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,26 +27,19 @@ public class MinerScoreStrategy {
     public static int MINUS_SCORE_PACKAGED_BEST = -20;
 
     //new score strategy
-    public static int SELECTED_DPOS_SET_SCORE = 0;
-    public static int MINED_BLOCK_SET_SCORE = 600;
-    public static int INC_ONEBLOCK_ADD_SCORE = 1;
-
-    public static long updateHigh = 150;
+    public static int SELECTED_DPOS_SET_SCORE = 600;
+    public static int MINED_BLOCK_SET_SCORE = 800;
+    public static int OFFLINE_MINER_SET_SCORE = 0;
+    public static int ONE_BLOCK_ADD_SCORE = 1;
 
     @Autowired
     private IScoreService scoreDaoService;
     @Autowired
     private TransactionService transactionService;
-
-    public boolean shouldExecuteOldStrategy(long height) {
-        return height <= updateHigh;
-    }
+    @Autowired
+    private NodeManager nodeManager;
 
     public void resetSelectedDposScore(Block toBeBestBlock, List<String> addressList) {
-        if (CollectionUtils.isEmpty(addressList) ||
-                shouldExecuteOldStrategy(toBeBestBlock.getHeight())) {
-            return;
-        }
         scoreDaoService.updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
     }
 
@@ -56,11 +48,7 @@ public class MinerScoreStrategy {
      */
     public void refreshMinersScore(Block toBeBestBlock) {
 
-        if (shouldExecuteOldStrategy(toBeBestBlock.getHeight())) {
-            oldScoreStrategy(toBeBestBlock);
-        } else {
-            newScoreStrategy(toBeBestBlock);
-        }
+        newScoreStrategy(toBeBestBlock);
 
         //handle joined miner and removed miner
         LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
@@ -91,11 +79,17 @@ public class MinerScoreStrategy {
 
     private void newScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
-        //if the block is only mined by  miner, plus score
+        //if the block is only mined by  miner, set score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
+        } else {
+            //mined by backup peer node
+            long blockHeight = toBeBestBlock.getHeight();
+            String prevBlockHash = toBeBestBlock.getPrevBlockHash();
+            List<String> dposAddressList = nodeManager.getDposGroupByHeihgt(blockHeight, prevBlockHash);
+            scoreDaoService.updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
         }
-        scoreDaoService.updateAll(INC_ONEBLOCK_ADD_SCORE);
+        scoreDaoService.plusAll(ONE_BLOCK_ADD_SCORE);
     }
 
     private void plusScore(String address, int plusScore) {

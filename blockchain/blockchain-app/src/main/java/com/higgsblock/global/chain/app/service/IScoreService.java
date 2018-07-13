@@ -38,7 +38,7 @@ public interface IScoreService {
      *
      * @param score
      */
-    int updateAll(Integer score);
+    int plusAll(Integer score);
 
     /**
      * set score if not exist

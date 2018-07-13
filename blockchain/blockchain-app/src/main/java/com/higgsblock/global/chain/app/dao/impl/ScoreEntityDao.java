@@ -32,9 +32,9 @@ public class ScoreEntityDao extends BaseDao<ScoreEntity> implements IScoreEntity
     }
 
     @Override
-    public int updateAll(int score) {
-        String sql = "update t_score set score=score+:score";
-        return template.update(sql, ImmutableMap.of("score", score));
+    public int plusAll(int plusScore) {
+        String sql = "update t_score set score=score+:plusScore";
+        return template.update(sql, ImmutableMap.of("plusScore", plusScore));
     }
 
     @Override
