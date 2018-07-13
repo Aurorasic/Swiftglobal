@@ -451,10 +451,6 @@ public class TransactionService {
         TransactionIndex transactionIndex = null;
         TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(hash);
         transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
-        //        try {
-        //        } catch (RocksDBException e) {
-        //            throw new IllegalStateException("Get transaction index error");
-        //        }
         if (transactionIndex != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
@@ -482,10 +478,6 @@ public class TransactionService {
             TransactionIndex transactionIndex;
             TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(txHash);
             transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
-            //            try {
-            //            } catch (RocksDBException e) {
-            //                throw new IllegalStateException("Get transaction index error");
-            //            }
             if (transactionIndex == null) {
                 continue;
             }
@@ -522,10 +514,6 @@ public class TransactionService {
 
             UTXO utxo = null;
             utxo = utxoDaoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
-            //            try {
-            //            } catch (RocksDBException e) {
-            //                throw new IllegalStateException("Get utxo error");
-            //            }
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;
