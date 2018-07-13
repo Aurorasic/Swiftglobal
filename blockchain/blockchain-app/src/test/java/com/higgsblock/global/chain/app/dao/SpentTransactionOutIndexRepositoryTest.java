@@ -36,9 +36,10 @@ public class SpentTransactionOutIndexRepositoryTest extends BaseTest {
 
     @Test
     public void testFindByPreTransactionHash() {
-        List<SpentTransactionOutIndexEntity> entity = spentTransactionOutIndexRepository.findByPreTransactionHash("122");
-        LOGGER.info("find by preTransactionHash result : {}", entity);
-        Assert.assertNotNull(entity);
+        List<SpentTransactionOutIndexEntity> entities = spentTransactionOutIndexRepository.findByPreTransactionHash("122");
+        LOGGER.info("find by preTransactionHash result : {}", entities);
+        Assert.assertNotNull(entities);
+        Assert.assertTrue(entities.size() > 0);
     }
 
 }
