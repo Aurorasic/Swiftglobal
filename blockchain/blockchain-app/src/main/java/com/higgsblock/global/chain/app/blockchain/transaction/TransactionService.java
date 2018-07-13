@@ -448,9 +448,8 @@ public class TransactionService {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        TransactionIndex transactionIndex = null;
         TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(hash);
-        transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+        TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
         if (transactionIndex != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
             return;
@@ -475,9 +474,8 @@ public class TransactionService {
             TransactionOutPoint prevOutPoint = input.getPrevOut();
 
             String txHash = prevOutPoint.getHash();
-            TransactionIndex transactionIndex;
             TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(txHash);
-            transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+            TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
             if (transactionIndex == null) {
                 continue;
             }
