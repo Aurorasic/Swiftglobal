@@ -136,14 +136,9 @@ public class NodeManager implements InitializingBean {
         list.addAll(maxScoreList);
         list.addAll(midScoreList);
         list.addAll(minScoreList);
+        list.addAll(inadequateScoreList);
         list.removeAll(select);
-        select.addAll(list.stream().sorted(comparator).limit(size).collect(Collectors.toList()));
-        size = maxSize + midSize + minSize - select.size();
-        if (size <= 0) {
-            LOGGER.info("first select the dpos node is {},sn+1:{}", select, (sn + 1));
-            return select;
-        }
-        select.addAll(inadequateScoreList.stream().sorted(comparator).limit(size).collect(Collectors.toList()));
+        select.addAll(list.stream().limit(size).collect(Collectors.toList()));
         LOGGER.info("the dpos node is {},sn+1:{}", select, (sn + 1));
         if (select.size() < NODE_SIZE) {
             throw new RuntimeException("can not find enough dpos node,sn+1:" + (sn + 1));
