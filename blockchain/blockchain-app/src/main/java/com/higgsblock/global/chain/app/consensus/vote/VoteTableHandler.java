@@ -54,6 +54,17 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
             LOGGER.info("the voteTable hasn't vote which voteVersion is one from {}", sourceId);
             return;
         }
+        long voteHeight = getVoteHeight(row);
+        if (voteHeight == -1) {
+            LOGGER.info("the voteHeight is wrong");
+            return;
+        }
+        LOGGER.info("add voteTable with voteHeight {} ,voteTable size: {}", voteHeight, voteTable.size());
+
+        witnessService.dealVoteMap(sourceId, voteHeight, voteTableMap);
+    }
+
+    private long getVoteHeight(Map<String, Map<String, Vote>> row) {
         Iterator<Map<String, Vote>> iterator = row.values().iterator();
         Map<String, Vote> voteMap = null;
         long voteHeight = -1;
@@ -68,17 +79,11 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
                 if (vote != null) {
                     voteHeight = vote.getHeight();
                     if (voteHeight != -1) {
-                        break;
+                        return voteHeight;
                     }
                 }
             }
         }
-        if (voteHeight == -1) {
-            LOGGER.info("the voteHeight is wrong");
-            return;
-        }
-        LOGGER.info("add voteTable with voteHeight {} ,voteTable size: {}", voteHeight, voteTable.size());
-
-        witnessService.dealVoteMap(sourceId, voteHeight, voteTableMap);
+        return voteHeight;
     }
 }
