@@ -103,57 +103,38 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
-        UTXO utxo = transDaoService.getUTXOOnBestChain(utxoKey);
+//        UTXO utxo = transDaoService.getUTXOOnBestChain(utxoKey);
         if (preBlockHash == null) {
             List<String> lastHightBlockHashs = blockIdxDaoService.getLastHightBlockHashs();
             for (String tmpPreBlockHash : lastHightBlockHashs) {
-                if (utxo == null) {
-                    utxo = getUTXORecurse(tmpPreBlockHash, utxoKey);
-                } else {
-                    boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(tmpPreBlockHash, utxoKey);
-                    if (isRemovedOnUnconfirmedChain) {
-                        utxo = null;
-                    }
+                UTXO utxo = getUnconfirmedUTXORecurse(tmpPreBlockHash, utxoKey);
+                if (utxo != null) {
+                    return utxo;
                 }
+                utxo = transDaoService.getUTXOOnBestChain(utxoKey);
                 if (utxo != null) {
                     return utxo;
                 }
             }
-            return utxo;
         } else {
-            if (utxo == null) {
-                utxo = getUTXORecurse(preBlockHash, utxoKey);
-            } else {
-                boolean isRemovedOnUnconfirmedChain = isRemovedUTXORecurse(preBlockHash, utxoKey);
-                if (isRemovedOnUnconfirmedChain) {
-                    return null;
-                }
+            UTXO utxo = getUnconfirmedUTXORecurse(preBlockHash, utxoKey);
+            if (utxo != null) {
+                return utxo;
+            }
+            utxo = transDaoService.getUTXOOnBestChain(utxoKey);
+            if (utxo != null) {
+                return utxo;
             }
         }
 
-        return utxo;
+        return null;
     }
 
     private void getUnionUTXOsRecurse(Map result, String blockHash, boolean isToGetAdded) {
         if (StringUtils.isEmpty(blockHash)) {
             return;
         }
-        Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
-        if (utxoMap == null) {
-            //there is no utxo cache, load this block and build new utxo map to cache
-            Block block = blockDaoService.getBlockByHash(blockHash);
-            if (block == null) {
-                return;
-            }
-            BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
-            if (blockIndex == null || blockIndex.isBest(blockHash)) {
-                return;
-            }
-            utxoMap = buildUTXOMap(block);
-            unconfirmedUtxoMaps.put(blockHash, utxoMap);
-            blockHashChainMap.put(blockHash, block.getPrevBlockHash());
-        }
-
+        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
         Set<String> keySet = utxoMap.keySet();
         for (String key : keySet) {
             UTXO utxo = utxoMap.get(key);
@@ -168,37 +149,23 @@ public class UTXODaoServiceProxy {
         getUnionUTXOsRecurse(result, preBlockHash, isToGetAdded);
     }
 
-    public UTXO getUTXORecurse(String blockHash, String utxoKey) {
+    private UTXO getUnconfirmedUTXORecurse(String blockHash, String utxoKey) {
         if (StringUtils.isEmpty(blockHash)) {
             return null;
         }
-        Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
-        if (utxoMap == null) {
-            //there is no utxo cache, load this block and build new utxo map to cache
-            Block block = blockDaoService.getBlockByHash(blockHash);
-            if (block == null) {
-                return null;
-            }
-            BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
-            if (blockIndex == null || blockIndex.isBest(blockHash)) {
-                return null;
-            }
-            utxoMap = buildUTXOMap(block);
-            unconfirmedUtxoMaps.put(blockHash, utxoMap);
-            blockHashChainMap.put(blockHash, block.getPrevBlockHash());
-        }
+        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
         if (utxoMap.containsKey(utxoKey)) {
             return utxoMap.get(utxoKey);
         }
         String preBlockHash = blockHashChainMap.get(blockHash);
-        return getUTXORecurse(preBlockHash, utxoKey);
+        return getUnconfirmedUTXORecurse(preBlockHash, utxoKey);
     }
 
     public boolean isRemovedUTXORecurse(String blockHash, String utxoKey) {
         if (StringUtils.isEmpty(blockHash)) {
             return false;
         }
-        Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
+        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
         if (utxoMap == null || utxoMap.isEmpty()) {
             return false;
         }
@@ -223,6 +190,31 @@ public class UTXODaoServiceProxy {
             Map utxoMap = buildUTXOMap(newBlock);
             put(newBlock.getPrevBlockHash(), newBlock.getHash(), utxoMap);
         }
+    }
+
+    /**
+     * get the utxos on the block if the block is in cache, else load the block and calculate
+     *
+     * @param blockHash
+     * @return if no element return empty hashmap
+     */
+    private Map<String, UTXO> getUnconfirmedUtxoMaps(String blockHash) {
+        Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
+        if (utxoMap == null) {
+            //there is no utxo cache, load this block and build new utxo map to cache
+            Block block = blockDaoService.getBlockByHash(blockHash);
+            if (block == null) {
+                return new HashMap<>();
+            }
+            BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+            if (blockIndex == null || blockIndex.isBest(blockHash)) {
+                return new HashMap<>();
+            }
+            utxoMap = buildUTXOMap(block);
+            unconfirmedUtxoMaps.put(blockHash, utxoMap);
+            blockHashChainMap.put(blockHash, block.getPrevBlockHash());
+        }
+        return utxoMap;
     }
 
     private Map buildUTXOMap(Block block) {
