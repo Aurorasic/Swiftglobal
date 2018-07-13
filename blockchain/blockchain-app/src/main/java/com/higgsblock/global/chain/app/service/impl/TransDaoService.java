@@ -84,7 +84,7 @@ public class TransDaoService implements ITransService {
                     if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    iutxoEntityRepository.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
+                    deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
                 }
             }
 
@@ -258,5 +258,11 @@ public class TransDaoService implements ITransService {
             utxos.add(utxo);
         });
         return utxos;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
+        iutxoEntityRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
     }
 }

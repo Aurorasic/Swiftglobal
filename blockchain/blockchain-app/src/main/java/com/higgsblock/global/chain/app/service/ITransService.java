@@ -45,5 +45,12 @@ public interface ITransService {
      * @param addr
      * @return
      */
-    public List<UTXO> getUTXOsByAddress(String addr);
+    List<UTXO> getUTXOsByAddress(String addr);
+
+    /**
+     * delete by txHash and outIndex
+     * @param transactionHash
+     * @param outIndex
+     */
+    void deleteByTransactionHashAndOutIndex(String transactionHash,short outIndex);
 }
