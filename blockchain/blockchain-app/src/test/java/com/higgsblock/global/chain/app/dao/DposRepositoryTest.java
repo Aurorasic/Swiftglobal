@@ -27,7 +27,7 @@ public class DposRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryBySn() {
-        DposEntity entity = dposRepository.queryBySn(13);
+        DposEntity entity = dposRepository.findBySn(13);
         LOGGER.info("--->>query by sn result : {}", entity);
     }
 

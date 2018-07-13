@@ -68,7 +68,7 @@ public class BlockRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryByBlockHash() {
-        BlockEntity entity = blockRepository.queryByBlockHash("123");
+        BlockEntity entity = blockRepository.findByBlockHash("123");
         LOGGER.info("query by blockHash result: {}", entity);
     }
 
