@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -32,7 +31,6 @@ public interface IUTXOEntityRepository extends JpaRepository<UTXOEntity, Long> {
      */
     @Query(value = "delete from UTXOEntity where transactionHash=:transactionHash and outIndex=:outIndex", nativeQuery = false)
     @Modifying
-    @Transactional(rollbackFor = Exception.class)
     void deleteByTransactionHashAndOutIndex(@Param("transactionHash") String transactionHash, @Param("outIndex") short outIndex);
 
     /**

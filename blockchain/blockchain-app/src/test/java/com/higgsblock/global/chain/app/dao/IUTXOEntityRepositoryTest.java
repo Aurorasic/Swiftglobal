@@ -3,8 +3,11 @@ package com.higgsblock.global.chain.app.dao;
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.IUTXOEntityRepository;
+import com.higgsblock.global.chain.app.service.ITransService;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -51,7 +54,9 @@ public class IUTXOEntityRepositoryTest extends BaseTest {
     }
 
     @Test
+    @Transactional
+    @Rollback(false)
     public void deleteUTXOEntityByTransactionHashAndOutIndex() {
-        iutxoEntityRepository.deleteByTransactionHashAndOutIndex("transactionHash", (short) 0);
+        iutxoEntityRepository.deleteByTransactionHashAndOutIndex("txHash", (short) 3);
     }
 }
