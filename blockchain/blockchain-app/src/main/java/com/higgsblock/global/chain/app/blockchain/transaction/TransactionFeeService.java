@@ -5,8 +5,8 @@ import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
-import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
+import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -277,17 +277,11 @@ public class TransactionFeeService {
         for (TransactionInput input : inputs) {
             String preOutKey = input.getPrevOut().getKey();
 
-            UTXO utxo = null;
-            utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
+            UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
             if (null == utxo) {
-                LOGGER.error("get utxo is null " + preOutKey);
-                throw new RuntimeException("uxto is null " + preOutKey);
+                LOGGER.warn("get utxo is null:{}", preOutKey);
+                throw new RuntimeException("uxto is null:" + preOutKey);
             }
-//            try {
-//            } catch (RocksDBException e) {
-//                throw new IllegalStateException("Get utxo error");
-//            }
-
             TransactionOutput output = utxo.getOutput();
             if (output.isCASCurrency()) {
                 preOutMoney.add(output.getMoney());
