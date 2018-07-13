@@ -30,7 +30,7 @@ public class WitnessCountTime {
     private volatile boolean isRunning;
     static Block block;
     public volatile static boolean isCurrBlockConfirm = false;
-    public static final long WAIT_WITNESS_TIME = 150;
+    public static final long WAIT_WITNESS_TIME = 15;
 
 
     @Autowired

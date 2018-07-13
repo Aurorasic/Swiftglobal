@@ -31,7 +31,7 @@ public class CandidateMiner {
     private ExecutorService executorService;
     private volatile boolean isRunning;
     public static volatile boolean isCMINER = false;
-    public static final long WAIT_MINER_TIME = 180;
+    public static final long WAIT_MINER_TIME = 30;
 
     @Autowired
     private BlockService blockService;
