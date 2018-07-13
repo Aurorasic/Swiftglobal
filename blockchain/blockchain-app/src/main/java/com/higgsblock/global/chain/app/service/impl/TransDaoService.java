@@ -6,9 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexRepository;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.iface.IUTXORepository;
-import com.higgsblock.global.chain.app.dao.impl.SpentTransactionOutIndexEntityDao;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -48,7 +48,7 @@ public class TransDaoService implements ITransService {
      * The Spent transaction out index entity dao.
      */
     @Autowired
-    private SpentTransactionOutIndexEntityDao spentTransactionOutIndexEntityDao;
+    private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
 
     @Override
     public void addTransIdxAndUtxo(Block toBeBestBlock, String bestBlockHash) {
@@ -78,7 +78,7 @@ public class TransDaoService implements ITransService {
                     spentTxOutIndexEntity.setPreTransactionHash(spentTxHash);
                     spentTxOutIndexEntity.setOutIndex(spentTxOutIndex);
                     spentTxOutIndexEntity.setNowTransactionHash(tx.getHash());
-                    spentTransactionOutIndexEntityDao.add(spentTxOutIndexEntity);
+                    spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {

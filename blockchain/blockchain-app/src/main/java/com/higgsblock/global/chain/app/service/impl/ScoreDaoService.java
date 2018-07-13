@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
-import com.higgsblock.global.chain.app.dao.iface.IScoreEntity;
 import com.higgsblock.global.chain.app.dao.iface.IScoreRepository;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
