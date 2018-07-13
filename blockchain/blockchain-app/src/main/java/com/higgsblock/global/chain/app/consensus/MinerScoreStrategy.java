@@ -40,7 +40,7 @@ public class MinerScoreStrategy {
     private TransactionService transactionService;
 
     public boolean shouldExecuteOldStrategy(long height) {
-        return height <= updateHigh ? true : false;
+        return height <= updateHigh;
     }
 
     public void resetSelectedDposScore(Block toBeBestBlock, List<String> addressList) {
