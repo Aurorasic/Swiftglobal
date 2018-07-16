@@ -15,6 +15,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "t_utxo", indexes = @Index(name = "uniq_utxo_transaction_hash_out_index", columnList = "transaction_hash,out_index", unique = true))
+//@Table(name = "t_utxo")
 public class UTXOEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
