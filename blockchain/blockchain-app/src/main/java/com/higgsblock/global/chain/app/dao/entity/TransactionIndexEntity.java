@@ -14,7 +14,6 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-//@Table(name = "t_transaction_index", indexes = @Index(name = "uniq_transaction_index_hash", columnList = "transaction_hash", unique = true))
 @Table(name = "t_transaction_index")
 public class TransactionIndexEntity {
     @Id
