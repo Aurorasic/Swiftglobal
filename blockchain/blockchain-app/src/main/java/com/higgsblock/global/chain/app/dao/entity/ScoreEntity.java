@@ -18,7 +18,7 @@ import javax.persistence.Table;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "t_score", indexes = @Index(name = "idx_score_address", columnList = "address"))
+@Table(name = "t_score")
 public class ScoreEntity {
 
     public ScoreEntity(String address, Integer score) {
