@@ -87,7 +87,7 @@ public class WitnessCountTime {
                 while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec = " + curSec);
+                        LOGGER.info("curSec = {} height={}", curSec, currHeight);
                         TimeUnit.SECONDS.sleep(1);
                         if (block == null) {
                             if (preHeight >= currHeight) {
