@@ -109,11 +109,12 @@ public class CandidateMiner {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
+            isRunning = true;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec = " + curSec);
+                        LOGGER.info("curSec={} height={}", curSec, currHeight);
                         TimeUnit.SECONDS.sleep(1);
                         if (preHeight >= currHeight) {
                             if (curSec > WAIT_MINER_TIME) {
@@ -132,7 +133,6 @@ public class CandidateMiner {
                     }
                 }
             });
-            isRunning = true;
         }
     }
 }
