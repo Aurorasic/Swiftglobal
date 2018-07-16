@@ -2,11 +2,14 @@ package com.higgsblock.global.chain.app.consensus;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
@@ -18,8 +21,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -63,35 +67,47 @@ public class NodeManager implements InitializingBean {
     }
 
     public List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
+        List<String> selected = Lists.newLinkedList();
 
         boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
 
         //select the next dpos nodes when toBeBestBlock height is first of round
         if (!isFirstOfRound) {
-            return null;
+            return selected;
         }
         LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
         boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
             LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
-            return null;
+            return selected;
         }
 
-        Map<String, Integer> dposMinerSoreMap = scoreDaoService.loadAll();
-        LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), dposMinerSoreMap);
-        if (dposMinerSoreMap.size() < NODE_SIZE) {
-            return null;
+        List<ScoreEntity> all = scoreDaoService.all();
+        LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), all);
+        if (CollectionUtils.isEmpty(all)) {
+            return selected;
         }
         final String hash = toBeBestBlock.getHash();
         LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
-        List<String> maxScoreList = new ArrayList<>();
-        List<String> midScoreList = new ArrayList<>();
-        List<String> minScoreList = new ArrayList<>();
-        List<String> inadequateScoreList = new ArrayList<>();
-        dposMinerSoreMap.forEach((address, score) -> {
+
+        // group by score range
+        List<String> maxScoreList = Lists.newLinkedList();
+        List<String> midScoreList = Lists.newLinkedList();
+        List<String> minScoreList = Lists.newLinkedList();
+        List<String> inadequateScoreList = Lists.newLinkedList();
+
+        all.forEach(entity -> {
+            if (null == entity) {
+                return;
+            }
+            Integer score = entity.getScore();
+            String address = entity.getAddress();
+            if (null == score || StringUtils.isBlank(address)) {
+                return;
+            }
             if (currentGroup.contains(address)) {
                 return;
             }
@@ -109,37 +125,45 @@ public class NodeManager implements InitializingBean {
             }
             inadequateScoreList.add(address);
         });
+
+        // Shuffle by miner address and block hash
+        HashFunction function = Hashing.sha256();
+        Comparator<String> comparator = (o1, o2) -> {
+            HashCode hashCode1 = function.hashString(o1 + hash, Charsets.UTF_8);
+            HashCode hashCode2 = function.hashString(o2 + hash, Charsets.UTF_8);
+            return hashCode1.toString().compareTo(hashCode2.toString());
+        };
+        maxScoreList.sort(comparator);
+        midScoreList.sort(comparator);
+        minScoreList.sort(comparator);
+
+        // Select miners by score range
         int maxSize = 3;
         int midSize = 2;
         int minSize = 1;
-        HashFunction function = Hashing.sha256();
-        Comparator<String> comparator = (o1, o2) -> {
-            o1 = o1 + hash;
-            o2 = o2 + hash;
-            HashCode hashCode1 = function.hashString(o1, Charset.forName("UTF-8"));
-            HashCode hashCode = function.hashString(o2, Charset.forName("UTF-8"));
-            return hashCode1.toString().compareTo(hashCode.toString());
-        };
-        List<String> select = maxScoreList.stream().sorted(comparator).limit(maxSize).collect(Collectors.toList());
-        select.addAll(midScoreList.stream().sorted(comparator).limit(midSize).collect(Collectors.toList()));
-        select.addAll(minScoreList.stream().sorted(comparator).limit(minSize).collect(Collectors.toList()));
-        int size = maxSize + midSize + minSize - select.size();
+
+        selected.addAll(maxScoreList.stream().limit(maxSize).collect(Collectors.toList()));
+        selected.addAll(midScoreList.stream().limit(midSize).collect(Collectors.toList()));
+        selected.addAll(minScoreList.stream().limit(minSize).collect(Collectors.toList()));
+        int size = maxSize + midSize + minSize - selected.size();
         if (size <= 0) {
-            LOGGER.info("first select the dpos node is {},sn+1:{}", select, (sn + 1));
-            return select;
+            LOGGER.info("first select the dpos node is {},sn+1:{}", selected, (sn + 1));
+            return selected;
         }
-        List<String> list = new LinkedList();
-        list.addAll(maxScoreList);
-        list.addAll(midScoreList);
-        list.addAll(minScoreList);
-        list.addAll(inadequateScoreList);
-        list.removeAll(select);
-        select.addAll(list.stream().sorted(comparator).limit(size).collect(Collectors.toList()));
-        LOGGER.info("the dpos node is {},sn+1:{}", select, (sn + 1));
-        if (select.size() < NODE_SIZE) {
+
+        // If the selected miners are not enough, then select others from the left miners.
+        List<String> left = Lists.newLinkedList();
+        left.addAll(maxScoreList);
+        left.addAll(midScoreList);
+        left.addAll(minScoreList);
+        left.addAll(inadequateScoreList);
+        left.removeAll(selected);
+        selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
+        LOGGER.info("the dpos node is {},sn+1:{}", selected, (sn + 1));
+        if (selected.size() < NODE_SIZE) {
             throw new RuntimeException("can not find enough dpos node,sn+1:" + (sn + 1));
         }
-        return select;
+        return selected;
     }
 
     public void persistDposNodes(long sn, List<String> dposNodes) {
@@ -173,7 +197,7 @@ public class NodeManager implements InitializingBean {
         long sn = getSn(height);
         List<String> dposGroupBySn = getDposGroupBySn(sn);
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
-            return new ArrayList<>();
+            return Lists.newLinkedList();
         }
         long startHeight = getStartHeight(height);
         while (height-- > startHeight) {

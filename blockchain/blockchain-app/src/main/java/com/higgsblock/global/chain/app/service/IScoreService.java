@@ -1,6 +1,9 @@
 package com.higgsblock.global.chain.app.service;
 
 
+import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,4 +52,5 @@ public interface IScoreService {
      */
     Map<String, Integer> loadAll();
 
+    List<ScoreEntity> all();
 }
