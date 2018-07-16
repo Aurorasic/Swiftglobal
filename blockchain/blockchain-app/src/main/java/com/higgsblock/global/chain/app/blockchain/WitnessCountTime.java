@@ -82,6 +82,7 @@ public class WitnessCountTime {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
+            isRunning = true;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
@@ -117,7 +118,7 @@ public class WitnessCountTime {
                     }
                 }
             });
-            isRunning = true;
+
         }
 
     }
