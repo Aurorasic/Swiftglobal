@@ -14,7 +14,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "t_dpos", indexes = {@Index(name = "idx_dpos_sn", columnList = "sn")})
+@Table(name = "t_dpos")
 public class DposEntity {
 
     @Id

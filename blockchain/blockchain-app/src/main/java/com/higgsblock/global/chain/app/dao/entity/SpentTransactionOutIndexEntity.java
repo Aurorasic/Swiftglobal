@@ -10,8 +10,7 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-@Table(name = "t_spent_transaction_out_index", indexes = {@Index(name = "idx_spt_tran_out_idx_now_tran_hash", columnList = "now_transaction_hash"),
-        @Index(name = "idx_spt_tran_out_idx_pre_tran_hash", columnList = "pre_transaction_hash")})
+@Table(name = "t_spent_transaction_out_index")
 public class SpentTransactionOutIndexEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
