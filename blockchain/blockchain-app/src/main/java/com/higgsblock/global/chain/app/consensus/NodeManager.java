@@ -7,6 +7,8 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
+import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
@@ -194,6 +196,14 @@ public class NodeManager implements InitializingBean {
      * @return
      */
     public List<String> getDposGroupByHeihgt(long height, String preBlockHash) {
+        if (preBlockHash == null || height == 1) {
+            return Lists.newLinkedList();
+        }
+        Block preBlock = blockDaoService.getBlockByHash(preBlockHash);
+        if (preBlock == null || height != preBlock.getHeight() + 1) {
+            LOGGER.warn("the block:{} not found or height:{} is not match", preBlockHash, height);
+            return Lists.newLinkedList();
+        }
         long sn = getSn(height);
         List<String> dposGroupBySn = getDposGroupBySn(sn);
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
@@ -201,14 +211,60 @@ public class NodeManager implements InitializingBean {
         }
         long startHeight = getStartHeight(height);
         while (height-- > startHeight) {
-            Block preBlock = blockDaoService.getBlockByHash(preBlockHash);
             BlockWitness minerFirstPKSig = preBlock.getMinerFirstPKSig();
             String address = minerFirstPKSig.getAddress();
             dposGroupBySn.remove(address);
-            preBlockHash = preBlock.getPrevBlockHash();
+            preBlock = blockDaoService.getBlockByHash(preBlock.getPrevBlockHash());
         }
         return dposGroupBySn;
     }
+
+    /**
+     * find dpos miners by blockHash,exceed miners which have produced blocks at the branch
+     *
+     * @param blockHash
+     * @return
+     */
+    public DposGroupVO getDposGroupByBlock(String blockHash) {
+        if (StringUtils.isEmpty(blockHash)) {
+            return null;
+        }
+        Block block = blockDaoService.getBlockByHash(blockHash);
+        if (block == null) {
+            LOGGER.warn("the block not found by blockhash:{}", blockHash);
+            return null;
+        }
+        long height = block.getHeight();
+        long startHeight = getStartHeight(height);
+        DposGroupVO dposGroupVO = buildDposGroup(block);
+
+        while (height-- > startHeight) {
+            block = blockDaoService.getBlockByHash(block.getPrevBlockHash());
+            if (block == null) {
+                break;
+            }
+            SimpleBlockVO simpleBlockVO = new SimpleBlockVO(block);
+            dposGroupVO.getBlockVOS().add(simpleBlockVO);
+            dposGroupVO.getLeftDposNodes().remove(simpleBlockVO.getMinerAddress());
+        }
+        dposGroupVO.getBlockVOS().sort((o1, o2) -> (int) (o1.getHeight() - o2.getHeight()));
+
+        return dposGroupVO;
+    }
+
+    private DposGroupVO buildDposGroup(Block block) {
+        long sn = getSn(block.getHeight());
+        DposGroupVO dposGroupVO = new DposGroupVO();
+        dposGroupVO.setSn(sn);
+        dposGroupVO.setStartHeight(getStartHeight(block.getHeight()));
+        dposGroupVO.setEndHeight(getEndHeight((block.getHeight())));
+        dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
+        dposGroupVO.setDposNodes(getDposGroupBySn(sn));
+        dposGroupVO.setLeftDposNodes(dposGroupVO.getDposNodes());
+        dposGroupVO.getLeftDposNodes().remove(dposGroupVO.getBlockVOS().get(0).getMinerAddress());
+        return dposGroupVO;
+    }
+
 
     public boolean checkProducer(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
@@ -225,6 +281,13 @@ public class NodeManager implements InitializingBean {
             return 1;
         }
         return (getSn(height) - 2) * DPOS_BLOCKS_PER_ROUND + 2L;
+    }
+
+    public long getEndHeight(long height) {
+        if (height <= 1) {
+            return 1;
+        }
+        return (getSn(height) - 1) * DPOS_BLOCKS_PER_ROUND + 1L;
     }
 
     public boolean canPackBlock(long height, String address, String preBlockHash) {
