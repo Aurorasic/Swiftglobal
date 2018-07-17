@@ -16,7 +16,7 @@ import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -76,7 +76,7 @@ public class BlockService {
     private AppConfig config;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
     private BlockDaoService blockDaoService;
@@ -99,7 +99,7 @@ public class BlockService {
 
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
-        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
         if (lastBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
         }
@@ -166,7 +166,7 @@ public class BlockService {
      * get the max height
      */
     public long getMaxHeight() {
-        BlockIndex index = blockIdxDaoService.getLastBlockIndex();
+        BlockIndex index = blockIndexService.getLastBlockIndex();
         return index == null ? 0 : index.getHeight();
     }
 
@@ -183,18 +183,18 @@ public class BlockService {
      * @return
      */
     public BlockIndex getLastBestBlockIndex() {
-        BlockIndex index = blockIdxDaoService.getLastBlockIndex();
+        BlockIndex index = blockIndexService.getLastBlockIndex();
         if (index.hasBestBlock()) {
             return index;
         }
         long maxHeight = index.getHeight();
         while (maxHeight-- > 0) {
-            BlockIndex preBlockIndex = blockIdxDaoService.getBlockIndexByHeight(maxHeight);
+            BlockIndex preBlockIndex = blockIndexService.getBlockIndexByHeight(maxHeight);
             if (preBlockIndex.hasBestBlock()) {
                 return preBlockIndex;
             }
         }
-        return blockIdxDaoService.getBlockIndexByHeight(1);
+        return blockIndexService.getBlockIndexByHeight(1);
     }
 
     /**

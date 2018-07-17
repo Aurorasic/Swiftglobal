@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -41,7 +41,7 @@ public class CandidateMinerTimer {
     @Autowired
     private TransactionService transactionService;
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     public void queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
@@ -79,7 +79,7 @@ public class CandidateMinerTimer {
         long bestMaxHeight = currHeight;
         long expectHeight = bestMaxHeight + 1;
         try {
-            BlockIndex maxBlockIndex = blockIdxDaoService.getBlockIndexByHeight(currHeight);
+            BlockIndex maxBlockIndex = blockIndexService.getBlockIndexByHeight(currHeight);
             if (maxBlockIndex == null) {
                 throw new IllegalArgumentException("the blockIndex not found ,current height:" + currHeight);
             }

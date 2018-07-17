@@ -16,7 +16,7 @@ import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -60,7 +60,7 @@ public class TransactionService {
     private ITransactionIndexRepository iTransactionIndexRepository;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
     private TransactionFeeService transactionFeeService;
@@ -139,7 +139,7 @@ public class TransactionService {
             return false;
         }
 
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight());
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(preBlock.getHeight());
         if (null == blockIndex) {
             LOGGER.error("null == blockIndex, preBlock hash={}_height={}", preBlock.getHash(), height);
             return false;

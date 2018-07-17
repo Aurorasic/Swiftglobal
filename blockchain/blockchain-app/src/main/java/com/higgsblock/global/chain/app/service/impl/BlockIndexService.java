@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockIdxDaoService implements IBlockIndexService {
+public class BlockIndexService implements IBlockIndexService {
 
 
     @Autowired

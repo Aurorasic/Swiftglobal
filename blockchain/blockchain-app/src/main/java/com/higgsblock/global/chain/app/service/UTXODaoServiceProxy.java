@@ -4,7 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.TransDaoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -25,7 +25,7 @@ public class UTXODaoServiceProxy {
     @Autowired
     private BlockDaoService blockDaoService;
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     /**
      * key1: unconfirmed blockhash
@@ -58,7 +58,7 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public List<UTXO> getUnionUTXO(String address) {
-        BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+        BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
         String firstBlockHash = lastBlockIndex.getFirstBlockHash();
         if (StringUtils.isEmpty(firstBlockHash)) {
             throw new RuntimeException("error lastBlockIndex " + lastBlockIndex);
@@ -105,7 +105,7 @@ public class UTXODaoServiceProxy {
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
 //        UTXO utxo = transDaoService.getUTXOOnBestChain(utxoKey);
         if (preBlockHash == null) {
-            List<String> lastHightBlockHashs = blockIdxDaoService.getLastHightBlockHashs();
+            List<String> lastHightBlockHashs = blockIndexService.getLastHightBlockHashs();
             for (String tmpPreBlockHash : lastHightBlockHashs) {
                 UTXO utxo = getUnconfirmedUTXORecurse(tmpPreBlockHash, utxoKey);
                 if (utxo != null) {
@@ -179,7 +179,7 @@ public class UTXODaoServiceProxy {
     public void addNewBlock(Block newBestBlock, Block newBlock) {
         if (newBestBlock != null) {
             //remove cached blocks info for the blocks of on the new best block height
-            BlockIndex bestBlockIndex = blockIdxDaoService.getBlockIndexByHeight(newBestBlock.getHeight());
+            BlockIndex bestBlockIndex = blockIndexService.getBlockIndexByHeight(newBestBlock.getHeight());
             ArrayList<String> bestBlockHashs = bestBlockIndex.getBlockHashs();
             for (String blockHash : bestBlockHashs) {
                 remove(blockHash);
@@ -206,7 +206,7 @@ public class UTXODaoServiceProxy {
             if (block == null) {
                 return new HashMap<>();
             }
-            BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+            BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(block.getHeight());
             if (blockIndex == null || blockIndex.isBest(blockHash)) {
                 return new HashMap<>();
             }

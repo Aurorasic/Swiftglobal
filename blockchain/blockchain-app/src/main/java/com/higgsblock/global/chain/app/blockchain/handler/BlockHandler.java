@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +36,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     private WitnessService witnessService;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
     private PeerManager peerManager;
@@ -70,7 +70,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
 
             Inventory inventory = new Inventory();
             inventory.setHeight(height);
-            Set<String> set = new HashSet<>(blockIdxDaoService.getBlockIndexByHeight(height).getBlockHashs());
+            Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
             witnessService.initWitnessTask(blockService.getMaxHeight() + 1);
