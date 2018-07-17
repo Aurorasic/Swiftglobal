@@ -29,6 +29,8 @@ public interface IScoreService {
     void put(String address, Integer score);
 
     /**
+     * batch update
+     *
      * @param addressList
      * @param score
      * @return
@@ -36,9 +38,11 @@ public interface IScoreService {
     int updateBatch(List<String> addressList, int score);
 
     /**
+     * Score all the records
      * add or sub score
      *
      * @param score
+     * @return
      */
     int plusAll(Integer score);
 

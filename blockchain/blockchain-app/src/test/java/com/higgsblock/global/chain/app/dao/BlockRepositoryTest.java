@@ -33,7 +33,6 @@ public class BlockRepositoryTest extends BaseTest {
     }
 
     @Test
-    @Transactional
     public void testSave() {
         BlockEntity blockEntity = new BlockEntity();
         blockEntity.setBlockHash("123");

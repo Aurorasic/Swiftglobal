@@ -21,8 +21,8 @@ public class IUTXORepositoryTest extends BaseTest {
     @Test
     public void save() {
         UTXOEntity entity = new UTXOEntity();
-        entity.setTransactionHash("transactionHash");
-        entity.setOutIndex((short) 2);
+        entity.setTransactionHash("txHash");
+        entity.setOutIndex((short) 3);
         entity.setAmount("amount");
         entity.setCurrency("currency");
         entity.setScriptType(3);

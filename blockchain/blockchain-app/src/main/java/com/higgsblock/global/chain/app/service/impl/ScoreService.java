@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -53,11 +54,13 @@ public class ScoreService implements IScoreService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateBatch(List<String> addressList, int score) {
-        return scoreRepository.update(addressList, score);
+        return scoreRepository.updateByAddress(addressList, score);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int plusAll(Integer score) {
         return scoreRepository.plusAll(score);
     }
