@@ -77,7 +77,7 @@ public class BlockIndexService implements IBlockIndexService {
             return null;
         }
         BlockIndex blockIndex = new BlockIndex();
-        blockIndex.setHeight(blockIndexEntities.get(0).getHeight());
+        blockIndex.setHeight(height);
         blockIndex.setBlockHashs(Lists.newArrayList());
         blockIndexEntities.forEach(blockIndexEntity -> {
             blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
