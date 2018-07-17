@@ -29,15 +29,14 @@ public class BlockIndex extends BaseSerializer {
     private ArrayList<String> blockHashs;
 
     /**
-     * the block index begin with 0 in blockHashs on the best chain with the same height.
-     * if bestIndex < 0, there is no block on the best chain with this height
+     * if null ,this block has not been confirmed on main chain
      */
-    private int bestIndex;
+    private String bestBlockHash;
 
-    public BlockIndex(long height, ArrayList<String> blockHashs, int bestIndex) {
+    public BlockIndex(long height, ArrayList<String> blockHashs, String bestBlockHash) {
         this.height = height;
         this.blockHashs = blockHashs;
-        this.bestIndex = bestIndex;
+        this.bestBlockHash = bestBlockHash;
     }
 
     public boolean valid() {
@@ -47,20 +46,16 @@ public class BlockIndex extends BaseSerializer {
         if (CollectionUtils.isEmpty(blockHashs)) {
             return false;
         }
-        if (bestIndex > blockHashs.size() - 1) {
-            return false;
-        }
         return true;
     }
 
     public void addBlockHash(String blockHash, boolean toBest) {
         if (CollectionUtils.isEmpty(blockHashs)) {
             blockHashs = new ArrayList<>(1);
-            bestIndex = -1;
         }
         blockHashs.add(blockHash);
         if (toBest) {
-            bestIndex = blockHashs.size() - 1;
+            bestBlockHash = blockHash;
         }
     }
 
@@ -72,17 +67,11 @@ public class BlockIndex extends BaseSerializer {
     }
 
     public boolean isBest(String blockHash) {
-        if (StringUtils.isEmpty(blockHash)) {
+        if (StringUtils.isEmpty(blockHash) || StringUtils.isEmpty(bestBlockHash)) {
             return false;
         }
 
-        if (blockHashs != null && bestIndex >= 0 && bestIndex < blockHashs.size()) {
-            String bestBlockHash = blockHashs.get(bestIndex);
-            if (StringUtils.equals(blockHash, bestBlockHash)) {
-                return true;
-            }
-        }
-        return false;
+        return StringUtils.equals(blockHash, bestBlockHash);
     }
 
     public String getFirstBlockHash() {
@@ -92,18 +81,8 @@ public class BlockIndex extends BaseSerializer {
         return null;
     }
 
-    public String getBestBlockHash() {
-        if (bestIndex > -1 && bestIndex < blockHashs.size()) {
-            return blockHashs.get(bestIndex);
-        }
-        return null;
-    }
-
     public boolean hasBestBlock() {
-        if (bestIndex > -1 && bestIndex < blockHashs.size()) {
-            return true;
-        }
-        return false;
+        return StringUtils.isNotEmpty(bestBlockHash);
     }
 
     public int getIndex(String blockHash) {
@@ -117,35 +96,5 @@ public class BlockIndex extends BaseSerializer {
             }
         }
         return -1;
-    }
-
-    public boolean setBestHash(String blockHash) {
-        if (StringUtils.isEmpty(blockHash) || CollectionUtils.isEmpty(blockHashs)) {
-            return false;
-        }
-        for (int i = 0; i < blockHashs.size(); i++) {
-            if (StringUtils.equals(blockHashs.get(i), blockHash)) {
-                setBestIndex(i);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public int getBlockHashCount() {
-        if (blockHashs == null) {
-            return 0;
-        }
-        return blockHashs.size();
-    }
-
-    public boolean switchToBestChain(String blockHash) {
-        int index = getIndex(blockHash);
-        if (index < 0) {
-            return false;
-        }
-        //may be the same
-        bestIndex = index;
-        return true;
     }
 }

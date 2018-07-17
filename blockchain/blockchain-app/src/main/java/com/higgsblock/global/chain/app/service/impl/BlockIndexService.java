@@ -11,7 +11,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,6 +56,7 @@ public class BlockIndexService implements IBlockIndexService {
     }
 
     private void updateBestBlockIndex(Block bestBlock) {
+
         BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
         for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
             if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
@@ -72,23 +72,21 @@ public class BlockIndexService implements IBlockIndexService {
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
         List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
-
-        if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
-            BlockIndex blockIndex = new BlockIndex();
-            blockIndex.setHeight(blockIndexEntities.get(0).getHeight());
-            ArrayList<String> blockHashs = Lists.newArrayList();
-            blockIndex.setBlockHashs(blockHashs);
-            blockIndex.setBestIndex(-1);
-            blockIndexEntities.forEach(blockIndexEntity -> {
-                blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
-                if (blockIndexEntity.getIsBest() != -1) {
-                    blockIndex.setBestIndex(blockIndexEntity.getIsBest());
-                }
-            });
-            return blockIndex;
+        if (CollectionUtils.isEmpty(blockIndexEntities)) {
+            LOGGER.info("get blockIndex is null by height={}", height);
+            return null;
         }
-        LOGGER.info("get blockIndex is null by height={}", height);
-        return null;
+        BlockIndex blockIndex = new BlockIndex();
+        blockIndex.setHeight(blockIndexEntities.get(0).getHeight());
+        blockIndex.setBlockHashs(Lists.newArrayList());
+        blockIndexEntities.forEach(blockIndexEntity -> {
+            blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
+            if (blockIndexEntity.getIsBest() != -1) {
+                blockIndex.setBestBlockHash(blockIndexEntity.getBlockHash());
+            }
+        });
+        return blockIndex;
+
     }
 
 
