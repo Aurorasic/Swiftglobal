@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.TransactionPersistService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,20 +55,26 @@ public class UTXODaoServiceProxy {
      * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
      * from the max height first block
      *
+     * @param preBlockHash
      * @param address
+     * @param currency
      * @return
      */
-    public List<UTXO> getUnionUTXO(String address) {
-        BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
-        String firstBlockHash = lastBlockIndex.getFirstBlockHash();
-        if (StringUtils.isEmpty(firstBlockHash)) {
-            throw new RuntimeException("error lastBlockIndex " + lastBlockIndex);
+    public List<UTXO> getUnionUTXO(String preBlockHash, String address, String currency) {
+
+        if (StringUtils.isEmpty(preBlockHash)) {
+            BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
+            String firstBlockHash = lastBlockIndex.getFirstBlockHash();
+            if (StringUtils.isEmpty(firstBlockHash)) {
+                throw new RuntimeException("error lastBlockIndex " + lastBlockIndex);
+            }
+            preBlockHash = firstBlockHash;
         }
 
         Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
         Map<String, UTXO> unconfirmedAddedUtxos = new HashMap<>();
-        getUnionUTXOsRecurse(unconfirmedSpentUtxos, firstBlockHash, false);
-        getUnionUTXOsRecurse(unconfirmedAddedUtxos, firstBlockHash, true);
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
+        getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
         List<UTXO> bestAddedUtxoList = transactionPersistService.getUTXOsByAddress(address);
 
@@ -76,10 +83,15 @@ public class UTXODaoServiceProxy {
         allAddedUtxoList.addAll(unconfirmedAddedUtxos.values());
         Set<UTXO> result = new HashSet<>();
         for (UTXO utxo : allAddedUtxoList) {
+            if (StringUtils.isNotEmpty(currency) &&
+                    !StringUtils.equals(currency, utxo.getCurrency())) {
+                continue;
+            }
             if (!StringUtils.equals(address, utxo.getAddress()) ||
                     unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
                 continue;
             }
+
             result.add(utxo);
         }
 

@@ -61,6 +61,10 @@ public class UTXO extends BaseSerializer {
         return getIndex() == other.getIndex() && getHash().equals(other.getHash());
     }
 
+    public String getCurrency() {
+        return output.getMoney().getCurrency();
+    }
+
     public boolean isCASCurrency() {
         return output.isCASCurrency();
     }
