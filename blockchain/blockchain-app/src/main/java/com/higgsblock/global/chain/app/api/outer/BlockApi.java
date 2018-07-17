@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.constants.RespCodeEnum;
-import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +35,7 @@ public class BlockApi {
     private BlockService blockService;
 
     @Autowired
-    private BlockDaoService blockDaoService;
+    private BlockPersistService blockPersistService;
 
     /**
      * @param fromHeight
@@ -100,7 +100,7 @@ public class BlockApi {
         if (null == hash) {
             return new ResponseData(PARAM_INVALID);
         }
-        Block block = blockDaoService.getBlockByHash(hash);
+        Block block = blockPersistService.getBlockByHash(hash);
         if (null == block) {
             return new ResponseData(HASH_NOT_EXIST);
         }

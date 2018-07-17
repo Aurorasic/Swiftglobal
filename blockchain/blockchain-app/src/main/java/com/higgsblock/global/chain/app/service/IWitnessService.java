@@ -9,7 +9,7 @@ import java.util.List;
  * @author liuweizhen
  * @date 2018-05-21
  */
-public interface IWitnessEntityService {
+public interface IWitnessService {
 
     /**
      * Get all.

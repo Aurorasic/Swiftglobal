@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Service
 @Slf4j
-public class BlockDaoService implements IBlockService {
+public class BlockPersistService implements IBlockService {
 
     @Autowired
     private IBlockRepository blockRepository;
@@ -39,7 +39,7 @@ public class BlockDaoService implements IBlockService {
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
     private TransactionCacheManager txCacheManager;
@@ -62,7 +62,7 @@ public class BlockDaoService implements IBlockService {
     @Override
     public boolean isExistInDB(long height, String blockHash) {
 
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         return blockIndex != null && blockIndex.containsBlockHash(blockHash);
 
     }
@@ -100,7 +100,7 @@ public class BlockDaoService implements IBlockService {
     public List<Block> getBlocksByHeight(long height) {
         BlockIndex blockIndex;
         try {
-            blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+            blockIndex = blockIndexService.getBlockIndexByHeight(height);
         } catch (Exception e) {
             throw new IllegalStateException("Get block index error");
         }
@@ -122,7 +122,7 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public List<Block> getBlocksExcept(long height, String exceptBlockHash) {
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         if (blockIndex == null) {
             return null;
         }
@@ -143,7 +143,7 @@ public class BlockDaoService implements IBlockService {
 
     @Override
     public Block getBestBlockByHeight(long height) {
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(height);
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         if (blockIndex == null) {
             return null;
         }
@@ -181,7 +181,7 @@ public class BlockDaoService implements IBlockService {
             LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
         }
         //step 2 whether this block can be confirmed pre N block
-        blockIdxDaoService.addBlockIndex(block, toBeBestBlock);
+        blockIndexService.addBlockIndex(block, toBeBestBlock);
 
         if (block.isGenesisBlock()) {
             //step 3
@@ -261,7 +261,7 @@ public class BlockDaoService implements IBlockService {
         if (block.isGenesisBlock()) {
             return true;
         }
-        return null == blockIdxDaoService.getBlockIndexByHeight(block.getHeight());
+        return null == blockIndexService.getBlockIndexByHeight(block.getHeight());
     }
 
 
@@ -300,7 +300,7 @@ public class BlockDaoService implements IBlockService {
             LOGGER.warn("preblock is null,may be db transaction error or sync error,blockhash:{}", preBlockHash);
             throw new IllegalStateException("can not find block,blockhash:" + preBlockHash);
         }
-        if (preBlock.getHash().equals(blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight()).getBestBlockHash())) {
+        if (preBlock.getHash().equals(blockIndexService.getBlockIndexByHeight(preBlock.getHeight()).getBestBlockHash())) {
             LOGGER.info("block[blockhash:{},height:{}]has be confirmed on best chain,skip this", preBlock.getHash(), preBlock.getHeight());
             return null;
         }

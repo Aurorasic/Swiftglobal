@@ -20,14 +20,14 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockIdxDaoService implements IBlockIndexService {
+public class BlockIndexService implements IBlockIndexService {
 
 
     @Autowired
     private IBlockIndexRepository blockIndexRepository;
 
     @Autowired
-    private TransDaoService transDaoService;
+    private TransactionPersistService transactionPersistService;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -38,10 +38,10 @@ public class BlockIdxDaoService implements IBlockIndexService {
         }
 
         if (block.isGenesisBlock()) {
-            transDaoService.addTransIdxAndUtxo(block, block.getHash());
+            transactionPersistService.addTransIdxAndUtxo(block, block.getHash());
         } else {
             if (toBeBestBlock != null) {
-                transDaoService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
+                transactionPersistService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
     }
@@ -97,10 +97,10 @@ public class BlockIdxDaoService implements IBlockIndexService {
         return getBlockIndexByHeight(maxHeight);
     }
 
-    public List<String> getLastHightBlockHashs() {
+    public List<String> getLastHeightBlockHashs() {
         List<String> result = getLastBlockIndex().getBlockHashs();
         if (CollectionUtils.isEmpty(result)) {
-            throw new RuntimeException("error getLastHightBlockHashs" + getLastBlockIndex());
+            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
         }
         return result;
     }

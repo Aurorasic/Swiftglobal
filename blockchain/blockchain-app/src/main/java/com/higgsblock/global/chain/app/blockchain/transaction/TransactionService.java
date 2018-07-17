@@ -15,8 +15,8 @@ import com.higgsblock.global.chain.app.dao.iface.IUTXORepository;
 import com.higgsblock.global.chain.app.script.LockScript;
 import com.higgsblock.global.chain.app.script.UnLockScript;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
-import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -48,7 +48,7 @@ public class TransactionService {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockDaoService blockDaoService;
+    private BlockPersistService blockPersistService;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -60,7 +60,7 @@ public class TransactionService {
     private ITransactionIndexRepository iTransactionIndexRepository;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
     private TransactionFeeService transactionFeeService;
@@ -88,7 +88,7 @@ public class TransactionService {
             return false;
         }
 
-        Block preBlock = blockDaoService.getBlockByHash(block.getPrevBlockHash());
+        Block preBlock = blockPersistService.getBlockByHash(block.getPrevBlockHash());
         String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
             LOGGER.error("preBlock == null,tx hash={}_block hash={}", tx.getHash(), block.getHash());
@@ -139,7 +139,7 @@ public class TransactionService {
             return false;
         }
 
-        BlockIndex blockIndex = blockIdxDaoService.getBlockIndexByHeight(preBlock.getHeight());
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(preBlock.getHeight());
         if (null == blockIndex) {
             LOGGER.error("null == blockIndex, preBlock hash={}_height={}", preBlock.getHash(), height);
             return false;
@@ -481,7 +481,7 @@ public class TransactionService {
             }
 
             String blockHash = transactionIndex.getBlockHash();
-            Block block = blockDaoService.getBlockByHash(blockHash);
+            Block block = blockPersistService.getBlockByHash(blockHash);
             Transaction transactionByHash = block.getTransactionByHash(txHash);
             short index = prevOutPoint.getIndex();
             TransactionOutput preOutput = null;
