@@ -336,6 +336,12 @@ public class BlockService {
     }
 
     public void loadAllBlockData() {
+        //todo kongyu 2018-7-17 loadAllBlockData backup
+        /*
+        1.先校验创世块
+        2.然后再校验区块索引信息
+        3.最后设置系统状态为LOADED_ALL_DATA
+         */
         if (!checkBlockNumbers()) {
             throw new RuntimeException("blockMap size is not equal blockIndexMap count number");
         }
