@@ -18,7 +18,7 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 6/29/2018
  */
-@Component("allVoteHandler")
+@Component("voteTableHandler")
 @Slf4j
 public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
 
