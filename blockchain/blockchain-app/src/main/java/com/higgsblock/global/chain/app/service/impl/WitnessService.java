@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import com.higgsblock.global.chain.app.dao.iface.IWitnessRepository;
-import com.higgsblock.global.chain.app.service.IWitnessEntityService;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2018-05-21
  */
 @Service
-public class WitnessEntityService implements IWitnessEntityService {
+public class WitnessService implements IWitnessService {
 
     /**
      * TODO lwz pre mine block num 2018-05-26
