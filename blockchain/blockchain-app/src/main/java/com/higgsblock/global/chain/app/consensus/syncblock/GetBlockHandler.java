@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class GetBlockHandler extends BaseEntityHandler<GetBlock> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockDaoService blockDaoService;
+    private BlockPersistService blockPersistService;
 
     @Override
     protected void process(SocketRequest<GetBlock> request) {
@@ -40,7 +40,7 @@ public class GetBlockHandler extends BaseEntityHandler<GetBlock> {
          * send block to peer
          */
         if (null != hash) {
-            Block block = blockDaoService.getBlockByHash(hash);
+            Block block = blockPersistService.getBlockByHash(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, block);
             }

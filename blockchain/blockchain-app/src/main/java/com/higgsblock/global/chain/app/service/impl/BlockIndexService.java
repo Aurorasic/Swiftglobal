@@ -27,7 +27,7 @@ public class BlockIndexService implements IBlockIndexService {
     private IBlockIndexRepository blockIndexRepository;
 
     @Autowired
-    private TransDaoService transDaoService;
+    private TransactionPersistService transactionPersistService;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -38,10 +38,10 @@ public class BlockIndexService implements IBlockIndexService {
         }
 
         if (block.isGenesisBlock()) {
-            transDaoService.addTransIdxAndUtxo(block, block.getHash());
+            transactionPersistService.addTransIdxAndUtxo(block, block.getHash());
         } else {
             if (toBeBestBlock != null) {
-                transDaoService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
+                transactionPersistService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
     }
