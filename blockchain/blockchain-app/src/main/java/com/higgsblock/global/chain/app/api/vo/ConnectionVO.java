@@ -9,7 +9,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * @date 2018/4/9
  */
 @Data
-public class ConnectionInfo {
+public class ConnectionVO {
 
     private String id;
     private String peerId;

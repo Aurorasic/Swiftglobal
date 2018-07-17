@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.api.inner;
 
-import com.higgsblock.global.chain.app.api.vo.ConnectionInfo;
+import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
 import com.higgsblock.global.chain.app.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
@@ -40,7 +40,7 @@ public class StatusController {
     @RequestMapping("/connections")
     public Object connections() {
         return connectionManager.getActivatedConnections().stream().map(connection -> {
-            ConnectionInfo info = new ConnectionInfo();
+            ConnectionVO info = new ConnectionVO();
             info.setId(connection.getId());
             info.setPeerId(connection.getPeerId());
             info.setIp(connection.getIp());
