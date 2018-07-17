@@ -187,11 +187,12 @@ public class BlockDaoService implements IBlockService {
             //step 3
             minerScoreStrategy.refreshMinersScore(block);
             //step 4
-            nodeManager.calculateDposNodes(block, block.getHeight());
+            nodeManager.calcNextDposNodes(block, block.getHeight());
         } else {
             if (isFirst && toBeBestBlock != null) {
                 minerScoreStrategy.refreshMinersScore(toBeBestBlock);
-                nodeManager.calculateDposNodes(toBeBestBlock, block.getHeight());
+                List<String> nextDposAddressList = nodeManager.calcNextDposNodes(toBeBestBlock, block.getHeight());
+                minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
                 //step5
                 freshPeerMinerAddr(toBeBestBlock);
             }

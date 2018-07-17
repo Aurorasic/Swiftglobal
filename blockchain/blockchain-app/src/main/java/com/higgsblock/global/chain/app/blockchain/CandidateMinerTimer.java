@@ -30,7 +30,7 @@ public class CandidateMinerTimer {
     private ExecutorService executorService;
     private volatile boolean isRunning;
     public static volatile boolean isCMINER = false;
-    public static final long WAIT_MINER_TIME = 180;
+    public static final long WAIT_MINER_TIME = 30;
 
     @Autowired
     private BlockService blockService;
@@ -107,11 +107,12 @@ public class CandidateMinerTimer {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
+            isRunning = true;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec = " + curSec);
+                        LOGGER.info("curSec={} height={}", curSec, currHeight);
                         TimeUnit.SECONDS.sleep(1);
                         if (preHeight >= currHeight) {
                             if (curSec > WAIT_MINER_TIME) {
@@ -129,7 +130,6 @@ public class CandidateMinerTimer {
                     }
                 }
             });
-            isRunning = true;
         }
     }
 }

@@ -29,6 +29,20 @@ public interface IScoreService {
     void put(String address, Integer score);
 
     /**
+     * @param addressList
+     * @param score
+     * @return
+     */
+    int updateBatch(List<String> addressList, int score);
+
+    /**
+     * add or sub score
+     *
+     * @param score
+     */
+    int plusAll(Integer score);
+
+    /**
      * set score if not exist
      *
      * @param address

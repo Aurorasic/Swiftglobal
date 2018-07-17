@@ -52,6 +52,16 @@ public class ScoreService implements IScoreService {
         }
     }
 
+    @Override
+    public int updateBatch(List<String> addressList, int score) {
+        return scoreDao.updateBatch(addressList, score);
+    }
+
+    @Override
+    public int plusAll(Integer score) {
+        return scoreDao.plusAll(score);
+    }
+
     /**
      * set score if not exist
      *
