@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.example.api;
 
-import com.higgsblock.global.chain.app.api.vo.ConnectionInfo;
+import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import retrofit2.Call;
 import retrofit2.http.GET;
 
@@ -17,5 +17,5 @@ public interface IConnectionApi {
      * @return
      */
     @GET("/connections/list")
-    Call<List<ConnectionInfo>> all();
+    Call<List<ConnectionVO>> all();
 }
