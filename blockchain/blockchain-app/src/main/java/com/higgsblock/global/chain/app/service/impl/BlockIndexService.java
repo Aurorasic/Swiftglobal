@@ -97,10 +97,10 @@ public class BlockIndexService implements IBlockIndexService {
         return getBlockIndexByHeight(maxHeight);
     }
 
-    public List<String> getLastHightBlockHashs() {
+    public List<String> getLastHeightBlockHashs() {
         List<String> result = getLastBlockIndex().getBlockHashs();
         if (CollectionUtils.isEmpty(result)) {
-            throw new RuntimeException("error getLastHightBlockHashs" + getLastBlockIndex());
+            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
         }
         return result;
     }

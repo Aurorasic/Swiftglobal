@@ -71,28 +71,19 @@ public class UTXODaoServiceProxy {
 
         List<UTXO> bestAddedUtxoList = transactionPersistService.getUTXOsByAddress(address);
 
-        Map<String, UTXO> allUtxoMap = new HashMap<>();
-        for (UTXO utxo : bestAddedUtxoList) {
-            if (unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
-                continue;
-            }
-            allUtxoMap.put(utxo.getKey(), utxo);
-        }
-        for (UTXO utxo : unconfirmedAddedUtxos.values()) {
-            if (unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
-                continue;
-            }
-            allUtxoMap.put(utxo.getKey(), utxo);
-        }
-
-        List<UTXO> result = new LinkedList();
-        for (UTXO utxo : allUtxoMap.values()) {
-            if (utxo == null || !StringUtils.equals(address, utxo.getAddress())) {
+        List<UTXO> allAddedUtxoList = new LinkedList<>();
+        allAddedUtxoList.addAll(bestAddedUtxoList);
+        allAddedUtxoList.addAll(unconfirmedAddedUtxos.values());
+        Set<UTXO> result = new HashSet<>();
+        for (UTXO utxo : allAddedUtxoList) {
+            if (!StringUtils.equals(address, utxo.getAddress()) ||
+                    unconfirmedSpentUtxos.containsKey(utxo.getKey())) {
                 continue;
             }
             result.add(utxo);
         }
-        return result;
+
+        return new LinkedList<>(result);
     }
 
     /**
@@ -103,10 +94,9 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
-//        UTXO utxo = transDaoService.getUTXOOnBestChain(utxoKey);
         if (preBlockHash == null) {
-            List<String> lastHightBlockHashs = blockIndexService.getLastHightBlockHashs();
-            for (String tmpPreBlockHash : lastHightBlockHashs) {
+            List<String> lastHeightBlockHashs = blockIndexService.getLastHeightBlockHashs();
+            for (String tmpPreBlockHash : lastHeightBlockHashs) {
                 UTXO utxo = getUnconfirmedUTXORecurse(tmpPreBlockHash, utxoKey);
                 if (utxo != null) {
                     return utxo;
@@ -134,7 +124,7 @@ public class UTXODaoServiceProxy {
         if (StringUtils.isEmpty(blockHash)) {
             return;
         }
-        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
+        Map<String, UTXO> utxoMap = getAndLoadUnconfirmedUtxoMaps(blockHash);
         Set<String> keySet = utxoMap.keySet();
         for (String key : keySet) {
             UTXO utxo = utxoMap.get(key);
@@ -153,7 +143,7 @@ public class UTXODaoServiceProxy {
         if (StringUtils.isEmpty(blockHash)) {
             return null;
         }
-        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
+        Map<String, UTXO> utxoMap = getAndLoadUnconfirmedUtxoMaps(blockHash);
         if (utxoMap.containsKey(utxoKey)) {
             return utxoMap.get(utxoKey);
         }
@@ -165,7 +155,7 @@ public class UTXODaoServiceProxy {
         if (StringUtils.isEmpty(blockHash)) {
             return false;
         }
-        Map<String, UTXO> utxoMap = getUnconfirmedUtxoMaps(blockHash);
+        Map<String, UTXO> utxoMap = getAndLoadUnconfirmedUtxoMaps(blockHash);
         if (utxoMap == null || utxoMap.isEmpty()) {
             return false;
         }
@@ -198,7 +188,7 @@ public class UTXODaoServiceProxy {
      * @param blockHash
      * @return if no element return empty hashmap
      */
-    private Map<String, UTXO> getUnconfirmedUtxoMaps(String blockHash) {
+    private Map<String, UTXO> getAndLoadUnconfirmedUtxoMaps(String blockHash) {
         Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
         if (utxoMap == null) {
             //there is no utxo cache, load this block and build new utxo map to cache
