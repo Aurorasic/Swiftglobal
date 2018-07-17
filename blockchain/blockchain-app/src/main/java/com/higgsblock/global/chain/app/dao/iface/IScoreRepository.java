@@ -48,6 +48,6 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param score
      * @return
      */
-    @Query("update t_score set score=score+:plusScore")
+    @Query("update t_score set score=score+:score")
     int plusAll(int score);
 }
