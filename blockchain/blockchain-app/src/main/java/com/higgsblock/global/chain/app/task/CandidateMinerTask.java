@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
@@ -38,7 +38,7 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private TransactionService transactionService;
+    private TransactionProcessor transactionProcessor;
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -59,7 +59,7 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
         String address = peerManager.getSelf().getId();
         curSec += TASK_TIME;
         LOGGER.info("curSec={} currHeight={}", curSec, currHeight);
-        if (curSec >= WAIT_MINER_TIME && transactionService.hasStake(address, SystemCurrencyEnum.CMINER)) {
+        if (curSec >= WAIT_MINER_TIME && transactionProcessor.hasStake(address, SystemCurrencyEnum.CMINER)) {
             doMing();
         }
     }

@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public class MinerScoreStrategy {
     @Autowired
     private IScoreService scoreDaoService;
     @Autowired
-    private TransactionService transactionService;
+    private TransactionProcessor transactionProcessor;
     @Autowired
     private NodeManager nodeManager;
 
@@ -59,12 +59,12 @@ public class MinerScoreStrategy {
         List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
             LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
-            Set<String> removedMiners = transactionService.getRemovedMiners(tx);
+            Set<String> removedMiners = transactionProcessor.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 scoreDaoService.remove(removedMiner);
             }
 
-            Set<String> addedMiners = transactionService.getAddedMiners(tx);
+            Set<String> addedMiners = transactionProcessor.getAddedMiners(tx);
             for (String addedMiner : addedMiners) {
                 scoreDaoService.putIfAbsent(addedMiner, INIT_SCORE);
             }
@@ -75,7 +75,7 @@ public class MinerScoreStrategy {
     private void oldScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner
-        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             //set miner score to 600
             plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         }
@@ -84,7 +84,7 @@ public class MinerScoreStrategy {
     private void newScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner, set score
-        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
         } else {
             //mined by backup peer node
