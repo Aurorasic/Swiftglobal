@@ -558,20 +558,7 @@ public class TransactionProcessor {
      */
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
-        LOGGER.info("broadcast transaction success: " + tx.getHash());
+        LOGGER.info("broadcast transaction success: {}", tx.getHash());
     }
-
-//    private boolean isSpent(String preTxHash, short outIndex) {
-//        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTransactionOutIndexRepository.findByPreTransactionHash(preTxHash);
-//        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
-//            return false;
-//        }
-//        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
-//            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
 }
