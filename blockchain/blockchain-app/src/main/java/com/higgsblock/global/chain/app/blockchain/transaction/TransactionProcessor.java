@@ -370,7 +370,7 @@ public class TransactionProcessor {
     private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
-            LOGGER.warn("ipreOutKey is empty,input={}", JSONObject.toJSONString(input, true));
+            LOGGER.info("preOutKey is empty,input={}", JSONObject.toJSONString(input, true));
             return null;
         }
 
