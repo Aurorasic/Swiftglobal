@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.HashBasedTable;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.Set;
 public class VoteTableNotifyHandler extends BaseEntityHandler<VoteTableNotify> {
 
     @Autowired
-    private VoteService voteService;
+    private VoteProcessor voteProcessor;
 
     @Override
     protected void process(SocketRequest<VoteTableNotify> request) {
@@ -61,7 +61,7 @@ public class VoteTableNotifyHandler extends BaseEntityHandler<VoteTableNotify> {
         }
         LOGGER.info("add voteTable with voteHeight {} ,voteTable size: {}", voteHeight, voteTable.size());
 
-        voteService.dealVoteMap(sourceId, voteHeight, voteTableMap);
+        voteProcessor.dealVoteMap(sourceId, voteHeight, voteTableMap);
     }
 
     private long getVoteHeight(Map<String, Map<String, Vote>> row) {

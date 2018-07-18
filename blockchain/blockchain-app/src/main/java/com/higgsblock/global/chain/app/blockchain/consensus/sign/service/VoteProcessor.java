@@ -33,7 +33,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class VoteService implements IEventBusListener {
+public class VoteProcessor implements IEventBusListener {
 
     @Autowired
     private KeyPair keyPair;
