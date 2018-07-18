@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("inventoryNotifyHandler")
+@Component
 @Slf4j
 public class InventoryNotifyHandler extends BaseEntityHandler<InventoryNotify> {
 

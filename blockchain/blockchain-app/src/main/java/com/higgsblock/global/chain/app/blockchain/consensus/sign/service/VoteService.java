@@ -9,9 +9,9 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.blockchain.consensus.vote.SourceBlockReq;
+import com.higgsblock.global.chain.app.blockchain.consensus.vote.SourceBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
-import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTable;
+import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTableNotify;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
@@ -130,9 +130,9 @@ public class VoteService implements IEventBusListener {
             voteMap.put(bestBlockHash, vote);
             this.voteHashTable.put(1, keyPair.getPubKey(), voteMap);
             Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteHashTable.rowMap();
-            VoteTable voteTable = new VoteTable(integerMapMap);
-            this.messageCenter.dispatchToWitnesses(voteTable);
-            LOGGER.info("send voteHashTable to witness success {},{}", this.height, voteTable);
+            VoteTableNotify voteTableNotify = new VoteTableNotify(integerMapMap);
+            this.messageCenter.dispatchToWitnesses(voteTableNotify);
+            LOGGER.info("send voteHashTable to witness success {},{}", this.height, voteTableNotify);
         }
     }
 
@@ -172,7 +172,7 @@ public class VoteService implements IEventBusListener {
                     if (!blockCache.get(this.height, k -> new HashMap<>()).containsKey(vote.getBlockHash())) {
                         Set<String> set1 = new HashSet<>();
                         set1.add(vote.getBlockHash());
-                        messageCenter.dispatchToWitnesses(new SourceBlockReq(set1));
+                        messageCenter.dispatchToWitnesses(new SourceBlockRequest(set1));
                         setTemp.add(vote);
                         return;
                     }
@@ -210,7 +210,7 @@ public class VoteService implements IEventBusListener {
         }
         if (getAllVoteSize() > startAllVoteSize) {
             LOGGER.info("local voteHashTable with height {} ,is : {}", height, voteHashTable);
-            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
+            messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
         }
     }
 
@@ -264,7 +264,7 @@ public class VoteService implements IEventBusListener {
         dealVoteMap(voteHeight, voteMap);
         if (getAllVoteSize() > startAllVoteSize) {
             LOGGER.info("local voteHashTable with height {} ,is : {}", voteHeight, voteHashTable);
-            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
+            messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
         }
     }
 
@@ -287,9 +287,9 @@ public class VoteService implements IEventBusListener {
         if (blockHashs.size() > 0) {
             updateVoteCache(voteHeight, voteMap);
             if (null != sourceId) {
-                messageCenter.unicast(sourceId, new SourceBlockReq(blockHashs));
+                messageCenter.unicast(sourceId, new SourceBlockRequest(blockHashs));
             } else {
-                messageCenter.dispatchToWitnesses(new SourceBlockReq(blockHashs));
+                messageCenter.dispatchToWitnesses(new SourceBlockRequest(blockHashs));
             }
             LOGGER.info("source blocks is not enough,add vote table to cache");
             return false;
@@ -451,7 +451,7 @@ public class VoteService implements IEventBusListener {
                 blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
-                messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
+                messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
                 this.messageCenter.broadcast(blockWithEnoughSign);
                 return true;
             }
