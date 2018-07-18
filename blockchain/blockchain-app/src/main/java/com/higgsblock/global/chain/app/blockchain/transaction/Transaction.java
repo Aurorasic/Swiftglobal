@@ -4,11 +4,11 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
-import com.higgsblock.global.chain.app.entity.BaseBizEntity;
-import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
+import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
+import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +27,12 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
-public class Transaction extends BaseBizEntity {
+public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
     private static final int EXTRA_LIMITED_SIZE_UNIT = 1024 * 10;
+
+    private int version;
 
     /**
      * the hash of this transaction
@@ -60,8 +62,6 @@ public class Transaction extends BaseBizEntity {
 
     private String creatorPubKey;
 
-
-    @Override
     public boolean valid() {
 
         if (StringUtils.isEmpty(hash)) {

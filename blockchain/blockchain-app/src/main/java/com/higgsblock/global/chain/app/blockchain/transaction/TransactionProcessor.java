@@ -252,7 +252,7 @@ public class TransactionProcessor {
      * @return return result
      */
     public boolean verifyTransaction(Transaction tx, Block block) {
-        short version = tx.getVersion();
+        int version = tx.getVersion();
         if (version < 0) {
             return false;
         }

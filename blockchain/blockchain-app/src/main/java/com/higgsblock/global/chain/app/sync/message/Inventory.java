@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.sync.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.entity.BaseBizEntity;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
 
 import java.util.Set;
@@ -13,13 +13,12 @@ import java.util.Set;
  */
 @Data
 @Message(MessageType.INVENTORY)
-public class Inventory extends BaseBizEntity {
+public class Inventory extends BaseSerializer {
 
     private long height;
 
     private Set<String> hashs;
 
-    @Override
     public boolean valid() {
         if (height < 0) {
             return false;

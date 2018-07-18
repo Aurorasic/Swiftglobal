@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.entity.BaseBizEntity;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,8 +17,7 @@ import org.apache.commons.lang.StringUtils;
 @AllArgsConstructor
 @Data
 @Slf4j
-public class Vote extends BaseBizEntity {
-
+public class Vote extends BaseSerializer {
 
     /**
      * current version
@@ -92,12 +91,7 @@ public class Vote extends BaseBizEntity {
         return false;
     }
 
-    @Override
     public boolean valid() {
-
-        if (version < 0) {
-            return false;
-        }
         if (height < 0) {
             return false;
         }

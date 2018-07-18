@@ -254,7 +254,7 @@ public class BlockProcessor {
      * 8.Chaining the orphan block to the chain;
      * </P>
      */
-    public synchronized boolean persistBlockAndIndex(Block block, String sourceId, short version) {
+    public synchronized boolean persistBlockAndIndex(Block block, String sourceId, int version) {
         long height = block.getHeight();
         String blockHash = block.getHash();
         int sigCount = block.getWitnessSigCount();
@@ -299,7 +299,7 @@ public class BlockProcessor {
         return true;
     }
 
-    public boolean checkOrphanBlock(Block block, String sourceId, short version) {
+    public boolean checkOrphanBlock(Block block, String sourceId, int version) {
         long height = block.getHeight();
         boolean isGenesisBlock = block.isGenesisBlock();
 
@@ -351,11 +351,11 @@ public class BlockProcessor {
         }
     }
 
-    public void doLastJobForBlock(Block block, String sourceId, short version) {
+    public void doLastJobForBlock(Block block, String sourceId, int version) {
         chainingOrphanBlock(block, sourceId, version);
     }
 
-    private void chainingOrphanBlock(Block block, String sourceId, short version) {
+    private void chainingOrphanBlock(Block block, String sourceId, int version) {
         BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
         persistPreOrphanBlock(blockFullInfo);
     }
@@ -542,7 +542,7 @@ public class BlockProcessor {
     }
 
     public boolean validBlockCommon(Block block) {
-        short version = block.getVersion();
+        int version = block.getVersion();
         String blockHash = block.getHash();
         String prevBlockHash = block.getPrevBlockHash();
         List<Transaction> transactions = block.getTransactions();
@@ -649,7 +649,7 @@ public class BlockProcessor {
                 long nextHeight = nextBlock.getHeight();
                 String nextBlockHash = nextBlock.getHash();
                 String nextSourceId = nextBlockFullInfo.getSourceId();
-                short nextVersion = nextBlockFullInfo.getVersion();
+                int nextVersion = nextBlockFullInfo.getVersion();
                 LOGGER.info("persisted height={}_block={}, find orphan next block height={}_block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
                 if (!validBasic(block)) {

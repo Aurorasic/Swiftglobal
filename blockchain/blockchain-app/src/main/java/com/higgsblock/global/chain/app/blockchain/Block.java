@@ -7,11 +7,11 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
-import com.higgsblock.global.chain.app.entity.BaseBizEntity;
-import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
+import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
+import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.Data;
 import lombok.Getter;
@@ -34,8 +34,10 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Slf4j
-public class Block extends BaseBizEntity {
+public class Block extends BaseSerializer {
     private static final int LIMITED_SIZE = 1024 * 1024 * 1;
+
+    private int version;
 
     /**
      * block height begin with 1
@@ -87,8 +89,6 @@ public class Block extends BaseBizEntity {
     @Getter
     private int voteVersion;
 
-
-    @Override
     public boolean valid() {
         if (version < 0) {
             return false;

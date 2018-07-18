@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.sync.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.entity.BaseBizEntity;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,14 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @Message(MessageType.MAX_HEIGHT_RESPONSE)
-public class MaxHeightResponse extends BaseBizEntity {
+public class MaxHeightResponse extends BaseSerializer {
     private long maxHeight;
-
-    @Override
-    public boolean valid() {
-        if (maxHeight < 0) {
-            return false;
-        }
-        return true;
-    }
 }
