@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
  * @date 3/8/2018
  */
 @Component
-public class BlockReqFormatter extends BaseEntityFormatter<BlockReq> {
+public class BlockRequestFormatter extends BaseEntityFormatter<BlockRequest> {
 }

@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("maxHeightReqHandler")
+@Component("maxHeightRequestHandler")
 @Slf4j
-public class MaxHeightReqHandler extends BaseEntityHandler<MaxHeightReq> {
+public class MaxHeightRequestHandler extends BaseEntityHandler<MaxHeightRequest> {
 
     @Autowired
     private BlockProcessor blockProcessor;
@@ -23,7 +23,7 @@ public class MaxHeightReqHandler extends BaseEntityHandler<MaxHeightReq> {
     private MessageCenter messageCenter;
 
     @Override
-    protected void process(SocketRequest<MaxHeightReq> request) {
-        messageCenter.unicast(request.getSourceId(), new MaxHeightResp(blockProcessor.getMaxHeight()));
+    protected void process(SocketRequest<MaxHeightRequest> request) {
+        messageCenter.unicast(request.getSourceId(), new MaxHeightResponse(blockProcessor.getMaxHeight()));
     }
 }

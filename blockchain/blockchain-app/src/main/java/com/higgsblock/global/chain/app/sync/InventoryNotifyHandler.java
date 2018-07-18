@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("inventoryHandler")
+@Component("inventoryNotifyHandler")
 @Slf4j
-public class InventoryHandler extends BaseEntityHandler<Inventory> {
+public class InventoryNotifyHandler extends BaseEntityHandler<InventoryNotify> {
 
     private static final long SYNC_BLOCK_EXPIRATION_IN_RUNNING = 1000L;
 
@@ -45,19 +45,19 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
             .build();
 
     @Override
-    protected void process(SocketRequest<Inventory> request) {
+    protected void process(SocketRequest<InventoryNotify> request) {
         if (!systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
             return;
         }
-        Inventory data = request.getData();
+        InventoryNotify data = request.getData();
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
         if (height <= blockProcessor.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
                 if (!blockProcessor.isExistInDB(height, hash)) {
-                    BlockReq blockReq = new BlockReq(height, hash);
-                    messageCenter.unicast(sourceId, blockReq);
+                    BlockRequest blockRequest = new BlockRequest(height, hash);
+                    messageCenter.unicast(sourceId, blockRequest);
                     return height;
                 }
                 return null;
