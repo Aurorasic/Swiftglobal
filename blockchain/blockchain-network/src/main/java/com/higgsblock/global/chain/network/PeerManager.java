@@ -239,9 +239,8 @@ public class PeerManager {
             throw new IllegalArgumentException("self peer params invalid");
         }
 
-        self = peer;
+        setSelf(peer);
         peerCache.setCached(peer);
-        addOrUpdate(self);
         return true;
     }
 
