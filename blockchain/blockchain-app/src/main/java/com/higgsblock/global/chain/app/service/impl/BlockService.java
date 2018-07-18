@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Service
 @Slf4j
-public class BlockPersistService implements IBlockService {
+public class BlockService implements IBlockService {
 
     @Autowired
     private IBlockRepository blockRepository;

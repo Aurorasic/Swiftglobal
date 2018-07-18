@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class BlockReqHandler extends BaseEntityHandler<BlockReq> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Override
     protected void process(SocketRequest<BlockReq> request) {
@@ -40,7 +40,7 @@ public class BlockReqHandler extends BaseEntityHandler<BlockReq> {
          * send block to peer
          */
         if (null != hash) {
-            Block block = blockPersistService.getBlockByHash(hash);
+            Block block = blockService.getBlockByHash(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new BlockResp(block));
             }

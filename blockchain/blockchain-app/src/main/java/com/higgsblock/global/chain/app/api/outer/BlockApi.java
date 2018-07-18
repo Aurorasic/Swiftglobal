@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,7 +35,7 @@ public class BlockApi {
     private BlockProcessor blockProcessor;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     /**
      * @param fromHeight
@@ -100,7 +100,7 @@ public class BlockApi {
         if (null == hash) {
             return new ResponseData(PARAM_INVALID);
         }
-        Block block = blockPersistService.getBlockByHash(hash);
+        Block block = blockService.getBlockByHash(hash);
         if (null == block) {
             return new ResponseData(HASH_NOT_EXIST);
         }

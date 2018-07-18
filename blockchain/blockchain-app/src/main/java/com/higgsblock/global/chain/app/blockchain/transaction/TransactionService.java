@@ -16,7 +16,7 @@ import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -48,7 +48,7 @@ public class TransactionService {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -88,7 +88,7 @@ public class TransactionService {
             return false;
         }
 
-        Block preBlock = blockPersistService.getBlockByHash(block.getPrevBlockHash());
+        Block preBlock = blockService.getBlockByHash(block.getPrevBlockHash());
         String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
             LOGGER.error("preBlock == null,tx hash={}_block hash={}", tx.getHash(), block.getHash());
@@ -481,7 +481,7 @@ public class TransactionService {
             }
 
             String blockHash = transactionIndex.getBlockHash();
-            Block block = blockPersistService.getBlockByHash(blockHash);
+            Block block = blockService.getBlockByHash(blockHash);
             Transaction transactionByHash = block.getTransactionByHash(txHash);
             short index = prevOutPoint.getIndex();
             TransactionOutput preOutput = null;

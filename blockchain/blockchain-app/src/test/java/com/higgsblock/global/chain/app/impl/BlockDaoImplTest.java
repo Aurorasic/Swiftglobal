@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.impl;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class BlockDaoImplTest extends BaseTest {
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Test
     public void test() {
@@ -35,7 +35,7 @@ public class BlockDaoImplTest extends BaseTest {
     }
 
     private void testGetBestBlockIndex(long height) {
-        System.out.println(blockPersistService.getBestBlockByHeight(height));
+        System.out.println(blockService.getBestBlockByHeight(height));
 
     }
 }

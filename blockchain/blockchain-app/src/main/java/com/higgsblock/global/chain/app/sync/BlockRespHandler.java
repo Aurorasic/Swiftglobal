@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class BlockRespHandler extends BaseEntityHandler<BlockResp> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;

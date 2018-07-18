@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class TransactionPersistService implements ITransService {
+public class TransactionService implements ITransService {
     @Autowired
     private IUTXORepository iutxoRepository;
 
