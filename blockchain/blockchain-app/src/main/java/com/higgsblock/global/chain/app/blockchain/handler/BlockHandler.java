@@ -3,15 +3,12 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.WitnessTime;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
-import com.higgsblock.global.chain.app.sync.Inventory;
-import com.higgsblock.global.chain.app.task.CandidateMinerTask;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.sync.Inventory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -42,12 +39,6 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private BlockIndexService blockIndexService;
 
-    @Autowired
-    private PeerManager peerManager;
-    @Autowired
-    private CandidateMinerTask candidateMinerTask;
-    @Autowired
-    private WitnessTime witnessTime;
 
     @Override
     protected void process(SocketRequest<Block> request) {

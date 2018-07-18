@@ -7,13 +7,13 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
@@ -88,7 +88,7 @@ public class BlockService {
     private TransactionPersistService transactionPersistService;
 
     @Autowired
-    private WitnessTime witnessTime;
+    private WitnessTimeProcess witnessTimeProcess;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -732,7 +732,7 @@ public class BlockService {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isCandidateBlock = witnessTime.acceptBlock(block);
+            boolean isCandidateBlock = witnessTimeProcess.acceptBlock(block);
             LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
             if (!isCandidateBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);
