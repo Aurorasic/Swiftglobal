@@ -67,13 +67,6 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
 
         if (success && !data.isGenesisBlock()) {
-
-            String address = peerManager.getSelf().getId();
-            candidateMinerTask.updateCandidateMinerTime();
-            if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
-                witnessTime.updateMaxHeightAndInitTime(data);
-            }
-
             Inventory inventory = new Inventory();
             inventory.setHeight(height);
             Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());

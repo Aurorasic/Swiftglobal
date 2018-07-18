@@ -1,6 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain;
 
+import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -50,12 +52,14 @@ public class WitnessTime {
         return false;
     }
 
-    public void updateMaxHeightAndInitTime(Block block) {
+
+    @Subscribe
+    public void process(BlockPersistedEvent event) {
         String address = peerManager.getSelf().getId();
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(address) && block.getHeight() > currHeight) {
-            currHeight = block.getHeight();
+        if (BlockService.WITNESS_ADDRESS_LIST.contains(address) && blockService.getMaxHeight() > currHeight) {
+            currHeight = blockService.getMaxHeight();
             initTime = System.currentTimeMillis();
-            LOGGER.info("updateMaxHeightAndInitTime modify init time={},currHeight={} ", initTime, currHeight);
+            LOGGER.info("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);
         }
     }
 
