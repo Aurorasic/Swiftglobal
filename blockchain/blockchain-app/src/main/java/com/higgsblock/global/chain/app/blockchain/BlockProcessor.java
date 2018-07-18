@@ -37,7 +37,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class BlockService {
+public class BlockProcessor {
 
     private static final int LRU_CACHE_SIZE = 5;
     /**

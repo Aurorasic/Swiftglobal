@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
@@ -33,7 +33,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private SourceBlockService sourceBlockService;
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -86,11 +86,11 @@ public class MiningListener implements IEventBusListener {
     }
 
     private void calculateDpos() {
-        long maxHeight = blockService.getMaxHeight();
+        long maxHeight = blockProcessor.getMaxHeight();
         if (maxHeight == 1L) {
             List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
-                Block block = blockService.getBestBlockByHeight(1L);
+                Block block = blockProcessor.getBestBlockByHeight(1L);
                 List<String> dposAddresses = nodeManager.calculateDposAddresses(block, 1L);
                 nodeManager.persistDposNodes(0L, dposAddresses);
             }
@@ -147,7 +147,7 @@ public class MiningListener implements IEventBusListener {
     private boolean doMining(long expectHeight, String blockHash) {
         try {
             LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
-            Block block = blockService.packageNewBlock(blockHash);
+            Block block = blockProcessor.packageNewBlock(blockHash);
             if (block == null) {
                 LOGGER.info("can not produce a new block,height={}", expectHeight);
                 return false;

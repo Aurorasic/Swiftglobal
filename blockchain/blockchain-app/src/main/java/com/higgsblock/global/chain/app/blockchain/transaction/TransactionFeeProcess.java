@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.google.common.collect.Lists;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
@@ -319,14 +319,14 @@ public class TransactionFeeProcess {
 
     private List<TransactionOutput> genWitnessCoinBaseOutput(Rewards rewards) {
         List<TransactionOutput> outputList = Lists.newArrayList();
-        int witnessSize = BlockService.WITNESS_ADDRESS_LIST.size();
+        int witnessSize = BlockProcessor.WITNESS_ADDRESS_LIST.size();
         int lastReward = new Random().nextInt(11);
         for (int i = 0; i < witnessSize; i++) {
             if (lastReward == i) {
-                TransactionOutput transactionOutput = generateTransactionOutput(BlockService.WITNESS_ADDRESS_LIST.get(i), rewards.getLastWitnessMoney());
+                TransactionOutput transactionOutput = generateTransactionOutput(BlockProcessor.WITNESS_ADDRESS_LIST.get(i), rewards.getLastWitnessMoney());
                 outputList.add(transactionOutput);
             } else {
-                TransactionOutput transactionOutput = generateTransactionOutput(BlockService.WITNESS_ADDRESS_LIST.get(i), rewards.getTopTenSingleWitnessMoney());
+                TransactionOutput transactionOutput = generateTransactionOutput(BlockProcessor.WITNESS_ADDRESS_LIST.get(i), rewards.getTopTenSingleWitnessMoney());
                 outputList.add(transactionOutput);
             }
         }
