@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.api.inner;
 import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -26,7 +26,7 @@ public class StatusController {
     @Autowired
     private IScoreService scoreService;
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
     @Autowired
     private ConnectionManager connectionManager;
     @Autowired
@@ -72,7 +72,7 @@ public class StatusController {
      */
     @RequestMapping("/miners")
     public Object miners(long height, String preBlockHash) {
-        return nodeManager.getDposGroupByHeihgt(height, preBlockHash);
+        return nodeProcessor.getDposGroupByHeihgt(height, preBlockHash);
     }
 
     /**

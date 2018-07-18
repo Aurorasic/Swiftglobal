@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.network.upnp.impl.WeUpnpService;
 import com.higgsblock.global.chain.network.upnp.model.PortMappingInfo;
 import com.higgsblock.global.chain.network.enums.ProtocolEnum;
 import com.higgsblock.global.chain.network.upnp.model.UpnpConstant;
+import com.higgsblock.global.chain.network.utils.IpUtil;
 
 /**
  * The type Upnp disconver test.
@@ -22,7 +23,6 @@ public class UpnpDisconverTest {
      * @param args the input arguments
      */
     public static void main(String[] args) {
-
         //buildKey();
         upnpTest();
     }

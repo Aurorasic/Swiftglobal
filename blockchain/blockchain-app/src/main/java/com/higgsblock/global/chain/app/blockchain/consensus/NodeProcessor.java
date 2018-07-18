@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @Slf4j
-public class NodeManager implements InitializingBean {
+public class NodeProcessor implements InitializingBean {
 
     public static final int NODE_SIZE = 6;
     public static final int MAX_SIZE = 30;

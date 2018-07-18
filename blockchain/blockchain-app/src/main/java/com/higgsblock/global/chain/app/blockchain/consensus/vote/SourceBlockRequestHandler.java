@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 import com.alibaba.fastjson.JSON;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
@@ -26,7 +26,7 @@ public class SourceBlockRequestHandler extends BaseEntityHandler<SourceBlockRequ
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteService voteService;
+    private VoteProcessor voteProcessor;
 
     @Override
     protected void process(SocketRequest<SourceBlockRequest> request) {
@@ -37,7 +37,7 @@ public class SourceBlockRequestHandler extends BaseEntityHandler<SourceBlockRequ
         }
         LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
         data.getBlockHashs().forEach(hash -> {
-            Block block = voteService.getBlockCache().get(voteService.getHeight(), k -> new HashMap<>()).get(hash);
+            Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new SourceBlockResponse(block));
             }
