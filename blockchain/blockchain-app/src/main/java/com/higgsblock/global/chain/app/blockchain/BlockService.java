@@ -15,8 +15,8 @@ import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import com.higgsblock.global.chain.app.service.impl.TransactionPersistService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -86,6 +86,9 @@ public class BlockService {
 
     @Autowired
     private TransactionPersistService transactionPersistService;
+
+    @Autowired
+    private WitnessTime witnessTime;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -729,10 +732,10 @@ public class BlockService {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isWitnessTimer = WitnessTimer.isCurrBlockConfirm(block);
-            LOGGER.info("verify witness timer block is sure {} block hash {}", isWitnessTimer, block.getHash());
-            if (!isWitnessTimer) {
-                LOGGER.info("verify witness timer block is accept {} ", isWitnessTimer);
+            boolean isCandidateBlock = witnessTime.acceptBlock(block);
+            LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
+            if (!isCandidateBlock) {
+                LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);
                 return false;
             }
         }

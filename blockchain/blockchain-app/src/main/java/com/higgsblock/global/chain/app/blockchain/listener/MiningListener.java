@@ -115,7 +115,6 @@ public class MiningListener implements IEventBusListener {
             return;
         }
 
-        candidateMinerTimer.doMingTimer();
         // cancel running task
         if (null != future) {
             future.cancel(true);
