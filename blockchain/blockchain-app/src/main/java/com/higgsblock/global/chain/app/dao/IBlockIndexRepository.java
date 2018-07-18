@@ -42,4 +42,12 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
     @Query("select max (height) from BlockIndexEntity")
     long queryMaxHeight();
 
+    /**
+     * delete BlockIndexEntities by height
+     *
+     * @param height
+     * @return
+     */
+    int deleteByHeight(long height);
+
 }
