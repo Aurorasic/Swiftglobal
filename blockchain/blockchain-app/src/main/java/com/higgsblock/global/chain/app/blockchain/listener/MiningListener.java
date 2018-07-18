@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
@@ -37,7 +37,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
     @Autowired
     private VoteService voteService;
 
@@ -88,11 +88,11 @@ public class MiningListener implements IEventBusListener {
     private void calculateDpos() {
         long maxHeight = blockProcessor.getMaxHeight();
         if (maxHeight == 1L) {
-            List<String> dposGroupBySn = nodeManager.getDposGroupBySn(2);
+            List<String> dposGroupBySn = nodeProcessor.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
                 Block block = blockProcessor.getBestBlockByHeight(1L);
-                List<String> dposAddresses = nodeManager.calculateDposAddresses(block, 1L);
-                nodeManager.persistDposNodes(0L, dposAddresses);
+                List<String> dposAddresses = nodeProcessor.calculateDposAddresses(block, 1L);
+                nodeProcessor.persistDposNodes(0L, dposAddresses);
             }
         }
     }
@@ -120,7 +120,7 @@ public class MiningListener implements IEventBusListener {
         }
         // check if my turn now
         String address = peerManager.getSelf().getId();
-        boolean isMyTurn = nodeManager.canPackBlock(expectHeight, address, persistBlockHash);
+        boolean isMyTurn = nodeProcessor.canPackBlock(expectHeight, address, persistBlockHash);
         if (!isMyTurn) {
             return;
         }
