@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.formatter.BaseEntityFormatter;
+import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 
 /**
@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
  * @date 3/8/2018
  */
 @Component
-public class MaxHeightRequestFormatter extends BaseEntityFormatter<MaxHeightRequest> {
+public class MaxHeightRequestFormatter extends BaseMessageFormatter<MaxHeightRequest> {
 
 }

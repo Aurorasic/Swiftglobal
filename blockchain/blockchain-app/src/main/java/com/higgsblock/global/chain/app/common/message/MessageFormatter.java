@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.common.message;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.higgsblock.global.chain.app.common.formatter.IEntityFormatter;
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.formatter.IMessageFormatter;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -25,9 +25,9 @@ public class MessageFormatter implements InitializingBean {
     private static final String SEPARATOR = "|";
 
     @Autowired
-    private List<IEntityFormatter<?>> formatterList;
+    private List<IMessageFormatter<?>> formatterList;
 
-    private Map<EntityType, IEntityFormatter<?>> formatterMap = Maps.newHashMap();
+    private Map<MessageType, IMessageFormatter<?>> formatterMap = Maps.newHashMap();
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -36,42 +36,42 @@ public class MessageFormatter implements InitializingBean {
         }
     }
 
-    public void register(IEntityFormatter<?> formatter) {
-        EntityType type = getMessageType(formatter.getEntityClass());
+    public void register(IMessageFormatter<?> formatter) {
+        MessageType type = getMessageType(formatter.getEntityClass());
         formatterMap.put(type, formatter);
-        LOGGER.info("register IEntityFormatter, type={} ", type);
+        LOGGER.info("register IMessageFormatter, type={} ", type);
     }
 
-    public void unregister(EntityType type) {
+    public void unregister(MessageType type) {
         formatterMap.remove(type);
-        LOGGER.info("unregister IEntityFormatter, type={} ", type);
+        LOGGER.info("unregister IMessageFormatter, type={} ", type);
     }
 
-    public EntityType getMessageType(Class<?> clazz) {
+    public MessageType getMessageType(Class<?> clazz) {
         Message annotation = clazz.getAnnotation(Message.class);
         Preconditions.checkNotNull(annotation, "Missing annotation: Message");
 
-        EntityType type = annotation.value();
+        MessageType type = annotation.value();
         Preconditions.checkNotNull(type, "type invalid, class=", clazz);
 
         return type;
     }
 
-    public IEntityFormatter<?> getFormatter(Class<?> clazz) {
+    public IMessageFormatter<?> getFormatter(Class<?> clazz) {
         return getFormatter(getMessageType(clazz));
     }
 
-    public IEntityFormatter<?> getFormatter(EntityType type) {
+    public IMessageFormatter<?> getFormatter(MessageType type) {
         return formatterMap.get(type);
     }
 
     public <T> T parse(String data) {
         String typeCode = StringUtils.substringBefore(data, SEPARATOR);
 
-        EntityType type = EntityType.getByCode(typeCode);
+        MessageType type = MessageType.getByCode(typeCode);
         Preconditions.checkNotNull(type, "type invalid, typeCode={}", typeCode);
 
-        IEntityFormatter<?> formatter = getFormatter(type);
+        IMessageFormatter<?> formatter = getFormatter(type);
         Preconditions.checkNotNull(formatter, "unsupported formatter");
 
         String content = StringUtils.substringAfter(data, SEPARATOR);
@@ -85,8 +85,8 @@ public class MessageFormatter implements InitializingBean {
      * @return exclude type by default
      */
     public <T> String format(T data) {
-        EntityType type = getMessageType(data.getClass());
-        IEntityFormatter<T> formatter = (IEntityFormatter<T>) getFormatter(type);
+        MessageType type = getMessageType(data.getClass());
+        IMessageFormatter<T> formatter = (IMessageFormatter<T>) getFormatter(type);
         Preconditions.checkNotNull(formatter, "unsupported formatter");
 
         return String.format("%s|%s", type.getCode(), formatter.format(data));

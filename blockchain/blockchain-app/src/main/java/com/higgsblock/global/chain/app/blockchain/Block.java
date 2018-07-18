@@ -8,7 +8,7 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
@@ -30,7 +30,7 @@ import java.util.List;
  * @author yuguojia
  * @create 2018-02-22
  **/
-@Message(EntityType.BLOCK)
+@Message(MessageType.BLOCK)
 @NoArgsConstructor
 @Data
 @Slf4j

@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutorService;
  * @author baizhengwen
  * @date 2018/2/28
  */
-public interface IEntityHandler<T> {
+public interface IMessageHandler<T> {
 
-    Class<T> getEntityClass();
+    Class<T> getMessageClass();
 
     void start();
 
