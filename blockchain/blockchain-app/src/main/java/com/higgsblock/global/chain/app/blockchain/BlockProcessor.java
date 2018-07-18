@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
@@ -64,7 +64,7 @@ public class BlockProcessor {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
 
     @Autowired
     private EventBus eventBus;
@@ -676,11 +676,11 @@ public class BlockProcessor {
 
     private boolean verifyMinerPermission(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
-        if (!nodeManager.checkProducer(block)) {
+        if (!nodeProcessor.checkProducer(block)) {
             LOGGER.error("the height {}, this block miner is {}, the miners is {}"
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
-                    , nodeManager.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
+                    , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
             if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
                 LOGGER.info("verify block is candidate miner production true");
                 return true;
@@ -729,7 +729,7 @@ public class BlockProcessor {
             eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), sourceId));
             return false;
         }
-        boolean minerPermission = nodeManager.checkProducer(block);
+        boolean minerPermission = nodeProcessor.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
             boolean isCandidateBlock = witnessTimerProcessor.acceptBlock(block);

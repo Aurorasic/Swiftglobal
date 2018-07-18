@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class SourceBlockHandler extends BaseEntityHandler<SourceBlockResponse> {
 
     @Autowired
-    private VoteService voteService;
+    private VoteProcessor voteProcessor;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -49,7 +49,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlockResponse> {
             return;
         }
 
-        if (voteService.isExistInBlockCache(height, block.getHash())) {
+        if (voteProcessor.isExistInBlockCache(height, block.getHash())) {
             return;
         }
 
@@ -58,7 +58,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlockResponse> {
             return;
         }
         LOGGER.info("Received sourceBlockResponse {} ,{}", height, block.getHash());
-        voteService.addSourceBlock(block);
+        voteProcessor.addSourceBlock(block);
         messageCenter.dispatchToWitnesses(sourceBlockResponse);
 
     }
