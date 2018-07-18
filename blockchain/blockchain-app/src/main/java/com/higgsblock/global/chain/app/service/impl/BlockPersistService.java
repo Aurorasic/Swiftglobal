@@ -9,7 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheMa
 import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
-import com.higgsblock.global.chain.app.dao.iface.IBlockRepository;
+import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;

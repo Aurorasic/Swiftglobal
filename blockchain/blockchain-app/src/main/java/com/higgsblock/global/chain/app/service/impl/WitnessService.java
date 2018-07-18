@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.iface.IWitnessRepository;
+import com.higgsblock.global.chain.app.dao.IWitnessRepository;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.dao.iface;
+package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
