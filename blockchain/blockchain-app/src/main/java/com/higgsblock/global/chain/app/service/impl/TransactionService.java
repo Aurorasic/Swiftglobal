@@ -11,7 +11,6 @@ import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -36,7 +35,7 @@ public class TransactionService implements ITransService {
     private IUTXORepository iutxoRepository;
 
     @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     /**
      * The Transaction index entity dao.
@@ -81,7 +80,7 @@ public class TransactionService implements ITransService {
                     spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
-                    if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
+                    if (utxoService.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
@@ -129,7 +128,7 @@ public class TransactionService implements ITransService {
                     break;
                 }
 
-                UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
+                UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
                     unspentUtxoTx = false;
                     LOGGER.warn("utxo data map has no this uxto={},tx={}", preUTXOKey, tx.getHash());

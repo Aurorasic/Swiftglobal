@@ -14,7 +14,7 @@ import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -51,7 +51,7 @@ public class TransactionProcessor {
     private BlockService blockService;
 
     @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     @Autowired
     private IUTXORepository iutxoRepository;
@@ -375,7 +375,7 @@ public class TransactionProcessor {
         }
 
         UTXO utxo;
-        utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
+        utxo = utxoService.getUnionUTXO(preBlockHash, preOutKey);
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={},preOutKey={}", JSONObject.toJSONString(input, true), preOutKey);
@@ -410,7 +410,7 @@ public class TransactionProcessor {
             }
 
             String preUTXOKey = input.getPreUTXOKey();
-            UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
+            UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preUTXOKey);
             if (utxo == null) {
                 LOGGER.error("there is no such utxokey={}_preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
@@ -509,7 +509,7 @@ public class TransactionProcessor {
             }
 
             UTXO utxo = null;
-            utxo = utxoDaoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
+            utxo = utxoService.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;

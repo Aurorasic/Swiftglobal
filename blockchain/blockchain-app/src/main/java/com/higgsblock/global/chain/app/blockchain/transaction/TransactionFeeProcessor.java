@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -56,7 +56,7 @@ public class TransactionFeeProcessor {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     /**
      * count Miner and Witness Rewards
@@ -273,7 +273,7 @@ public class TransactionFeeProcessor {
         for (TransactionInput input : inputs) {
             String preOutKey = input.getPrevOut().getKey();
 
-            UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
+            UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preOutKey);
             if (null == utxo) {
                 LOGGER.warn("get utxo is null:{}", preOutKey);
                 throw new RuntimeException("uxto is null:" + preOutKey);

@@ -14,7 +14,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionService;
@@ -82,7 +82,7 @@ public class BlockProcessor {
     private BlockService blockService;
 
     @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     @Autowired
     private TransactionService transactionService;
@@ -281,7 +281,7 @@ public class BlockProcessor {
         Block newBestBlock = saveBlockCompletely(block);
 
         //add unconfirmed utxos and remove confirmed height blocks in cache
-        utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
+        utxoService.addNewBlock(newBestBlock, block);
 
         //refresh cache
         blockService.refreshCache(block.getHash(), block);
