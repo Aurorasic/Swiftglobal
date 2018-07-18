@@ -3,6 +3,8 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.dao.IUTXORepository;
+import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.IUTXOService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -19,12 +21,14 @@ import java.util.*;
 @Slf4j
 public class UTXOService implements IUTXOService {
     @Autowired
-    private TransactionService transactionService;
+    private TransactionIndexService transactionIndexService;
     @Autowired
     private BlockService blockService;
     @Autowired
     private BlockIndexService blockIndexService;
 
+    @Autowired
+    private IUTXORepository iutxoRepository;
     /**
      * key1: unconfirmed blockhash
      * key2: utxo key
@@ -47,7 +51,7 @@ public class UTXOService implements IUTXOService {
 
     @Override
     public UTXO getUTXOOnBestChain(String utxoKey) {
-        return transactionService.getUTXOOnBestChain(utxoKey);
+        return transactionIndexService.getUTXOOnBestChain(utxoKey);
     }
 
     /**
@@ -76,7 +80,7 @@ public class UTXOService implements IUTXOService {
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
-        List<UTXO> bestAddedUtxoList = transactionService.getUTXOsByAddress(address);
+        List<UTXO> bestAddedUtxoList = transactionIndexService.getUTXOsByAddress(address);
 
         List<UTXO> allAddedUtxoList = new LinkedList<>();
         allAddedUtxoList.addAll(bestAddedUtxoList);
@@ -114,7 +118,7 @@ public class UTXOService implements IUTXOService {
                 if (utxo != null) {
                     return utxo;
                 }
-                utxo = transactionService.getUTXOOnBestChain(utxoKey);
+                utxo = transactionIndexService.getUTXOOnBestChain(utxoKey);
                 if (utxo != null) {
                     return utxo;
                 }
@@ -124,7 +128,7 @@ public class UTXOService implements IUTXOService {
             if (utxo != null) {
                 return utxo;
             }
-            utxo = transactionService.getUTXOOnBestChain(utxoKey);
+            utxo = transactionIndexService.getUTXOOnBestChain(utxoKey);
             if (utxo != null) {
                 return utxo;
             }
@@ -195,6 +199,11 @@ public class UTXOService implements IUTXOService {
             Map utxoMap = buildUTXOMap(newBlock);
             put(newBlock.getPrevBlockHash(), newBlock.getHash(), utxoMap);
         }
+    }
+
+    @Override
+    public List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency) {
+        return iutxoRepository.findByLockScriptAndCurrency(lockScript, currency);
     }
 
     /**

@@ -7,17 +7,17 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -64,7 +64,7 @@ public class BlockProcessor {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
 
     @Autowired
     private EventBus eventBus;
@@ -85,7 +85,7 @@ public class BlockProcessor {
     private UTXOService utxoService;
 
     @Autowired
-    private TransactionService transactionService;
+    private TransactionIndexService transactionIndexService;
 
     @Autowired
     private WitnessTimerProcessor witnessTimerProcessor;
@@ -110,7 +110,7 @@ public class BlockProcessor {
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
 
-        List txOfUnSpentUtxos = transactionService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
+        List txOfUnSpentUtxos = transactionIndexService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
 
         if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
             LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);
@@ -287,7 +287,7 @@ public class BlockProcessor {
         blockService.refreshCache(block.getHash(), block);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, newBestBlock);
+        broadBlockPersistedEvent(block, newBestBlock, sourceId);
 
         //Do last job for the block
         doLastJobForBlock(block, sourceId, version);
@@ -329,7 +329,7 @@ public class BlockProcessor {
         persistPreOrphanBlock(blockFullInfo);
     }
 
-    public void broadBlockPersistedEvent(Block block, Block newBestBlock) {
+    public void broadBlockPersistedEvent(Block block, Block newBestBlock, String sourceId) {
         BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
         blockPersistedEvent.setHeight(block.getHeight());
         blockPersistedEvent.setBlockHash(block.getHash());
@@ -676,11 +676,11 @@ public class BlockProcessor {
 
     private boolean verifyMinerPermission(Block block) {
         BlockWitness blockWitness = block.getMinerFirstPKSig();
-        if (!nodeManager.checkProducer(block)) {
+        if (!nodeProcessor.checkProducer(block)) {
             LOGGER.error("the height {}, this block miner is {}, the miners is {}"
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
-                    , nodeManager.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
+                    , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
             if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
                 LOGGER.info("verify block is candidate miner production true");
                 return true;
@@ -729,7 +729,7 @@ public class BlockProcessor {
             eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), sourceId));
             return false;
         }
-        boolean minerPermission = nodeManager.checkProducer(block);
+        boolean minerPermission = nodeProcessor.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
             boolean isCandidateBlock = witnessTimerProcessor.acceptBlock(block);

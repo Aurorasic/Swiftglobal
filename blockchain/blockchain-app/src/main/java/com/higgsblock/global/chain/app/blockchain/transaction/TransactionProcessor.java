@@ -9,11 +9,10 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.ISpentTransactionOutIndexRepository;
-import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
-import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
 import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
@@ -54,19 +53,13 @@ public class TransactionProcessor {
     private UTXOService utxoService;
 
     @Autowired
-    private IUTXORepository iutxoRepository;
-
-    @Autowired
-    private ITransactionIndexRepository iTransactionIndexRepository;
+    private TransactionIndexService transactionIndexService;
 
     @Autowired
     private BlockIndexService blockIndexService;
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
-
-    @Autowired
-    private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
 
     /**
      * validate coin base tx
@@ -446,7 +439,7 @@ public class TransactionProcessor {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(hash);
+        TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(hash);
         TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
         if (transactionIndex != null) {
             LOGGER.info("the transaction is exist in block with hash {}", hash);
@@ -472,7 +465,7 @@ public class TransactionProcessor {
             TransactionOutPoint prevOutPoint = input.getPrevOut();
 
             String txHash = prevOutPoint.getHash();
-            TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(txHash);
+            TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(txHash);
             TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
             if (transactionIndex == null) {
                 continue;
@@ -526,7 +519,7 @@ public class TransactionProcessor {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-        List<UTXOEntity> utxoEntities = iutxoRepository.findByLockScriptAndCurrency(address, currency);
+        List<UTXOEntity> utxoEntities = utxoService.findByLockScriptAndCurrency(address, currency);
         List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
@@ -571,17 +564,17 @@ public class TransactionProcessor {
         LOGGER.info("broadcast transaction success: " + tx.getHash());
     }
 
-    private boolean isSpent(String preTxHash, short outIndex) {
-        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTransactionOutIndexRepository.findByPreTransactionHash(preTxHash);
-        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
-            return false;
-        }
-        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
-            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    private boolean isSpent(String preTxHash, short outIndex) {
+//        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTransactionOutIndexRepository.findByPreTransactionHash(preTxHash);
+//        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
+//            return false;
+//        }
+//        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
+//            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
 }

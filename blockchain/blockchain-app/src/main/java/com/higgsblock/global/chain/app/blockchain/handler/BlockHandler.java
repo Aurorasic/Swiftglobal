@@ -3,18 +3,14 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.sync.InventoryNotify;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author baizhengwen
@@ -34,7 +30,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteService voteService;
+    private VoteProcessor voteProcessor;
 
     @Autowired
     private BlockIndexService blockIndexService;
@@ -56,13 +52,5 @@ public class BlockHandler extends BaseEntityHandler<Block> {
 
         boolean success = blockProcessor.persistBlockAndIndex(data, sourceId, data.getVersion());
         LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
-
-        if (success && !data.isGenesisBlock()) {
-            InventoryNotify inventoryNotify = new InventoryNotify();
-            inventoryNotify.setHeight(height);
-            Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
-            inventoryNotify.setHashs(set);
-            messageCenter.broadcast(new String[]{sourceId}, inventoryNotify);
-        }
     }
 }

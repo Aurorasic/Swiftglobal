@@ -41,11 +41,6 @@ public final class UpnpConstant {
     public static final String HTTP_PORT_MAPPING_NAME = "higgs global http";
 
     /**
-     * The constant PUBLIC_ID_APIS.
-     */
-    public static final List<String> PUBLIC_ID_APIS = Arrays.asList("icanhazip.com", "checkip.amazonaws.com", "api.ipify.org");
-
-    /**
      * The constant MAX_MAPPING_COUNT.
      */
     public static final int MAX_MAPPING_COUNT = 255;

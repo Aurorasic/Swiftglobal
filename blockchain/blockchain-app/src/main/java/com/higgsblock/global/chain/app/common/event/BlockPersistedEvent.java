@@ -19,6 +19,11 @@ public class BlockPersistedEvent extends BaseSerializer {
     private long height;
 
     /**
+     * the peer's address who sent the block
+     */
+    private String sourceId;
+
+    /**
      * the block-hash of the persisted block
      */
     private String blockHash;

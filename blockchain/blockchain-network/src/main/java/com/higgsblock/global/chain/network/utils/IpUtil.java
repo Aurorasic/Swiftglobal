@@ -1,5 +1,7 @@
 package com.higgsblock.global.chain.network.utils;
 
+import com.higgsblock.global.chain.network.http.HttpClient;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetAddress;
@@ -7,41 +9,85 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * The type Network util.
+ * The type Ip util.
  *
  * @author yanghuadong
  * @date 2018 -05-24
  */
-public final class NetworkUtil {
+@Slf4j
+public final class IpUtil {
 
+    /**
+     * The constant PUBLIC_ID_APIS.
+     */
+    private static final List<String> PUBLIC_ID_APIS = Arrays.asList("icanhazip.com", "checkip.amazonaws.com", "api.ipify.org");
     /**
      * The constant INT_IP_PREFIX_10.
      */
     private static final String INT_IP_PREFIX_10 = "10.";
-
     /**
      * The constant INT_IP_PREFIX_192_168.
      */
     private static final String INT_IP_PREFIX_192_168 = "192.168.";
-
     /**
      * The constant MIN_IP_SUB.
      */
     private static final int MIN_IP_SUB = 17216;
-
     /**
      * The constant MAX_IP_SUB.
      */
     private static final int MAX_IP_SUB = 17231;
+    /**
+     * The constant ADDR_MIN_LEN.
+     */
+    private static final int ADDR_MIN_LEN = 7;
+    /**
+     * The constant ADDR_MAX_LEN.
+     */
+    private static final int ADDR_MAX_LEN = 15;
 
     /**
      * Instantiates a new Network util.
      */
-    private NetworkUtil() {
+    private IpUtil() {
+    }
+
+    /**
+     * Get public ip string.
+     *
+     * @return the public ip string
+     */
+    public static String getPublicIp() {
+        String publicIP = null;
+        for (String api : PUBLIC_ID_APIS) {
+            try {
+                publicIP = HttpClient.get(api);
+            } catch (Exception e) {
+                LOGGER.error(String.format("get public ip error=%s,api=%s", e.getMessage(), api), e);
+            }
+
+            if (StringUtils.isNotEmpty(publicIP)) {
+                break;
+            }
+        }
+
+        if (StringUtils.isEmpty(publicIP)) {
+            publicIP = getLocalIp();
+        }
+
+        LOGGER.info("publicIp={}", publicIP);
+        if (isIP(publicIP)) {
+            return publicIP;
+        }
+
+        return publicIP;
     }
 
     /**
@@ -57,21 +103,25 @@ public final class NetworkUtil {
             }
         }
 
-        return "";
+        return StringUtils.EMPTY;
     }
 
     /**
-     * Gets ip by name.
+     * Get local ip by name.
      *
      * @param hostName the host name
      * @return the ip by name
      */
-    public static String getIpByName(String hostName) {
-        String ip;
+    public static String getLocalIpByName(String hostName) {
+        String ip = null;
         try {
             InetAddress inetAddress = InetAddress.getByName(hostName);
             ip = inetAddress.getHostAddress();
         } catch (UnknownHostException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+
+        if (StringUtils.isEmpty(ip)) {
             ip = getLocalIp();
         }
 
@@ -93,6 +143,7 @@ public final class NetworkUtil {
             if (ip.startsWith(INT_IP_PREFIX_10) || ip.startsWith(INT_IP_PREFIX_192_168)) {
                 return true;
             }
+
             // 172.16.x.x～172.31.x.x
             String[] ns = ip.split("\\.");
             int ipSub = Integer.valueOf(ns[0] + ns[1]);
@@ -100,7 +151,7 @@ public final class NetworkUtil {
                 return true;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
         }
 
         return false;
@@ -135,9 +186,33 @@ public final class NetworkUtil {
                 }
             }
         } catch (SocketException e1) {
-            e1.printStackTrace();
+            LOGGER.error(e1.getMessage(), e1);
         }
 
         return ips;
+    }
+
+    /**
+     * Check the IP format and scope.
+     *
+     * @param ip : IP address
+     * @return the boolean
+     */
+    private static boolean isIP(String ip) {
+        if (StringUtils.isEmpty(ip) || ip.length() < ADDR_MIN_LEN || ip.length() > ADDR_MAX_LEN) {
+            return false;
+        }
+
+        String rexp = "^(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|[1-9])\\."
+
+                + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\."
+
+                + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\."
+
+                + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)$";
+
+        Pattern pat = Pattern.compile(rexp);
+        Matcher mat = pat.matcher(ip);
+        return mat.find();
     }
 }

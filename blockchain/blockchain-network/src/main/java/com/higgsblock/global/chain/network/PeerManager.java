@@ -229,8 +229,20 @@ public class PeerManager {
      * @return the boolean
      */
     public boolean loadSelfPeerInfo() {
-        // include public ip and port by upnp
-        return this.upnpManager.initPeerInfo();
+        Peer peer = new Peer();
+        peer.setIp(config.getIp());
+        peer.setSocketServerPort(config.getSocketPort());
+        peer.setHttpServerPort(config.getHttpPort());
+        peer.setPubKey(config.getPubKey());
+        peer.signature(config.getPriKey());
+        if (!self.valid()) {
+            throw new IllegalArgumentException("self peer params invalid");
+        }
+
+        self = peer;
+        peerCache.setCached(peer);
+        addOrUpdate(self);
+        return true;
     }
 
     /**
@@ -258,19 +270,7 @@ public class PeerManager {
      */
     public Peer getSelf() {
         if (null == self) {
-            Peer peer = new Peer();
-            peer.setIp(config.getIp());
-            peer.setSocketServerPort(config.getSocketPort());
-            peer.setHttpServerPort(config.getHttpPort());
-            peer.setPubKey(config.getPubKey());
-            peer.signature(config.getPriKey());
-
-            self = peer;
-            if (!self.valid()) {
-                throw new IllegalArgumentException("self peer params invalid");
-            }
-
-            addOrUpdate(self);
+            loadSelfPeerInfo();
         }
 
         return self;
@@ -285,18 +285,6 @@ public class PeerManager {
         if (null != self) {
             this.self = self;
             addOrUpdate(self);
-        }
-    }
-
-    /**
-     * Sets cache.
-     *
-     * @param peer the peer
-     */
-    public void setCache(Peer peer) {
-        peerCache.setCached(peer);
-        if (null != peer) {
-            this.self = peer;
         }
     }
 

@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.network.discover;
 
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.utils.NetworkUtil;
+import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,7 @@ public class LocalPeerConnectionInfoDiscovery implements IPeerConnectionInfoDisc
 
     @Override
     public String getIp() {
-        return NetworkUtil.getIpByName(peerConfig.getIp());
+        return IpUtil.getLocalIpByName(peerConfig.getIp());
     }
 
     @Override

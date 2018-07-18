@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.service.IBlockService;
@@ -45,7 +45,7 @@ public class BlockService implements IBlockService {
     private TransactionCacheManager txCacheManager;
 
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
 
     @Autowired
     private MinerScoreStrategy minerScoreStrategy;
@@ -187,11 +187,11 @@ public class BlockService implements IBlockService {
             //step 3
             minerScoreStrategy.refreshMinersScore(block);
             //step 4
-            nodeManager.calcNextDposNodes(block, block.getHeight());
+            nodeProcessor.calcNextDposNodes(block, block.getHeight());
         } else {
             if (isFirst && toBeBestBlock != null) {
                 minerScoreStrategy.refreshMinersScore(toBeBestBlock);
-                List<String> nextDposAddressList = nodeManager.calcNextDposNodes(toBeBestBlock, block.getHeight());
+                List<String> nextDposAddressList = nodeProcessor.calcNextDposNodes(toBeBestBlock, block.getHeight());
                 minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
                 //step5
                 freshPeerMinerAddr(toBeBestBlock);
@@ -208,12 +208,12 @@ public class BlockService implements IBlockService {
      */
     private void freshPeerMinerAddr(Block toBeBestBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
-        long sn = nodeManager.getSn(toBeBestBlock.getHeight());
-        List<String> dpos = nodeManager.getDposGroupBySn(sn);
+        long sn = nodeProcessor.getSn(toBeBestBlock.getHeight());
+        List<String> dpos = nodeProcessor.getDposGroupBySn(sn);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
         }
-        dpos = nodeManager.getDposGroupBySn(sn + 1);
+        dpos = nodeProcessor.getDposGroupBySn(sn + 1);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
         }
@@ -269,10 +269,10 @@ public class BlockService implements IBlockService {
         if (block.isGenesisBlock()) {
             return null;
         }
-        if (block.getHeight() - NodeManager.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
+        if (block.getHeight() - NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
             return null;
         }
-        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeManager.CONFIRM_BEST_BLOCK_MIN_NUM);
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM);
         if (bestBlock == null) {
             LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
             return null;

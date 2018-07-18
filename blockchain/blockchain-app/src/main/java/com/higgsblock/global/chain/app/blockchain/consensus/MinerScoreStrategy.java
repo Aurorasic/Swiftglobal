@@ -38,7 +38,7 @@ public class MinerScoreStrategy {
     @Autowired
     private TransactionProcessor transactionProcessor;
     @Autowired
-    private NodeManager nodeManager;
+    private NodeProcessor nodeProcessor;
 
     public void setSelectedDposScore(List<String> addressList) {
         if (CollectionUtils.isEmpty(addressList)) {
@@ -90,7 +90,7 @@ public class MinerScoreStrategy {
             //mined by backup peer node
             long blockHeight = toBeBestBlock.getHeight();
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
-            List<String> dposAddressList = nodeManager.getDposGroupByHeihgt(blockHeight, prevBlockHash);
+            List<String> dposAddressList = nodeProcessor.getDposGroupByHeihgt(blockHeight, prevBlockHash);
             scoreDaoService.updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
         }
         scoreDaoService.plusAll(ONE_BLOCK_ADD_SCORE);
