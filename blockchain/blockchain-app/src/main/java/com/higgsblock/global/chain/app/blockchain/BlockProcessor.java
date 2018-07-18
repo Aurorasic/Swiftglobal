@@ -16,7 +16,7 @@ import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
 import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -85,7 +85,7 @@ public class BlockProcessor {
     private UTXOService utxoService;
 
     @Autowired
-    private TransactionService transactionService;
+    private TransactionIndexService transactionIndexService;
 
     @Autowired
     private WitnessTimerProcessor witnessTimerProcessor;
@@ -110,7 +110,7 @@ public class BlockProcessor {
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
 
-        List txOfUnSpentUtxos = transactionService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
+        List txOfUnSpentUtxos = transactionIndexService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
 
         if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
             LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);

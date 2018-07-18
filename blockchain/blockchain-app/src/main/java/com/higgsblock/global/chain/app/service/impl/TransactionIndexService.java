@@ -23,14 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * The TransactionPersistService includes transaction index and utxo persistence.
+ * The TransactionService includes transaction index and utxo persistence.
  *
  * @author Zhao xiaogang
  * @date 2018 -05-22
  */
 @Service
 @Slf4j
-public class TransactionService implements ITransService {
+public class TransactionIndexService implements ITransService {
     @Autowired
     private IUTXORepository iutxoRepository;
 
