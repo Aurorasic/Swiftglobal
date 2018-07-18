@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;

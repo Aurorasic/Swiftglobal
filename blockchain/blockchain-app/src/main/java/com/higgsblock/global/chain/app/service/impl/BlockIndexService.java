@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
-import com.higgsblock.global.chain.app.dao.iface.IBlockIndexRepository;
+import com.higgsblock.global.chain.app.dao.IBlockIndexRepository;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;

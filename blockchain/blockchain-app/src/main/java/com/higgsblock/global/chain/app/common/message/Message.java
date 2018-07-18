@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.common.message;
 
-import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.EntityType;
 
 import java.lang.annotation.*;
 

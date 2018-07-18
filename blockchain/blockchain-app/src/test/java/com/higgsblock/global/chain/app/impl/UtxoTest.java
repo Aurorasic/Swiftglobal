@@ -2,7 +2,7 @@
 //
 //import com.higgsblock.global.chain.app.BaseTest;
 //import com.higgsblock.global.chain.app.blockchain.Block;
-//import com.higgsblock.global.chain.app.consensus.NodeManager;
+//import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 //import com.higgsblock.global.chain.app.service.impl.BlockDaoService;
 //import lombok.extern.slf4j.Slf4j;
 //import org.junit.Test;

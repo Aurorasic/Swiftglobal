@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
-import com.higgsblock.global.chain.app.dao.iface.IWitnessRepository;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

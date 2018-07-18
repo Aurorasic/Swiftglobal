@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
-import com.higgsblock.global.chain.app.dao.iface.IBlockIndexRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

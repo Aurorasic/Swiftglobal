@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.EntityType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

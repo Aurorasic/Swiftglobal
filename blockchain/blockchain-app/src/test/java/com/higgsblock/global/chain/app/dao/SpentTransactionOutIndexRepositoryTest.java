@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
-import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;

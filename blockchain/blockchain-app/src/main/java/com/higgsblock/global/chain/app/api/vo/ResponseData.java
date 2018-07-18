@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.api.vo;
 
-import com.higgsblock.global.chain.app.constants.RespCodeEnum;
+import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

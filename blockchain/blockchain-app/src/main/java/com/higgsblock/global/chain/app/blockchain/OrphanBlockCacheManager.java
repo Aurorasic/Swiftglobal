@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
-import com.higgsblock.global.chain.app.consensus.syncblock.SyncBlockService;
+import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.utils.ValueSortedMap;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

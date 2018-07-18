@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.common.handler;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Queues;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;

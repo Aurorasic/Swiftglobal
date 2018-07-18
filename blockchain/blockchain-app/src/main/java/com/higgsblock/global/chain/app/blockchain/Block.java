@@ -8,7 +8,7 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.EntityType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;

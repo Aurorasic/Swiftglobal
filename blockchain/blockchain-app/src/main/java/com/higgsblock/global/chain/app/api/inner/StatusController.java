@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.api.inner;
 
 import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
-import com.higgsblock.global.chain.app.connection.ConnectionManager;
-import com.higgsblock.global.chain.app.consensus.NodeManager;
+import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;

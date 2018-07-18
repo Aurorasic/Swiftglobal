@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.common.message;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.common.formatter.IEntityFormatter;
-import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;

@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexRepository;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

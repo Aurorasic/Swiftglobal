@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
-import com.higgsblock.global.chain.app.dao.iface.IDposRepository;
+import com.higgsblock.global.chain.app.dao.IDposRepository;
 import com.higgsblock.global.chain.app.service.IDposService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

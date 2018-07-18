@@ -7,8 +7,8 @@
 //import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 //import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 //import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
-//import com.higgsblock.global.chain.app.consensus.MinerScoreStrategy;
-//import com.higgsblock.global.chain.app.consensus.NodeManager;
+//import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
+//import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 //import com.higgsblock.global.chain.app.dao.BlockDao;
 //import com.higgsblock.global.chain.app.dao.BlockIndexDao;
 //import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
