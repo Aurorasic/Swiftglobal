@@ -63,7 +63,6 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
-            voteService.initWitnessTask(blockProcessor.getMaxHeight() + 1);
         }
     }
 }
