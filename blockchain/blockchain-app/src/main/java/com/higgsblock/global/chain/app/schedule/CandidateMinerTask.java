@@ -1,9 +1,11 @@
 package com.higgsblock.global.chain.app.schedule;
 
+import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -39,14 +41,14 @@ public class CandidateMinerTask extends BaseTask {
     @Autowired
     private BlockIndexService blockIndexService;
 
-    public void updateCandidateMinerTime() {
+    @Subscribe
+    public void process(BlockPersistedEvent event) {
         long maxHeight = blockService.getMaxHeight();
         if (maxHeight > currHeight) {
             currHeight = maxHeight;
             curSec = 0;
         }
     }
-
 
     /**
      * Task.
