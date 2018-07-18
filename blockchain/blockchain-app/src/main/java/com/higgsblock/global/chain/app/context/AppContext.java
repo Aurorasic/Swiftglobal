@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.context;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.WitnessTimeProcess;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimerProcess;
 import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
@@ -47,7 +47,7 @@ public class AppContext {
     private EventBus eventBus;
 
     @Autowired
-    private WitnessTimeProcess witnessTimeProcess;
+    private WitnessTimerProcess witnessTimerProcess;
 
     public void start() throws Exception {
         checkAndRecoveryBlockData();
@@ -109,7 +109,7 @@ public class AppContext {
 
 
     private void startWitnessTimer() {
-        witnessTimeProcess.initWitnessTime();
+        witnessTimerProcess.initWitnessTime();
     }
 
 }
