@@ -11,6 +11,7 @@ import java.util.List;
  * @date 2018/06/29
  **/
 public interface IUTXOService {
+    void saveUTXO(UTXO utxo);
 
     UTXO getUTXOOnBestChain(String utxoKey);
 
@@ -35,5 +36,16 @@ public interface IUTXOService {
      * @return
      */
     List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency);
+
+
+    List<UTXO> getUTXOsByAddress(String addr);
+
+
+    /**
+     * delete by txHash and outIndex
+     * @param transactionHash
+     * @param outIndex
+     */
+    void deleteByTransactionHashAndOutIndex(String transactionHash,short outIndex);
 
 }

@@ -40,26 +40,4 @@ public interface ITransactionIndexService {
      */
     List<Transaction> getTxOfUnSpentUtxo(String preBlockHash, List<Transaction> cacheTransactions);
 
-    /**
-     * Gets utxo.
-     *
-     * @param utxoKey the utxo key
-     * @return the utxo
-     */
-    UTXO getUTXOOnBestChain(String utxoKey);
-
-    /**
-     * Query the all UTXOS according the address
-     *
-     * @param addr
-     * @return
-     */
-    List<UTXO> getUTXOsByAddress(String addr);
-
-    /**
-     * delete by txHash and outIndex
-     * @param transactionHash
-     * @param outIndex
-     */
-    void deleteByTransactionHashAndOutIndex(String transactionHash,short outIndex);
 }

@@ -1,17 +1,12 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.ISpentTransactionRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
-import com.higgsblock.global.chain.app.dao.IUTXORepository;
-import com.higgsblock.global.chain.app.blockchain.script.LockScript;
+import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.service.ITransactionIndexService;
-import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +26,6 @@ import java.util.List;
 @Service
 @Slf4j
 public class TransactionIndexService implements ITransactionIndexService {
-    @Autowired
-    private IUTXORepository iutxoRepository;
-
     @Autowired
     private UTXOService utxoService;
 
@@ -88,7 +80,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     if (utxoService.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
+                    utxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
                 }
             }
 
@@ -99,7 +91,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                 for (int i = 0; i < outputSize; i++) {
                     TransactionOutput output = outputs.get(i);
                     UTXO utxo = new UTXO(tx, (short) i, output);
-                    saveUTXO(utxo);
+                    utxoService.saveUTXO(utxo);
                 }
             }
         }
@@ -187,86 +179,4 @@ public class TransactionIndexService implements ITransactionIndexService {
         return transactionIndex;
     }
 
-    /**
-     * Save utxo.
-     *
-     * @param utxo the utxo
-     */
-    private void saveUTXO(UTXO utxo) {
-        UTXOEntity entity = new UTXOEntity();
-        TransactionOutput output = utxo.getOutput();
-
-        entity.setAmount(output.getMoney().getValue());
-        entity.setScriptType(output.getLockScript().getType());
-        entity.setTransactionHash(utxo.getHash());
-        entity.setOutIndex(utxo.getIndex());
-        entity.setCurrency(output.getMoney().getCurrency());
-        entity.setLockScript(output.getLockScript().getAddress());
-
-        iutxoRepository.save(entity);
-    }
-
-    @Override
-    public UTXO getUTXOOnBestChain(String utxoKey) {
-        String[] keys = utxoKey.split("_");
-        UTXOEntity entity = iutxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
-
-        if (entity == null) {
-            return null;
-        }
-
-        TransactionOutput output = new TransactionOutput();
-
-        LockScript lockScript = new LockScript();
-        lockScript.setAddress(entity.getLockScript());
-        lockScript.setType((short) entity.getScriptType());
-
-        output.setMoney(new Money(entity.getAmount(), entity.getCurrency()));
-        output.setLockScript(lockScript);
-
-        UTXO utxo = new UTXO();
-        utxo.setAddress(lockScript.getAddress());
-        utxo.setHash(entity.getTransactionHash());
-        utxo.setIndex(entity.getOutIndex());
-        utxo.setOutput(output);
-
-        return utxo;
-    }
-
-    @Override
-    public List<UTXO> getUTXOsByAddress(String addr) {
-        if (null == addr) {
-            throw new RuntimeException("addr is null");
-        }
-
-        List<UTXOEntity> entityList = iutxoRepository.findByLockScript(addr);
-        if (CollectionUtils.isEmpty(entityList)) {
-            return null;
-        }
-
-        List<UTXO> utxos = Lists.newArrayList();
-        entityList.forEach(entity -> {
-            Money money = new Money(entity.getAmount(), entity.getCurrency());
-            LockScript lockScript = new LockScript();
-            lockScript.setAddress(entity.getLockScript());
-            lockScript.setType((short) entity.getScriptType());
-            TransactionOutput output = new TransactionOutput();
-            output.setMoney(money);
-            output.setLockScript(lockScript);
-
-            UTXO utxo = new UTXO();
-            utxo.setHash(entity.getTransactionHash());
-            utxo.setIndex(entity.getOutIndex());
-            utxo.setAddress(entity.getLockScript());
-            utxo.setOutput(output);
-            utxos.add(utxo);
-        });
-        return utxos;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
-        iutxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
-    }
 }

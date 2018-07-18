@@ -1,15 +1,21 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.IUTXOService;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -21,9 +27,8 @@ import java.util.*;
 @Slf4j
 public class UTXOService implements IUTXOService {
     @Autowired
-    private TransactionIndexService transactionIndexService;
-    @Autowired
     private BlockService blockService;
+
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -42,6 +47,21 @@ public class UTXOService implements IUTXOService {
      */
     private Map<String, String> blockHashChainMap = new HashMap<>(16);
 
+    @Override
+    public void saveUTXO(UTXO utxo) {
+        UTXOEntity entity = new UTXOEntity();
+        TransactionOutput output = utxo.getOutput();
+
+        entity.setAmount(output.getMoney().getValue());
+        entity.setScriptType(output.getLockScript().getType());
+        entity.setTransactionHash(utxo.getHash());
+        entity.setOutIndex(utxo.getIndex());
+        entity.setCurrency(output.getMoney().getCurrency());
+        entity.setLockScript(output.getLockScript().getAddress());
+
+        iutxoRepository.save(entity);
+    }
+
     /**
      * get utxo only on confirm block chain
      *
@@ -51,7 +71,31 @@ public class UTXOService implements IUTXOService {
 
     @Override
     public UTXO getUTXOOnBestChain(String utxoKey) {
-        return transactionIndexService.getUTXOOnBestChain(utxoKey);
+        //return transactionIndexService.getUTXOOnBestChain(utxoKey);
+
+        String[] keys = utxoKey.split("_");
+        UTXOEntity entity = iutxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
+
+        if (entity == null) {
+            return null;
+        }
+
+        TransactionOutput output = new TransactionOutput();
+
+        LockScript lockScript = new LockScript();
+        lockScript.setAddress(entity.getLockScript());
+        lockScript.setType((short) entity.getScriptType());
+
+        output.setMoney(new Money(entity.getAmount(), entity.getCurrency()));
+        output.setLockScript(lockScript);
+
+        UTXO utxo = new UTXO();
+        utxo.setAddress(lockScript.getAddress());
+        utxo.setHash(entity.getTransactionHash());
+        utxo.setIndex(entity.getOutIndex());
+        utxo.setOutput(output);
+
+        return utxo;
     }
 
     /**
@@ -80,7 +124,7 @@ public class UTXOService implements IUTXOService {
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
-        List<UTXO> bestAddedUtxoList = transactionIndexService.getUTXOsByAddress(address);
+        List<UTXO> bestAddedUtxoList = getUTXOsByAddress(address);
 
         List<UTXO> allAddedUtxoList = new LinkedList<>();
         allAddedUtxoList.addAll(bestAddedUtxoList);
@@ -118,7 +162,7 @@ public class UTXOService implements IUTXOService {
                 if (utxo != null) {
                     return utxo;
                 }
-                utxo = transactionIndexService.getUTXOOnBestChain(utxoKey);
+                utxo = getUTXOOnBestChain(utxoKey);
                 if (utxo != null) {
                     return utxo;
                 }
@@ -128,7 +172,7 @@ public class UTXOService implements IUTXOService {
             if (utxo != null) {
                 return utxo;
             }
-            utxo = transactionIndexService.getUTXOOnBestChain(utxoKey);
+            utxo = getUTXOOnBestChain(utxoKey);
             if (utxo != null) {
                 return utxo;
             }
@@ -204,6 +248,43 @@ public class UTXOService implements IUTXOService {
     @Override
     public List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency) {
         return iutxoRepository.findByLockScriptAndCurrency(lockScript, currency);
+    }
+
+    @Override
+    public List<UTXO> getUTXOsByAddress(String addr) {
+        if (null == addr) {
+            throw new RuntimeException("addr is null");
+        }
+
+        List<UTXOEntity> entityList = iutxoRepository.findByLockScript(addr);
+        if (CollectionUtils.isEmpty(entityList)) {
+            return null;
+        }
+
+        List<UTXO> utxos = Lists.newArrayList();
+        entityList.forEach(entity -> {
+            Money money = new Money(entity.getAmount(), entity.getCurrency());
+            LockScript lockScript = new LockScript();
+            lockScript.setAddress(entity.getLockScript());
+            lockScript.setType((short) entity.getScriptType());
+            TransactionOutput output = new TransactionOutput();
+            output.setMoney(money);
+            output.setLockScript(lockScript);
+
+            UTXO utxo = new UTXO();
+            utxo.setHash(entity.getTransactionHash());
+            utxo.setIndex(entity.getOutIndex());
+            utxo.setAddress(entity.getLockScript());
+            utxo.setOutput(output);
+            utxos.add(utxo);
+        });
+        return utxos;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
+        iutxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
     }
 
     /**
