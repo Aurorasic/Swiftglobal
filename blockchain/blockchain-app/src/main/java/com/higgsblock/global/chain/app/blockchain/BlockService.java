@@ -98,7 +98,7 @@ public class BlockService {
     public final static List<WitnessEntity> WITNESS_ENTITY_LIST = new ArrayList<>();
 
     @Autowired
-    private TransactionFeeProcess transactionFeeService;
+    private TransactionFeeProcess transactionFeeProcess;
 
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
@@ -122,12 +122,12 @@ public class BlockService {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, txOfUnSpentUtxos);
         List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
         if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
+            canPackageTransactionsOfBlock = transactionFeeProcess.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
             feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
             for (Transaction tx : canPackageTransactionsOfBlock) {
                 feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
@@ -135,7 +135,7 @@ public class BlockService {
         }
 
         if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
+            Transaction coinBaseTx = transactionFeeProcess.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
             transactions.add(coinBaseTx);
         }
 
