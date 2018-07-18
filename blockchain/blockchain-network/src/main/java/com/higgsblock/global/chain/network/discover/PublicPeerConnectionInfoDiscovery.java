@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.net.discover;
+package com.higgsblock.global.chain.network.discover;
 
 import com.higgsblock.global.chain.network.upnp.UpnpManager;
 import lombok.extern.slf4j.Slf4j;

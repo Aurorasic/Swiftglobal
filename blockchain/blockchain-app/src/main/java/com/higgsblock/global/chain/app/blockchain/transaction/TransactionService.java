@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
@@ -251,7 +251,7 @@ public class TransactionService {
         outputs.forEach(output -> {
             witnessTotalMoney.add(output.getMoney());
         });
-        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(BlockService.WITNESS_ADDRESS_LIST.size() - 1).add(lastWitnessMoney);
+        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(BlockProcessor.WITNESS_ADDRESS_LIST.size() - 1).add(lastWitnessMoney);
 
         return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
     }

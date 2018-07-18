@@ -26,7 +26,7 @@ public class OrphanBlockCacheManager {
 
     private final Map<String, BlockFullInfo> orphanBlockMap;
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
     @Autowired
     private SyncBlockService sycBlockService;
 

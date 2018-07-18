@@ -6,7 +6,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
@@ -73,7 +73,7 @@ public class VoteService {
         }
         String pubKey = keyPair.getPubKey();
         String address = ECKey.pubKey2Base58Address(pubKey);
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
+        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address)) {
             if (height == this.height) {
                 dealVoteCache();
                 return;
@@ -500,7 +500,7 @@ public class VoteService {
         vote.setProofVersion(proofVersion);
         vote.setProofBlockHash(proofBlockHash);
         vote.setPreBlockHash(preBlockHash);
-        String msg = BlockService.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
+        String msg = BlockProcessor.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
         String sign = ECKey.signMessage(msg, keyPair.getPriKey());
         vote.setSignature(sign);
         return vote;

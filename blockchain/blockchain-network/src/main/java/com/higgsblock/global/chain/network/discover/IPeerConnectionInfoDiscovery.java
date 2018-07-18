@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.net.discover;
+package com.higgsblock.global.chain.network.discover;
 
 /**
  * The interface Peer connection info discovery.

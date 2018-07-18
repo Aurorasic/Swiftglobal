@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class WitnessCountTimeTest {
     public volatile static boolean isCurrBlockConfirm = false;
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
 
     public boolean queryCurrHeight() throws InterruptedException {

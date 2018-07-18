@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
@@ -25,7 +25,7 @@ import java.util.Set;
 public class BlockHandler extends BaseEntityHandler<Block> {
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
@@ -54,7 +54,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             return;
         }
 
-        boolean success = blockService.persistBlockAndIndex(data, sourceId, data.getVersion());
+        boolean success = blockProcessor.persistBlockAndIndex(data, sourceId, data.getVersion());
         LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
 
         if (success && !data.isGenesisBlock()) {
@@ -63,7 +63,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
-            voteService.initWitnessTask(blockService.getMaxHeight() + 1);
+            voteService.initWitnessTask(blockProcessor.getMaxHeight() + 1);
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.SourceBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -31,7 +31,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
     private KeyPair keyPair;
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
     @Override
     protected void process(SocketRequest<SourceBlock> request) {
@@ -44,7 +44,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
         }
 
         long height = block.getHeight();
-        if (!BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+        if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
             messageCenter.dispatchToWitnesses(sourceBlock);
             return;
         }
@@ -53,7 +53,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
             return;
         }
 
-        if (!blockService.validSourceBlock(block, sourceId)) {
+        if (!blockProcessor.validSourceBlock(block, sourceId)) {
             LOGGER.info("the block is not valid {} {}", height, block.getHash());
             return;
         }

@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.net.discover;
+package com.higgsblock.global.chain.network.discover;
 
 import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.network.utils.NetworkUtil;

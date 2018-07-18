@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus;
 
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -56,13 +56,13 @@ public class WitnessManager implements InitializingBean {
                     witnessHttpPortList.get(i),
                     witnessPubkeyList.get(i));
 
-            BlockService.WITNESS_ENTITY_LIST.add(entity);
+            BlockProcessor.WITNESS_ENTITY_LIST.add(entity);
         }
 
-        BlockService.WITNESS_ENTITY_LIST.stream().forEach(entity -> {
-            BlockService.WITNESS_ADDRESS_LIST.add(ECKey.pubKey2Base58Address(entity.getPubKey()));
+        BlockProcessor.WITNESS_ENTITY_LIST.stream().forEach(entity -> {
+            BlockProcessor.WITNESS_ADDRESS_LIST.add(ECKey.pubKey2Base58Address(entity.getPubKey()));
         });
-        LOGGER.info("the witness list is {}", BlockService.WITNESS_ENTITY_LIST);
+        LOGGER.info("the witness list is {}", BlockProcessor.WITNESS_ENTITY_LIST);
     }
 
     private static com.higgsblock.global.chain.app.blockchain.WitnessEntity getEntity(String ip, int socketPort, int httpPort, String pubKey) {
@@ -76,7 +76,7 @@ public class WitnessManager implements InitializingBean {
     }
 
     private synchronized void loadWitnessFromDb() {
-        List<com.higgsblock.global.chain.app.blockchain.WitnessEntity> entities = BlockService.WITNESS_ENTITY_LIST;
+        List<com.higgsblock.global.chain.app.blockchain.WitnessEntity> entities = BlockProcessor.WITNESS_ENTITY_LIST;
         if (CollectionUtils.isNotEmpty(entities)) {
             peerManager.setWitnessPeers(com.higgsblock.global.chain.app.blockchain.WitnessEntity.witnessEntity2Peer(entities));
         }

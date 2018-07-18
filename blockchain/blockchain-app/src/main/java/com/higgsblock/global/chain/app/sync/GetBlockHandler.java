@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class GetBlockHandler extends BaseEntityHandler<GetBlock> {
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -45,7 +45,7 @@ public class GetBlockHandler extends BaseEntityHandler<GetBlock> {
                 messageCenter.unicast(sourceId, block);
             }
         } else {
-            blockService.getBlocksByHeight(height).forEach(block -> messageCenter.unicast(sourceId, block));
+            blockProcessor.getBlocksByHeight(height).forEach(block -> messageCenter.unicast(sourceId, block));
         }
     }
 }
