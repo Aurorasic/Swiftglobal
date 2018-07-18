@@ -78,24 +78,24 @@ public class TransactionProcessor {
     public boolean validCoinBaseTx(Transaction tx, Block block) {
         List<TransactionOutput> outputs = tx.getOutputs();
         if (CollectionUtils.isEmpty(outputs)) {
-            LOGGER.error("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
         final int outputSize = outputs.size();
         if (MIN_OUTPUT_SIZE != outputSize) {
-            LOGGER.error("Coinbase outputs number is less than twelve,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("Coinbase outputs number is less than twelve,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
         Block preBlock = blockService.getBlockByHash(block.getPrevBlockHash());
         String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
-            LOGGER.error("preBlock == null,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("preBlock == null,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
         if (!validPreBlock(preBlock, block.getHeight())) {
-            LOGGER.error("pre block is not last best block,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("pre block is not last best block,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
@@ -103,13 +103,13 @@ public class TransactionProcessor {
         TransactionFeeProcessor.Rewards rewards = transactionFeeProcessor.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeProcessor.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
-            LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
+            LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
             return false;
         }
 
         //verify producer coinbase output
         if (!validateProducerOutput(outputs.get(0), rewards.getMinerTotal())) {
-            LOGGER.error("verify miner coinbase output failed,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("verify miner coinbase output failed,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
@@ -126,27 +126,27 @@ public class TransactionProcessor {
     public boolean validPreBlock(Block preBlock, long height) {
         boolean isEffective = false;
         if (null == preBlock) {
-            LOGGER.error("null == preBlock, height={}", height);
+            LOGGER.info("null == preBlock, height={}", height);
             return false;
         }
         if (0 >= height || height > Long.MAX_VALUE) {
-            LOGGER.error("height is not correct, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("height is not correct, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
         if ((preBlock.getHeight() + 1) != height) {
-            LOGGER.error("(preBlock.getHeight() + 1) != height, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("(preBlock.getHeight() + 1) != height, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
 
         BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(preBlock.getHeight());
         if (null == blockIndex) {
-            LOGGER.error("null == blockIndex, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("null == blockIndex, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
 
         List<String> blockHashs = blockIndex.getBlockHashs();
         if (CollectionUtils.isEmpty(blockHashs)) {
-            LOGGER.error("the height is {} do not have List<String>", preBlock.getHeight());
+            LOGGER.info("the height is {} do not have List<String>", preBlock.getHeight());
             return false;
         }
         for (String hash : blockHashs) {
@@ -169,27 +169,27 @@ public class TransactionProcessor {
      */
     public boolean validateProducerOutput(TransactionOutput output,  Money totalReward) {
         if (!totalReward.checkRange()) {
-            LOGGER.error("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
             return false;
         }
         if (null == output) {
-            LOGGER.error("Producer coinbase transaction: UnLock script is null, output={},totalReward={}", output, totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: UnLock script is null, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         LockScript script = output.getLockScript();
         if (script == null) {
-            LOGGER.error("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output,  totalReward.getValue());
             return false;
         }
 
         if (!SystemCurrencyEnum.CAS.getCurrency().equals(output.getMoney().getCurrency())) {
-            LOGGER.error("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output,  totalReward.getValue());
             return false;
         }
 
         if (!validateProducerReward(output, totalReward)) {
-            LOGGER.error("Validate producer reward failed, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Validate producer reward failed, output={},totalReward={}", output,  totalReward.getValue());
             return false;
         }
 
@@ -205,7 +205,7 @@ public class TransactionProcessor {
      */
     private boolean validateProducerReward(TransactionOutput output, Money totalReward) {
         if (!totalReward.checkRange()) {
-            LOGGER.error("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
+            LOGGER.info("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
             return false;
         }
 
@@ -223,12 +223,12 @@ public class TransactionProcessor {
      */
     public boolean validateWitnessOutputs(List<TransactionOutput> outputs, Money topTenSingleWitnessMoney, Money lastWitnessMoney) {
         if (!topTenSingleWitnessMoney.checkRange() && !lastWitnessMoney.checkRange()) {
-            LOGGER.error("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", topTenSingleWitnessMoney.getValue(), lastWitnessMoney.getValue());
+            LOGGER.info("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", topTenSingleWitnessMoney.getValue(), lastWitnessMoney.getValue());
             return false;
         }
 
         if (!validateWitnessRewards(outputs, topTenSingleWitnessMoney, lastWitnessMoney)) {
-            LOGGER.error("Validate witness reward failed");
+            LOGGER.info("Validate witness reward failed");
             return false;
         }
 
@@ -270,7 +270,7 @@ public class TransactionProcessor {
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
         if (!tx.sizeAllowed()) {
-            LOGGER.error("Size of the transaction is illegal.");
+            LOGGER.info("Size of the transaction is illegal.");
             return false;
         }
 
@@ -280,21 +280,21 @@ public class TransactionProcessor {
         HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
             if (!input.valid()) {
-                LOGGER.error("input is invalid");
+                LOGGER.info("input is invalid");
                 return false;
             }
             String key = input.getPrevOut().getKey();
             boolean notContains = prevOutKey.add(key);
             if (!notContains) {
 
-                LOGGER.error("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
+                LOGGER.info("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
                         , tx.getHash()
                         , blockHash);
                 return false;
             }
             TransactionOutput preOutput = getPreOutput(preBlockHash, input);
             if (preOutput == null) {
-                LOGGER.error("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
+                LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
                 return false;
             }
 
@@ -309,7 +309,7 @@ public class TransactionProcessor {
         Map<String, Money> curMoneyMap = new HashMap<>(8);
         for (TransactionOutput output : outputs) {
             if (!output.valid()) {
-                LOGGER.error("Current output is invalid");
+                LOGGER.info("Current output is invalid");
                 return false;
             }
 
@@ -322,7 +322,7 @@ public class TransactionProcessor {
         }
 
         if (preMoneyMap.keySet().size() != curMoneyMap.keySet().size()) {
-            LOGGER.error("Pre-output currency type different from current");
+            LOGGER.info("Pre-output currency type different from current");
             return false;
         }
 
@@ -331,12 +331,12 @@ public class TransactionProcessor {
             Money curMoney = curMoneyMap.get(key);
 
             if (preMoney == null) {
-                LOGGER.error("Pre-output currency is null {}", key);
+                LOGGER.info("Pre-output currency is null {}", key);
                 return false;
             }
 
             if (curMoney == null) {
-                LOGGER.error("Current output currency is null {}", key);
+                LOGGER.info("Current output currency is null {}", key);
                 return false;
             }
             LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
@@ -346,13 +346,13 @@ public class TransactionProcessor {
                 }
 
                 if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.error("Not enough cas fees");
+                    LOGGER.info("Not enough cas fees");
                     return false;
                 }
             } else {
                 //TODO this ‘else’ is unnecessary, below code should be a precondition then  moved ahead ;commented by huangshengli 2018-05-28
                 if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.error("Not enough fees, currency type: ", key);
+                    LOGGER.info("Not enough fees, currency type: ", key);
                     return false;
                 }
             }
@@ -400,19 +400,19 @@ public class TransactionProcessor {
         for (int i = 0; i < size; i++) {
             input = inputs.get(i);
             if (null == input) {
-                LOGGER.error("the input is empty {}", i);
+                LOGGER.info("the input is empty {}", i);
                 return false;
             }
             unLockScript = input.getUnLockScript();
             if (null == unLockScript) {
-                LOGGER.error("the unLockScript is empty {}", i);
+                LOGGER.info("the unLockScript is empty {}", i);
                 return false;
             }
 
             String preUTXOKey = input.getPreUTXOKey();
             UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
             if (utxo == null) {
-                LOGGER.error("there is no such utxokey={}_preBlockHash={}", preUTXOKey, preBlockHash);
+                LOGGER.info("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
             }
 
