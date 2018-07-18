@@ -44,7 +44,7 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
-        long maxHeight = blockService.getMaxHeight();
+        long maxHeight = event.getHeight();
         if (maxHeight > currHeight) {
             currHeight = maxHeight;
             curSec = 0;

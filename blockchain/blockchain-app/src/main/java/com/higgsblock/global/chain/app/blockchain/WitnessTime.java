@@ -57,8 +57,8 @@ public class WitnessTime implements IEventBusListener {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         String address = peerManager.getSelf().getId();
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(address) && blockService.getMaxHeight() > currHeight) {
-            currHeight = blockService.getMaxHeight();
+        if (BlockService.WITNESS_ADDRESS_LIST.contains(address) && event.getHeight() > currHeight) {
+            currHeight = event.getHeight();
             initTime = System.currentTimeMillis();
             LOGGER.info("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);
         }
