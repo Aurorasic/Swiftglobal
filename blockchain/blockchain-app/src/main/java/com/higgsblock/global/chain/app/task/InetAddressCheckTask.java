@@ -2,9 +2,9 @@ package com.higgsblock.global.chain.app.task;
 
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.network.config.PeerConfig;
+import com.higgsblock.global.chain.network.discover.LocalPeerConnectionInfoDiscovery;
+import com.higgsblock.global.chain.network.discover.PublicPeerConnectionInfoDiscovery;
 import com.higgsblock.global.chain.network.enums.NetworkType;
-import com.higgsblock.global.chain.app.net.discover.LocalPeerConnectionInfoDiscovery;
-import com.higgsblock.global.chain.app.net.discover.PublicPeerConnectionInfoDiscovery;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import org.springframework.beans.factory.annotation.Autowired;

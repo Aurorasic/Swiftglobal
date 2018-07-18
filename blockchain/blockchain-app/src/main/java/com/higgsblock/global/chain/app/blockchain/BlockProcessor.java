@@ -88,7 +88,7 @@ public class BlockProcessor {
     private TransactionPersistService transactionPersistService;
 
     @Autowired
-    private WitnessTimeProcess witnessTimeProcess;
+    private WitnessTimerProcess witnessTimerProcess;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -732,7 +732,7 @@ public class BlockProcessor {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isCandidateBlock = witnessTimeProcess.acceptBlock(block);
+            boolean isCandidateBlock = witnessTimerProcess.acceptBlock(block);
             LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
             if (!isCandidateBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);
