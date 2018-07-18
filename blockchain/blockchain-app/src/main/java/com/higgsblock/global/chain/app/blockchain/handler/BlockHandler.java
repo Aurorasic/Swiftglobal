@@ -1,11 +1,15 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
-import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.WitnessTime;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
 import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
+import com.higgsblock.global.chain.app.schedule.CandidateMinerTask;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +45,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private CandidateMinerTime candidateMinerTime;
+    private CandidateMinerTask candidateMinerTask;
     @Autowired
     private WitnessTime witnessTime;
 
@@ -65,7 +69,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
         if (success && !data.isGenesisBlock()) {
 
             String address = peerManager.getSelf().getId();
-            candidateMinerTime.updateCandidateMinerTime();
+            candidateMinerTask.updateCandidateMinerTime();
             if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
                 witnessTime.updateMaxHeightAndInitTime(data);
             }

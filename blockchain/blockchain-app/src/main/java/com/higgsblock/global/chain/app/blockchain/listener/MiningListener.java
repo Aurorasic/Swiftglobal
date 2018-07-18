@@ -4,7 +4,6 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.CandidateMinerTimer;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
@@ -41,8 +40,6 @@ public class MiningListener implements IEventBusListener {
     private NodeManager nodeManager;
     @Autowired
     private VoteService voteService;
-    @Autowired
-    private CandidateMinerTimer candidateMinerTimer;
 
     @Autowired
     private BlockIndexService blockIndexService;
