@@ -101,8 +101,6 @@ public class BlockProcessor {
 
     public final static List<String> WITNESS_ADDRESS_LIST = new ArrayList<>();
 
-    public final static List<WitnessEntity> WITNESS_ENTITY_LIST = new ArrayList<>();
-
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
 
