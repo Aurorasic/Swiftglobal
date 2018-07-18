@@ -57,9 +57,6 @@ public class TransactionFeeProcess {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private ITransService transService;
-
-    @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     /**
