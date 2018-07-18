@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.common.message;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
-import com.higgsblock.global.chain.app.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;

@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.higgsblock.global.chain.app.script.UnLockScript;
+import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
 import lombok.NoArgsConstructor;

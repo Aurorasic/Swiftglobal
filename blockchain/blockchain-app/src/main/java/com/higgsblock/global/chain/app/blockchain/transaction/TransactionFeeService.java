@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;

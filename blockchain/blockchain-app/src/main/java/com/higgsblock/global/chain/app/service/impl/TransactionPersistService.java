@@ -9,7 +9,7 @@ import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.dao.iface.ISpentTransactionOutIndexRepository;
 import com.higgsblock.global.chain.app.dao.iface.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.iface.IUTXORepository;
-import com.higgsblock.global.chain.app.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.common.utils.Money;

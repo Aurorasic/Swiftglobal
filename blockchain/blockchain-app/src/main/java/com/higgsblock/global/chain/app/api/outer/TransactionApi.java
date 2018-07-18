@@ -4,7 +4,7 @@ import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.constants.RespCodeEnum;
+import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

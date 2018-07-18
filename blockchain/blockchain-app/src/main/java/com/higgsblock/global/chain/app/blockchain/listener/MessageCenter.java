@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.message.MessageFormatter;
 import com.higgsblock.global.chain.app.common.message.MessageHandler;
-import com.higgsblock.global.chain.app.connection.ConnectionManager;
+import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.message.StringMessage;

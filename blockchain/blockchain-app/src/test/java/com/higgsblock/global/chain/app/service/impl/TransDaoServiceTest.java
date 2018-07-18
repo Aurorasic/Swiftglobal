@@ -7,7 +7,7 @@
 //import com.higgsblock.global.chain.app.dao.TransDao;
 //import com.higgsblock.global.chain.app.dao.UtxoDao;
 //import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
-//import com.higgsblock.global.chain.app.script.LockScript;
+//import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 //import com.higgsblock.global.chain.common.utils.Money;
 //import org.junit.Assert;
 //import org.junit.Test;

@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.constants.RespCodeEnum;
+import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.higgsblock.global.chain.app.constants.RespCodeEnum.*;
+import static com.higgsblock.global.chain.app.common.constants.RespCodeEnum.*;
 
 /**
  * @author yuanjiantao
