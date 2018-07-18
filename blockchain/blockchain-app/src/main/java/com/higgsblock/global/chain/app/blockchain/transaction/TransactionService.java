@@ -6,17 +6,17 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.ISpentTransactionOutIndexRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
-import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
+import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -63,7 +63,7 @@ public class TransactionService {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionFeeService transactionFeeService;
+    private TransactionFeeProcess transactionFeeProcess;
 
     @Autowired
     private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
@@ -99,10 +99,10 @@ public class TransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        TransactionFeeService.Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
+        TransactionFeeProcess.Rewards rewards = transactionFeeProcess.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
-        if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
+        if (!transactionFeeProcess.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
             return false;
         }
@@ -344,7 +344,7 @@ public class TransactionService {
             LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
                 if (block == null) {
-                    curMoney.add(transactionFeeService.getCurrencyFee(tx));
+                    curMoney.add(transactionFeeProcess.getCurrencyFee(tx));
                 }
 
                 if (preMoney.compareTo(curMoney) < 0) {

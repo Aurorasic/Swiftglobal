@@ -7,13 +7,13 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeManager;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
@@ -88,7 +88,7 @@ public class BlockService {
     private TransactionPersistService transactionPersistService;
 
     @Autowired
-    private WitnessTime witnessTime;
+    private WitnessTimerProcess witnessTimerProcess;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -98,7 +98,7 @@ public class BlockService {
     public final static List<WitnessEntity> WITNESS_ENTITY_LIST = new ArrayList<>();
 
     @Autowired
-    private TransactionFeeService transactionFeeService;
+    private TransactionFeeProcess transactionFeeProcess;
 
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
@@ -122,12 +122,12 @@ public class BlockService {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, txOfUnSpentUtxos);
         List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
         if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
+            canPackageTransactionsOfBlock = transactionFeeProcess.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
             feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
             for (Transaction tx : canPackageTransactionsOfBlock) {
                 feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
@@ -135,7 +135,7 @@ public class BlockService {
         }
 
         if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
+            Transaction coinBaseTx = transactionFeeProcess.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
             transactions.add(coinBaseTx);
         }
 
@@ -732,7 +732,7 @@ public class BlockService {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isCandidateBlock = witnessTime.acceptBlock(block);
+            boolean isCandidateBlock = witnessTimerProcess.acceptBlock(block);
             LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
             if (!isCandidateBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);
