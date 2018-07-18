@@ -3,17 +3,12 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
-import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.IBlockService;
-import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Zhao xiaogang
@@ -41,17 +35,6 @@ public class BlockService implements IBlockService {
     @Autowired
     private BlockIndexService blockIndexService;
 
-    @Autowired
-    private TransactionCacheManager txCacheManager;
-
-    @Autowired
-    private NodeProcessor nodeProcessor;
-
-    @Autowired
-    private MinerScoreStrategy minerScoreStrategy;
-
-    @Autowired
-    private PeerManager peerManager;
 
     @Autowired
     private BlockFormatter blockFormatter;
@@ -89,11 +72,11 @@ public class BlockService implements IBlockService {
     @Override
     public Block getBlockByHash(String blockHash) {
         BlockEntity blockEntity = blockRepository.findByBlockHash(blockHash);
-        if (blockEntity == null) {
-            LOGGER.error("not found the block by blockHash ={} ", blockHash);
-            return null;
+        if (blockEntity != null) {
+            return blockFormatter.parse(blockEntity.getData());
         }
-        return blockFormatter.parse(blockEntity.getData());
+        return null;
+
     }
 
     @Override
@@ -166,88 +149,8 @@ public class BlockService implements IBlockService {
      **/
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public Block saveBlockCompletely(Block block) throws Exception {
+    public void saveBlock(Block block) throws Exception {
 
-        //step 1
-        addBlock2BlockEntity(block);
-
-
-        //step 2
-        boolean isFirst = hasBlockByHeight(block);
-        Block toBeBestBlock = null;
-        if (isFirst) {
-            toBeBestBlock = getToBeBestBlock(block);
-        } else {
-            LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
-        }
-        //step 2 whether this block can be confirmed pre N block
-        blockIndexService.addBlockIndex(block, toBeBestBlock);
-
-        if (block.isGenesisBlock()) {
-            //step 3
-            minerScoreStrategy.refreshMinersScore(block);
-            //step 4
-            nodeProcessor.calcNextDposNodes(block, block.getHeight());
-        } else {
-            if (isFirst && toBeBestBlock != null) {
-                minerScoreStrategy.refreshMinersScore(toBeBestBlock);
-                List<String> nextDposAddressList = nodeProcessor.calcNextDposNodes(toBeBestBlock, block.getHeight());
-                minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
-                //step5
-                freshPeerMinerAddr(toBeBestBlock);
-            }
-        }
-
-        return toBeBestBlock;
-    }
-
-    /**
-     * fresh peer's minerAddress to connect ahead
-     *
-     * @param toBeBestBlock
-     */
-    private void freshPeerMinerAddr(Block toBeBestBlock) {
-        List<String> dposGroupBySn = new LinkedList<>();
-        long sn = nodeProcessor.getSn(toBeBestBlock.getHeight());
-        List<String> dpos = nodeProcessor.getDposGroupBySn(sn);
-        if (!CollectionUtils.isEmpty(dpos)) {
-            dposGroupBySn.addAll(dpos);
-        }
-        dpos = nodeProcessor.getDposGroupBySn(sn + 1);
-        if (!CollectionUtils.isEmpty(dpos)) {
-            dposGroupBySn.addAll(dpos);
-        }
-        peerManager.setMinerAddresses(dposGroupBySn);
-    }
-
-
-    @Override
-    public boolean checkBlockNumbers() {
-        //TODO: zhao xiaogang  should optimize  2018-05-22
-        return true;
-    }
-
-    public void refreshCache(String blockHash, Block block) {
-        orphanBlockCacheManager.remove(blockHash);
-
-        block.getTransactions().stream().forEach(tx -> {
-            txCacheManager.remove(tx.getHash());
-        });
-        //remove by utxo key
-        //todo yuguojia 2018-7-9 add new utxo when confirmed a best block on other blocks of the same height
-        Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
-        List<String> spendUTXOKeys = block.getSpendUTXOKeys();
-        for (Transaction tx : transactionMap.values()) {
-            for (String spendUTXOKey : spendUTXOKeys) {
-                if (tx.containsSpendUTXO(spendUTXOKey)) {
-                    txCacheManager.remove(tx.getHash());
-                    break;
-                }
-            }
-        }
-    }
-
-    private void addBlock2BlockEntity(Block block) {
         BlockEntity blockEntity = new BlockEntity();
         blockEntity.setBlockHash(block.getHash());
         blockEntity.setHeight(block.getHeight());
@@ -257,7 +160,15 @@ public class BlockService implements IBlockService {
     }
 
 
-    private boolean hasBlockByHeight(Block block) {
+    @Override
+    public boolean checkBlockNumbers() {
+        //TODO: zhao xiaogang  should optimize  2018-05-22
+        return true;
+    }
+
+
+    @Override
+    public boolean isFirstBlockByHeight(Block block) {
         if (block.isGenesisBlock()) {
             return true;
         }
@@ -265,7 +176,8 @@ public class BlockService implements IBlockService {
     }
 
 
-    private Block getToBeBestBlock(Block block) {
+    @Override
+    public Block getToBeBestBlock(Block block) {
         if (block.isGenesisBlock()) {
             return null;
         }

@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
@@ -22,6 +23,7 @@ import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -89,6 +91,10 @@ public class BlockProcessor {
 
     @Autowired
     private WitnessTimerProcessor witnessTimerProcessor;
+    @Autowired
+    private MinerScoreStrategy minerScoreStrategy;
+    @Autowired
+    private PeerManager peerManager;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -284,7 +290,7 @@ public class BlockProcessor {
         utxoService.addNewBlock(newBestBlock, block);
 
         //refresh cache
-        blockService.refreshCache(block.getHash(), block);
+        refreshCache(block.getHash(), block);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock, sourceId);
@@ -312,7 +318,34 @@ public class BlockProcessor {
 
     private Block saveBlockCompletely(Block block) {
         try {
-            Block newBestBlock = blockService.saveBlockCompletely(block);
+            //step 1
+            blockService.saveBlock(block);
+
+            boolean isFirst = blockService.isFirstBlockByHeight(block);
+            Block newBestBlock = null;
+            if (isFirst) {
+                newBestBlock = blockService.getToBeBestBlock(block);
+            } else {
+                LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
+            }
+            //step 2 whether this block can be confirmed pre N block
+            blockIndexService.addBlockIndex(block, newBestBlock);
+
+            if (block.isGenesisBlock()) {
+                //step 3
+                minerScoreStrategy.refreshMinersScore(block);
+                //step 4
+                nodeProcessor.calcNextDposNodes(block, block.getHeight());
+                return newBestBlock;
+            }
+            if (isFirst && newBestBlock != null) {
+                LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
+                minerScoreStrategy.refreshMinersScore(newBestBlock);
+                List<String> nextDposAddressList = nodeProcessor.calcNextDposNodes(newBestBlock, block.getHeight());
+                minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
+                //step5
+                freshPeerMinerAddr(newBestBlock);
+            }
             return newBestBlock;
         } catch (Exception e) {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
@@ -749,5 +782,50 @@ public class BlockProcessor {
 
     public boolean isWitness(String address) {
         return WITNESS_ADDRESS_LIST.contains(address);
+    }
+
+    /**
+     * fresh peer's minerAddress to connect ahead
+     *
+     * @param toBeBestBlock
+     */
+    private void freshPeerMinerAddr(Block toBeBestBlock) {
+        List<String> dposGroupBySn = new LinkedList<>();
+        long sn = nodeProcessor.getSn(toBeBestBlock.getHeight());
+        List<String> dpos = nodeProcessor.getDposGroupBySn(sn);
+        if (!CollectionUtils.isEmpty(dpos)) {
+            dposGroupBySn.addAll(dpos);
+        }
+        dpos = nodeProcessor.getDposGroupBySn(sn + 1);
+        if (!CollectionUtils.isEmpty(dpos)) {
+            dposGroupBySn.addAll(dpos);
+        }
+        peerManager.setMinerAddresses(dposGroupBySn);
+    }
+
+    /**
+     * refresh txCacheManager
+     *
+     * @param blockHash
+     * @param block
+     */
+    private void refreshCache(String blockHash, Block block) {
+        orphanBlockCacheManager.remove(blockHash);
+
+        block.getTransactions().stream().forEach(tx -> {
+            txCacheManager.remove(tx.getHash());
+        });
+        //remove by utxo key
+        //todo yuguojia 2018-7-9 add new utxo when confirmed a best block on other blocks of the same height
+        Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
+        List<String> spendUTXOKeys = block.getSpendUTXOKeys();
+        for (Transaction tx : transactionMap.values()) {
+            for (String spendUTXOKey : spendUTXOKeys) {
+                if (tx.containsSpendUTXO(spendUTXOKey)) {
+                    txCacheManager.remove(tx.getHash());
+                    break;
+                }
+            }
+        }
     }
 }
