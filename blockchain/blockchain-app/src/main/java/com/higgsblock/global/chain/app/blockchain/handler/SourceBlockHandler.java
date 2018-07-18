@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.SourceBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
 
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -49,7 +49,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
             return;
         }
 
-        if (witnessService.isExistInBlockCache(height, block.getHash())) {
+        if (voteService.isExistInBlockCache(height, block.getHash())) {
             return;
         }
 
@@ -58,7 +58,7 @@ public class SourceBlockHandler extends BaseEntityHandler<SourceBlock> {
             return;
         }
         LOGGER.info("Received sourceBlock {} ,{}", height, block.getHash());
-        witnessService.addSourceBlock(block);
+        voteService.addSourceBlock(block);
         messageCenter.dispatchToWitnesses(sourceBlock);
 
     }

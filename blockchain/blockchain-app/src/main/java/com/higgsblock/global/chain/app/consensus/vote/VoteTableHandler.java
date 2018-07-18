@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.HashBasedTable;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ import java.util.Set;
 public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
 
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
 
     @Override
     protected void process(SocketRequest<VoteTable> request) {
@@ -61,7 +61,7 @@ public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
         }
         LOGGER.info("add voteTable with voteHeight {} ,voteTable size: {}", voteHeight, voteTable.size());
 
-        witnessService.dealVoteMap(sourceId, voteHeight, voteTableMap);
+        voteService.dealVoteMap(sourceId, voteHeight, voteTableMap);
     }
 
     private long getVoteHeight(Map<String, Map<String, Vote>> row) {

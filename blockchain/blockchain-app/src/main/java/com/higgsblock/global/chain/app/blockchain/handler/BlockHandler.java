@@ -4,7 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.consensus.syncblock.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -33,7 +33,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
 
     @Autowired
     private BlockIndexService blockIndexService;
@@ -73,7 +73,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
             inventory.setHashs(set);
             messageCenter.broadcast(new String[]{sourceId}, inventory);
-            witnessService.initWitnessTask(blockService.getMaxHeight() + 1);
+            voteService.initWitnessTask(blockService.getMaxHeight() + 1);
         }
     }
 }

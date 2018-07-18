@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.SourceBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class SourceBlockReqHandler extends BaseEntityHandler<SourceBlockReq> {
     private MessageCenter messageCenter;
 
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
 
     @Override
     protected void process(SocketRequest<SourceBlockReq> request) {
@@ -37,7 +37,7 @@ public class SourceBlockReqHandler extends BaseEntityHandler<SourceBlockReq> {
         }
         LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
         data.getBlockHashs().forEach(hash -> {
-            Block block = witnessService.getBlockCache().get(witnessService.getHeight(), k -> new HashMap<>()).get(hash);
+            Block block = voteService.getBlockCache().get(voteService.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new SourceBlock(block));
             }

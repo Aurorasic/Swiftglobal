@@ -23,7 +23,7 @@ public class SourceBlockService {
     private MessageCenter messageCenter;
 
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
 
     @Autowired
     private KeyPair keyPair;
@@ -36,7 +36,7 @@ public class SourceBlockService {
         SourceBlock sourceBlock = new SourceBlock(block);
         messageCenter.dispatchToWitnesses(sourceBlock);
         if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            witnessService.addSourceBlock(sourceBlock.getBlock());
+            voteService.addSourceBlock(sourceBlock.getBlock());
         }
     }
 

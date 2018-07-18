@@ -10,7 +10,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
-import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
+import com.higgsblock.global.chain.app.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -40,7 +40,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private NodeManager nodeManager;
     @Autowired
-    private WitnessService witnessService;
+    private VoteService voteService;
     @Autowired
     private CandidateMinerTimer candidateMinerTimer;
 
@@ -81,7 +81,7 @@ public class MiningListener implements IEventBusListener {
             } else {
                 process(lastBlockIndex.getFirstBlockHash(), lastBlockIndex.getHeight());
             }
-            witnessService.initWitnessTask(lastBlockIndex.getHeight() + 1);
+            voteService.initWitnessTask(lastBlockIndex.getHeight() + 1);
         } else {
             isMining = false;
             LOGGER.info("The system state is changed to {}, stop mining", state);

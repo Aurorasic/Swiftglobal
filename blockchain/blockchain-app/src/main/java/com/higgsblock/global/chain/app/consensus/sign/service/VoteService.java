@@ -30,7 +30,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class WitnessService {
+public class VoteService {
 
     @Autowired
     private KeyPair keyPair;
