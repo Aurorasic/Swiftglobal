@@ -10,7 +10,7 @@ import com.higgsblock.global.chain.app.dao.ISpentTransactionOutIndexRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.service.ITransService;
+import com.higgsblock.global.chain.app.service.ITransactionIndexService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -30,7 +30,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class TransactionIndexService implements ITransService {
+public class TransactionIndexService implements ITransactionIndexService {
     @Autowired
     private IUTXORepository iutxoRepository;
 
@@ -48,6 +48,11 @@ public class TransactionIndexService implements ITransService {
      */
     @Autowired
     private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
+
+    @Override
+    public TransactionIndexEntity findByTransactionHash(String txHash) {
+        return iTransactionIndexRepository.findByTransactionHash(txHash);
+    }
 
     @Override
     public void addTransIdxAndUtxo(Block toBeBestBlock, String bestBlockHash) {

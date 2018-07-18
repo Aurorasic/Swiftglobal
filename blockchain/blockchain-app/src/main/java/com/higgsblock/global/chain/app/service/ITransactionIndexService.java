@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.service;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 
 import java.util.List;
 
@@ -12,7 +13,15 @@ import java.util.List;
  * @author Zhao xiaogang
  * @date 2018 -05-22
  */
-public interface ITransService {
+public interface ITransactionIndexService {
+
+    /**
+     * find by txHash
+     *
+     * @param txHash
+     * @return
+     */
+    TransactionIndexEntity findByTransactionHash(String txHash);
 
     /**
      * Add transaction index and utxo in database
