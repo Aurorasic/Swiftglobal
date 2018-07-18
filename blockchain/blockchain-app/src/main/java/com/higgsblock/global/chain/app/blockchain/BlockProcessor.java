@@ -52,7 +52,7 @@ public class BlockProcessor {
 
 
     @Autowired
-    private TransactionService transactionService;
+    private TransactionProcessor transactionProcessor;
 
     @Autowired
     private TransactionCacheManager txCacheManager;
@@ -425,14 +425,14 @@ public class BlockProcessor {
         }
         if (isCoinBaseTx) {
             if (!transaction.isEmptyInputs()
-                    || !transactionService.validCoinBaseTx(transaction, block)) {
+                    || !transactionProcessor.validCoinBaseTx(transaction, block)) {
                 LOGGER.error("Invalidate Coinbase transaction");
                 return false;
             }
             return true;
         }
 
-        if (!transactionService.verifyTransaction(transaction, block)) {
+        if (!transactionProcessor.verifyTransaction(transaction, block)) {
             LOGGER.error("Invalidate transaction");
             return false;
         }
@@ -681,7 +681,7 @@ public class BlockProcessor {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeManager.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
-            if (transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
+            if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
                 LOGGER.info("verify block is candidate miner production true");
                 return true;
             }
