@@ -22,8 +22,6 @@ public class TransactionCacheManager {
             .maximumSize(MAX_SIZE)
             .build();
 
-//    private Map<String, Transaction> transactionMap = new HashMap(16);
-
     public boolean hasTx() {
         if (CollectionUtils.isNotEmpty(transactionMap.asMap().values())) {
             return true;

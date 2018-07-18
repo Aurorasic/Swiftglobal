@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class BlockResponseHandler extends BaseEntityHandler<BlockResponse> {
+public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
 
     @Autowired
     private BlockProcessor blockProcessor;
@@ -30,7 +30,6 @@ public class BlockResponseHandler extends BaseEntityHandler<BlockResponse> {
 
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
-
 
     @Override
     protected void process(SocketRequest<BlockResponse> request) {

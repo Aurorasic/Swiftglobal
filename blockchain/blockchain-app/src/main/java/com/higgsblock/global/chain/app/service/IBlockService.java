@@ -76,7 +76,7 @@ public interface IBlockService {
      * @return block
      * @throws Exception
      */
-    Block saveBlockCompletely(Block block) throws Exception;
+    void saveBlock(Block block) throws Exception;
 
     /**
      * Check the block numbers
@@ -84,5 +84,21 @@ public interface IBlockService {
      * @return boolean
      */
     boolean checkBlockNumbers();
+
+    /**
+     * whether the block is first block at its height
+     *
+     * @param block
+     * @return
+     */
+    boolean isFirstBlockByHeight(Block block);
+
+    /**
+     * find the best block (h-N) when a block is confirmed
+     *
+     * @param block
+     * @return
+     */
+    Block getToBeBestBlock(Block block);
 
 }

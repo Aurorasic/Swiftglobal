@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.Data;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor
 @Data
-@Message(EntityType.MAX_HEIGHT_REQUEST)
+@Message(MessageType.MAX_HEIGHT_REQUEST)
 public class MaxHeightRequest extends BaseBizEntity {
     @Override
     public boolean valid() {

@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
@@ -10,10 +9,10 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -361,7 +360,7 @@ public class TransactionProcessor {
     private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
-            LOGGER.info("preOutKey is empty,input={}", JSONObject.toJSONString(input, true));
+            LOGGER.info("preOutKey is empty,input={}", input.toJson());
             return null;
         }
 
@@ -369,7 +368,7 @@ public class TransactionProcessor {
         utxo = utxoService.getUnionUTXO(preBlockHash, preOutKey);
 
         if (utxo == null) {
-            LOGGER.warn("UTXO is empty,input={},preOutKey={}", JSONObject.toJSONString(input, true), preOutKey);
+            LOGGER.warn("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
             return null;
         }
         TransactionOutput output = utxo.getOutput();
@@ -559,20 +558,7 @@ public class TransactionProcessor {
      */
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
-        LOGGER.info("broadcast transaction success: " + tx.getHash());
+        LOGGER.info("broadcast transaction success: {}", tx.getHash());
     }
-
-//    private boolean isSpent(String preTxHash, short outIndex) {
-//        List<SpentTransactionOutIndexEntity> spentTxOutIndexEntities = spentTransactionOutIndexRepository.findByPreTransactionHash(preTxHash);
-//        if (CollectionUtils.isEmpty(spentTxOutIndexEntities)) {
-//            return false;
-//        }
-//        for (SpentTransactionOutIndexEntity spentTxOutIndexEntity : spentTxOutIndexEntities) {
-//            if (spentTxOutIndexEntity.getOutIndex() == outIndex) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
 }

@@ -235,13 +235,12 @@ public class PeerManager {
         peer.setHttpServerPort(config.getHttpPort());
         peer.setPubKey(config.getPubKey());
         peer.signature(config.getPriKey());
-        if (!self.valid()) {
+        if (!peer.valid()) {
             throw new IllegalArgumentException("self peer params invalid");
         }
 
-        self = peer;
+        setSelf(peer);
         peerCache.setCached(peer);
-        addOrUpdate(self);
         return true;
     }
 

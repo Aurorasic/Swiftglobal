@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.formatter;
 
 import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
-import com.higgsblock.global.chain.app.common.formatter.BaseEntityFormatter;
+import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,5 +11,5 @@ import org.springframework.stereotype.Component;
  * @date 5/25/2018
  */
 @Component
-public class SourceBlockFormatter extends BaseEntityFormatter<SourceBlockResponse> {
+public class SourceBlockFormatter extends BaseMessageFormatter<SourceBlockResponse> {
 }

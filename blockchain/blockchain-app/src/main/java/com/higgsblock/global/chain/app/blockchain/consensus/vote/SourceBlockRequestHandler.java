@@ -1,12 +1,11 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.alibaba.fastjson.JSON;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,7 @@ import java.util.HashMap;
  */
 @Component
 @Slf4j
-public class SourceBlockRequestHandler extends BaseEntityHandler<SourceBlockRequest> {
+public class SourceBlockRequestHandler extends BaseMessageHandler<SourceBlockRequest> {
 
     @Autowired
     private MessageCenter messageCenter;
@@ -35,7 +34,7 @@ public class SourceBlockRequestHandler extends BaseEntityHandler<SourceBlockRequ
         if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
             return;
         }
-        LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
+        LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, data);
         data.getBlockHashs().forEach(hash -> {
             Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {

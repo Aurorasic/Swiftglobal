@@ -1,9 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.alibaba.fastjson.JSON;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class VoteTableNotifyHandler extends BaseEntityHandler<VoteTableNotify> {
+public class VoteTableNotifyHandler extends BaseMessageHandler<VoteTableNotify> {
 
     @Autowired
     private VoteProcessor voteProcessor;
@@ -24,7 +23,7 @@ public class VoteTableNotifyHandler extends BaseEntityHandler<VoteTableNotify> {
 
         VoteTableNotify data = request.getData();
         String sourceId = request.getSourceId();
-        LOGGER.info("Received VoteTable from {} with data {}", sourceId, JSON.toJSONString(data));
+        LOGGER.info("Received VoteTable from {} with data {}", sourceId, data.toJson());
         if (data == null || !data.valid()) {
             LOGGER.info("the voteTable is not validate from {}", sourceId);
             return;
