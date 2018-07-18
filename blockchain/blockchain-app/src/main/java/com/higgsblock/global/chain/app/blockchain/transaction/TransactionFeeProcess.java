@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.service.ITransService;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
@@ -69,7 +68,7 @@ public class TransactionFeeProcess {
 
         Money minerTotal;
 
-        LOGGER.info(" MINER_REWARDS_RATION：{} " + MINER_REWARDS_RATION.getValue());
+        LOGGER.info("miner rewards ration：{} ", MINER_REWARDS_RATION.getValue());
         Money totalFee = new Money("0");
         for (Map.Entry<String, Money> entry : feeMap.entrySet()) {
             Money fee = entry.getValue();
