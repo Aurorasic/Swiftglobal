@@ -3,13 +3,13 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
+import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.formatter.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
-import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
+import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -90,7 +90,7 @@ public class BlockService implements IBlockService {
     public Block getBlockByHash(String blockHash) {
         BlockEntity blockEntity = blockRepository.findByBlockHash(blockHash);
         if (blockEntity == null) {
-            LOGGER.error("not found the block by blockHash = " + blockHash);
+            LOGGER.error("not found the block by blockHash ={} ", blockHash);
             return null;
         }
         return blockFormatter.parse(blockEntity.getData());

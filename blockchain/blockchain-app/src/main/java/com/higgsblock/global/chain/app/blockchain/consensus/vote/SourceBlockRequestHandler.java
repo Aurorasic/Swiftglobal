@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.alibaba.fastjson.JSON;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
@@ -35,7 +34,7 @@ public class SourceBlockRequestHandler extends BaseMessageHandler<SourceBlockReq
         if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
             return;
         }
-        LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, JSON.toJSONString(data));
+        LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, data);
         data.getBlockHashs().forEach(hash -> {
             Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {

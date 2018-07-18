@@ -31,7 +31,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
-
     @Override
     protected void process(SocketRequest<BlockResponse> request) {
         BlockResponse blockResponse = request.getData();
