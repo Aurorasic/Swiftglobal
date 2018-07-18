@@ -56,8 +56,8 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
         if (height <= blockProcessor.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
                 if (!blockProcessor.isExistInDB(height, hash)) {
-                    GetBlock getBlock = new GetBlock(height, hash);
-                    messageCenter.unicast(sourceId, getBlock);
+                    BlockReq blockReq = new BlockReq(height, hash);
+                    messageCenter.unicast(sourceId, blockReq);
                     return height;
                 }
                 return null;

@@ -22,10 +22,11 @@ public enum EntityType {
     BLOCK("200"),
     INVENTORY("201"),
     MAX_HEIGHT("202"),
-    GET_BLOCK("203"),
+    GET_BLOCK_REQ("203"),
     GET_MAX_HEIGHT("204"),
     SOURCE_BLOCK("205"),
     SOURCE_BLOCK_REQ("207"),
+    GET_BLOCK_RESP("208"),
 
     // ================ type 300-399: transaction related ==============
     TRANSACTION("300"),
