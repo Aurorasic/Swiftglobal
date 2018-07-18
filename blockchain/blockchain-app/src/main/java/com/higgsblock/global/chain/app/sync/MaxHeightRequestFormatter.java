@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
  * @date 3/8/2018
  */
 @Component
-public class MaxHeightReqFormatter extends BaseEntityFormatter<MaxHeightReq> {
+public class MaxHeightRequestFormatter extends BaseEntityFormatter<MaxHeightRequest> {
 
 }

@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(EntityType.GET_BLOCK_RESP)
-public class BlockResp {
+@Message(EntityType.BLOCK_RESPONSE)
+public class BlockResponse {
 
     private Block block;
 }

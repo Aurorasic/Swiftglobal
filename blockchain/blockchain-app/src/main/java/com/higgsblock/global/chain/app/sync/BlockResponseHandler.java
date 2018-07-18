@@ -15,9 +15,9 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("blockReqHandler")
+@Component("blockResponseHandler")
 @Slf4j
-public class BlockRespHandler extends BaseEntityHandler<BlockResp> {
+public class BlockResponseHandler extends BaseEntityHandler<BlockResponse> {
 
     @Autowired
     private BlockProcessor blockProcessor;
@@ -33,10 +33,10 @@ public class BlockRespHandler extends BaseEntityHandler<BlockResp> {
 
 
     @Override
-    protected void process(SocketRequest<BlockResp> request) {
-        BlockResp blockResp = request.getData();
+    protected void process(SocketRequest<BlockResponse> request) {
+        BlockResponse blockResponse = request.getData();
         String sourceId = request.getSourceId();
-        Block block = blockResp.getBlock();
+        Block block = blockResponse.getBlock();
         if (null == block) {
             return;
         }

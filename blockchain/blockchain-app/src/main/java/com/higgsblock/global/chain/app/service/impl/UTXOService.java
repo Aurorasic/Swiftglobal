@@ -1,11 +1,9 @@
-package com.higgsblock.global.chain.app.service;
+package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.IUTXOService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,7 @@ import java.util.*;
  **/
 @Service
 @Slf4j
-public class UTXODaoServiceProxy {
+public class UTXOService implements IUTXOService {
     @Autowired
     private TransactionService transactionService;
     @Autowired
@@ -46,6 +44,8 @@ public class UTXODaoServiceProxy {
      * @param utxoKey
      * @return
      */
+
+    @Override
     public UTXO getUTXOOnBestChain(String utxoKey) {
         return transactionService.getUTXOOnBestChain(utxoKey);
     }
@@ -59,6 +59,7 @@ public class UTXODaoServiceProxy {
      * @param currency
      * @return
      */
+    @Override
     public List<UTXO> getUnionUTXO(String preBlockHash, String address, String currency) {
 
         if (StringUtils.isEmpty(preBlockHash)) {
@@ -104,6 +105,7 @@ public class UTXODaoServiceProxy {
      * @param utxoKey
      * @return
      */
+    @Override
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
         if (preBlockHash == null) {
             List<String> lastHeightBlockHashs = blockIndexService.getLastHeightBlockHashs();
@@ -162,6 +164,7 @@ public class UTXODaoServiceProxy {
         return getUnconfirmedUTXORecurse(preBlockHash, utxoKey);
     }
 
+    @Override
     public boolean isRemovedUTXORecurse(String blockHash, String utxoKey) {
         if (StringUtils.isEmpty(blockHash)) {
             return false;
@@ -177,6 +180,7 @@ public class UTXODaoServiceProxy {
         return isRemovedUTXORecurse(preBlockHash, utxoKey);
     }
 
+    @Override
     public void addNewBlock(Block newBestBlock, Block newBlock) {
         if (newBestBlock != null) {
             //remove cached blocks info for the blocks of on the new best block height

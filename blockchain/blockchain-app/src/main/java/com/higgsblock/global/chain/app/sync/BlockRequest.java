@@ -15,23 +15,23 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(EntityType.GET_BLOCK_REQ)
-public class BlockReq extends BaseBizEntity {
+@Message(EntityType.GET_BLOCK_REQUEST)
+public class BlockRequest extends BaseBizEntity {
 
     private long height;
 
     private String hash;
 
-    public BlockReq(long height) {
+    public BlockRequest(long height) {
         this.height = height;
     }
 
     @Override
     public boolean equals(Object o) {
 
-        if (o instanceof BlockReq) {
-            BlockReq blockReq = (BlockReq) o;
-            return this.height == blockReq.height && StringUtils.equals(this.hash, blockReq.hash);
+        if (o instanceof BlockRequest) {
+            BlockRequest blockRequest = (BlockRequest) o;
+            return this.height == blockRequest.height && StringUtils.equals(this.hash, blockRequest.hash);
         }
         return false;
     }

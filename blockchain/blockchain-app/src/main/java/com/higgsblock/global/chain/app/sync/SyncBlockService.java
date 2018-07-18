@@ -91,7 +91,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         /*
         1.At the beginning of synchronization, ask the nodes you have already connected to about their max height
          */
-        messageCenter.broadcast(new MaxHeightReq());
+        messageCenter.broadcast(new MaxHeightRequest());
 
         try {
             countDownLatch.await(10, TimeUnit.SECONDS);
@@ -133,7 +133,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         }
         String sourceId = list.get(new Random().nextInt(list.size()));
         requestRecord.get(height, v -> {
-            messageCenter.unicast(sourceId, new BlockReq(height));
+            messageCenter.unicast(sourceId, new BlockRequest(height));
             LOGGER.info("send block request! height:{} ", height);
             return sourceId;
         });
@@ -193,7 +193,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
         if (height <= blockProcessor.getMaxHeight()) {
             requestRecord.get(height, v -> {
-                messageCenter.unicast(sourceId, new BlockReq(height, hash));
+                messageCenter.unicast(sourceId, new BlockRequest(height, hash));
                 LOGGER.info("send block request! height:{},hash:{} ", height, hash);
                 return sourceId;
             });

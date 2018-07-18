@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("blockReqHandler")
+@Component("blockRequestHandler")
 @Slf4j
-public class BlockReqHandler extends BaseEntityHandler<BlockReq> {
+public class BlockRequestHandler extends BaseEntityHandler<BlockRequest> {
 
     @Autowired
     private BlockProcessor blockProcessor;
@@ -28,8 +28,8 @@ public class BlockReqHandler extends BaseEntityHandler<BlockReq> {
     private BlockService blockService;
 
     @Override
-    protected void process(SocketRequest<BlockReq> request) {
-        BlockReq data = request.getData();
+    protected void process(SocketRequest<BlockRequest> request) {
+        BlockRequest data = request.getData();
         long height = data.getHeight();
         if (height <= 0L) {
             return;
@@ -42,10 +42,10 @@ public class BlockReqHandler extends BaseEntityHandler<BlockReq> {
         if (null != hash) {
             Block block = blockService.getBlockByHash(hash);
             if (null != block) {
-                messageCenter.unicast(sourceId, new BlockResp(block));
+                messageCenter.unicast(sourceId, new BlockResponse(block));
             }
         } else {
-            blockProcessor.getBlocksByHeight(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResp(block)));
+            blockProcessor.getBlocksByHeight(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResponse(block)));
         }
     }
 }
