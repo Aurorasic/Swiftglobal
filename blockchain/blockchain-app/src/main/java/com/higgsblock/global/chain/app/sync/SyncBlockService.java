@@ -13,6 +13,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +21,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
@@ -57,6 +55,9 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Autowired
     private SystemStatusManager systemStatusManager;
+
+    @Autowired
+    private BlockIndexService blockIndexService;
 
     private CountDownLatch countDownLatch = new CountDownLatch(ACTIVE_CONNECTION_NUM);
 
@@ -142,10 +143,28 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
+        LOGGER.info("process event: {}", event);
+        broadcastInventory(event);
+        continueSyncBlock(event);
+    }
+
+    private void broadcastInventory(BlockPersistedEvent event) {
+        long height = event.getHeight();
+        String sourceId = event.getSourceId();
+        InventoryNotify inventoryNotify = new InventoryNotify();
+        inventoryNotify.setHeight(height);
+        Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
+        inventoryNotify.setHashs(set);
+        messageCenter.broadcast(new String[]{sourceId}, inventoryNotify);
+    }
+
+    /**
+     * check whether to continue sync block
+     */
+    private void continueSyncBlock(BlockPersistedEvent event) {
         if (getPeersMaxHeight() < event.getHeight()) {
             return;
         }
-        LOGGER.info("process event: {}", event);
 
         //when there has a persisted block on the height, stop sycn this height.If another one is real best block on
         // the height, its next block maybe orphan block, then fetch the real best block as orphan block.

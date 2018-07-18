@@ -14,10 +14,10 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -287,7 +287,7 @@ public class BlockProcessor {
         blockService.refreshCache(block.getHash(), block);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, newBestBlock);
+        broadBlockPersistedEvent(block, newBestBlock, sourceId);
 
         //Do last job for the block
         doLastJobForBlock(block, sourceId, version);
@@ -329,7 +329,7 @@ public class BlockProcessor {
         persistPreOrphanBlock(blockFullInfo);
     }
 
-    public void broadBlockPersistedEvent(Block block, Block newBestBlock) {
+    public void broadBlockPersistedEvent(Block block, Block newBestBlock, String sourceId) {
         BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
         blockPersistedEvent.setHeight(block.getHeight());
         blockPersistedEvent.setBlockHash(block.getHash());
