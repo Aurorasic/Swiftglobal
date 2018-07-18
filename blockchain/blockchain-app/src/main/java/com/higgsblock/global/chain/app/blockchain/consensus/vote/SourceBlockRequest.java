@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.higgsblock.global.chain.app.common.constants.EntityType;
 import com.higgsblock.global.chain.app.common.message.Message;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Data
 @Slf4j
-public class SourceBlockRequest {
+public class SourceBlockRequest extends BaseSerializer {
 
     private Set<String> blockHashs;
 }
