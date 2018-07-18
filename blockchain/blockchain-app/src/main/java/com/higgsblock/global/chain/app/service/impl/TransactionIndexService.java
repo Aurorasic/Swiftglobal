@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.dao.ISpentTransactionOutIndexRepository;
+import com.higgsblock.global.chain.app.dao.ISpentTransactionRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
@@ -47,7 +47,7 @@ public class TransactionIndexService implements ITransactionIndexService {
      * The Spent transaction out index entity dao.
      */
     @Autowired
-    private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
+    private ISpentTransactionRepository spentTransactionOutIndexRepository;
 
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {

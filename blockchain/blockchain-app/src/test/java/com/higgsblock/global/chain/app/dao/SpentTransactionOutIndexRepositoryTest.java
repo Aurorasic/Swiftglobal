@@ -18,7 +18,7 @@ import java.util.List;
 public class SpentTransactionOutIndexRepositoryTest extends BaseTest {
 
     @Autowired
-    private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
+    private ISpentTransactionRepository spentTransactionOutIndexRepository;
 
 
     @Test

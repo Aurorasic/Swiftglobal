@@ -9,7 +9,7 @@ import java.util.List;
  * @author wangxiangyi
  * @date 2018/7/13
  */
-public interface ISpentTransactionOutIndexRepository extends JpaRepository<SpentTransactionOutIndexEntity, Long> {
+public interface ISpentTransactionRepository extends JpaRepository<SpentTransactionOutIndexEntity, Long> {
 
     /**
      * find SpentTransactionOutIndexEntity list by preTransactionHash
