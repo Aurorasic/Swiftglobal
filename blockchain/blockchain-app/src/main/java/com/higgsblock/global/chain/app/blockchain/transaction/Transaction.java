@@ -5,7 +5,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
@@ -26,7 +26,7 @@ import java.util.List;
 @Data
 @Slf4j
 @NoArgsConstructor
-@Message(EntityType.TRANSACTION)
+@Message(MessageType.TRANSACTION)
 public class Transaction extends BaseBizEntity {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;

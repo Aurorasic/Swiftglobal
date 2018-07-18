@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @Component("sourceBlockHandler")
 @Slf4j
-public class SourceBlockHandler extends BaseEntityHandler<SourceBlockResponse> {
+public class SourceBlockHandler extends BaseMessageHandler<SourceBlockResponse> {
 
     @Autowired
     private VoteProcessor voteProcessor;

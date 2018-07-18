@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(EntityType.GET_BLOCK_REQUEST)
+@Message(MessageType.GET_BLOCK_REQUEST)
 public class BlockRequest extends BaseBizEntity {
 
     private long height;

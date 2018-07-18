@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.context;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimerProcessor;
-import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.task.BaseTask;
@@ -35,7 +35,7 @@ public class AppContext {
     private List<BaseTask> tasks;
 
     @Autowired
-    private List<IEntityHandler> entityHandlers;
+    private List<IMessageHandler> messageHandlers;
 
     @Autowired
     private SyncBlockService syncBlockService;
@@ -75,8 +75,8 @@ public class AppContext {
     }
 
     private void startHandlers() {
-        if (CollectionUtils.isNotEmpty(entityHandlers)) {
-            entityHandlers.forEach(IEntityHandler::start);
+        if (CollectionUtils.isNotEmpty(messageHandlers)) {
+            messageHandlers.forEach(IMessageHandler::start);
         }
     }
 

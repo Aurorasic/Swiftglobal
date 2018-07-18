@@ -17,18 +17,18 @@ import java.util.concurrent.ExecutorService;
  */
 @Slf4j
 @Data
-public abstract class BaseEntityHandler<T> implements IEntityHandler<T> {
+public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
 
     private volatile boolean isRunning;
     private ExecutorService executorService;
     private BlockingQueue<SocketRequest<T>> queue;
 
-    public BaseEntityHandler() {
+    public BaseMessageHandler() {
         this.queue = Queues.newLinkedBlockingQueue(10000);
     }
 
     @Override
-    public Class<T> getEntityClass() {
+    public Class<T> getMessageClass() {
         Type type = getClass().getGenericSuperclass();
         if (type instanceof ParameterizedType) {
             Type[] entityClass = ((ParameterizedType) type).getActualTypeArguments();

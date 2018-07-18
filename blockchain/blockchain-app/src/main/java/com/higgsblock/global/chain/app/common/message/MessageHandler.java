@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.common.message;
 
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.IEntityHandler;
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -25,9 +25,9 @@ public class MessageHandler implements InitializingBean {
     private MessageFormatter formatter;
 
     @Autowired
-    private List<IEntityHandler<?>> handlerList;
+    private List<IMessageHandler<?>> handlerList;
 
-    private Map<EntityType, IEntityHandler<?>> handlerMap = Maps.newHashMap();
+    private Map<MessageType, IMessageHandler<?>> handlerMap = Maps.newHashMap();
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -36,27 +36,27 @@ public class MessageHandler implements InitializingBean {
         }
     }
 
-    public void register(IEntityHandler<?> handler) {
-        EntityType type = formatter.getMessageType(handler.getEntityClass());
+    public void register(IMessageHandler<?> handler) {
+        MessageType type = formatter.getMessageType(handler.getMessageClass());
         handlerMap.put(type, handler);
-        LOGGER.info("register IEntityFormatter, type={} ", type);
+        LOGGER.info("register IMessageFormatter, type={} ", type);
     }
 
-    public void unregister(EntityType type) {
+    public void unregister(MessageType type) {
         handlerMap.remove(type);
-        LOGGER.info("unregister IEntityFormatter, type={} ", type);
+        LOGGER.info("unregister IMessageFormatter, type={} ", type);
     }
 
-    public IEntityHandler<?> getHandler(Class<?> clazz) {
+    public IMessageHandler<?> getHandler(Class<?> clazz) {
         return getHandler(formatter.getMessageType(clazz));
     }
 
-    public IEntityHandler<?> getHandler(EntityType type) {
+    public IMessageHandler<?> getHandler(MessageType type) {
         return handlerMap.get(type);
     }
 
     public boolean accept(SocketRequest request) {
-        IEntityHandler handler = getHandler(request.getData().getClass());
+        IMessageHandler handler = getHandler(request.getData().getClass());
         if (null != handler) {
             return handler.accept(request);
         }
