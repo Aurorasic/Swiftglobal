@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.higgsblock.global.chain.app.common.formatter.BaseEntityFormatter;
+import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 
 /**
@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
  * @date 7/2/2018
  */
 @Component
-public class SourceBlockRequestFormatter extends BaseEntityFormatter<SourceBlockRequest> {
+public class SourceBlockRequestFormatter extends BaseMessageFormatter<SourceBlockRequest> {
 }

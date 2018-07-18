@@ -5,7 +5,7 @@ package com.higgsblock.global.chain.app.common.formatter;
  * @author baizhengwen
  * @date 2018/2/28
  */
-public interface IEntityFormatter<T> {
+public interface IMessageFormatter<T> {
 
     /**
      * get class of T

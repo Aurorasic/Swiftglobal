@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.util.Set;
  * @date 3/8/2018
  */
 @Data
-@Message(EntityType.INVENTORY_NOTIFY)
+@Message(MessageType.INVENTORY_NOTIFY)
 public class InventoryNotify extends BaseBizEntity {
 
     private long height;

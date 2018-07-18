@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync;
 
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class MaxHeightResponseHandler extends BaseEntityHandler<MaxHeightResponse> {
+public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightResponse> {
 
     @Autowired
     private SyncBlockService syncBlockService;

@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.transaction.formatter;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.common.formatter.BaseEntityFormatter;
+import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,5 +10,5 @@ import org.springframework.stereotype.Component;
  * @description
  */
 @Component
-public class TransactionFormatter extends BaseEntityFormatter<Transaction> {
+public class TransactionFormatter extends BaseMessageFormatter<Transaction> {
 }

@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.common.message;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 
 import java.lang.annotation.*;
 
@@ -12,5 +12,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Message {
-    EntityType value();
+    MessageType value();
 }

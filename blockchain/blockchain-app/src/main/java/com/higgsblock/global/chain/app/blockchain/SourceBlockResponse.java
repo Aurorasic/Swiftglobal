@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author yuanjiantao
  * @date 5/25/2018
  */
-@Message(EntityType.SOURCE_BLOCK_RESPONSE)
+@Message(MessageType.SOURCE_BLOCK_RESPONSE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
