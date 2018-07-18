@@ -63,7 +63,7 @@ public class TransactionService {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionFeeProcess transactionFeeProcess;
+    private TransactionFeeProcessor transactionFeeProcessor;
 
     @Autowired
     private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
@@ -99,10 +99,10 @@ public class TransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        TransactionFeeProcess.Rewards rewards = transactionFeeProcess.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        SortResult sortResult = transactionFeeProcessor.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
+        TransactionFeeProcessor.Rewards rewards = transactionFeeProcessor.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
-        if (!transactionFeeProcess.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
+        if (!transactionFeeProcessor.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
             return false;
         }
@@ -344,7 +344,7 @@ public class TransactionService {
             LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
                 if (block == null) {
-                    curMoney.add(transactionFeeProcess.getCurrencyFee(tx));
+                    curMoney.add(transactionFeeProcessor.getCurrencyFee(tx));
                 }
 
                 if (preMoney.compareTo(curMoney) < 0) {

@@ -72,7 +72,7 @@ public class VoteService implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
-        initWitnessTask(event.getHeight());
+        initWitnessTask(event.getHeight() + 1L);
     }
 
     public synchronized void initWitnessTask(long height) {
