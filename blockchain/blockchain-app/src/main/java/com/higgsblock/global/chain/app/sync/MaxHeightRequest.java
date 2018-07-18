@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor
 @Data
-@Message(EntityType.GET_MAX_HEIGHT)
+@Message(EntityType.MAX_HEIGHT_REQUEST)
 public class MaxHeightRequest extends BaseBizEntity {
     @Override
     public boolean valid() {

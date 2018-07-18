@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Message(EntityType.MAX_HEIGHT)
+@Message(EntityType.MAX_HEIGHT_RESPONSE)
 public class MaxHeightResponse extends BaseBizEntity {
     private long maxHeight;
 
