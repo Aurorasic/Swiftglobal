@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("blockRequestHandler")
+@Component
 @Slf4j
 public class BlockRequestHandler extends BaseEntityHandler<BlockRequest> {
 

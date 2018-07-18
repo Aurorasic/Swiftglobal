@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("maxHeightResponseHandler")
+@Component
 @Slf4j
 public class MaxHeightResponseHandler extends BaseEntityHandler<MaxHeightResponse> {
 

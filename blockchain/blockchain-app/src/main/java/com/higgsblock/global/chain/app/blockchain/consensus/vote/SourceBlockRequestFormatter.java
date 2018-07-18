@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author yuanjiantao
- * @date 6/29/2018
+ * @date 7/2/2018
  */
 @Component
-public class VoteTableFormatter extends BaseEntityFormatter<VoteTable> {
+public class SourceBlockRequestFormatter extends BaseEntityFormatter<SourceBlockRequest> {
 }
