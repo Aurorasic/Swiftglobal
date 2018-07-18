@@ -19,4 +19,13 @@ public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
      */
     BlockEntity findByBlockHash(String blockHash);
 
+
+    /**
+     * delete BlockEntity by height
+     *
+     * @param height
+     * @return
+     */
+    int deleteByHeight(long height);
+
 }
