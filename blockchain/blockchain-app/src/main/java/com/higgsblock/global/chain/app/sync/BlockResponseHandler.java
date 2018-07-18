@@ -1,47 +1,47 @@
-package com.higgsblock.global.chain.app.blockchain.handler;
+package com.higgsblock.global.chain.app.sync;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * @author baizhengwen
- * @date 2018/2/28
+ * @author yuanjiantao
+ * @date 3/8/2018
  */
-@Component("blockHandler")
+@Component
 @Slf4j
-public class BlockHandler extends BaseEntityHandler<Block> {
+public class BlockResponseHandler extends BaseEntityHandler<BlockResponse> {
 
     @Autowired
     private BlockProcessor blockProcessor;
 
     @Autowired
-    private OrphanBlockCacheManager orphanBlockCacheManager;
-
-    @Autowired
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteService voteService;
+    private BlockService blockService;
 
     @Autowired
-    private BlockIndexService blockIndexService;
+    private OrphanBlockCacheManager orphanBlockCacheManager;
 
 
     @Override
-    protected void process(SocketRequest<Block> request) {
-        Block data = request.getData();
-        long height = data.getHeight();
-        String hash = data.getHash();
+    protected void process(SocketRequest<BlockResponse> request) {
+        BlockResponse blockResponse = request.getData();
         String sourceId = request.getSourceId();
+        Block block = blockResponse.getBlock();
+        if (null == block) {
+            return;
+        }
+        long height = block.getHeight();
+        String hash = block.getHash();
 
         if (height <= 1) {
             return;
@@ -50,7 +50,7 @@ public class BlockHandler extends BaseEntityHandler<Block> {
             return;
         }
 
-        boolean success = blockProcessor.persistBlockAndIndex(data, sourceId, data.getVersion());
-        LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
+        blockProcessor.persistBlockAndIndex(block, sourceId, block.getVersion());
+
     }
 }

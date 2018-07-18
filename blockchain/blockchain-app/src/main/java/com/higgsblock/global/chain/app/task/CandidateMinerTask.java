@@ -3,10 +3,10 @@ package com.higgsblock.global.chain.app.task;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -32,13 +32,13 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
 
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
     @Autowired
-    private SourceBlockService sourceBlockService;
+    private SourceBlockProcessor sourceBlockService;
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private TransactionService transactionService;
+    private TransactionProcessor transactionProcessor;
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -59,7 +59,7 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
         String address = peerManager.getSelf().getId();
         curSec += TASK_TIME;
         LOGGER.info("curSec={} currHeight={}", curSec, currHeight);
-        if (curSec >= WAIT_MINER_TIME && transactionService.hasStake(address, SystemCurrencyEnum.CMINER)) {
+        if (curSec >= WAIT_MINER_TIME && transactionProcessor.hasStake(address, SystemCurrencyEnum.CMINER)) {
             doMing();
         }
     }
@@ -85,12 +85,12 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
             }
             for (String blockHash : maxBlockIndex.getBlockHashs()) {
                 LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
-                Block block = blockService.packageNewBlock(blockHash);
+                Block block = blockProcessor.packageNewBlock(blockHash);
                 if (block == null) {
                     LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
                     return;
                 }
-                long maxHeight = blockService.getMaxHeight();
+                long maxHeight = blockProcessor.getMaxHeight();
                 if (block.getHeight() <= maxHeight) {
                     LOGGER.warn("the expect block height={}, but max height={}", block.getHeight(), maxHeight);
                     return;

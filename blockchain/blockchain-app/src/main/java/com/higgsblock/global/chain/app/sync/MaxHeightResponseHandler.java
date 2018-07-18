@@ -10,16 +10,16 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("maxHeightHandler")
+@Component
 @Slf4j
-public class MaxHeightHandler extends BaseEntityHandler<MaxHeight> {
+public class MaxHeightResponseHandler extends BaseEntityHandler<MaxHeightResponse> {
 
     @Autowired
     private SyncBlockService syncBlockService;
 
     @Override
-    protected void process(SocketRequest<MaxHeight> request) {
-        MaxHeight maxHeight = request.getData();
-        syncBlockService.updatePeersMaxHeight(maxHeight.getMaxHeight(), request.getSourceId());
+    protected void process(SocketRequest<MaxHeightResponse> request) {
+        MaxHeightResponse maxHeightResponse = request.getData();
+        syncBlockService.updatePeersMaxHeight(maxHeightResponse.getMaxHeight(), request.getSourceId());
     }
 }

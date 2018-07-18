@@ -1,24 +1,22 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.message.Message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Set;
-
 /**
  * @author yuanjiantao
- * @date 7/2/2018
+ * @date 5/25/2018
  */
-@Message(EntityType.SOURCE_BLOCK_REQ)
+@Message(EntityType.SOURCE_BLOCK_RESPONSE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class SourceBlockReq {
+public class SourceBlockResponse {
 
-    private Set<String> blockHashs;
+    private Block block;
 }

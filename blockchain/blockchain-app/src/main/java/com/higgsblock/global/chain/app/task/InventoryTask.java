@@ -1,10 +1,10 @@
 package com.higgsblock.global.chain.app.task;
 
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.sync.Inventory;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.sync.InventoryNotify;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,23 +26,23 @@ public class InventoryTask extends BaseTask {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
     @Autowired
     private BlockIndexService blockIndexService;
 
     @Override
     protected void task() {
-        long height = blockService.getMaxHeight();
-        Inventory inventory = new Inventory();
-        inventory.setHeight(height);
+        long height = blockProcessor.getMaxHeight();
+        InventoryNotify inventoryNotify = new InventoryNotify();
+        inventoryNotify.setHeight(height);
         BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         if (blockIndex != null &&
                 CollectionUtils.isNotEmpty(blockIndex.getBlockHashs())) {
             Set<String> set = new HashSet<>(blockIndex.getBlockHashs());
-            inventory.setHashs(set);
+            inventoryNotify.setHashs(set);
         }
-        messageCenter.broadcast(inventory);
+        messageCenter.broadcast(inventoryNotify);
     }
 
     @Override

@@ -11,7 +11,6 @@ import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.service.ITransService;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,19 +23,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * The TransactionPersistService includes transaction index and utxo persistence.
+ * The TransactionService includes transaction index and utxo persistence.
  *
  * @author Zhao xiaogang
  * @date 2018 -05-22
  */
 @Service
 @Slf4j
-public class TransactionPersistService implements ITransService {
+public class TransactionIndexService implements ITransService {
     @Autowired
     private IUTXORepository iutxoRepository;
 
     @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     /**
      * The Transaction index entity dao.
@@ -81,7 +80,7 @@ public class TransactionPersistService implements ITransService {
                     spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
-                    if (utxoDaoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
+                    if (utxoService.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
@@ -129,7 +128,7 @@ public class TransactionPersistService implements ITransService {
                     break;
                 }
 
-                UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
+                UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
                     unspentUtxoTx = false;
                     LOGGER.warn("utxo data map has no this uxto={},tx={}", preUTXOKey, tx.getHash());

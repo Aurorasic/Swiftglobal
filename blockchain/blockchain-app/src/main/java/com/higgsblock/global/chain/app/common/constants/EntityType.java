@@ -20,18 +20,19 @@ public enum EntityType {
 
     // ================ type 200-299: block related ====================
     BLOCK("200"),
-    INVENTORY("201"),
-    MAX_HEIGHT("202"),
-    GET_BLOCK("203"),
-    GET_MAX_HEIGHT("204"),
-    SOURCE_BLOCK("205"),
-    SOURCE_BLOCK_REQ("207"),
+    INVENTORY_NOTIFY("201"),
+    MAX_HEIGHT_RESPONSE("202"),
+    GET_BLOCK_REQUEST("203"),
+    MAX_HEIGHT_REQUEST("204"),
+    SOURCE_BLOCK_RESPONSE("205"),
+    SOURCE_BLOCK_REQUEST("207"),
+    BLOCK_RESPONSE("208"),
 
     // ================ type 300-399: transaction related ==============
     TRANSACTION("300"),
 
     // ================ type 400-499: consensus related ================
-    VOTE_TABLE("400");
+    VOTES_NOTIFY("400");
 
     private String code;
 

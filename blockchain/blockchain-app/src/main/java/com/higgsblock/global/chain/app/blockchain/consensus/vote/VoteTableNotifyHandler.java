@@ -2,9 +2,9 @@ package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.HashBasedTable;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,19 +18,19 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 6/29/2018
  */
-@Component("voteTableHandler")
+@Component
 @Slf4j
-public class VoteTableHandler extends BaseEntityHandler<VoteTable> {
+public class VoteTableNotifyHandler extends BaseEntityHandler<VoteTableNotify> {
 
     @Autowired
     private VoteService voteService;
 
     @Override
-    protected void process(SocketRequest<VoteTable> request) {
+    protected void process(SocketRequest<VoteTableNotify> request) {
 
-        VoteTable data = request.getData();
+        VoteTableNotify data = request.getData();
         String sourceId = request.getSourceId();
-        LOGGER.info("Received VoteTable from {} with data {}", sourceId, JSON.toJSONString(data));
+        LOGGER.info("Received VoteTableNotify from {} with data {}", sourceId, JSON.toJSONString(data));
         Map<Integer, Map<String, Map<String, Vote>>> voteTableMap = data.getVoteTable();
         if (voteTableMap == null || voteTableMap.size() == 0) {
             LOGGER.info("the voteTable is null from {}", sourceId);

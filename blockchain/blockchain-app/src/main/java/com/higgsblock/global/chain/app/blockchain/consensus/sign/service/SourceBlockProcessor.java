@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.sign.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
-import com.higgsblock.global.chain.app.blockchain.SourceBlock;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class SourceBlockService {
+public class SourceBlockProcessor {
 
     @Autowired
     private MessageCenter messageCenter;
@@ -33,10 +33,10 @@ public class SourceBlockService {
      */
     public void sendBlockToWitness(Block block) {
         LOGGER.info("begin to send block to witness,height={}", block.getHeight());
-        SourceBlock sourceBlock = new SourceBlock(block);
-        messageCenter.dispatchToWitnesses(sourceBlock);
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            voteService.addSourceBlock(sourceBlock.getBlock());
+        SourceBlockResponse sourceBlockResponse = new SourceBlockResponse(block);
+        messageCenter.dispatchToWitnesses(sourceBlockResponse);
+        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+            voteService.addSourceBlock(sourceBlockResponse.getBlock());
         }
     }
 

@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.sync;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -22,14 +22,14 @@ import java.util.concurrent.TimeUnit;
  * @author yuanjiantao
  * @date 3/8/2018
  */
-@Component("inventoryHandler")
+@Component
 @Slf4j
-public class InventoryHandler extends BaseEntityHandler<Inventory> {
+public class InventoryNotifyHandler extends BaseEntityHandler<InventoryNotify> {
 
     private static final long SYNC_BLOCK_EXPIRATION_IN_RUNNING = 1000L;
 
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -45,24 +45,24 @@ public class InventoryHandler extends BaseEntityHandler<Inventory> {
             .build();
 
     @Override
-    protected void process(SocketRequest<Inventory> request) {
+    protected void process(SocketRequest<InventoryNotify> request) {
         if (!systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
             return;
         }
-        Inventory data = request.getData();
+        InventoryNotify data = request.getData();
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
-        if (height <= blockService.getMaxHeight() + 1L) {
+        if (height <= blockProcessor.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
-                if (!blockService.isExistInDB(height, hash)) {
-                    GetBlock getBlock = new GetBlock(height, hash);
-                    messageCenter.unicast(sourceId, getBlock);
+                if (!blockProcessor.isExistInDB(height, hash)) {
+                    BlockRequest blockRequest = new BlockRequest(height, hash);
+                    messageCenter.unicast(sourceId, blockRequest);
                     return height;
                 }
                 return null;
             }));
-        } else if (height > blockService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
+        } else if (height > blockProcessor.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
             eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
         }
 

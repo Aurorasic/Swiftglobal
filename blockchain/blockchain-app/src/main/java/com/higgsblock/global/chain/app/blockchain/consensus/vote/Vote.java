@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -113,7 +113,7 @@ public class Vote extends BaseBizEntity {
         if (StringUtils.isEmpty(signature)) {
             return false;
         }
-        if (!BlockService.validSign(height, blockHash, voteVersion, signature, witnessPubKey)) {
+        if (!BlockProcessor.validSign(height, blockHash, voteVersion, signature, witnessPubKey)) {
             return false;
         }
         if (voteVersion > 1) {

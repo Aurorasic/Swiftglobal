@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,23 +15,23 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(EntityType.GET_BLOCK)
-public class GetBlock extends BaseBizEntity {
+@Message(EntityType.GET_BLOCK_REQUEST)
+public class BlockRequest extends BaseBizEntity {
 
     private long height;
 
     private String hash;
 
-    public GetBlock(long height) {
+    public BlockRequest(long height) {
         this.height = height;
     }
 
     @Override
     public boolean equals(Object o) {
 
-        if (o instanceof GetBlock) {
-            GetBlock getBlock = (GetBlock) o;
-            return this.height == getBlock.height && StringUtils.equals(this.hash, getBlock.hash);
+        if (o instanceof BlockRequest) {
+            BlockRequest blockRequest = (BlockRequest) o;
+            return this.height == blockRequest.height && StringUtils.equals(this.hash, blockRequest.hash);
         }
         return false;
     }

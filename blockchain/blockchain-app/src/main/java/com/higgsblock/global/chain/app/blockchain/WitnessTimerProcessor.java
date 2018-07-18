@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.Subscribe;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -17,24 +17,24 @@ import org.springframework.stereotype.Component;
  **/
 @Component
 @Slf4j
-public class WitnessTimerProcess implements IEventBusListener {
+public class WitnessTimerProcessor implements IEventBusListener {
 
     public static long initTime;
     public static long currHeight;
     public final long WAIT_WITNESS_TIME = 20;
 
     @Autowired
-    private TransactionService transactionService;
+    private TransactionProcessor transactionProcessor;
     @Autowired
-    private BlockService blockService;
+    private BlockProcessor blockProcessor;
     @Autowired
     private PeerManager peerManager;
 
     public void initWitnessTime() {
         String address = peerManager.getSelf().getId();
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(address)) {
+        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address)) {
             initTime = System.currentTimeMillis();
-            currHeight = blockService.getMaxHeight();
+            currHeight = blockProcessor.getMaxHeight();
         }
         LOGGER.info("init time={},currHeight={} ", initTime, currHeight);
     }
@@ -57,7 +57,7 @@ public class WitnessTimerProcess implements IEventBusListener {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         String address = peerManager.getSelf().getId();
-        if (BlockService.WITNESS_ADDRESS_LIST.contains(address) && event.getHeight() > currHeight) {
+        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address) && event.getHeight() > currHeight) {
             currHeight = event.getHeight();
             initTime = System.currentTimeMillis();
             LOGGER.info("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);
@@ -65,6 +65,6 @@ public class WitnessTimerProcess implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongCandidateMiner(Block block) {
-        return transactionService.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER);
+        return transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER);
     }
 }

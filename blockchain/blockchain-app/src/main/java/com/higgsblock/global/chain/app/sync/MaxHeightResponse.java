@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync;
 
-import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Message(EntityType.MAX_HEIGHT)
-public class MaxHeight extends BaseBizEntity {
+@Message(EntityType.MAX_HEIGHT_RESPONSE)
+public class MaxHeightResponse extends BaseBizEntity {
     private long maxHeight;
 
     @Override

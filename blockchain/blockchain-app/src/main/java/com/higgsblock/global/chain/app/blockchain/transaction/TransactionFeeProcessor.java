@@ -1,10 +1,9 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.google.common.collect.Lists;
-import com.higgsblock.global.chain.app.blockchain.BlockService;
+import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.service.ITransService;
-import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
+import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -28,7 +27,7 @@ import java.util.*;
  **/
 @Slf4j
 @Service
-public class TransactionFeeProcess {
+public class TransactionFeeProcessor {
 
     public static final Money MINER_REWARDS_RATION = new Money("0.8");
 
@@ -57,10 +56,7 @@ public class TransactionFeeProcess {
     private KeyPair peerKeyPair;
 
     @Autowired
-    private ITransService transService;
-
-    @Autowired
-    private UTXODaoServiceProxy utxoDaoServiceProxy;
+    private UTXOService utxoService;
 
     /**
      * count Miner and Witness Rewards
@@ -72,7 +68,7 @@ public class TransactionFeeProcess {
 
         Money minerTotal;
 
-        LOGGER.info(" MINER_REWARDS_RATION：{} " + MINER_REWARDS_RATION.getValue());
+        LOGGER.info("miner rewards ration：{} ", MINER_REWARDS_RATION.getValue());
         Money totalFee = new Money("0");
         for (Map.Entry<String, Money> entry : feeMap.entrySet()) {
             Money fee = entry.getValue();
@@ -277,7 +273,7 @@ public class TransactionFeeProcess {
         for (TransactionInput input : inputs) {
             String preOutKey = input.getPrevOut().getKey();
 
-            UTXO utxo = utxoDaoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
+            UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preOutKey);
             if (null == utxo) {
                 LOGGER.warn("get utxo is null:{}", preOutKey);
                 throw new RuntimeException("uxto is null:" + preOutKey);
@@ -319,14 +315,14 @@ public class TransactionFeeProcess {
 
     private List<TransactionOutput> genWitnessCoinBaseOutput(Rewards rewards) {
         List<TransactionOutput> outputList = Lists.newArrayList();
-        int witnessSize = BlockService.WITNESS_ADDRESS_LIST.size();
+        int witnessSize = BlockProcessor.WITNESS_ADDRESS_LIST.size();
         int lastReward = new Random().nextInt(11);
         for (int i = 0; i < witnessSize; i++) {
             if (lastReward == i) {
-                TransactionOutput transactionOutput = generateTransactionOutput(BlockService.WITNESS_ADDRESS_LIST.get(i), rewards.getLastWitnessMoney());
+                TransactionOutput transactionOutput = generateTransactionOutput(BlockProcessor.WITNESS_ADDRESS_LIST.get(i), rewards.getLastWitnessMoney());
                 outputList.add(transactionOutput);
             } else {
-                TransactionOutput transactionOutput = generateTransactionOutput(BlockService.WITNESS_ADDRESS_LIST.get(i), rewards.getTopTenSingleWitnessMoney());
+                TransactionOutput transactionOutput = generateTransactionOutput(BlockProcessor.WITNESS_ADDRESS_LIST.get(i), rewards.getTopTenSingleWitnessMoney());
                 outputList.add(transactionOutput);
             }
         }
