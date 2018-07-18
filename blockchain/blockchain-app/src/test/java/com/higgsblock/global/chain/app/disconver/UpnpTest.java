@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.disconver;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.network.Peer;
+import com.higgsblock.global.chain.network.PeerManager;
 import com.higgsblock.global.chain.network.api.IRegistryApi;
 import com.higgsblock.global.chain.network.upnp.UpnpDiscover;
 import com.higgsblock.global.chain.network.upnp.UpnpManager;
@@ -37,6 +38,9 @@ public class UpnpTest extends BaseTest {
     @Autowired
     private IRegistryApi registryApi;
 
+    @Autowired
+    private PeerManager peerManager;
+
     /**
      * Init port test.
      *
@@ -44,7 +48,7 @@ public class UpnpTest extends BaseTest {
      */
     @Test
     public void initPortTest() throws Exception {
-        boolean state = this.upnpManager.initPeerInfo();
+        boolean state = this.peerManager.loadSelfPeerInfo();
         System.out.println("init port result = " + state);
     }
 
@@ -53,21 +57,8 @@ public class UpnpTest extends BaseTest {
      */
     @Test
     public void socketPortTest(){
-        String publicIp = this.upnpManager.getIp();
-        int port = upnpManager.getHttpPort();
+        int port = upnpManager.getHttpMappingPort();
         System.out.println("port = " + port);
-    }
-
-    /**
-     * Public ip test.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void publicIpTest() throws Exception {
-        String publicIp = this.upnpManager.getIp();
-        System.out.println("publicIp=" + publicIp);
-        Assert.assertNotEquals(null, publicIp);
     }
 
     /**

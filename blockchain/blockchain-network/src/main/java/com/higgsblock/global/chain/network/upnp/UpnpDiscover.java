@@ -38,6 +38,7 @@ public class UpnpDiscover {
 
     /**
      * Add port mapping port mapping info. Until find a valid port.
+     * If has exits then return present mapping info
      *
      * @param externalPort the external port
      * @param internalPort the internal port
