@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.consensus;
 
 import com.higgsblock.global.chain.app.blockchain.BlockService;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
-import com.higgsblock.global.chain.app.service.IWitnessEntityService;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.List;
 public class WitnessManager implements InitializingBean {
 
     @Autowired
-    private IWitnessEntityService witnessService;
+    private IWitnessService witnessService;
 
     @Autowired
     private PeerManager peerManager;

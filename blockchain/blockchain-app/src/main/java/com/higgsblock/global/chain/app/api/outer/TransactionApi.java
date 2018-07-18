@@ -48,7 +48,7 @@ public class TransactionApi {
             return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
         }
 
-        List<UTXO> list = utxoDaoServiceProxy.getUnionUTXO(address);
+        List<UTXO> list = utxoDaoServiceProxy.getUnionUTXO(null, address, null);
         return ResponseData.success(list);
     }
 }

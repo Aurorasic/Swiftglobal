@@ -11,7 +11,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,14 +19,14 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BlockIdxDaoService implements IBlockIndexService {
+public class BlockIndexService implements IBlockIndexService {
 
 
     @Autowired
     private IBlockIndexRepository blockIndexRepository;
 
     @Autowired
-    private TransDaoService transDaoService;
+    private TransactionPersistService transactionPersistService;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -38,10 +37,10 @@ public class BlockIdxDaoService implements IBlockIndexService {
         }
 
         if (block.isGenesisBlock()) {
-            transDaoService.addTransIdxAndUtxo(block, block.getHash());
+            transactionPersistService.addTransIdxAndUtxo(block, block.getHash());
         } else {
             if (toBeBestBlock != null) {
-                transDaoService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
+                transactionPersistService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
     }
@@ -57,6 +56,7 @@ public class BlockIdxDaoService implements IBlockIndexService {
     }
 
     private void updateBestBlockIndex(Block bestBlock) {
+
         BlockIndex blockIndex = getBlockIndexByHeight(bestBlock.getHeight());
         for (int i = 0; i < blockIndex.getBlockHashs().size(); i++) {
             if (bestBlock.getHash().equals(blockIndex.getBlockHashs().get(i))) {
@@ -72,23 +72,21 @@ public class BlockIdxDaoService implements IBlockIndexService {
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
         List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
-
-        if (CollectionUtils.isNotEmpty(blockIndexEntities)) {
-            BlockIndex blockIndex = new BlockIndex();
-            blockIndex.setHeight(blockIndexEntities.get(0).getHeight());
-            ArrayList<String> blockHashs = Lists.newArrayList();
-            blockIndex.setBlockHashs(blockHashs);
-            blockIndex.setBestIndex(-1);
-            blockIndexEntities.forEach(blockIndexEntity -> {
-                blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
-                if (blockIndexEntity.getIsBest() != -1) {
-                    blockIndex.setBestIndex(blockIndexEntity.getIsBest());
-                }
-            });
-            return blockIndex;
+        if (CollectionUtils.isEmpty(blockIndexEntities)) {
+            LOGGER.info("get blockIndex is null by height={}", height);
+            return null;
         }
-        LOGGER.info("get blockIndex is null by height={}", height);
-        return null;
+        BlockIndex blockIndex = new BlockIndex();
+        blockIndex.setHeight(height);
+        blockIndex.setBlockHashs(Lists.newArrayList());
+        blockIndexEntities.forEach(blockIndexEntity -> {
+            blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
+            if (blockIndexEntity.getIsBest() != -1) {
+                blockIndex.setBestBlockHash(blockIndexEntity.getBlockHash());
+            }
+        });
+        return blockIndex;
+
     }
 
 
@@ -97,10 +95,10 @@ public class BlockIdxDaoService implements IBlockIndexService {
         return getBlockIndexByHeight(maxHeight);
     }
 
-    public List<String> getLastHightBlockHashs() {
+    public List<String> getLastHeightBlockHashs() {
         List<String> result = getLastBlockIndex().getBlockHashs();
         if (CollectionUtils.isEmpty(result)) {
-            throw new RuntimeException("error getLastHightBlockHashs" + getLastBlockIndex());
+            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
         }
         return result;
     }

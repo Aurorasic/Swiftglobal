@@ -29,7 +29,7 @@ public class WitnessTimer {
     private volatile boolean isRunning;
     static Block block;
     public volatile static boolean isCurrBlockConfirm = false;
-    public static final long WAIT_WITNESS_TIME = 150;
+    public static final long WAIT_WITNESS_TIME = 15;
 
 
     @Autowired
@@ -80,11 +80,12 @@ public class WitnessTimer {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
+            isRunning = true;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec = " + curSec);
+                        LOGGER.info("curSec = {} height={}", curSec, currHeight);
                         TimeUnit.SECONDS.sleep(1);
                         if (block == null) {
                             if (preHeight >= currHeight) {
@@ -112,7 +113,7 @@ public class WitnessTimer {
                     }
                 }
             });
-            isRunning = true;
+
         }
 
     }

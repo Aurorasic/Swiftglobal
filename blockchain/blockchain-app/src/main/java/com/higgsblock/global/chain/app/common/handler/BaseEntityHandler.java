@@ -49,6 +49,7 @@ public abstract class BaseEntityHandler<T> implements IEntityHandler<T> {
 
     @Override
     public final synchronized void start(ExecutorService executorService) {
+        //todo kongyu 2018-7-17 isRunning=false 默认值，下面的任务可能永远不会执行！
         if (!isRunning) {
             this.executorService = executorService;
             this.executorService.execute(() -> {

@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionService;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -30,7 +30,7 @@ public class CandidateMinerTimer {
     private ExecutorService executorService;
     private volatile boolean isRunning;
     public static volatile boolean isCMINER = false;
-    public static final long WAIT_MINER_TIME = 180;
+    public static final long WAIT_MINER_TIME = 30;
 
     @Autowired
     private BlockService blockService;
@@ -41,7 +41,7 @@ public class CandidateMinerTimer {
     @Autowired
     private TransactionService transactionService;
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     public void queryCurrHeightStartTime() throws InterruptedException {
         String address = peerManager.getSelf().getId();
@@ -79,7 +79,7 @@ public class CandidateMinerTimer {
         long bestMaxHeight = currHeight;
         long expectHeight = bestMaxHeight + 1;
         try {
-            BlockIndex maxBlockIndex = blockIdxDaoService.getBlockIndexByHeight(currHeight);
+            BlockIndex maxBlockIndex = blockIndexService.getBlockIndexByHeight(currHeight);
             if (maxBlockIndex == null) {
                 throw new IllegalArgumentException("the blockIndex not found ,current height:" + currHeight);
             }
@@ -107,11 +107,12 @@ public class CandidateMinerTimer {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             this.executorService = executorService;
+            isRunning = true;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
                         ++curSec;
-                        LOGGER.info("curSec = " + curSec);
+                        LOGGER.info("curSec={} height={}", curSec, currHeight);
                         TimeUnit.SECONDS.sleep(1);
                         if (preHeight >= currHeight) {
                             if (curSec > WAIT_MINER_TIME) {
@@ -129,7 +130,6 @@ public class CandidateMinerTimer {
                     }
                 }
             });
-            isRunning = true;
         }
     }
 }

@@ -11,7 +11,7 @@ import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.consensus.NodeManager;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.consensus.sign.service.WitnessService;
-import com.higgsblock.global.chain.app.service.impl.BlockIdxDaoService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ public class MiningListener implements IEventBusListener {
     private CandidateMinerTimer candidateMinerTimer;
 
     @Autowired
-    private BlockIdxDaoService blockIdxDaoService;
+    private BlockIndexService blockIndexService;
 
     /**
      * the block height which is produced recently
@@ -74,7 +74,7 @@ public class MiningListener implements IEventBusListener {
         if (SystemStatus.RUNNING == state) {
             isMining = true;
             //add by huangshengli  input pre blockhash when try to produce new block 2018-07-09
-            BlockIndex lastBlockIndex = blockIdxDaoService.getLastBlockIndex();
+            BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
             LOGGER.info("The system is ready, start mining,max height={}", lastBlockIndex.getHeight());
             if (lastBlockIndex.hasBestBlock()) {
                 process(lastBlockIndex.getBestBlockHash(), lastBlockIndex.getHeight());

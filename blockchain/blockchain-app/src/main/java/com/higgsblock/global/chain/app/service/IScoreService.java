@@ -1,6 +1,9 @@
 package com.higgsblock.global.chain.app.service;
 
 
+import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,6 +29,24 @@ public interface IScoreService {
     void put(String address, Integer score);
 
     /**
+     * batch update
+     *
+     * @param addressList
+     * @param score
+     * @return
+     */
+    int updateBatch(List<String> addressList, int score);
+
+    /**
+     * Score all the records
+     * add or sub score
+     *
+     * @param score
+     * @return
+     */
+    int plusAll(Integer score);
+
+    /**
      * set score if not exist
      *
      * @param address
@@ -49,4 +70,5 @@ public interface IScoreService {
      */
     Map<String, Integer> loadAll();
 
+    List<ScoreEntity> all();
 }

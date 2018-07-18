@@ -24,14 +24,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * The type Trans dao service.
+ * The TransactionPersistService includes transaction index and utxo persistence.
  *
  * @author Zhao xiaogang
  * @date 2018 -05-22
  */
 @Service
 @Slf4j
-public class TransDaoService implements ITransService {
+public class TransactionPersistService implements ITransService {
     @Autowired
     private IUTXORepository iutxoRepository;
 

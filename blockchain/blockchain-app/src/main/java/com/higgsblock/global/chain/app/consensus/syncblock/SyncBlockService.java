@@ -88,6 +88,9 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     }
 
     public void startSyncBlock() {
+        /*
+        1.At the beginning of synchronization, the nodes you have already connected to is asked how high it is
+         */
         messageCenter.broadcast(new GetMaxHeight());
 
         try {
@@ -144,7 +147,8 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         }
         LOGGER.info("process event: {}", event);
 
-        //when there has a persisted block on the height, stop sycn this height.If another one is real best block on the height, its next block maybe orphan block, then fetch the real best block as orphan block.
+        //when there has a persisted block on the height, stop sycn this height.If another one is real best block on
+        // the height, its next block maybe orphan block, then fetch the real best block as orphan block.
         requestRecord.invalidate(event.getHeight());
         long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
         if (targetHeight <= getPeersMaxHeight()) {
@@ -220,6 +224,12 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         peersMaxHeight.remove(sourceId);
     }
 
+    /**
+     * The node takes the initiative to ask the adjacent node for the current block height of the other party
+     *
+     * @param height
+     * @param sourceId
+     */
     public void updatePeersMaxHeight(long height, String sourceId) {
         if (null != sourceId && countDownLatch.getCount() > 0L) {
             peersMaxHeight.compute(sourceId, (k, v) -> {

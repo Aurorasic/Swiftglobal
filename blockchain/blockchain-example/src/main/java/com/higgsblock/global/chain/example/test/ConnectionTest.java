@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.example.test;
 
 import com.alibaba.fastjson.JSON;
-import com.higgsblock.global.chain.app.api.vo.ConnectionInfo;
+import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.example.api.IConnectionApi;
 import com.higgsblock.global.chain.network.http.HttpClient;
 
@@ -20,7 +20,7 @@ public class ConnectionTest {
         int port = 8081;
         for (int i = 0; i < MAX_NUMBER; i++) {
             IConnectionApi api = HttpClient.getApi(ip, port, IConnectionApi.class);
-            List<ConnectionInfo> connections = api.all().execute().body();
+            List<ConnectionVO> connections = api.all().execute().body();
             System.out.println(JSON.toJSONString(connections, true));
             System.out.println(ip + ":" + port + " 总连接数：" + connections.size());
             port++;

@@ -6,8 +6,10 @@ import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,7 +18,7 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class ScoreDaoService implements IScoreService {
+public class ScoreService implements IScoreService {
 
     @Autowired
     private IScoreRepository scoreRepository;
@@ -49,6 +51,18 @@ public class ScoreDaoService implements IScoreService {
             ScoreEntity saveEntity = new ScoreEntity(address, score);
             scoreRepository.save(saveEntity);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int updateBatch(List<String> addressList, int score) {
+        return scoreRepository.updateByAddress(addressList, score);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int plusAll(Integer score) {
+        return scoreRepository.plusAll(score);
     }
 
     /**
@@ -87,5 +101,10 @@ public class ScoreDaoService implements IScoreService {
         Map<String, Integer> map = new HashMap<>();
         scoreRepository.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
         return map;
+    }
+
+    @Override
+    public List<ScoreEntity> all() {
+        return scoreRepository.findAll();
     }
 }
