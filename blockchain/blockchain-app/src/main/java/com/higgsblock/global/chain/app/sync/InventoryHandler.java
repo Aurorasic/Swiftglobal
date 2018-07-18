@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class InventoryNotifyHandler extends BaseMessageHandler<InventoryNotify> {
+public class InventoryHandler extends BaseMessageHandler<Inventory> {
 
     private static final long SYNC_BLOCK_EXPIRATION_IN_RUNNING = 1000L;
 
@@ -45,11 +45,11 @@ public class InventoryNotifyHandler extends BaseMessageHandler<InventoryNotify> 
             .build();
 
     @Override
-    protected void process(SocketRequest<InventoryNotify> request) {
+    protected void process(SocketRequest<Inventory> request) {
         if (!systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
             return;
         }
-        InventoryNotify data = request.getData();
+        Inventory data = request.getData();
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();

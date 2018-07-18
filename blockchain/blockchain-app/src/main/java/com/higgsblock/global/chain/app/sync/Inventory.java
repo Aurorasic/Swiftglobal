@@ -12,8 +12,8 @@ import java.util.Set;
  * @date 3/8/2018
  */
 @Data
-@Message(MessageType.INVENTORY_NOTIFY)
-public class InventoryNotify extends BaseBizEntity {
+@Message(MessageType.INVENTORY)
+public class Inventory extends BaseBizEntity {
 
     private long height;
 

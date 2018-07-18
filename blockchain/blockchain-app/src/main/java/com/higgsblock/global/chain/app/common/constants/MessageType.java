@@ -14,25 +14,26 @@ import org.apache.commons.lang.StringUtils;
 @AllArgsConstructor
 public enum MessageType {
 
-    // ================ type 000-099: base related =========================
-    UNKNOWN("000"),
-    SYNC_FRAMEWORK("010"),
+    // ================ 000-099: base related =====================
 
-    // ================ type 200-299: block related ====================
+    // ================ 200-299: block related ====================
     BLOCK("200"),
-    INVENTORY_NOTIFY("201"),
-    MAX_HEIGHT_RESPONSE("202"),
-    GET_BLOCK_REQUEST("203"),
-    MAX_HEIGHT_REQUEST("204"),
-    SOURCE_BLOCK_RESPONSE("205"),
-    SOURCE_BLOCK_REQUEST("207"),
-    BLOCK_RESPONSE("208"),
+    INVENTORY("201"),
 
-    // ================ type 300-399: transaction related ==============
+    MAX_HEIGHT_REQUEST("202"),
+    MAX_HEIGHT_RESPONSE("203"),
+
+    BLOCK_REQUEST("204"),
+    BLOCK_RESPONSE("205"),
+
+    SOURCE_BLOCK_REQUEST("206"),
+    SOURCE_BLOCK_RESPONSE("207"),
+
+    // ================ 300-399: transaction related ==============
     TRANSACTION("300"),
 
-    // ================ type 400-499: consensus related ================
-    VOTES_NOTIFY("400");
+    // ================ 400-499: consensus related ================
+    VOTE_TABLE("400");
 
     private String code;
 

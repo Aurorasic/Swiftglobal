@@ -151,11 +151,11 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     private void broadcastInventory(BlockPersistedEvent event) {
         long height = event.getHeight();
         String sourceId = event.getSourceId();
-        InventoryNotify inventoryNotify = new InventoryNotify();
-        inventoryNotify.setHeight(height);
+        Inventory inventory = new Inventory();
+        inventory.setHeight(height);
         Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
-        inventoryNotify.setHashs(set);
-        messageCenter.broadcast(new String[]{sourceId}, inventoryNotify);
+        inventory.setHashs(set);
+        messageCenter.broadcast(new String[]{sourceId}, inventory);
     }
 
     /**

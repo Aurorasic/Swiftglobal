@@ -13,15 +13,15 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class VoteTableNotifyHandler extends BaseMessageHandler<VoteTableNotify> {
+public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
 
     @Autowired
     private VoteProcessor voteProcessor;
 
     @Override
-    protected void process(SocketRequest<VoteTableNotify> request) {
+    protected void process(SocketRequest<VoteTable> request) {
 
-        VoteTableNotify data = request.getData();
+        VoteTable data = request.getData();
         String sourceId = request.getSourceId();
         LOGGER.info("Received VoteTable from {} with data {}", sourceId, data.toJson());
         if (data == null || !data.valid()) {

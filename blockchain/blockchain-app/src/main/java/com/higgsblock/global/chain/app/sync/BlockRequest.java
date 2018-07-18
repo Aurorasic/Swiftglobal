@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(MessageType.GET_BLOCK_REQUEST)
+@Message(MessageType.BLOCK_REQUEST)
 public class BlockRequest extends BaseBizEntity {
 
     private long height;

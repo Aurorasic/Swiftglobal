@@ -1,12 +1,12 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.sync;
 
 import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 
 /**
  * @author yuanjiantao
- * @date 6/29/2018
+ * @date 3/8/2018
  */
 @Component
-public class VoteTableNotifyFormatter extends BaseMessageFormatter<VoteTableNotify> {
+public class InventoryFormatter extends BaseMessageFormatter<Inventory> {
 }

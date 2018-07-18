@@ -19,18 +19,18 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 6/28/2018
  */
-@Message(MessageType.VOTES_NOTIFY)
+@Message(MessageType.VOTE_TABLE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class VoteTableNotify extends BaseSerializer {
+public class VoteTable extends BaseSerializer {
 
     private int version = 0;
 
     private Map<Integer, Map<String, Map<String, Vote>>> voteTable;
 
-    public VoteTableNotify(Map<Integer, Map<String, Map<String, Vote>>> voteTable) {
+    public VoteTable(Map<Integer, Map<String, Map<String, Vote>>> voteTable) {
         this.voteTable = voteTable;
     }
 

@@ -11,7 +11,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.SourceBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
-import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTableNotify;
+import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
@@ -62,7 +62,7 @@ public class VoteProcessor implements IEventBusListener {
      * the row is version of vote,the column is the pubKey of vote,
      * the inner key of Map is the blockHash of the vote
      */
-    //TODO:yangyi use VoteTableNotify
+    //TODO:yangyi use VoteTable
     private HashBasedTable<Integer, String, Map<String, Vote>> voteHashTable;
 
     @Getter
@@ -132,7 +132,7 @@ public class VoteProcessor implements IEventBusListener {
             voteMap.put(bestBlockHash, vote);
             this.voteHashTable.put(1, keyPair.getPubKey(), voteMap);
             Map<Integer, Map<String, Map<String, Vote>>> integerMapMap = this.voteHashTable.rowMap();
-            VoteTableNotify voteTable = new VoteTableNotify(integerMapMap);
+            VoteTable voteTable = new VoteTable(integerMapMap);
             this.messageCenter.dispatchToWitnesses(voteTable);
             LOGGER.info("send voteHashTable to witness success {},{}", this.height, voteTable);
         }
@@ -212,11 +212,11 @@ public class VoteProcessor implements IEventBusListener {
         }
         if (getAllVoteSize() > startAllVoteSize) {
             LOGGER.info("local voteHashTable with height {} ,is : {}", height, voteHashTable);
-            messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
         }
     }
 
-    private void updateVoteCache(long height, VoteTableNotify otherVoteTable) {
+    private void updateVoteCache(long height, VoteTable otherVoteTable) {
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
         voteMap.values().stream().forEach(map -> {
             if (MapUtils.isEmpty(map)) {
@@ -246,7 +246,7 @@ public class VoteProcessor implements IEventBusListener {
         });
     }
 
-    public synchronized void dealVoteTable(String sourceId, long voteHeight, VoteTableNotify otherVoteTable) {
+    public synchronized void dealVoteTable(String sourceId, long voteHeight, VoteTable otherVoteTable) {
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
@@ -267,11 +267,11 @@ public class VoteProcessor implements IEventBusListener {
         dealVoteTable(voteHeight, otherVoteTable);
         if (getAllVoteSize() > startAllVoteSize) {
             LOGGER.info("local voteHashTable with height {} ,is : {}", voteHeight, voteHashTable);
-            messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
+            messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
         }
     }
 
-    private boolean checkSourceBlock(String sourceId, long voteHeight, VoteTableNotify otherVoteTable) {
+    private boolean checkSourceBlock(String sourceId, long voteHeight, VoteTable otherVoteTable) {
         Map<String, Map<String, Vote>> map = otherVoteTable.getVoteMapOfPubKeyByVersion(1);
         if (null == map || map.isEmpty()) {
             return false;
@@ -300,7 +300,7 @@ public class VoteProcessor implements IEventBusListener {
         return true;
     }
 
-    private void dealVoteTable(long voteHeight, VoteTableNotify otherVoteTable) {
+    private void dealVoteTable(long voteHeight, VoteTable otherVoteTable) {
         LOGGER.info("add voteMap to task with voteHeight {} ,otherVoteTable {}", voteHeight, otherVoteTable);
 
         int versionSize = otherVoteTable.getVersionSize();
@@ -454,7 +454,7 @@ public class VoteProcessor implements IEventBusListener {
                 blockWithEnoughSign.setVoteVersion(version);
                 blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, blockWithEnoughSign);
-                messageCenter.dispatchToWitnesses(new VoteTableNotify(this.voteHashTable.rowMap()));
+                messageCenter.dispatchToWitnesses(new VoteTable(this.voteHashTable.rowMap()));
                 this.messageCenter.broadcast(blockWithEnoughSign);
                 return true;
             }
