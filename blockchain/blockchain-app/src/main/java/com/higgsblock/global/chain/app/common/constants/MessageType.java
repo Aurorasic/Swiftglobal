@@ -20,20 +20,21 @@ public enum MessageType {
     BLOCK("200"),
     INVENTORY("201"),
 
-    MAX_HEIGHT_REQUEST("202"),
-    MAX_HEIGHT_RESPONSE("203"),
-
-    BLOCK_REQUEST("204"),
-    BLOCK_RESPONSE("205"),
-
-    SOURCE_BLOCK_REQUEST("206"),
-    SOURCE_BLOCK_RESPONSE("207"),
-
     // ================ 300-399: transaction related ==============
     TRANSACTION("300"),
 
     // ================ 400-499: consensus related ================
-    VOTE_TABLE("400");
+    VOTE_TABLE("400"),
+
+    // ================ 500-599: request and response ==============
+    MAX_HEIGHT_REQUEST("501"),
+    MAX_HEIGHT_RESPONSE("502"),
+
+    BLOCK_REQUEST("503"),
+    BLOCK_RESPONSE("504"),
+
+    SOURCE_BLOCK_REQUEST("505"),
+    SOURCE_BLOCK_RESPONSE("506");
 
     private String code;
 
