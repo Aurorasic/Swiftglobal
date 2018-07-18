@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  */
 @Component("blockHandler")
 @Slf4j
-public class BlockHandler extends BaseEntityHandler<Block> {
+public class BlockHandler extends BaseMessageHandler<Block> {
 
     @Autowired
     private BlockProcessor blockProcessor;

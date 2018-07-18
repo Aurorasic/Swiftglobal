@@ -10,7 +10,7 @@ import java.lang.reflect.Type;
  * @author baizhengwen
  * @date 2018/3/27
  */
-public abstract class BaseEntityFormatter<T> implements IEntityFormatter<T> {
+public abstract class BaseMessageFormatter<T> implements IMessageFormatter<T> {
 
     @Override
     public Class<T> getEntityClass() {

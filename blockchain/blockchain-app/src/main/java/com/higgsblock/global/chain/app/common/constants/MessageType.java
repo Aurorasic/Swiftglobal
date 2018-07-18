@@ -12,7 +12,7 @@ import org.apache.commons.lang.StringUtils;
  */
 @Getter
 @AllArgsConstructor
-public enum EntityType {
+public enum MessageType {
 
     // ================ type 000-099: base related =========================
     UNKNOWN("000"),
@@ -37,8 +37,8 @@ public enum EntityType {
     private String code;
 
 
-    public static EntityType getByCode(String code) {
-        for (EntityType item : values()) {
+    public static MessageType getByCode(String code) {
+        for (MessageType item : values()) {
             if (StringUtils.equals(code, item.getCode())) {
                 return item;
             }

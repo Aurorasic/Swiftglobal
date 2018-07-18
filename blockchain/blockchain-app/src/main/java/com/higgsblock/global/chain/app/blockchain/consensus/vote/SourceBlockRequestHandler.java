@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import java.util.HashMap;
  */
 @Component
 @Slf4j
-public class SourceBlockRequestHandler extends BaseEntityHandler<SourceBlockRequest> {
+public class SourceBlockRequestHandler extends BaseMessageHandler<SourceBlockRequest> {
 
     @Autowired
     private MessageCenter messageCenter;

@@ -9,7 +9,7 @@ import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class InventoryNotifyHandler extends BaseEntityHandler<InventoryNotify> {
+public class InventoryNotifyHandler extends BaseMessageHandler<InventoryNotify> {
 
     private static final long SYNC_BLOCK_EXPIRATION_IN_RUNNING = 1000L;
 

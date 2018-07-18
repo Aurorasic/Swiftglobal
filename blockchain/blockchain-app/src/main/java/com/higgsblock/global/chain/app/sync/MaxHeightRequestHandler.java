@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.sync;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.BaseEntityHandler;
+import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class MaxHeightRequestHandler extends BaseEntityHandler<MaxHeightRequest> {
+public class MaxHeightRequestHandler extends BaseMessageHandler<MaxHeightRequest> {
 
     @Autowired
     private BlockProcessor blockProcessor;

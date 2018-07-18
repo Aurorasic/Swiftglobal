@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.higgsblock.global.chain.app.common.constants.EntityType;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 7/2/2018
  */
-@Message(EntityType.SOURCE_BLOCK_REQUEST)
+@Message(MessageType.SOURCE_BLOCK_REQUEST)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
