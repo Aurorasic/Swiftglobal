@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.consensus.sign.service.SourceBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  **/
 @Component
 @Slf4j
-public class CandidateMinerTask extends BaseTask {
+public class CandidateMinerTask extends BaseTask implements IEventBusListener {
     private static long currHeight = 0;
     private static final long WAIT_MINER_TIME = 30;
     private static long curSec = 0;
