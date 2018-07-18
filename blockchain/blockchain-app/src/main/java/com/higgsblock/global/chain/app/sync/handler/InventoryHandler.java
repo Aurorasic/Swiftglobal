@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.sync;
+package com.higgsblock.global.chain.app.sync.handler;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -10,6 +10,8 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.sync.message.BlockRequest;
+import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -14,6 +14,9 @@ import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.sync.message.BlockRequest;
+import com.higgsblock.global.chain.app.sync.message.Inventory;
+import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class SyncBlockService implements IEventBusListener, InitializingBean {
+public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
 
     /**
      * the num of active connections to trigger sync data

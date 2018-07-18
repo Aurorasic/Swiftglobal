@@ -1,6 +1,7 @@
-package com.higgsblock.global.chain.app.sync;
+package com.higgsblock.global.chain.app.sync.formatter;
 
 import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
+import com.higgsblock.global.chain.app.sync.message.MaxHeightResponse;
 import org.springframework.stereotype.Component;
 
 /**

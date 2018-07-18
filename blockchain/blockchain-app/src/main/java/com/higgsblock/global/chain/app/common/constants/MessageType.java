@@ -26,7 +26,7 @@ public enum MessageType {
     // ================ 400-499: consensus related ================
     VOTE_TABLE("400"),
 
-    // ================ 500-599: request and response ==============
+    // ================ 500-599: request and response =============
     MAX_HEIGHT_REQUEST("501"),
     MAX_HEIGHT_RESPONSE("502"),
 

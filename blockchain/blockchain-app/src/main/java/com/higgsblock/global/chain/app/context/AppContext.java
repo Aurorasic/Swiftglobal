@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimerProcessor;
 import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.app.sync.SyncBlockService;
+import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
 import com.higgsblock.global.chain.app.task.BaseTask;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -38,7 +38,7 @@ public class AppContext {
     private List<IMessageHandler> messageHandlers;
 
     @Autowired
-    private SyncBlockService syncBlockService;
+    private SyncBlockProcessor syncBlockProcessor;
 
     @Autowired
     private List<IEventBusListener> eventBusListeners;
@@ -104,7 +104,7 @@ public class AppContext {
     }
 
     private void syncBlocks() {
-        syncBlockService.startSyncBlock();
+        syncBlockProcessor.startSyncBlock();
     }
 
 

@@ -1,27 +1,26 @@
-package com.higgsblock.global.chain.app.sync;
+package com.higgsblock.global.chain.app.sync.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.Set;
+import lombok.NoArgsConstructor;
 
 /**
  * @author yuanjiantao
  * @date 3/8/2018
  */
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
-@Message(MessageType.INVENTORY)
-public class Inventory extends BaseBizEntity {
-
-    private long height;
-
-    private Set<String> hashs;
+@Message(MessageType.MAX_HEIGHT_RESPONSE)
+public class MaxHeightResponse extends BaseBizEntity {
+    private long maxHeight;
 
     @Override
     public boolean valid() {
-        if (height < 0) {
+        if (maxHeight < 0) {
             return false;
         }
         return true;

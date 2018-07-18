@@ -1,9 +1,8 @@
-package com.higgsblock.global.chain.app.sync;
+package com.higgsblock.global.chain.app.sync.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.entity.BaseBizEntity;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,17 +11,11 @@ import lombok.NoArgsConstructor;
  * @date 3/8/2018
  */
 @NoArgsConstructor
-@AllArgsConstructor
 @Data
-@Message(MessageType.MAX_HEIGHT_RESPONSE)
-public class MaxHeightResponse extends BaseBizEntity {
-    private long maxHeight;
-
+@Message(MessageType.MAX_HEIGHT_REQUEST)
+public class MaxHeightRequest extends BaseBizEntity {
     @Override
     public boolean valid() {
-        if (maxHeight < 0) {
-            return false;
-        }
         return true;
     }
 }

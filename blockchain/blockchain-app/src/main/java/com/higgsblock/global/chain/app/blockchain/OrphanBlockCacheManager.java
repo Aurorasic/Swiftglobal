@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
-import com.higgsblock.global.chain.app.sync.SyncBlockService;
+import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
 import com.higgsblock.global.chain.app.utils.ValueSortedMap;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class OrphanBlockCacheManager {
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
-    private SyncBlockService sycBlockService;
+    private SyncBlockProcessor sycBlockService;
 
     @Autowired
     private EventBus eventBus;

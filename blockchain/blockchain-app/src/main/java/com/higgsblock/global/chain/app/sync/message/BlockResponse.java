@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.sync;
+package com.higgsblock.global.chain.app.sync.message;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
