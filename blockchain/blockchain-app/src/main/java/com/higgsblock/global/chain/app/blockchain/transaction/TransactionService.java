@@ -63,7 +63,7 @@ public class TransactionService {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionFeeService transactionFeeService;
+    private TransactionFeeProcess transactionFeeService;
 
     @Autowired
     private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
@@ -100,7 +100,7 @@ public class TransactionService {
         }
 
         SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        TransactionFeeService.Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        TransactionFeeProcess.Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());

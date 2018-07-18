@@ -28,7 +28,7 @@ import java.util.*;
  **/
 @Slf4j
 @Service
-public class TransactionFeeService {
+public class TransactionFeeProcess {
 
     public static final Money MINER_REWARDS_RATION = new Money("0.8");
 

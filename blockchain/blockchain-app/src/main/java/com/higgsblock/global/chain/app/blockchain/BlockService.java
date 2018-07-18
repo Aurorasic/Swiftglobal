@@ -98,7 +98,7 @@ public class BlockService {
     public final static List<WitnessEntity> WITNESS_ENTITY_LIST = new ArrayList<>();
 
     @Autowired
-    private TransactionFeeService transactionFeeService;
+    private TransactionFeeProcess transactionFeeService;
 
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
