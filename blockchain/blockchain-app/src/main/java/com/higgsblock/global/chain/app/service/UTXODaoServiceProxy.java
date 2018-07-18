@@ -3,10 +3,9 @@ package com.higgsblock.global.chain.app.service;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.TransactionPersistService;
-import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.app.service.impl.TransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +21,9 @@ import java.util.*;
 @Slf4j
 public class UTXODaoServiceProxy {
     @Autowired
-    private TransactionPersistService transactionPersistService;
+    private TransactionService transactionService;
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -48,7 +47,7 @@ public class UTXODaoServiceProxy {
      * @return
      */
     public UTXO getUTXOOnBestChain(String utxoKey) {
-        return transactionPersistService.getUTXOOnBestChain(utxoKey);
+        return transactionService.getUTXOOnBestChain(utxoKey);
     }
 
     /**
@@ -76,7 +75,7 @@ public class UTXODaoServiceProxy {
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
-        List<UTXO> bestAddedUtxoList = transactionPersistService.getUTXOsByAddress(address);
+        List<UTXO> bestAddedUtxoList = transactionService.getUTXOsByAddress(address);
 
         List<UTXO> allAddedUtxoList = new LinkedList<>();
         allAddedUtxoList.addAll(bestAddedUtxoList);
@@ -113,7 +112,7 @@ public class UTXODaoServiceProxy {
                 if (utxo != null) {
                     return utxo;
                 }
-                utxo = transactionPersistService.getUTXOOnBestChain(utxoKey);
+                utxo = transactionService.getUTXOOnBestChain(utxoKey);
                 if (utxo != null) {
                     return utxo;
                 }
@@ -123,7 +122,7 @@ public class UTXODaoServiceProxy {
             if (utxo != null) {
                 return utxo;
             }
-            utxo = transactionPersistService.getUTXOOnBestChain(utxoKey);
+            utxo = transactionService.getUTXOOnBestChain(utxoKey);
             if (utxo != null) {
                 return utxo;
             }
@@ -204,7 +203,7 @@ public class UTXODaoServiceProxy {
         Map<String, UTXO> utxoMap = unconfirmedUtxoMaps.get(blockHash);
         if (utxoMap == null) {
             //there is no utxo cache, load this block and build new utxo map to cache
-            Block block = blockPersistService.getBlockByHash(blockHash);
+            Block block = blockService.getBlockByHash(blockHash);
             if (block == null) {
                 return new HashMap<>();
             }

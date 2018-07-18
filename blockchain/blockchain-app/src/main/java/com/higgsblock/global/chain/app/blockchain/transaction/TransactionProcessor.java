@@ -16,7 +16,7 @@ import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -48,7 +48,7 @@ public class TransactionProcessor {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
@@ -63,7 +63,7 @@ public class TransactionProcessor {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionFeeProcess transactionFeeProcess;
+    private TransactionFeeProcessor transactionFeeProcessor;
 
     @Autowired
     private ISpentTransactionOutIndexRepository spentTransactionOutIndexRepository;
@@ -88,7 +88,7 @@ public class TransactionProcessor {
             return false;
         }
 
-        Block preBlock = blockPersistService.getBlockByHash(block.getPrevBlockHash());
+        Block preBlock = blockService.getBlockByHash(block.getPrevBlockHash());
         String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
             LOGGER.error("preBlock == null,tx hash={},block hash={}", tx.getHash(), block.getHash());
@@ -99,10 +99,10 @@ public class TransactionProcessor {
             return false;
         }
 
-        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        TransactionFeeProcess.Rewards rewards = transactionFeeProcess.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        SortResult sortResult = transactionFeeProcessor.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
+        TransactionFeeProcessor.Rewards rewards = transactionFeeProcessor.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
-        if (!transactionFeeProcess.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
+        if (!transactionFeeProcessor.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.error("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
             return false;
         }
@@ -342,7 +342,7 @@ public class TransactionProcessor {
             LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
                 if (block == null) {
-                    curMoney.add(transactionFeeProcess.getCurrencyFee(tx));
+                    curMoney.add(transactionFeeProcessor.getCurrencyFee(tx));
                 }
 
                 if (preMoney.compareTo(curMoney) < 0) {
@@ -479,7 +479,7 @@ public class TransactionProcessor {
             }
 
             String blockHash = transactionIndex.getBlockHash();
-            Block block = blockPersistService.getBlockByHash(blockHash);
+            Block block = blockService.getBlockByHash(blockHash);
             Transaction transactionByHash = block.getTransactionByHash(txHash);
             short index = prevOutPoint.getIndex();
             TransactionOutput preOutput = null;

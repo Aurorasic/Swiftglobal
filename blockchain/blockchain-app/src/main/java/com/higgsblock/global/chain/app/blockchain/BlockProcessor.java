@@ -16,8 +16,8 @@ import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.UTXODaoServiceProxy;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
-import com.higgsblock.global.chain.app.service.impl.TransactionPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.impl.TransactionService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -79,16 +79,16 @@ public class BlockProcessor {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Autowired
     private UTXODaoServiceProxy utxoDaoServiceProxy;
 
     @Autowired
-    private TransactionPersistService transactionPersistService;
+    private TransactionService transactionService;
 
     @Autowired
-    private WitnessTimerProcess witnessTimerProcess;
+    private WitnessTimerProcessor witnessTimerProcessor;
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
@@ -98,7 +98,7 @@ public class BlockProcessor {
     public final static List<WitnessEntity> WITNESS_ENTITY_LIST = new ArrayList<>();
 
     @Autowired
-    private TransactionFeeProcess transactionFeeProcess;
+    private TransactionFeeProcessor transactionFeeProcessor;
 
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
@@ -110,7 +110,7 @@ public class BlockProcessor {
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
 
-        List txOfUnSpentUtxos = transactionPersistService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
+        List txOfUnSpentUtxos = transactionService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
 
         if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
             LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);
@@ -122,12 +122,12 @@ public class BlockProcessor {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeProcess.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        SortResult sortResult = transactionFeeProcessor.orderTransaction(preBlockHash, txOfUnSpentUtxos);
         List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
         if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeProcess.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
+            canPackageTransactionsOfBlock = transactionFeeProcessor.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
             feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
             for (Transaction tx : canPackageTransactionsOfBlock) {
                 feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
@@ -135,7 +135,7 @@ public class BlockProcessor {
         }
 
         if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeProcess.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
+            Transaction coinBaseTx = transactionFeeProcessor.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
             transactions.add(coinBaseTx);
         }
 
@@ -205,7 +205,7 @@ public class BlockProcessor {
      */
     public Block getLastBestBlock() {
         BlockIndex lastBestBlockIndex = getLastBestBlockIndex();
-        return blockPersistService.getBlockByHash(lastBestBlockIndex.getBestBlockHash());
+        return blockService.getBlockByHash(lastBestBlockIndex.getBestBlockHash());
     }
 
     /**
@@ -284,7 +284,7 @@ public class BlockProcessor {
         utxoDaoServiceProxy.addNewBlock(newBestBlock, block);
 
         //refresh cache
-        blockPersistService.refreshCache(block.getHash(), block);
+        blockService.refreshCache(block.getHash(), block);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock);
@@ -312,7 +312,7 @@ public class BlockProcessor {
 
     private Block saveBlockCompletely(Block block) {
         try {
-            Block newBestBlock = blockPersistService.saveBlockCompletely(block);
+            Block newBestBlock = blockService.saveBlockCompletely(block);
             return newBestBlock;
         } catch (Exception e) {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
@@ -357,15 +357,15 @@ public class BlockProcessor {
     }
 
     private boolean checkBlockNumbers() {
-        return blockPersistService.checkBlockNumbers();
+        return blockService.checkBlockNumbers();
     }
 
     public Block getBestBlockByHeight(long height) {
-        return blockPersistService.getBestBlockByHeight(height);
+        return blockService.getBestBlockByHeight(height);
     }
 
     public List<Block> getBlocksByHeight(long height) {
-        return blockPersistService.getBlocksByHeight(height);
+        return blockService.getBlocksByHeight(height);
     }
 
     private boolean verifySize(Block block) {
@@ -377,15 +377,15 @@ public class BlockProcessor {
     }
 
     public boolean isExistInDB(long height, String blockHash) {
-        return blockPersistService.isExistInDB(height, blockHash);
+        return blockService.isExistInDB(height, blockHash);
     }
 
     public boolean isExist(Block block) {
-        return blockPersistService.isExist(block);
+        return blockService.isExist(block);
     }
 
     public boolean preIsExistInDB(Block block) {
-        return blockPersistService.preIsExistInDB(block);
+        return blockService.preIsExistInDB(block);
     }
 
     public boolean validBlockTransactions(Block block) {
@@ -698,7 +698,7 @@ public class BlockProcessor {
     }
 
     private boolean validateGenesisBlock() {
-        Block block = blockPersistService.getBlockByHash(config.getGenesisBlockHash());
+        Block block = blockService.getBlockByHash(config.getGenesisBlockHash());
         return null != block && block.isGenesisBlock();
     }
 
@@ -732,7 +732,7 @@ public class BlockProcessor {
         boolean minerPermission = nodeManager.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isCandidateBlock = witnessTimerProcess.acceptBlock(block);
+            boolean isCandidateBlock = witnessTimerProcessor.acceptBlock(block);
             LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
             if (!isCandidateBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);

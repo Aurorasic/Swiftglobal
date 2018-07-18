@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import java.util.List;
 
 /**
- * The interface Trans service.
+ * The interface Transaction service.
  *
  * @author Zhao xiaogang
  * @date 2018 -05-22

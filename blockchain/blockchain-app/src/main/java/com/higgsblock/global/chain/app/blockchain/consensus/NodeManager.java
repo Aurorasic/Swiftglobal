@@ -13,7 +13,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.app.service.impl.BlockPersistService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.DposService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +50,7 @@ public class NodeManager implements InitializingBean {
     @Autowired
     private IScoreService scoreDaoService;
     @Autowired
-    private BlockPersistService blockPersistService;
+    private BlockService blockService;
 
     @Autowired
     private DposService dposService;
@@ -200,7 +200,7 @@ public class NodeManager implements InitializingBean {
         if (preBlockHash == null || height == 1) {
             return Lists.newLinkedList();
         }
-        Block preBlock = blockPersistService.getBlockByHash(preBlockHash);
+        Block preBlock = blockService.getBlockByHash(preBlockHash);
         if (preBlock == null || height != preBlock.getHeight() + 1) {
             LOGGER.warn("the block:{} not found or height:{} is not match", preBlockHash, height);
             return Lists.newLinkedList();
@@ -215,7 +215,7 @@ public class NodeManager implements InitializingBean {
             BlockWitness minerFirstPKSig = preBlock.getMinerFirstPKSig();
             String address = minerFirstPKSig.getAddress();
             dposGroupBySn.remove(address);
-            preBlock = blockPersistService.getBlockByHash(preBlock.getPrevBlockHash());
+            preBlock = blockService.getBlockByHash(preBlock.getPrevBlockHash());
         }
         return dposGroupBySn;
     }
@@ -230,7 +230,7 @@ public class NodeManager implements InitializingBean {
         if (StringUtils.isEmpty(blockHash)) {
             return null;
         }
-        Block block = blockPersistService.getBlockByHash(blockHash);
+        Block block = blockService.getBlockByHash(blockHash);
         if (block == null) {
             LOGGER.warn("the block not found by blockhash:{}", blockHash);
             return null;
@@ -240,7 +240,7 @@ public class NodeManager implements InitializingBean {
         DposGroupVO dposGroupVO = buildDposGroup(block);
 
         while (height-- > startHeight) {
-            block = blockPersistService.getBlockByHash(block.getPrevBlockHash());
+            block = blockService.getBlockByHash(block.getPrevBlockHash());
             if (block == null) {
                 break;
             }

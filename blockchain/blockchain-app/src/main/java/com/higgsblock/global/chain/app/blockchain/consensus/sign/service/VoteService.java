@@ -5,14 +5,17 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.SourceBlockReq;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTable;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.Getter;
@@ -30,7 +33,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class VoteService {
+public class VoteService implements IEventBusListener {
 
     @Autowired
     private KeyPair keyPair;
@@ -57,7 +60,7 @@ public class VoteService {
     /**
      * the row is version of vote,the column is the pubKey of vote,
      * the inner key of Map is the blockHash of the vote
-     * */
+     */
     private HashBasedTable<Integer, String, Map<String, Vote>> voteHashTable;
 
     @Getter
@@ -66,6 +69,11 @@ public class VoteService {
             .build();
 
     private Block blockWithEnoughSign;
+
+    @Subscribe
+    public void process(BlockPersistedEvent event) {
+        initWitnessTask(event.getHeight() + 1L);
+    }
 
     public synchronized void initWitnessTask(long height) {
         if (height < this.height) {

@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockService;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -34,7 +34,7 @@ public class CandidateMinerTask extends BaseTask implements IEventBusListener {
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
-    private SourceBlockService sourceBlockService;
+    private SourceBlockProcessor sourceBlockService;
     @Autowired
     private PeerManager peerManager;
     @Autowired
