@@ -14,11 +14,11 @@ import lombok.extern.slf4j.Slf4j;
  * @deta 2018/7/19
  * @description
  */
-@Message(MessageType.ORIGIN_BLOCK)
+@Message(MessageType.ORIGINAL_BLOCK)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class OriginBlock extends BaseSerializer {
+public class OriginalBlock extends BaseSerializer {
     private Block block;
 }

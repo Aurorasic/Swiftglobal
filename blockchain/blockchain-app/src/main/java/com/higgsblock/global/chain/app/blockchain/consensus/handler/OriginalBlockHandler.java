@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginBlock;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class OriginBlockHandler extends BaseMessageHandler<OriginBlock> {
+public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Autowired
     private VoteProcessor voteProcessor;
@@ -35,19 +35,19 @@ public class OriginBlockHandler extends BaseMessageHandler<OriginBlock> {
     private BlockProcessor blockProcessor;
 
     @Override
-    protected void process(SocketRequest<OriginBlock> request) {
+    protected void process(SocketRequest<OriginalBlock> request) {
 
-        OriginBlock originBlock = request.getData();
+        OriginalBlock originalBlock = request.getData();
         Block block;
         String sourceId = request.getSourceId();
 
-        if (null == originBlock || null == (block = originBlock.getBlock())) {
+        if (null == originalBlock || null == (block = originalBlock.getBlock())) {
             return;
         }
 
         long height = block.getHeight();
         if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            messageCenter.dispatchToWitnesses(originBlock);
+            messageCenter.dispatchToWitnesses(originalBlock);
             return;
         }
 
@@ -61,6 +61,6 @@ public class OriginBlockHandler extends BaseMessageHandler<OriginBlock> {
         }
         LOGGER.info("Received votingBlockResponse {} ,{}", height, block.getHash());
         voteProcessor.addOriginalBlock(block);
-        messageCenter.dispatchToWitnesses(originBlock);
+        messageCenter.dispatchToWitnesses(originalBlock);
     }
 }
