@@ -75,7 +75,7 @@ public class MinerScoreStrategy {
     private void oldScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner
-        if (transactionProcessor.hasStakeOnBest(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             //set miner score to 600
             plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         }
@@ -84,7 +84,7 @@ public class MinerScoreStrategy {
     private void newScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner, set score
-        if (transactionProcessor.hasStakeOnBest(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
         } else {
             //mined by backup peer node
