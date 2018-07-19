@@ -22,7 +22,7 @@ import java.util.Set;
 @Component
 @Slf4j
 public class MinerScoreStrategy {
-    public static int INIT_SCORE = 1000;
+    public static int INIT_SCORE = 600;
 
     //old score strategy
     public static int MINUS_SCORE_PACKAGED_BEST = -20;
