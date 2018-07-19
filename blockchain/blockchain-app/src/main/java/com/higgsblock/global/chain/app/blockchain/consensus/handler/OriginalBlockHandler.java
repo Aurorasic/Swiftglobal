@@ -46,7 +46,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         }
 
         long height = block.getHeight();
-        LOGGER.info("Received OriginalBlock {} ,{}", height, block.getHash());
+        LOGGER.info("Received OriginalBlock height={}, hash={}", height, block.getHash());
         if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
             messageCenter.dispatchToWitnesses(originalBlock);
             return;
@@ -57,10 +57,10 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         }
 
         if (!blockProcessor.validOriginalBlock(block, sourceId)) {
-            LOGGER.info("the block is not valid {} {}", height, block.getHash());
+            LOGGER.info("the block is not valid height={}, hash={}", height, block.getHash());
             return;
         }
-        LOGGER.info("add OriginalBlock {} ,{}", height, block.getHash());
+        LOGGER.info("add OriginalBlock height={}, hash={}", height, block.getHash());
         voteProcessor.addOriginalBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
     }
