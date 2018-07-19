@@ -504,7 +504,7 @@ public class TransactionProcessor {
             UTXO utxo = null;
             utxo = utxoProcessor.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
             if (utxo == null) {
-                LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
+                LOGGER.warn("cannot find utxo when get added miners, tx={},i={}", tx.getHash(), i);
                 continue;
             }
             String address = utxo.getAddress();

@@ -38,6 +38,6 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         }
 
         boolean success = blockProcessor.persistBlockAndIndex(data, sourceId, data.getVersion());
-        LOGGER.error("persisted block all info, success={},height={},block={}", success, height, hash);
+        LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
     }
 }
