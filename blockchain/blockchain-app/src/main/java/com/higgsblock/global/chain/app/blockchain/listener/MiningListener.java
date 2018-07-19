@@ -156,7 +156,7 @@ public class MiningListener implements IEventBusListener {
                 LOGGER.warn("the expect height={}, but {}", expectHeight, block.getHeight());
                 return true;
             }
-            originBlockProcessor.sendBlockToWitness(block);
+            originBlockProcessor.sendOriginBlockToWitness(block);
             return true;
         } catch (Exception e) {
             LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);

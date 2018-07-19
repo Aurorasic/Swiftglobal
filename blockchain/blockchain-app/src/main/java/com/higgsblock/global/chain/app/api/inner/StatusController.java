@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.api.inner;
 
 import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
-import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
+import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -66,13 +66,12 @@ public class StatusController {
     /**
      * query miners
      *
-     * @param height
-     * @param preBlockHash
+     * @param blockhash
      * @return
      */
     @RequestMapping("/miners")
-    public Object miners(long height, String preBlockHash) {
-        return nodeProcessor.getDposGroupByHeihgt(height, preBlockHash);
+    public Object miners(String blockhash) {
+        return nodeProcessor.getDposGroupByBlock(blockhash);
     }
 
     /**
