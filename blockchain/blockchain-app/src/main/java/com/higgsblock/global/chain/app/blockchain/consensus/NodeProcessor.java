@@ -7,8 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
-import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
@@ -220,52 +218,6 @@ public class NodeProcessor implements InitializingBean {
             preBlock = blockService.getBlockByHash(preBlock.getPrevBlockHash());
         }
         return dposGroupBySn;
-    }
-
-    /**
-     * find dpos miners by blockHash,exceed miners which have produced blocks at the branch
-     *
-     * @param blockHash
-     * @return
-     */
-    public DposGroupVO getDposGroupByBlock(String blockHash) {
-        if (StringUtils.isEmpty(blockHash)) {
-            return null;
-        }
-        Block block = blockService.getBlockByHash(blockHash);
-        if (block == null) {
-            LOGGER.warn("the block not found by blockhash:{}", blockHash);
-            return null;
-        }
-        long height = block.getHeight();
-        long startHeight = getStartHeight(height);
-        DposGroupVO dposGroupVO = buildDposGroup(block);
-
-        while (height-- > startHeight) {
-            block = blockService.getBlockByHash(block.getPrevBlockHash());
-            if (block == null) {
-                break;
-            }
-            SimpleBlockVO simpleBlockVO = new SimpleBlockVO(block);
-            dposGroupVO.getBlockVOS().add(simpleBlockVO);
-            dposGroupVO.getLeftDposNodes().remove(simpleBlockVO.getMinerAddress());
-        }
-        dposGroupVO.getBlockVOS().sort((o1, o2) -> (int) (o1.getHeight() - o2.getHeight()));
-
-        return dposGroupVO;
-    }
-
-    private DposGroupVO buildDposGroup(Block block) {
-        long sn = getSn(block.getHeight());
-        DposGroupVO dposGroupVO = new DposGroupVO();
-        dposGroupVO.setSn(sn);
-        dposGroupVO.setStartHeight(getStartHeight(block.getHeight()));
-        dposGroupVO.setEndHeight(getEndHeight((block.getHeight())));
-        dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
-        dposGroupVO.setDposNodes(getDposGroupBySn(sn));
-        dposGroupVO.setLeftDposNodes(dposGroupVO.getDposNodes());
-        dposGroupVO.getLeftDposNodes().remove(dposGroupVO.getBlockVOS().get(0).getMinerAddress());
-        return dposGroupVO;
     }
 
 

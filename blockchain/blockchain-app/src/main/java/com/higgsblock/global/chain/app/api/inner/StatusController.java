@@ -1,12 +1,18 @@
 package com.higgsblock.global.chain.app.api.inner;
 
 import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
+import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
+import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @RequestMapping("/status")
 @RestController
+@Slf4j
 public class StatusController {
 
     @Autowired
@@ -31,6 +38,8 @@ public class StatusController {
     private ConnectionManager connectionManager;
     @Autowired
     private PeerManager peerManager;
+    @Autowired
+    private BlockService blockService;
 
     /**
      * query connections of current peer
@@ -66,12 +75,35 @@ public class StatusController {
     /**
      * query miners
      *
-     * @param blockhash
+     * @param blockHash
      * @return
      */
     @RequestMapping("/miners")
-    public Object miners(String blockhash) {
-        return nodeProcessor.getDposGroupByBlock(blockhash);
+    public Object miners(String blockHash) {
+        if (StringUtils.isEmpty(blockHash)) {
+            return null;
+        }
+        Block block = blockService.getBlockByHash(blockHash);
+        if (block == null) {
+            LOGGER.warn("the block not found by blockhash:{}", blockHash);
+            return null;
+        }
+        long height = block.getHeight();
+        long startHeight = nodeProcessor.getStartHeight(height);
+        DposGroupVO dposGroupVO = buildDposGroup(block);
+
+        while (height-- > startHeight) {
+            block = blockService.getBlockByHash(block.getPrevBlockHash());
+            if (block == null) {
+                break;
+            }
+            SimpleBlockVO simpleBlockVO = new SimpleBlockVO(block);
+            dposGroupVO.getBlockVOS().add(simpleBlockVO);
+            dposGroupVO.getLeftDposNodes().remove(simpleBlockVO.getMinerAddress());
+        }
+        dposGroupVO.getBlockVOS().sort((o1, o2) -> (int) (o1.getHeight() - o2.getHeight()));
+
+        return dposGroupVO;
     }
 
     /**
@@ -89,5 +121,19 @@ public class StatusController {
         vo.setIp(self.getIp());
         vo.setPubKey(self.getPubKey());
         return vo;
+    }
+
+
+    private DposGroupVO buildDposGroup(Block block) {
+        long sn = nodeProcessor.getSn(block.getHeight());
+        DposGroupVO dposGroupVO = new DposGroupVO();
+        dposGroupVO.setSn(sn);
+        dposGroupVO.setStartHeight(nodeProcessor.getStartHeight(block.getHeight()));
+        dposGroupVO.setEndHeight(nodeProcessor.getEndHeight((block.getHeight())));
+        dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
+        dposGroupVO.setDposNodes(nodeProcessor.getDposGroupBySn(sn));
+        dposGroupVO.setLeftDposNodes(dposGroupVO.getDposNodes());
+        dposGroupVO.getLeftDposNodes().remove(dposGroupVO.getBlockVOS().get(0).getMinerAddress());
+        return dposGroupVO;
     }
 }

@@ -18,25 +18,25 @@ public class DposGroupVO extends BaseSerializer {
     /**
      * the round of dpos nodes
      */
-    private long sn;
+    private Long sn;
 
     /**
      * the start height of this round
      */
-    private long startHeight;
+    private Long startHeight;
     /**
      * the end height of this round
      */
-    private long endHeight;
+    private Long endHeight;
 
     /**
      * the addresses of selected dpos nodes within this round
      */
-    private List<String> dposNodes;
+    private List<String> dposNodes = new ArrayList<>(6);
     /**
      * the addresses of left dpos nodes within this round
      */
-    private List<String> leftDposNodes;
+    private List<String> leftDposNodes = new ArrayList<>(6);
 
     private List<SimpleBlockVO> blockVOS = new ArrayList<>(5);
 
