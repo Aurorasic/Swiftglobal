@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 
-import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
+import com.higgsblock.global.chain.network.Peer;
 
 import java.util.List;
 
@@ -16,5 +16,5 @@ public interface IWitnessService {
      *
      * @return
      */
-    List<WitnessEntity> getAll();
+    List<Peer> getAllWitnessPeer();
 }
