@@ -104,7 +104,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("the expect height={}, but block height={}", expectHeight, block.getHeight());
                     return;
                 }
-                originBlockProcessor.sendBlockToWitness(block);
+                originBlockProcessor.sendOriginBlockToWitness(block);
             }
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);

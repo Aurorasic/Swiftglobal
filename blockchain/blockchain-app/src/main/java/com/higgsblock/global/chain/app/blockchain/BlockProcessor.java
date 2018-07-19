@@ -156,7 +156,7 @@ public class BlockProcessor {
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
         block.initMinerPkSig(keyPair.getPubKey(), sig);
         blockCache.put(block.getHash(), block);
-        LOGGER.info("The block was successfully punched out, block height={}, block hash={}", block.getHeight(), block.getHash());
+        LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
     }
 

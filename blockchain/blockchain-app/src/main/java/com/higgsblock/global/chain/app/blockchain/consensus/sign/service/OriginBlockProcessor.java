@@ -31,8 +31,8 @@ public class OriginBlockProcessor {
     /**
      * Creator sends the signed block to other witnesses for resigning.
      */
-    public void sendBlockToWitness(Block block) {
-        LOGGER.info("begin to send block to witness,height={}", block.getHeight());
+    public void sendOriginBlockToWitness(Block block) {
+        LOGGER.info("send origin block to witness,height={},hash={}", block.getHeight(), block.getHash());
         OriginalBlock originalBlock = new OriginalBlock();
         originalBlock.setBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
