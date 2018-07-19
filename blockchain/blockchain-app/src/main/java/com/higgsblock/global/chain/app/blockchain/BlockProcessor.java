@@ -708,7 +708,7 @@ public class BlockProcessor {
             LOGGER.error("the height {}, this block miner is {}, the miners is {}"
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
-                    , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
+                    , nodeProcessor.getDposGroupByHeihgt(block.getPrevBlockHash()));
             if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
                 LOGGER.info("verify block is Guarder production true");
                 return true;

@@ -190,21 +190,23 @@ public class NodeProcessor implements InitializingBean {
     }
 
     /**
-     * find dpos miners by height,exceed miners which have produced blocks at the branch
+     * find dpos miners by preBlockHash,exceed miners which have produced blocks at the branch
      *
-     * @param height
      * @param preBlockHash
      * @return
      */
-    public List<String> getDposGroupByHeihgt(long height, String preBlockHash) {
-        if (preBlockHash == null || height == 1) {
+    public List<String> getDposGroupByHeihgt(String preBlockHash) {
+        if (preBlockHash == null) {
             return Lists.newLinkedList();
         }
         Block preBlock = blockService.getBlockByHash(preBlockHash);
-        if (preBlock == null || height != preBlock.getHeight() + 1) {
-            LOGGER.warn("the block:{} not found or height:{} is not match", preBlockHash, height);
+
+        if (preBlock == null) {
+            LOGGER.warn("the block:{} not found", preBlockHash);
             return Lists.newLinkedList();
         }
+        long height = preBlock.getHeight() + 1;
+
         long sn = getSn(height);
         List<String> dposGroupBySn = getDposGroupBySn(sn);
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
@@ -273,7 +275,7 @@ public class NodeProcessor implements InitializingBean {
             return false;
         }
         String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
-        List<String> currentGroup = getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash());
+        List<String> currentGroup = getDposGroupByHeihgt(block.getPrevBlockHash());
         return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
     }
 
@@ -296,7 +298,7 @@ public class NodeProcessor implements InitializingBean {
         if (startHeight > height) {
             throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + startHeight + ",the height=" + height);
         }
-        List<String> dposNodes = getDposGroupByHeihgt(height, preBlockHash);
+        List<String> dposNodes = getDposGroupByHeihgt(preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.warn("the dpos node is empty with the height={}", height);
             return false;

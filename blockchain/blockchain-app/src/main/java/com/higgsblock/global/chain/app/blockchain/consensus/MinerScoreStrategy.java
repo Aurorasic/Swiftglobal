@@ -88,9 +88,8 @@ public class MinerScoreStrategy {
             setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
         } else {
             //mined by backup peer node
-            long blockHeight = toBeBestBlock.getHeight();
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
-            List<String> dposAddressList = nodeProcessor.getDposGroupByHeihgt(blockHeight, prevBlockHash);
+            List<String> dposAddressList = nodeProcessor.getDposGroupByHeihgt(prevBlockHash);
             scoreDaoService.updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
         }
         scoreDaoService.plusAll(ONE_BLOCK_ADD_SCORE);
