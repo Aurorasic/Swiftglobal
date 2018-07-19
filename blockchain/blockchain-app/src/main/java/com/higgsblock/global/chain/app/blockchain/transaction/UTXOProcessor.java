@@ -5,6 +5,8 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.service.impl.BestUTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.common.utils.Money;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -215,6 +217,20 @@ public class UTXOProcessor {
             utxoMap.put(newUTXO.getKey(), newUTXO);
         }
         return utxoMap;
+    }
+
+    public boolean hasStakeOnUnion(String preHash, String address, SystemCurrencyEnum currency) {
+        Money stakeMinMoney = new Money("1", currency.getCurrency());
+        List<UTXO> result = getUnionUTXO(preHash, address, currency.getCurrency());
+        Money money = new Money("0", currency.getCurrency());
+        for (UTXO utxo : result) {
+            money.add(utxo.getOutput().getMoney());
+            if (money.compareTo(stakeMinMoney) >= 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void put(String preBlockHash, String blockHash, Map utxoMap) {
