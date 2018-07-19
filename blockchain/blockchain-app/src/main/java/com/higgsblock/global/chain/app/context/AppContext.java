@@ -90,6 +90,7 @@ public class AppContext {
 
     private void loadSelfPeerInfo() {
         peerManager.loadSelfPeerInfo();
+        peerManager.reportToRegistry();
     }
 
     private void loadOrFetchPeers() {
