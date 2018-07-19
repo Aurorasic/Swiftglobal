@@ -17,5 +17,11 @@ import lombok.NoArgsConstructor;
 @Message(MessageType.BLOCK_RESPONSE)
 public class BlockResponse {
 
+    private int version = 0;
+
     private Block block;
+
+    public BlockResponse(Block block) {
+        this.block = block;
+    }
 }

@@ -34,7 +34,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
-    private OriginBlockProcessor sourceBlockService;
+    private OriginBlockProcessor originBlockProcessor;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -56,10 +56,9 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
      */
     @Override
     protected void task() {
-        String address = peerManager.getSelf().getId();
         curSec += TASK_TIME;
         LOGGER.info("curSec={} currHeight={}", curSec, currHeight);
-        if (curSec >= WAIT_MINER_TIME && transactionProcessor.hasStakeOnBest(address, SystemCurrencyEnum.GUARDER)) {
+        if (curSec >= WAIT_MINER_TIME) {
             doMing();
         }
     }
@@ -84,7 +83,12 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                 return;
             }
             for (String blockHash : maxBlockIndex.getBlockHashs()) {
-                LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={}", expectHeight, blockHash);
+                String address = peerManager.getSelf().getId();
+                if (!transactionProcessor.hasStake(blockHash, address, SystemCurrencyEnum.GUARDER)) {
+                    LOGGER.warn("this miner no guarder currency");
+                    return;
+                }
+                LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={},this guarder address ={}", expectHeight, blockHash, address);
                 Block block = blockProcessor.packageNewBlock(blockHash);
                 if (block == null) {
                     LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
@@ -100,7 +104,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("the expect height={}, but block height={}", expectHeight, block.getHeight());
                     return;
                 }
-                sourceBlockService.sendBlockToWitness(block);
+                originBlockProcessor.sendBlockToWitness(block);
             }
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);

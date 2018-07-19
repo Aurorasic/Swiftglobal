@@ -1,6 +1,5 @@
-package com.higgsblock.global.chain.app.blockchain.formatter;
+package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 

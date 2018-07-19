@@ -1,5 +1,6 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
+import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -120,15 +121,16 @@ public class VoteTable extends BaseSerializer {
         return result;
     }
 
-    public boolean addVote(Vote vote) {
-        if (!valid() || vote == null) {
-            return false;
+    public void addVote(Vote vote) {
+        if (voteTable == null || vote == null) {
+            return;
         }
         String pubKey = vote.getWitnessPubKey();
         int version = vote.getVoteVersion();
         String blockHash = vote.getBlockHash();
-        Vote old = voteTable.computeIfAbsent(version, (key) -> new HashMap()).computeIfAbsent(pubKey, (key) -> new HashMap()).computeIfAbsent(blockHash, (hash) -> vote);
-        return old == null;
+        Map<String, Map<String, Vote>> versionVoteMap = voteTable.computeIfAbsent(version, (key) -> new HashMap());
+        Map<String, Vote> pubKeyVoteMap = versionVoteMap.computeIfAbsent(pubKey, (key) -> new HashMap());
+        pubKeyVoteMap.computeIfAbsent(blockHash, (hash) -> vote);
     }
 
     public boolean valid() {

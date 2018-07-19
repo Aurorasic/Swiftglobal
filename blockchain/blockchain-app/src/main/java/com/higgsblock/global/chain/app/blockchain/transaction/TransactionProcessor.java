@@ -60,7 +60,6 @@ public class TransactionProcessor {
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
-
     /**
      * validate coin base tx
      *
@@ -486,7 +485,7 @@ public class TransactionProcessor {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
+            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -504,14 +503,14 @@ public class TransactionProcessor {
             UTXO utxo = null;
             utxo = utxoProcessor.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
             if (utxo == null) {
-                LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
+                LOGGER.warn("cannot find utxo when get added miners, tx={},i={}", tx.getHash(), i);
                 continue;
             }
             String address = utxo.getAddress();
             if (result.contains(address)) {
                 continue;
             }
-            if (hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
+            if (hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -540,9 +539,20 @@ public class TransactionProcessor {
         return utxos;
     }
 
-    public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
-        Money stakeMinMoney = new Money("1", currency.getCurrency());
+    public boolean hasStake(String address, SystemCurrencyEnum currency) {
         List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+
+    }
+
+    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
+        List<UTXO> result = utxoProcessor.getUnionUTXO(preBlockHash, address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+    }
+
+
+    public boolean getUTXOCurrency(List<UTXO> result, SystemCurrencyEnum currency) {
+        Money stakeMinMoney = new Money("1", currency.getCurrency());
         Money money = new Money("0", currency.getCurrency());
         for (UTXO utxo : result) {
             money.add(utxo.getOutput().getMoney());
@@ -550,7 +560,6 @@ public class TransactionProcessor {
                 return true;
             }
         }
-
         return false;
     }
 

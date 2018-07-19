@@ -1,5 +1,6 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;

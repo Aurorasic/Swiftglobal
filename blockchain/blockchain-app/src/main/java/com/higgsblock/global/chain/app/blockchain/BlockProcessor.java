@@ -276,7 +276,7 @@ public class BlockProcessor {
         }
 
         if (!validBlockTransactions(block)) {
-            LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
+            LOGGER.error("Error block transactions, height={},block={}", height, blockHash);
             return false;
         }
 
@@ -652,14 +652,12 @@ public class BlockProcessor {
                 LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
                 if (!validBasic(block)) {
-                    LOGGER.error("Error block basic info, height={},block={}", height, blockHash);
-                    LOGGER.error("Error next block height={},block={}", nextHeight, nextBlockHash);
+                    LOGGER.error("Error next orphan block height={},block={}", nextHeight, nextBlockHash);
                     orphanBlockCacheManager.remove(nextBlock.getHash());
                     continue;
                 }
                 if (!validBlockTransactions(block)) {
-                    LOGGER.error("Error block transactions, height={}_block={}", height, blockHash);
-                    LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
+                    LOGGER.error("Error orphan next block height={},block={}", nextHeight, nextBlockHash);
                     orphanBlockCacheManager.remove(nextBlock.getHash());
                     continue;
                 }
@@ -711,7 +709,7 @@ public class BlockProcessor {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
-            if (transactionProcessor.hasStakeOnBest(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
+            if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
                 LOGGER.info("verify block is Guarder production true");
                 return true;
             }
@@ -746,7 +744,7 @@ public class BlockProcessor {
         return ECKey.verifySign(message, sign, pubKey);
     }
 
-    public boolean validSourceBlock(Block block, String sourceId) {
+    public boolean validOriginalBlock(Block block, String sourceId) {
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
         LOGGER.info("start valid source block,height {}, {}", blockHeight, blockHash);

@@ -1,7 +1,8 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -19,7 +20,7 @@ import java.util.HashMap;
  */
 @Component
 @Slf4j
-public class SourceBlockRequestHandler extends BaseMessageHandler<SourceBlockRequest> {
+public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockRequest> {
 
     @Autowired
     private MessageCenter messageCenter;
@@ -28,17 +29,17 @@ public class SourceBlockRequestHandler extends BaseMessageHandler<SourceBlockReq
     private VoteProcessor voteProcessor;
 
     @Override
-    protected void process(SocketRequest<SourceBlockRequest> request) {
+    protected void process(SocketRequest<VotingBlockRequest> request) {
         String sourceId = request.getSourceId();
-        SourceBlockRequest data = request.getData();
+        VotingBlockRequest data = request.getData();
         if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
             return;
         }
-        LOGGER.info("received sourceBlockReq from {} with data {}", sourceId, data);
+        LOGGER.info("received originalBlockRequest from {} with data {}", sourceId, data);
         data.getBlockHashs().forEach(hash -> {
             Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {
-                messageCenter.unicast(sourceId, new SourceBlockResponse(block));
+                messageCenter.unicast(sourceId, new VotingBlockResponse(block));
             }
         });
 

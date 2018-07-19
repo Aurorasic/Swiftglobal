@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
@@ -12,12 +13,20 @@ import java.util.Set;
  * @date 3/8/2018
  */
 @Data
+@NoArgsConstructor
 @Message(MessageType.INVENTORY)
 public class Inventory extends BaseSerializer {
+
+    private int version = 0;
 
     private long height;
 
     private Set<String> hashs;
+
+    public Inventory(long height, Set<String> hashs) {
+        this.height = height;
+        this.hashs = hashs;
+    }
 
     public boolean valid() {
         if (height < 0) {

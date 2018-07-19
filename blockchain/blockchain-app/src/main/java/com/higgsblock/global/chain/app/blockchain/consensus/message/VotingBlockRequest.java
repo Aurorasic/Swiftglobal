@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
@@ -14,12 +14,18 @@ import java.util.Set;
  * @author yuanjiantao
  * @date 7/2/2018
  */
-@Message(MessageType.SOURCE_BLOCK_REQUEST)
+@Message(MessageType.VOTING_BLOCK_REQUEST)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class SourceBlockRequest extends BaseSerializer {
+public class VotingBlockRequest extends BaseSerializer {
+
+    private int version = 0;
 
     private Set<String> blockHashs;
+
+    public VotingBlockRequest(Set<String> blockHashs) {
+        this.blockHashs = blockHashs;
+    }
 }
