@@ -60,7 +60,6 @@ public class TransactionProcessor {
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
-
     /**
      * validate coin base tx
      *
@@ -486,7 +485,7 @@ public class TransactionProcessor {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
+            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -511,7 +510,7 @@ public class TransactionProcessor {
             if (result.contains(address)) {
                 continue;
             }
-            if (hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
+            if (hasStake(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -540,8 +539,19 @@ public class TransactionProcessor {
         return utxos;
     }
 
-    public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
+    public boolean hasStake(String address, SystemCurrencyEnum currency) {
         List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+
+    }
+
+    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
+        List<UTXO> result = utxoProcessor.getUnionUTXO(preBlockHash, address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+    }
+
+
+    public boolean getUTXOCurrency(List<UTXO> result, SystemCurrencyEnum currency) {
         Money stakeMinMoney = new Money("1", currency.getCurrency());
         Money money = new Money("0", currency.getCurrency());
         for (UTXO utxo : result) {
@@ -550,12 +560,7 @@ public class TransactionProcessor {
                 return true;
             }
         }
-
         return false;
-    }
-
-    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
-        return true;
     }
 
     /**

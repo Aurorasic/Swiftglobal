@@ -709,7 +709,7 @@ public class BlockProcessor {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
-            if (transactionProcessor.hasStakeOnBest(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
+            if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
                 LOGGER.info("verify block is Guarder production true");
                 return true;
             }
