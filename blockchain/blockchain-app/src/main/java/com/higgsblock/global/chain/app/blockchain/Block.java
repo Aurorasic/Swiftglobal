@@ -93,7 +93,7 @@ public class Block extends BaseSerializer {
         if (version < 0) {
             return false;
         }
-        if (height < 0) {
+        if (height <= 0) {
             return false;
         }
         if (blockTime < 0) {
