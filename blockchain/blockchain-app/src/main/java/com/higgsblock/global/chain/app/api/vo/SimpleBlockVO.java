@@ -23,7 +23,7 @@ public class SimpleBlockVO extends BaseSerializer {
     /**
      * the height of block
      */
-    private long height;
+    private Long height;
 
     public SimpleBlockVO() {
         super();
