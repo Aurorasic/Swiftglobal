@@ -121,7 +121,7 @@ public class VoteTable extends BaseSerializer {
     }
 
     public boolean addVote(Vote vote) {
-        if (!valid() || vote == null) {
+        if (voteTable == null || vote == null) {
             return false;
         }
         String pubKey = vote.getWitnessPubKey();
