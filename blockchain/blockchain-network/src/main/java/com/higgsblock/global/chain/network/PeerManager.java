@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.network.config.RegistryConfig;
 import com.higgsblock.global.chain.network.socket.PeerCache;
 import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
 import com.higgsblock.global.chain.network.upnp.UpnpManager;
+import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -224,7 +225,7 @@ public class PeerManager {
      */
     public boolean loadSelfPeerInfo() {
         Peer peer = new Peer();
-        peer.setIp(config.getIp());
+        peer.setIp(IpUtil.getLocalIpByName(config.getIp()));
         peer.setSocketServerPort(config.getSocketPort());
         peer.setHttpServerPort(config.getHttpPort());
         peer.setPubKey(config.getPubKey());
