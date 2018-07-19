@@ -24,4 +24,8 @@ public class OriginalBlock extends BaseSerializer {
     private int version = 0;
 
     private Block block;
+
+    public OriginalBlock(Block block) {
+        this.block = block;
+    }
 }
