@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -28,14 +29,19 @@ public class WitnessManager implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        loadWitnessFromDb();
-    }
-
-    private void loadWitnessFromDb() {
         List<Peer> list = witnessService.getAllWitnessPeer();
         if (CollectionUtils.isEmpty(list)) {
             return;
         }
+        initWitness(list);
+        loadWitnessFromDb(list);
+    }
+
+    private void loadWitnessFromDb(List<Peer> list) {
         peerManager.setWitnessPeers(list);
+    }
+
+    public void initWitness(List<Peer> list) {
+        list.forEach(peer -> BlockProcessor.WITNESS_ADDRESS_LIST.add(ECKey.pubKey2Base58Address(peer.getPubKey())));
     }
 }
