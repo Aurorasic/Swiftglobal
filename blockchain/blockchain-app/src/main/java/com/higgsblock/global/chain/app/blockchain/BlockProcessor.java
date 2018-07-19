@@ -255,7 +255,6 @@ public class BlockProcessor {
      * 8.Chaining the orphan block to the chain;
      * </P>
      */
-    @Transactional(rollbackFor = Exception.class)
     public synchronized boolean persistBlockAndIndex(Block block, String sourceId, int version) {
         long height = block.getHeight();
         String blockHash = block.getHash();
@@ -316,7 +315,8 @@ public class BlockProcessor {
         return false;
     }
 
-    private Block saveBlockCompletely(Block block) {
+    @Transactional(rollbackFor = Exception.class)
+    public Block saveBlockCompletely(Block block) {
         try {
             //step 1
             blockService.saveBlock(block);
