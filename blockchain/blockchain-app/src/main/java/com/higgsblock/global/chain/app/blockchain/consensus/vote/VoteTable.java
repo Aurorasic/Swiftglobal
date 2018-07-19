@@ -120,17 +120,16 @@ public class VoteTable extends BaseSerializer {
         return result;
     }
 
-    public boolean addVote(Vote vote) {
+    public void addVote(Vote vote) {
         if (voteTable == null || vote == null) {
-            return false;
+            return;
         }
         String pubKey = vote.getWitnessPubKey();
         int version = vote.getVoteVersion();
         String blockHash = vote.getBlockHash();
         Map<String, Map<String, Vote>> versionVoteMap = voteTable.computeIfAbsent(version, (key) -> new HashMap());
         Map<String, Vote> pubKeyVoteMap = versionVoteMap.computeIfAbsent(pubKey, (key) -> new HashMap());
-        Vote old = pubKeyVoteMap.computeIfAbsent(blockHash, (hash) -> vote);
-        return old == null;
+        pubKeyVoteMap.computeIfAbsent(blockHash, (hash) -> vote);
     }
 
     public boolean valid() {
