@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.sign.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -31,13 +31,13 @@ public class OriginBlockProcessor {
     /**
      * Creator sends the signed block to other witnesses for resigning.
      */
-    public void sendBlockToWitness(Block block) {
-        LOGGER.info("begin to send block to witness,height={}", block.getHeight());
-        VotingBlockResponse votingBlockResponse = new VotingBlockResponse(block);
-        messageCenter.dispatchToWitnesses(votingBlockResponse);
+    public void sendOriginBlockToWitness(Block block) {
+        LOGGER.info("send origin block to witness,height={},hash={}", block.getHeight(), block.getHash());
+        OriginalBlock originalBlock = new OriginalBlock();
+        originalBlock.setBlock(block);
+        messageCenter.dispatchToWitnesses(originalBlock);
         if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            voteProcessor.addOriginalBlock(votingBlockResponse.getBlock());
+            voteProcessor.addOriginalBlock(block);
         }
     }
-
 }

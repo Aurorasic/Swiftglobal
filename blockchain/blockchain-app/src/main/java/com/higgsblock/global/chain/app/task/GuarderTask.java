@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Slf4j
 public class GuarderTask extends BaseTask implements IEventBusListener {
-    private static long currHeight = 0;
+    private static long currHeight = 1;
     private static final long WAIT_MINER_TIME = 30;
     private static long curSec = 0;
     private static final long TASK_TIME = 5;
@@ -104,7 +104,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("the expect height={}, but block height={}", expectHeight, block.getHeight());
                     return;
                 }
-                originBlockProcessor.sendBlockToWitness(block);
+                originBlockProcessor.sendOriginBlockToWitness(block);
             }
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);
