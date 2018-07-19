@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ITransactionIndexRepositoryTest extends BaseTest {
 
     @Autowired
-    private ITransactionIndexRepository iTransactionIndexRepository;
+    private ITransactionIndexRepository TransactionIndexRepository;
 
     @Test
     public void save() {
@@ -20,12 +20,12 @@ public class ITransactionIndexRepositoryTest extends BaseTest {
         transactionIndexEntity.setBlockHash("blockHash");
         transactionIndexEntity.setTransactionHash("transactionHash");
         transactionIndexEntity.setTransactionIndex((short) 1);
-        iTransactionIndexRepository.save(transactionIndexEntity);
+        TransactionIndexRepository.save(transactionIndexEntity);
     }
 
     @Test
     public void findByTxHash(){
-        TransactionIndexEntity transactionHash = iTransactionIndexRepository.findByTransactionHash("transactionHash");
+        TransactionIndexEntity transactionHash = TransactionIndexRepository.findByTransactionHash("transactionHash");
         System.err.println(transactionHash);
     }
 }

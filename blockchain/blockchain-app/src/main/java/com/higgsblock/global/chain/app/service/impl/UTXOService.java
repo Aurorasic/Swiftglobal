@@ -33,7 +33,7 @@ public class UTXOService implements IUTXOService {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private IUTXORepository iutxoRepository;
+    private IUTXORepository utxoRepository;
     /**
      * key1: unconfirmed blockhash
      * key2: utxo key
@@ -59,7 +59,7 @@ public class UTXOService implements IUTXOService {
         entity.setCurrency(output.getMoney().getCurrency());
         entity.setLockScript(output.getLockScript().getAddress());
 
-        iutxoRepository.save(entity);
+        utxoRepository.save(entity);
     }
 
     /**
@@ -74,7 +74,7 @@ public class UTXOService implements IUTXOService {
         //return transactionIndexService.getUTXOOnBestChain(utxoKey);
 
         String[] keys = utxoKey.split("_");
-        UTXOEntity entity = iutxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
+        UTXOEntity entity = utxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
 
         if (entity == null) {
             return null;
@@ -247,7 +247,7 @@ public class UTXOService implements IUTXOService {
 
     @Override
     public List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency) {
-        return iutxoRepository.findByLockScriptAndCurrency(lockScript, currency);
+        return utxoRepository.findByLockScriptAndCurrency(lockScript, currency);
     }
 
     @Override
@@ -256,7 +256,7 @@ public class UTXOService implements IUTXOService {
             throw new RuntimeException("addr is null");
         }
 
-        List<UTXOEntity> entityList = iutxoRepository.findByLockScript(addr);
+        List<UTXOEntity> entityList = utxoRepository.findByLockScript(addr);
         if (CollectionUtils.isEmpty(entityList)) {
             return null;
         }
@@ -284,7 +284,7 @@ public class UTXOService implements IUTXOService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
-        iutxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
+        utxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
     }
 
     /**

@@ -21,10 +21,10 @@ public class WitnessService implements IWitnessService {
      * The Witness repository.
      */
     @Autowired
-    private IWitnessRepository iWitnessRepository;
+    private IWitnessRepository witnessRepository;
 
     @Override
     public List<WitnessEntity> getAll() {
-        return iWitnessRepository.findAll();
+        return witnessRepository.findAll();
     }
 }
