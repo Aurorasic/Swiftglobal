@@ -80,17 +80,10 @@ public class BlockService implements IBlockService {
 
     @Override
     public List<Block> getBlocksByHeight(long height) {
-        BlockIndex blockIndex;
-        try {
-            blockIndex = blockIndexService.getBlockIndexByHeight(height);
-        } catch (Exception e) {
-            throw new IllegalStateException("Get block index error");
-        }
-
+        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         List<Block> blocks = new LinkedList<>();
         if (blockIndex != null) {
             ArrayList<String> blockHashes = blockIndex.getBlockHashs();
-
             blockHashes.forEach(blockHash -> {
                 Block otherBlock = getBlockByHash(blockHash);
                 if (otherBlock != null) {
