@@ -45,6 +45,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         long maxHeight = event.getHeight();
+        LOGGER.info("BlockPersistedEvent to Guarder height={}", maxHeight);
         if (maxHeight > currHeight) {
             currHeight = maxHeight;
             curSec = 0;
