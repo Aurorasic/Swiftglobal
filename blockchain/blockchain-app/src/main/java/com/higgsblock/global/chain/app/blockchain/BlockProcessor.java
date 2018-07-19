@@ -30,6 +30,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -254,6 +255,7 @@ public class BlockProcessor {
      * 8.Chaining the orphan block to the chain;
      * </P>
      */
+    @Transactional(rollbackFor = Exception.class)
     public synchronized boolean persistBlockAndIndex(Block block, String sourceId, int version) {
         long height = block.getHeight();
         String blockHash = block.getHash();

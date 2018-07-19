@@ -132,7 +132,7 @@ public class StatusController {
         dposGroupVO.setEndHeight(nodeProcessor.getEndHeight((block.getHeight())));
         dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
         dposGroupVO.setDposNodes(nodeProcessor.getDposGroupBySn(sn));
-        dposGroupVO.setLeftDposNodes(dposGroupVO.getDposNodes());
+        dposGroupVO.getLeftDposNodes().addAll(dposGroupVO.getDposNodes());
         dposGroupVO.getLeftDposNodes().remove(dposGroupVO.getBlockVOS().get(0).getMinerAddress());
         return dposGroupVO;
     }
