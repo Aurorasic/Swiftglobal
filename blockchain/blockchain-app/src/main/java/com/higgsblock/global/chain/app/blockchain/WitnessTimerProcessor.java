@@ -65,6 +65,6 @@ public class WitnessTimerProcessor implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongGuarder(Block block) {
-        return transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
+        return transactionProcessor.hasStakeOnBest(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
     }
 }

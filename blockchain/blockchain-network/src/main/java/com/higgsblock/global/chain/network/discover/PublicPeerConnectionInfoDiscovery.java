@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * @date 2018 -4-11
  */
 @Slf4j
-@Component
+@Component("publicDiscovery")
 public class PublicPeerConnectionInfoDiscovery implements IPeerConnectionInfoDiscovery {
 
     /**

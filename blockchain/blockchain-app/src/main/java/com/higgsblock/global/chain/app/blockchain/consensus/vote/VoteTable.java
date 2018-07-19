@@ -8,12 +8,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author yuanjiantao
@@ -47,16 +44,53 @@ public class VoteTable extends BaseSerializer {
         if (MapUtils.isEmpty(voteMap)) {
             throw new RuntimeException("the voteMap of version one is empty");
         }
-        Vote vote = voteMap.values().stream().findFirst().get();
+        Vote vote = voteMap.values().stream().findAny().get();
         height = vote.getHeight();
         return height;
     }
 
     public int getVersionSize() {
-        if (MapUtils.isEmpty(voteTable)) {
+        if (!valid()) {
             return 0;
         }
         return voteTable.size();
+    }
+
+    public int getAllVoteSize() {
+        if (!valid()) {
+            return 0;
+        }
+        int size = 0;
+        for (Map<String, Map<String, Vote>> versionVoteMap : voteTable.values()) {
+            if (MapUtils.isEmpty(versionVoteMap)) {
+                continue;
+            }
+            for (Map<String, Vote> pubKeyVoteMap : versionVoteMap.values()) {
+                if (MapUtils.isEmpty(pubKeyVoteMap)) {
+                    continue;
+                }
+                size = size + pubKeyVoteMap.size();
+            }
+        }
+        return size;
+    }
+
+    public int getARowVoteSize(int version) {
+        if (!valid()) {
+            return 0;
+        }
+        Map<String, Map<String, Vote>> versionVoteMap = voteTable.get(version);
+        if (MapUtils.isEmpty(versionVoteMap)) {
+            return 0;
+        }
+        int size = 0;
+        for (Map<String, Vote> pubKeyVoteMap : versionVoteMap.values()) {
+            if (MapUtils.isEmpty(pubKeyVoteMap)) {
+                continue;
+            }
+            size = size + pubKeyVoteMap.size();
+        }
+        return size;
     }
 
     public Map<String, Map<String, Vote>> getVoteMapOfPubKeyByVersion(int version) {
@@ -72,32 +106,7 @@ public class VoteTable extends BaseSerializer {
         return result;
     }
 
-    public Map<Integer, Map<String, Vote>> getVoteMapOfVersionByPubKey(String pubKey) {
-        Map<Integer, Map<String, Vote>> voteMapOfVersionByPubKey = new HashMap<>();
-        if (!valid()) {
-            throw new RuntimeException("the voteTable is not valid");
-        }
-        Set<Map.Entry<Integer, Map<String, Map<String, Vote>>>> entries = voteTable.entrySet();
-        entries.parallelStream().forEach(integerMapEntry -> {
-            Integer version = integerMapEntry.getKey();
-            Map<String, Map<String, Vote>> voteMapOfVersion = integerMapEntry.getValue();
-            if (MapUtils.isEmpty(voteMapOfVersion)) {
-                return;
-            }
-            voteMapOfVersion.forEach((votePubKey, voteMap) -> {
-                if (StringUtils.equals(votePubKey, pubKey)) {
-                    voteMapOfVersionByPubKey.computeIfAbsent(version, (tmpVersion) -> new HashMap()).putAll(voteMap);
-                }
-            });
-        });
-        Iterator<Map.Entry<Integer, Map<String, Map<String, Vote>>>> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Integer, Map<String, Map<String, Vote>>> next = iterator.next();
-        }
-        return voteMapOfVersionByPubKey;
-    }
-
-    public Map<String, Vote> getVoteMap(String pubKey, int version) {
+    public Map<String, Vote> getVoteMap(int version, String pubKey) {
         Map<String, Vote> result = new HashMap<>();
         Map<String, Map<String, Vote>> voteMapOfPubKey = getVoteMapOfPubKeyByVersion(version);
         if (MapUtils.isEmpty(voteMapOfPubKey)) {
@@ -112,9 +121,14 @@ public class VoteTable extends BaseSerializer {
     }
 
     public boolean addVote(Vote vote) {
-        boolean result = false;
-
-        return result;
+        if (!valid() || vote == null) {
+            return false;
+        }
+        String pubKey = vote.getWitnessPubKey();
+        int version = vote.getVoteVersion();
+        String blockHash = vote.getBlockHash();
+        Vote old = voteTable.computeIfAbsent(version, (key) -> new HashMap()).computeIfAbsent(pubKey, (key) -> new HashMap()).computeIfAbsent(blockHash, (hash) -> vote);
+        return old == null;
     }
 
     public boolean valid() {

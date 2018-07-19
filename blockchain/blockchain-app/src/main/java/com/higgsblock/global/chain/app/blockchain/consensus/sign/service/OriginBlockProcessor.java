@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class SourceBlockProcessor {
+public class OriginBlockProcessor {
 
     @Autowired
     private MessageCenter messageCenter;

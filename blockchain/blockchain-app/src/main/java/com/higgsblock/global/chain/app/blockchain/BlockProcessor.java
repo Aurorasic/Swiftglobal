@@ -365,7 +365,7 @@ public class BlockProcessor {
         blockPersistedEvent.setBlockHash(block.getHash());
         blockPersistedEvent.setConfirmedNewBestBlock(newBestBlock == null ? false : true);
         eventBus.post(blockPersistedEvent);
-        LOGGER.info("sent broad BlockPersistedEvent,height={}_block={}", block.getHeight(), block.getHash());
+        LOGGER.info("sent broad BlockPersistedEvent,height={},block={}", block.getHeight(), block.getHash());
     }
 
     public void loadAllBlockData() {
@@ -649,11 +649,11 @@ public class BlockProcessor {
                 String nextBlockHash = nextBlock.getHash();
                 String nextSourceId = nextBlockFullInfo.getSourceId();
                 int nextVersion = nextBlockFullInfo.getVersion();
-                LOGGER.info("persisted height={}_block={}, find orphan next block height={}_block={} to persist",
+                LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
                 if (!validBasic(block)) {
-                    LOGGER.error("Error block basic info, height={}_block={}", height, blockHash);
-                    LOGGER.error("Error next block height={}_block={}", nextHeight, nextBlockHash);
+                    LOGGER.error("Error block basic info, height={},block={}", height, blockHash);
+                    LOGGER.error("Error next block height={},block={}", nextHeight, nextBlockHash);
                     orphanBlockCacheManager.remove(nextBlock.getHash());
                     continue;
                 }
@@ -711,7 +711,7 @@ public class BlockProcessor {
                     , block.getHeight()
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
-            if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
+            if (transactionProcessor.hasStakeOnBest(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER)) {
                 LOGGER.info("verify block is Guarder production true");
                 return true;
             }

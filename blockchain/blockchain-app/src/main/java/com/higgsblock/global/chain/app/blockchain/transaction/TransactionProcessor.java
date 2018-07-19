@@ -486,7 +486,7 @@ public class TransactionProcessor {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (!hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -511,14 +511,14 @@ public class TransactionProcessor {
             if (result.contains(address)) {
                 continue;
             }
-            if (hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
         return result;
     }
 
-    public List<UTXO> getUTXOList(String address, String currency) {
+    public List<UTXO> getBestUTXOList(String address, String currency) {
         List<UTXOEntity> utxoEntities = bestUtxoService.findByLockScriptAndCurrency(address, currency);
         List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
@@ -540,9 +540,9 @@ public class TransactionProcessor {
         return utxos;
     }
 
-    public boolean hasStake(String address, SystemCurrencyEnum currency) {
+    public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
         Money stakeMinMoney = new Money("1", currency.getCurrency());
-        List<UTXO> result = getUTXOList(address, currency.getCurrency());
+        List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
         Money money = new Money("0", currency.getCurrency());
         for (UTXO utxo : result) {
             money.add(utxo.getOutput().getMoney());
