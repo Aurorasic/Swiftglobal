@@ -9,6 +9,12 @@ import lombok.Getter;
  **/
 @Getter
 public enum SystemCurrencyEnum {
+
+    /**
+     * the stack currency who has some community authorities
+     */
+    COMMUNITY("community"),
+
     /**
      * CAS
      */
@@ -19,9 +25,13 @@ public enum SystemCurrencyEnum {
      */
     MINER("miner"),
     /**
-     * add guarder_miner coin
+     * add guarder coin
      */
-    GUARDER("guarder");
+    GUARDER("guarder"),
+    /**
+     * the stack currency who could issue token
+     */
+    ISSUE_TOKEN("issue_tokens");
 
     private String currency;
 
