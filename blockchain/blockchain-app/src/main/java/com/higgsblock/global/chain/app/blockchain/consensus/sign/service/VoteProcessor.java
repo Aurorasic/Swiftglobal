@@ -9,9 +9,9 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
-import com.higgsblock.global.chain.app.blockchain.consensus.vote.SourceBlockRequest;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
-import com.higgsblock.global.chain.app.blockchain.consensus.vote.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
@@ -99,7 +99,7 @@ public class VoteProcessor implements IEventBusListener {
         }
     }
 
-    public synchronized void addSourceBlock(Block block) {
+    public synchronized void addOriginalBlock(Block block) {
         if (block == null) {
             return;
         }
@@ -167,7 +167,7 @@ public class VoteProcessor implements IEventBusListener {
                     if (!blockCache.get(this.height, k -> new HashMap<>()).containsKey(vote.getBlockHash())) {
                         Set<String> set1 = new HashSet<>();
                         set1.add(vote.getBlockHash());
-                        messageCenter.dispatchToWitnesses(new SourceBlockRequest(set1));
+                        messageCenter.dispatchToWitnesses(new VotingBlockRequest(set1));
                         setTemp.add(vote);
                         return;
                     }
@@ -252,7 +252,7 @@ public class VoteProcessor implements IEventBusListener {
             return;
         }
 
-        if (!checkSourceBlock(sourceId, voteHeight, otherVoteTable)) {
+        if (!checkOriginalBlock(sourceId, voteHeight, otherVoteTable)) {
             return;
         }
 
@@ -264,7 +264,7 @@ public class VoteProcessor implements IEventBusListener {
         }
     }
 
-    private boolean checkSourceBlock(String sourceId, long voteHeight, VoteTable otherVoteTable) {
+    private boolean checkOriginalBlock(String sourceId, long voteHeight, VoteTable otherVoteTable) {
         Map<String, Map<String, Vote>> map = otherVoteTable.getVoteMapOfPubKeyByVersion(1);
         if (null == map || map.isEmpty()) {
             return false;
@@ -283,9 +283,9 @@ public class VoteProcessor implements IEventBusListener {
         if (blockHashs.size() > 0) {
             updateVoteCache(voteHeight, otherVoteTable);
             if (null != sourceId) {
-                messageCenter.unicast(sourceId, new SourceBlockRequest(blockHashs));
+                messageCenter.unicast(sourceId, new VotingBlockRequest(blockHashs));
             } else {
-                messageCenter.dispatchToWitnesses(new SourceBlockRequest(blockHashs));
+                messageCenter.dispatchToWitnesses(new VotingBlockRequest(blockHashs));
             }
             LOGGER.info("source blocks is not enough,add vote table to cache");
             return false;

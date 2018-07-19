@@ -41,16 +41,9 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
             return;
         }
         long height = block.getHeight();
-        String hash = block.getHash();
-
         if (height <= 1) {
             return;
         }
-        if (orphanBlockCacheManager.isContains(hash)) {
-            return;
-        }
-
         blockProcessor.persistBlockAndIndex(block, sourceId, block.getVersion());
-
     }
 }

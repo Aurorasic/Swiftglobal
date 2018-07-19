@@ -1,5 +1,6 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.formatter;
 
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import org.springframework.stereotype.Component;
 

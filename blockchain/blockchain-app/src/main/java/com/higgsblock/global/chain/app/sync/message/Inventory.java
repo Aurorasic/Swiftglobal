@@ -15,6 +15,8 @@ import java.util.Set;
 @Message(MessageType.INVENTORY)
 public class Inventory extends BaseSerializer {
 
+    private int version = 0;
+
     private long height;
 
     private Set<String> hashs;

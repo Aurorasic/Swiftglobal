@@ -1,5 +1,6 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.vote;
+package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
+import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;

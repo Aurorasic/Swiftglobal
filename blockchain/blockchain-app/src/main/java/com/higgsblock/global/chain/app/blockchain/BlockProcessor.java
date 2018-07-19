@@ -744,7 +744,7 @@ public class BlockProcessor {
         return ECKey.verifySign(message, sign, pubKey);
     }
 
-    public boolean validSourceBlock(Block block, String sourceId) {
+    public boolean validOriginalBlock(Block block, String sourceId) {
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
         LOGGER.info("start valid source block,height {}, {}", blockHeight, blockHash);
