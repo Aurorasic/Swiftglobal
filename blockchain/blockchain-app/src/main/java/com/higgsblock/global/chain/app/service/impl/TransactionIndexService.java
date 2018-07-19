@@ -30,7 +30,7 @@ public class TransactionIndexService implements ITransactionIndexService {
     private BestUTXOService bestUtxoService;
 
     @Autowired
-    private UTXOProcessor utxoProcessor;
+    private UTXOServiceProxy utxoServiceProxy;
 
     /**
      * The Transaction index entity dao.
@@ -80,7 +80,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
-                    if (utxoProcessor.getUTXOOnBestChain(utxoKey) == null) {
+                    if (utxoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     bestUtxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
@@ -128,7 +128,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     break;
                 }
 
-                UTXO utxo = utxoProcessor.getUnionUTXO(preBlockHash, preUTXOKey);
+                UTXO utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
                     unspentUtxoTx = false;
                     LOGGER.warn("utxo data map has no this uxto={},tx={}", preUTXOKey, tx.getHash());

@@ -9,10 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.service.impl.BestUTXOService;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
+import com.higgsblock.global.chain.app.service.impl.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -50,7 +47,7 @@ public class TransactionProcessor {
     private BestUTXOService bestUtxoService;
 
     @Autowired
-    private UTXOProcessor utxoProcessor;
+    private UTXOServiceProxy utxoServiceProxy;
 
     @Autowired
     private TransactionIndexService transactionIndexService;
@@ -60,6 +57,7 @@ public class TransactionProcessor {
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
+
     /**
      * validate coin base tx
      *
@@ -159,7 +157,7 @@ public class TransactionProcessor {
      * @param totalReward total reward
      * @return return validate result
      */
-    public boolean validateProducerOutput(TransactionOutput output,  Money totalReward) {
+    public boolean validateProducerOutput(TransactionOutput output, Money totalReward) {
         if (!totalReward.checkRange()) {
             LOGGER.info("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
             return false;
@@ -171,17 +169,17 @@ public class TransactionProcessor {
 
         LockScript script = output.getLockScript();
         if (script == null) {
-            LOGGER.info("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         if (!SystemCurrencyEnum.CAS.getCurrency().equals(output.getMoney().getCurrency())) {
-            LOGGER.info("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         if (!validateProducerReward(output, totalReward)) {
-            LOGGER.info("Validate producer reward failed, output={},totalReward={}", output,  totalReward.getValue());
+            LOGGER.info("Validate producer reward failed, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
@@ -367,7 +365,7 @@ public class TransactionProcessor {
         }
 
         UTXO utxo;
-        utxo = utxoProcessor.getUnionUTXO(preBlockHash, preOutKey);
+        utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
@@ -402,7 +400,7 @@ public class TransactionProcessor {
             }
 
             String preUTXOKey = input.getPreUTXOKey();
-            UTXO utxo = utxoProcessor.getUnionUTXO(preBlockHash, preUTXOKey);
+            UTXO utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
             if (utxo == null) {
                 LOGGER.info("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
@@ -501,7 +499,7 @@ public class TransactionProcessor {
             }
 
             UTXO utxo = null;
-            utxo = utxoProcessor.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
+            utxo = utxoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={},i={}", tx.getHash(), i);
                 continue;
@@ -546,7 +544,7 @@ public class TransactionProcessor {
     }
 
     public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
-        List<UTXO> result = utxoProcessor.getUnionUTXO(preBlockHash, address, currency.getCurrency());
+        List<UTXO> result = utxoServiceProxy.getUnionUTXO(preBlockHash, address, currency.getCurrency());
         return getUTXOCurrency(result, currency);
     }
 
