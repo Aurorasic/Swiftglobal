@@ -87,7 +87,6 @@ public class DataErrorProcessor {
         }
     }
 
-
     public void handleError() {
 
         LOGGER.info("start reimport data");
@@ -110,6 +109,5 @@ public class DataErrorProcessor {
         //start sync block
         syncBlockProcessor.startSyncBlock();
     }
-
 
 }
