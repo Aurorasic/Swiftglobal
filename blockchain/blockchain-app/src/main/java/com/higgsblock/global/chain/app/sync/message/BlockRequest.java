@@ -18,6 +18,8 @@ import org.apache.commons.lang3.StringUtils;
 @Message(MessageType.BLOCK_REQUEST)
 public class BlockRequest extends BaseSerializer {
 
+    private int version = 0;
+
     private long height;
 
     private String hash;
