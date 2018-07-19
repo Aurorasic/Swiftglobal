@@ -47,6 +47,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
         long height = block.getHeight();
         LOGGER.info("Received OriginalBlock height={}, hash={}", height, block.getHash());
+        //todo kongyu 2018-7-19 可以统一调用BlockProcessor isWitness方法判断是否为见证者
         if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
             messageCenter.dispatchToWitnesses(originalBlock);
             return;

@@ -747,9 +747,9 @@ public class BlockProcessor {
     public boolean validOriginalBlock(Block block, String sourceId) {
         String blockHash = block.getHash();
         long blockHeight = block.getHeight();
-        LOGGER.info("start valid source block,height {}, {}", blockHeight, blockHash);
+        LOGGER.info("start valid source block, height={}, hash={}", blockHeight, blockHash);
         if (!block.valid()) {
-            LOGGER.info("this block is not valid,height {}, {}", blockHeight, blockHash);
+            LOGGER.info("this block is not valid, height={}, hash={}", blockHeight, blockHash);
             return false;
         }
         if (!preIsExistInDB(block)) {
@@ -759,9 +759,9 @@ public class BlockProcessor {
         }
         boolean minerPermission = nodeProcessor.checkProducer(block);
         if (!minerPermission) {
-            LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
+            LOGGER.info("the miner can not package the height block, height={}, hash={}", block.getHeight(), blockHash);
             boolean isGuarderBlock = witnessTimerProcessor.acceptBlock(block);
-            LOGGER.info("verify witness timer block is sure {} block hash {}", isGuarderBlock, block.getHash());
+            LOGGER.info("verify witness timer block is sure {} block hash={}", isGuarderBlock, block.getHash());
             if (!isGuarderBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isGuarderBlock);
                 return false;
@@ -769,7 +769,7 @@ public class BlockProcessor {
         }
         boolean valid = validBlockFromProducer(block);
         if (!valid) {
-            LOGGER.info("the block is not valid {} {}", block.getHeight(), blockHash);
+            LOGGER.info("the block is not valid, height={}, hash={}", block.getHeight(), blockHash);
             return false;
         }
         return true;
