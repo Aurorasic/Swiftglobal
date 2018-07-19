@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.Subscribe;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXOProcessor;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -24,7 +24,7 @@ public class WitnessTimerProcessor implements IEventBusListener {
     public final long WAIT_WITNESS_TIME = 20;
 
     @Autowired
-    private UTXOProcessor utxoProcessor;
+    private TransactionProcessor transactionProcessor;
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
@@ -65,6 +65,6 @@ public class WitnessTimerProcessor implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongGuarder(Block block) {
-        return utxoProcessor.hasStakeOnUnion(block.getPrevBlockHash(), block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
+        return transactionProcessor.hasStake(block.getPrevBlockHash(), block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
     }
 }
