@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class IUTXORepositoryTest extends BaseTest {
     @Autowired
-    private IUTXORepository iutxoRepository;
+    private IUTXORepository utxoRepository;
 
     @Test
     public void save() {
@@ -26,18 +26,18 @@ public class IUTXORepositoryTest extends BaseTest {
         entity.setCurrency("currency");
         entity.setScriptType(3);
         entity.setLockScript("lockScript");
-        iutxoRepository.save(entity);
+        utxoRepository.save(entity);
     }
 
     @Test
     public void findUTXOEntityByTransactionHashAndOutIndex() {
-        UTXOEntity transactionHash = iutxoRepository.findByTransactionHashAndOutIndex("txHash", (short) 3);
+        UTXOEntity transactionHash = utxoRepository.findByTransactionHashAndOutIndex("txHash", (short) 3);
         System.err.println(transactionHash);
     }
 
     @Test
     public void findUTXOEntitiesByLockScript() {
-        List<UTXOEntity> lockScript = iutxoRepository.findByLockScript("lockScript1");
+        List<UTXOEntity> lockScript = utxoRepository.findByLockScript("lockScript1");
         for (UTXOEntity utxoEntity : lockScript) {
             System.err.println(utxoEntity);
         }
@@ -45,7 +45,7 @@ public class IUTXORepositoryTest extends BaseTest {
 
     @Test
     public void findUTXOEntitiesByLockScriptAndCurrency() {
-        List<UTXOEntity> utxoEntitiesByLockScriptAndCurrency = iutxoRepository.findByLockScriptAndCurrency("lockScript", "currency");
+        List<UTXOEntity> utxoEntitiesByLockScriptAndCurrency = utxoRepository.findByLockScriptAndCurrency("lockScript", "currency");
         for (UTXOEntity utxoEntity : utxoEntitiesByLockScriptAndCurrency) {
             System.err.println(utxoEntity);
         }
@@ -55,6 +55,6 @@ public class IUTXORepositoryTest extends BaseTest {
     @Transactional
     @Rollback(false)
     public void deleteUTXOEntityByTransactionHashAndOutIndex() {
-        iutxoRepository.deleteByTransactionHashAndOutIndex("txHash", (short) 3);
+        utxoRepository.deleteByTransactionHashAndOutIndex("txHash", (short) 3);
     }
 }

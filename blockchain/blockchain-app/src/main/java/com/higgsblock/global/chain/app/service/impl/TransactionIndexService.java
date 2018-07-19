@@ -33,7 +33,7 @@ public class TransactionIndexService implements ITransactionIndexService {
      * The Transaction index entity dao.
      */
     @Autowired
-    private ITransactionIndexRepository iTransactionIndexRepository;
+    private ITransactionIndexRepository transactionIndexRepository;
 
     /**
      * The Spent transaction out index entity dao.
@@ -43,7 +43,7 @@ public class TransactionIndexService implements ITransactionIndexService {
 
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {
-        return iTransactionIndexRepository.findByTransactionHash(txHash);
+        return transactionIndexRepository.findByTransactionHash(txHash);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class TransactionIndexService implements ITransactionIndexService {
         transactionIndexEntity.setTransactionHash(newTxIndex.getTxHash());
         transactionIndexEntity.setTransactionIndex(newTxIndex.getTxIndex());
 
-        iTransactionIndexRepository.save(transactionIndexEntity);
+        transactionIndexRepository.save(transactionIndexEntity);
     }
 
     /**
@@ -166,7 +166,7 @@ public class TransactionIndexService implements ITransactionIndexService {
      * @return the transaction index
      */
     private TransactionIndex getTransactionIndex(String spentTxHash) {
-        TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(spentTxHash);
+        TransactionIndexEntity entity = transactionIndexRepository.findByTransactionHash(spentTxHash);
         if (entity == null) {
             return null;
         }
