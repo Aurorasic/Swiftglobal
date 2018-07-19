@@ -76,12 +76,4 @@ public class UTXO extends BaseSerializer {
     public boolean hasMinerStake() {
         return output.hasMinerStake();
     }
-
-    public boolean isCommunityManagerCurrency() {
-        return output.isCommunityManagerCurrency();
-    }
-
-    public boolean isIssueTokenCurrency() {
-        return output.isIssueTokenCurrency();
-    }
 }

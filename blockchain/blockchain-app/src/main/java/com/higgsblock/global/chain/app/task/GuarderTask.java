@@ -59,7 +59,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
         String address = peerManager.getSelf().getId();
         curSec += TASK_TIME;
         LOGGER.info("curSec={} currHeight={}", curSec, currHeight);
-        if (curSec >= WAIT_MINER_TIME && transactionProcessor.hasStake(address, SystemCurrencyEnum.CMINER)) {
+        if (curSec >= WAIT_MINER_TIME && transactionProcessor.hasStake(address, SystemCurrencyEnum.GUARDER)) {
             doMing();
         }
     }

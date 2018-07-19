@@ -76,27 +76,4 @@ public class TransactionOutput extends BaseSerializer {
         }
         return false;
     }
-
-    public boolean isCommunityManagerCurrency() {
-        if (StringUtils.equals(SystemCurrencyEnum.COMMUNITY_MANAGER.getCurrency(), money.getCurrency())) {
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isIssueTokenCurrency() {
-        if (StringUtils.equals(SystemCurrencyEnum.ISSUE_TOKEN.getCurrency(), money.getCurrency())) {
-            return true;
-        }
-        return false;
-    }
-
-    @JSONField(serialize = false)
-    public boolean hasIssueTokenStake() {
-        if (isMinerCurrency() &&
-                money.compareTo(new Money("1", SystemCurrencyEnum.ISSUE_TOKEN.getCurrency())) >= 0) {
-            return true;
-        }
-        return false;
-    }
 }
