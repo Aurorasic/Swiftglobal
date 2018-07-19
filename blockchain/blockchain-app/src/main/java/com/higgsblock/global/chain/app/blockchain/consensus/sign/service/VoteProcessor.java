@@ -120,9 +120,9 @@ public class VoteProcessor implements IEventBusListener {
         if (voteMap == null || voteMap.size() == 0) {
             String blockHash = block.getHash();
             long blockHeight = block.getHeight();
-            LOGGER.info("start vote first vote,height {}, {}", blockHeight, blockHash);
+            LOGGER.info("start vote first vote, height={}, {}", blockHeight, blockHash);
             String bestBlockHash = block.getHash();
-            LOGGER.info("add source block from miner and vote {},{}", this.height, bestBlockHash);
+            LOGGER.info("add source block from miner and vote height={},{}", this.height, bestBlockHash);
             int voteVersion = 1;
             String proofPubKey = null;
             String proofBlockHash = null;
@@ -130,7 +130,7 @@ public class VoteProcessor implements IEventBusListener {
             Vote vote = createVote(bestBlockHash, block.getHeight(), voteVersion, proofBlockHash, proofPubKey, proofVersion, null);
             this.voteTable.addVote(vote);
             this.messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
-            LOGGER.info("send voteHashTable to witness success {},{}", this.height, voteTable);
+            LOGGER.info("send voteHashTable to witness success height={},{}", this.height, voteTable);
         }
     }
 
@@ -204,7 +204,7 @@ public class VoteProcessor implements IEventBusListener {
             }
         }
         if (this.voteTable.getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteHashTable with height {} ,is : {}", height, voteTable);
+            LOGGER.info("local voteHashTable with height={} ,is : {}", height, voteTable);
             messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
         }
     }
@@ -243,7 +243,7 @@ public class VoteProcessor implements IEventBusListener {
 
         boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
         if (isOver) {
-            LOGGER.info("the voting process of {} is over , current height : {}", voteHeight, height);
+            LOGGER.info("the voting process of {} is over , current height={}", voteHeight, height);
             return;
         }
         if (voteHeight > this.height) {
@@ -259,7 +259,7 @@ public class VoteProcessor implements IEventBusListener {
         int startAllVoteSize = voteTable.getAllVoteSize();
         dealVoteTable(voteHeight, otherVoteTable);
         if (voteTable.getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteHashTable with height {} ,is : {}", voteHeight, voteTable);
+            LOGGER.info("local voteHashTable with height={} ,is : {}", voteHeight, voteTable);
             messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
         }
     }
@@ -294,7 +294,7 @@ public class VoteProcessor implements IEventBusListener {
     }
 
     private void dealVoteTable(long voteHeight, VoteTable otherVoteTable) {
-        LOGGER.info("add voteMap to task with voteHeight {} ,otherVoteTable {}", voteHeight, otherVoteTable);
+        LOGGER.info("add voteMap to task with voteHeight={} ,otherVoteTable {}", voteHeight, otherVoteTable);
 
         int versionSize = otherVoteTable.getVersionSize();
         for (int version = 1; version <= versionSize; version++) {
