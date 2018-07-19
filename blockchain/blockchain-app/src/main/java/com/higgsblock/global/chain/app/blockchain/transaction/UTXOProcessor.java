@@ -1,31 +1,22 @@
-package com.higgsblock.global.chain.app.service.impl;
+package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.dao.IUTXORepository;
-import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import com.higgsblock.global.chain.app.service.IUTXOService;
-import com.higgsblock.global.chain.common.utils.Money;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import com.higgsblock.global.chain.app.service.impl.BestUTXOService;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 /**
+ * Utxo service that handle utxos both on best block chain and on unconfirmed block chains
+ *
  * @author yuguojia
- * @date 2018/06/29
+ * @date 2018/07/19
  **/
-@Service
-@Slf4j
-public class UTXOService implements IUTXOService {
+public class UTXOProcessor {
     @Autowired
     private BlockService blockService;
 
@@ -33,7 +24,8 @@ public class UTXOService implements IUTXOService {
     private BlockIndexService blockIndexService;
 
     @Autowired
-    private IUTXORepository utxoRepository;
+    private BestUTXOService bestUtxoService;
+
     /**
      * key1: unconfirmed blockhash
      * key2: utxo key
@@ -47,56 +39,6 @@ public class UTXOService implements IUTXOService {
      */
     private Map<String, String> blockHashChainMap = new HashMap<>(16);
 
-    @Override
-    public void saveUTXO(UTXO utxo) {
-        UTXOEntity entity = new UTXOEntity();
-        TransactionOutput output = utxo.getOutput();
-
-        entity.setAmount(output.getMoney().getValue());
-        entity.setScriptType(output.getLockScript().getType());
-        entity.setTransactionHash(utxo.getHash());
-        entity.setOutIndex(utxo.getIndex());
-        entity.setCurrency(output.getMoney().getCurrency());
-        entity.setLockScript(output.getLockScript().getAddress());
-
-        utxoRepository.save(entity);
-    }
-
-    /**
-     * get utxo only on confirm block chain
-     *
-     * @param utxoKey
-     * @return
-     */
-
-    @Override
-    public UTXO getUTXOOnBestChain(String utxoKey) {
-        //return transactionIndexService.getUTXOOnBestChain(utxoKey);
-
-        String[] keys = utxoKey.split("_");
-        UTXOEntity entity = utxoRepository.findByTransactionHashAndOutIndex(keys[0], Short.valueOf(keys[1]));
-
-        if (entity == null) {
-            return null;
-        }
-
-        TransactionOutput output = new TransactionOutput();
-
-        LockScript lockScript = new LockScript();
-        lockScript.setAddress(entity.getLockScript());
-        lockScript.setType((short) entity.getScriptType());
-
-        output.setMoney(new Money(entity.getAmount(), entity.getCurrency()));
-        output.setLockScript(lockScript);
-
-        UTXO utxo = new UTXO();
-        utxo.setAddress(lockScript.getAddress());
-        utxo.setHash(entity.getTransactionHash());
-        utxo.setIndex(entity.getOutIndex());
-        utxo.setOutput(output);
-
-        return utxo;
-    }
 
     /**
      * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
@@ -107,7 +49,6 @@ public class UTXOService implements IUTXOService {
      * @param currency
      * @return
      */
-    @Override
     public List<UTXO> getUnionUTXO(String preBlockHash, String address, String currency) {
 
         if (StringUtils.isEmpty(preBlockHash)) {
@@ -124,7 +65,7 @@ public class UTXOService implements IUTXOService {
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
-        List<UTXO> bestAddedUtxoList = getUTXOsByAddress(address);
+        List<UTXO> bestAddedUtxoList = bestUtxoService.getUTXOsByAddress(address);
 
         List<UTXO> allAddedUtxoList = new LinkedList<>();
         allAddedUtxoList.addAll(bestAddedUtxoList);
@@ -153,7 +94,6 @@ public class UTXOService implements IUTXOService {
      * @param utxoKey
      * @return
      */
-    @Override
     public UTXO getUnionUTXO(String preBlockHash, String utxoKey) {
         if (preBlockHash == null) {
             List<String> lastHeightBlockHashs = blockIndexService.getLastHeightBlockHashs();
@@ -179,6 +119,16 @@ public class UTXOService implements IUTXOService {
         }
 
         return null;
+    }
+
+    /**
+     * get utxo only on confirm block chain
+     *
+     * @param utxoKey
+     * @return
+     */
+    public UTXO getUTXOOnBestChain(String utxoKey) {
+        return bestUtxoService.getUTXOByKey(utxoKey);
     }
 
     private void getUnionUTXOsRecurse(Map result, String blockHash, boolean isToGetAdded) {
@@ -212,23 +162,6 @@ public class UTXOService implements IUTXOService {
         return getUnconfirmedUTXORecurse(preBlockHash, utxoKey);
     }
 
-    @Override
-    public boolean isRemovedUTXORecurse(String blockHash, String utxoKey) {
-        if (StringUtils.isEmpty(blockHash)) {
-            return false;
-        }
-        Map<String, UTXO> utxoMap = getAndLoadUnconfirmedUtxoMaps(blockHash);
-        if (utxoMap == null || utxoMap.isEmpty()) {
-            return false;
-        }
-        if (utxoMap.containsKey(utxoKey) && utxoMap.get(utxoKey) == null) {
-            return true;
-        }
-        String preBlockHash = blockHashChainMap.get(blockHash);
-        return isRemovedUTXORecurse(preBlockHash, utxoKey);
-    }
-
-    @Override
     public void addNewBlock(Block newBestBlock, Block newBlock) {
         if (newBestBlock != null) {
             //remove cached blocks info for the blocks of on the new best block height
@@ -245,47 +178,6 @@ public class UTXOService implements IUTXOService {
         }
     }
 
-    @Override
-    public List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency) {
-        return utxoRepository.findByLockScriptAndCurrency(lockScript, currency);
-    }
-
-    @Override
-    public List<UTXO> getUTXOsByAddress(String addr) {
-        if (null == addr) {
-            throw new RuntimeException("addr is null");
-        }
-
-        List<UTXOEntity> entityList = utxoRepository.findByLockScript(addr);
-        if (CollectionUtils.isEmpty(entityList)) {
-            return null;
-        }
-
-        List<UTXO> utxos = Lists.newArrayList();
-        entityList.forEach(entity -> {
-            Money money = new Money(entity.getAmount(), entity.getCurrency());
-            LockScript lockScript = new LockScript();
-            lockScript.setAddress(entity.getLockScript());
-            lockScript.setType((short) entity.getScriptType());
-            TransactionOutput output = new TransactionOutput();
-            output.setMoney(money);
-            output.setLockScript(lockScript);
-
-            UTXO utxo = new UTXO();
-            utxo.setHash(entity.getTransactionHash());
-            utxo.setIndex(entity.getOutIndex());
-            utxo.setAddress(entity.getLockScript());
-            utxo.setOutput(output);
-            utxos.add(utxo);
-        });
-        return utxos;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @Override
-    public void deleteByTransactionHashAndOutIndex(String transactionHash, short outIndex) {
-        utxoRepository.deleteByTransactionHashAndOutIndex(transactionHash, outIndex);
-    }
 
     /**
      * get the utxos on the block if the block is in cache, else load the block and calculate
@@ -333,13 +225,5 @@ public class UTXOService implements IUTXOService {
     private void remove(String blockHash) {
         blockHashChainMap.remove(blockHash);
         unconfirmedUtxoMaps.remove(blockHash);
-    }
-
-    private String getPreBlockHash(String blockHash) {
-        return blockHashChainMap.get(blockHash);
-    }
-
-    private boolean containsKey(String blockHash) {
-        return blockHashChainMap.containsKey(blockHash) && unconfirmedUtxoMaps.containsKey(blockHash);
     }
 }

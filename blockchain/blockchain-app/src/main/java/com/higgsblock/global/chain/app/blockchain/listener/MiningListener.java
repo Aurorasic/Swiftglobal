@@ -8,7 +8,7 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -31,7 +31,7 @@ import java.util.concurrent.*;
 public class MiningListener implements IEventBusListener {
 
     @Autowired
-    private SourceBlockProcessor sourceBlockService;
+    private OriginBlockProcessor sourceBlockService;
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired

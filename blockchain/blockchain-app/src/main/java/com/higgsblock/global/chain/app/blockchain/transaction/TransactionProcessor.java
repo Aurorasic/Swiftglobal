@@ -9,10 +9,10 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.service.impl.BestUTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -47,7 +47,10 @@ public class TransactionProcessor {
     private BlockService blockService;
 
     @Autowired
-    private UTXOService utxoService;
+    private BestUTXOService bestUtxoService;
+
+    @Autowired
+    private UTXOProcessor utxoProcessor;
 
     @Autowired
     private TransactionIndexService transactionIndexService;
@@ -365,7 +368,7 @@ public class TransactionProcessor {
         }
 
         UTXO utxo;
-        utxo = utxoService.getUnionUTXO(preBlockHash, preOutKey);
+        utxo = utxoProcessor.getUnionUTXO(preBlockHash, preOutKey);
 
         if (utxo == null) {
             LOGGER.warn("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
@@ -400,7 +403,7 @@ public class TransactionProcessor {
             }
 
             String preUTXOKey = input.getPreUTXOKey();
-            UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preUTXOKey);
+            UTXO utxo = utxoProcessor.getUnionUTXO(preBlockHash, preUTXOKey);
             if (utxo == null) {
                 LOGGER.info("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
@@ -499,7 +502,7 @@ public class TransactionProcessor {
             }
 
             UTXO utxo = null;
-            utxo = utxoService.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
+            utxo = utxoProcessor.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
             if (utxo == null) {
                 LOGGER.warn("cannot find utxo when get added miners, tx={}_i={}", tx.getHash(), i);
                 continue;
@@ -516,7 +519,7 @@ public class TransactionProcessor {
     }
 
     public List<UTXO> getUTXOList(String address, String currency) {
-        List<UTXOEntity> utxoEntities = utxoService.findByLockScriptAndCurrency(address, currency);
+        List<UTXOEntity> utxoEntities = bestUtxoService.findByLockScriptAndCurrency(address, currency);
         List<UTXO> utxos = Lists.newArrayList();
         utxoEntities.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
