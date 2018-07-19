@@ -46,8 +46,8 @@ public class WitnessTimerProcessor implements IEventBusListener {
         long currTime = System.currentTimeMillis();
         long timeDifference = (currTime - initTime) / 1000;
         LOGGER.info("currTime={},timeDifference={} ", currTime, timeDifference);
-        if (timeDifference >= WAIT_WITNESS_TIME && verifyBlockBelongCandidateMiner(block)) {
-            LOGGER.info("timeDifference > {} and block belong candidate block return true", WAIT_WITNESS_TIME);
+        if (timeDifference >= WAIT_WITNESS_TIME && verifyBlockBelongGuarder(block)) {
+            LOGGER.info("timeDifference > {} and block belong Guarder block return true", WAIT_WITNESS_TIME);
             return true;
         }
         return false;
@@ -64,7 +64,7 @@ public class WitnessTimerProcessor implements IEventBusListener {
         }
     }
 
-    public boolean verifyBlockBelongCandidateMiner(Block block) {
+    public boolean verifyBlockBelongGuarder(Block block) {
         return transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER);
     }
 }

@@ -4,9 +4,9 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.SourceBlockProcessor;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  **/
 @Component
 @Slf4j
-public class CandidateMinerTask extends BaseTask implements IEventBusListener {
+public class GuarderTask extends BaseTask implements IEventBusListener {
     private static long currHeight = 0;
     private static final long WAIT_MINER_TIME = 30;
     private static long curSec = 0;

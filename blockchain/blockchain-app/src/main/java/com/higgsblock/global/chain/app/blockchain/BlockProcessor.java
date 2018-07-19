@@ -713,7 +713,7 @@ public class BlockProcessor {
                     , block.getMinerSelfSigPKs().get(0).getAddress()
                     , nodeProcessor.getDposGroupByHeihgt(block.getHeight(), block.getPrevBlockHash()));
             if (transactionProcessor.hasStake(block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.CMINER)) {
-                LOGGER.info("verify block is candidate miner production true");
+                LOGGER.info("verify block is Guarder production true");
                 return true;
             }
             return false;
@@ -763,10 +763,10 @@ public class BlockProcessor {
         boolean minerPermission = nodeProcessor.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block {} {}", block.getHeight(), blockHash);
-            boolean isCandidateBlock = witnessTimerProcessor.acceptBlock(block);
-            LOGGER.info("verify witness timer block is sure {} block hash {}", isCandidateBlock, block.getHash());
-            if (!isCandidateBlock) {
-                LOGGER.info("verify witness timer block is accept {} ", isCandidateBlock);
+            boolean isGuarderBlock = witnessTimerProcessor.acceptBlock(block);
+            LOGGER.info("verify witness timer block is sure {} block hash {}", isGuarderBlock, block.getHash());
+            if (!isGuarderBlock) {
+                LOGGER.info("verify witness timer block is accept {} ", isGuarderBlock);
                 return false;
             }
         }
