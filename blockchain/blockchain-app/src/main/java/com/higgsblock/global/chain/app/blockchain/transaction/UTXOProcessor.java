@@ -5,8 +5,10 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.service.impl.BestUTXOService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
@@ -16,6 +18,8 @@ import java.util.*;
  * @author yuguojia
  * @date 2018/07/19
  **/
+@Service
+@Slf4j
 public class UTXOProcessor {
     @Autowired
     private BlockService blockService;
