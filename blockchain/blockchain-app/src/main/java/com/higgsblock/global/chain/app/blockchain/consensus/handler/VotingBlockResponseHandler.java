@@ -43,7 +43,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             return;
         }
         long height = block.getHeight();
-        LOGGER.info("Received VotingBlockResponse {} ,{}", height, block.getHash());
+        LOGGER.info("Received VotingBlockResponse height={}, hash={}", height, block.getHash());
         if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
             messageCenter.dispatchToWitnesses(votingBlockResponse);
             return;
@@ -54,10 +54,10 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         }
 
         if (!blockProcessor.validOriginalBlock(block, sourceId)) {
-            LOGGER.info("the block is not valid {} {}", height, block.getHash());
+            LOGGER.info("the block is not valid height={}, hash={}", height, block.getHash());
             return;
         }
-        LOGGER.info("add votingBlockResponse {} ,{}", height, block.getHash());
+        LOGGER.info("add votingBlockResponse height={}, hash={}", height, block.getHash());
         voteProcessor.addOriginalBlock(block);
         messageCenter.dispatchToWitnesses(votingBlockResponse);
 
