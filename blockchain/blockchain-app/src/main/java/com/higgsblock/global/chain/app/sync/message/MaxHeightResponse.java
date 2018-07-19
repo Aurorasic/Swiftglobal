@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 @Data
 @Message(MessageType.MAX_HEIGHT_RESPONSE)
 public class MaxHeightResponse extends BaseSerializer {
+
     private int version = 0;
+
     private long maxHeight;
 }

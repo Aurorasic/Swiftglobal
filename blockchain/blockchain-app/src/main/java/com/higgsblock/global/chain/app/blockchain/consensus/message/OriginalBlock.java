@@ -20,5 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public class OriginalBlock extends BaseSerializer {
+
+    private int version = 0;
+
     private Block block;
 }

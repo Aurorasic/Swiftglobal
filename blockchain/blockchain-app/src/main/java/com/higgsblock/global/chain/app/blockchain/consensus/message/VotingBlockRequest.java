@@ -21,5 +21,7 @@ import java.util.Set;
 @Slf4j
 public class VotingBlockRequest extends BaseSerializer {
 
+    private int version = 0;
+
     private Set<String> blockHashs;
 }
