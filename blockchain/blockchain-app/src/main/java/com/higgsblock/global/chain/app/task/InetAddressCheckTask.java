@@ -1,13 +1,13 @@
 package com.higgsblock.global.chain.app.task;
 
 import com.higgsblock.global.chain.app.config.AppConfig;
-import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.discover.LocalPeerConnectionInfoDiscovery;
-import com.higgsblock.global.chain.network.discover.PublicPeerConnectionInfoDiscovery;
-import com.higgsblock.global.chain.network.enums.NetworkType;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.network.config.PeerConfig;
+import com.higgsblock.global.chain.network.discover.IPeerConnectionInfoDiscovery;
+import com.higgsblock.global.chain.network.enums.NetworkType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -32,12 +32,14 @@ public class InetAddressCheckTask extends BaseTask {
      * The Local discovery.
      */
     @Autowired
-    private LocalPeerConnectionInfoDiscovery localDiscovery;
+    @Qualifier("localDiscovery")
+    private IPeerConnectionInfoDiscovery localDiscovery;
     /**
      * The Public discovery.
      */
     @Autowired
-    private PublicPeerConnectionInfoDiscovery publicDiscovery;
+    @Qualifier("publicDiscovery")
+    private IPeerConnectionInfoDiscovery publicDiscovery;
     /**
      * The Peer manager.
      */
