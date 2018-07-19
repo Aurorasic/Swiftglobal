@@ -137,9 +137,6 @@ public class VoteTable extends BaseSerializer {
         if (version < 0) {
             return false;
         }
-        if (MapUtils.isEmpty(voteTable)) {
-            return false;
-        }
         return true;
     }
 
