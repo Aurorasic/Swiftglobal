@@ -4,12 +4,12 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.common.SystemStatus;
-import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
+import com.higgsblock.global.chain.app.common.SystemStatus;
+import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -31,7 +31,7 @@ import java.util.concurrent.*;
 public class MiningListener implements IEventBusListener {
 
     @Autowired
-    private OriginBlockProcessor sourceBlockService;
+    private OriginBlockProcessor originBlockProcessor;
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
@@ -156,7 +156,7 @@ public class MiningListener implements IEventBusListener {
                 LOGGER.warn("the expect height={}, but {}", expectHeight, block.getHeight());
                 return true;
             }
-            sourceBlockService.sendBlockToWitness(block);
+            originBlockProcessor.sendBlockToWitness(block);
             return true;
         } catch (Exception e) {
             LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);

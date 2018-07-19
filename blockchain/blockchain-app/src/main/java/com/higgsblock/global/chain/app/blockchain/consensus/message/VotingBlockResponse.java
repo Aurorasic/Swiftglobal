@@ -1,23 +1,23 @@
-package com.higgsblock.global.chain.app.blockchain;
+package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author yangyi
- * @deta 2018/7/19
- * @description
+ * @author yuanjiantao
+ * @date 5/25/2018
  */
-@Message(MessageType.ORIGIN_BLOCK)
+@Message(MessageType.VOTING_BLOCK_RESPONSE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Slf4j
-public class OriginBlock extends BaseSerializer {
+public class VotingBlockResponse {
+
     private Block block;
 }

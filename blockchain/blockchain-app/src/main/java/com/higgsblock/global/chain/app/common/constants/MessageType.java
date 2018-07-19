@@ -34,8 +34,8 @@ public enum MessageType {
     BLOCK_REQUEST("503"),
     BLOCK_RESPONSE("504"),
 
-    SOURCE_BLOCK_REQUEST("505"),
-    SOURCE_BLOCK_RESPONSE("506");
+    VOTING_BLOCK_REQUEST("505"),
+    VOTING_BLOCK_RESPONSE("506");
 
     private String code;
 

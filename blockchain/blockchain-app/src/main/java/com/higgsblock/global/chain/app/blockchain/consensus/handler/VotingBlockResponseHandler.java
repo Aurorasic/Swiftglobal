@@ -1,8 +1,8 @@
-package com.higgsblock.global.chain.app.blockchain.handler;
+package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.SourceBlockResponse;
+import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
  * @author yuanjiantao
  * @date 5/25/2018
  */
-@Component("sourceBlockHandler")
 @Slf4j
-public class SourceBlockHandler extends BaseMessageHandler<SourceBlockResponse> {
+@Component
+public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockResponse> {
 
     @Autowired
     private VoteProcessor voteProcessor;
@@ -34,18 +34,18 @@ public class SourceBlockHandler extends BaseMessageHandler<SourceBlockResponse> 
     private BlockProcessor blockProcessor;
 
     @Override
-    protected void process(SocketRequest<SourceBlockResponse> request) {
-        SourceBlockResponse sourceBlockResponse = request.getData();
+    protected void process(SocketRequest<VotingBlockResponse> request) {
+        VotingBlockResponse votingBlockResponse = request.getData();
         Block block;
         String sourceId = request.getSourceId();
 
-        if (null == sourceBlockResponse || null == (block = sourceBlockResponse.getBlock())) {
+        if (null == votingBlockResponse || null == (block = votingBlockResponse.getBlock())) {
             return;
         }
 
         long height = block.getHeight();
         if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
-            messageCenter.dispatchToWitnesses(sourceBlockResponse);
+            messageCenter.dispatchToWitnesses(votingBlockResponse);
             return;
         }
 
@@ -53,13 +53,13 @@ public class SourceBlockHandler extends BaseMessageHandler<SourceBlockResponse> 
             return;
         }
 
-        if (!blockProcessor.validSourceBlock(block, sourceId)) {
+        if (!blockProcessor.validOriginalBlock(block, sourceId)) {
             LOGGER.info("the block is not valid {} {}", height, block.getHash());
             return;
         }
-        LOGGER.info("Received sourceBlockResponse {} ,{}", height, block.getHash());
-        voteProcessor.addSourceBlock(block);
-        messageCenter.dispatchToWitnesses(sourceBlockResponse);
+        LOGGER.info("Received votingBlockResponse {} ,{}", height, block.getHash());
+        voteProcessor.addOriginalBlock(block);
+        messageCenter.dispatchToWitnesses(votingBlockResponse);
 
     }
 

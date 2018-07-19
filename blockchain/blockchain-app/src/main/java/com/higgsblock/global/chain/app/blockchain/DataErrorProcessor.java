@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.*;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,7 +24,7 @@ public class DataErrorProcessor {
     private SystemStatusManager systemStatusManager;
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
 
     @Autowired
     private BlockProcessor blockProcessor;

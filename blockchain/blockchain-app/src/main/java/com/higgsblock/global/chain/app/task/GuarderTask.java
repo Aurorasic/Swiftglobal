@@ -34,7 +34,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
-    private OriginBlockProcessor sourceBlockService;
+    private OriginBlockProcessor originBlockProcessor;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -104,7 +104,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("the expect height={}, but block height={}", expectHeight, block.getHeight());
                     return;
                 }
-                sourceBlockService.sendBlockToWitness(block);
+                originBlockProcessor.sendBlockToWitness(block);
             }
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);
