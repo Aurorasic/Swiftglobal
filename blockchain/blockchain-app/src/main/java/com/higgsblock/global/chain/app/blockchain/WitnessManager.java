@@ -55,7 +55,7 @@ public class WitnessManager implements InitializingBean {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         loadWitnessFromDb();
     }
 
