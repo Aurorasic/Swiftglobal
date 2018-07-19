@@ -3,11 +3,8 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
-import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,16 +23,6 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
-    @Autowired
-    private MessageCenter messageCenter;
-
-    @Autowired
-    private VoteProcessor voteProcessor;
-
-    @Autowired
-    private BlockIndexService blockIndexService;
-
-
     @Override
     protected void process(SocketRequest<Block> request) {
         Block data = request.getData();
@@ -51,6 +38,6 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         }
 
         boolean success = blockProcessor.persistBlockAndIndex(data, sourceId, data.getVersion());
-        LOGGER.error("persisted block all info, success={}_height={}_block={}", success, height, hash);
+        LOGGER.error("persisted block all info, success={},height={},block={}", success, height, hash);
     }
 }
