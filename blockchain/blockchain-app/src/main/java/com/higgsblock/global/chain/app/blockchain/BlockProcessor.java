@@ -18,7 +18,6 @@ import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -84,7 +83,7 @@ public class BlockProcessor {
     private BlockService blockService;
 
     @Autowired
-    private UTXOService utxoService;
+    private UTXOProcessor utxoProcessor;
 
     @Autowired
     private TransactionIndexService transactionIndexService;
@@ -285,7 +284,7 @@ public class BlockProcessor {
         Block newBestBlock = saveBlockCompletely(block);
 
         //add unconfirmed utxos and remove confirmed height blocks in cache
-        utxoService.addNewBlock(newBestBlock, block);
+        utxoProcessor.addNewBlock(newBestBlock, block);
 
         //refresh cache
         refreshCache(block.getHash(), block);

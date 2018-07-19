@@ -4,8 +4,8 @@ import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXOProcessor;
 import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
-import com.higgsblock.global.chain.app.service.impl.UTXOService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +26,7 @@ import java.util.List;
 public class TransactionApi {
 
     @Autowired
-    private UTXOService utxoService;
+    private UTXOProcessor utxoProcessor;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -48,7 +48,7 @@ public class TransactionApi {
             return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
         }
 
-        List<UTXO> list = utxoService.getUnionUTXO(null, address, null);
+        List<UTXO> list = utxoProcessor.getUnionUTXO(null, address, null);
         return ResponseData.success(list);
     }
 }
