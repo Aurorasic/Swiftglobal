@@ -59,12 +59,6 @@ public class PeerManager {
     private Peer self;
 
     /**
-     * The Upnp manager.
-     */
-    @Autowired
-    private UpnpManager upnpManager;
-
-    /**
      * The Peer map.
      */
     private Map<String, Peer> peerMap = new ConcurrentHashMap<>();

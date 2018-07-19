@@ -14,11 +14,11 @@ import java.util.List;
 public class IWitnessRepositoryTest extends BaseTest {
 
     @Autowired
-    private IWitnessRepository iWitnessRepository;
+    private IWitnessRepository witnessRepository;
 
     @Test
     public void findAll() {
-        List<WitnessEntity> all = iWitnessRepository.findAll();
+        List<WitnessEntity> all = witnessRepository.findAll();
         for (WitnessEntity witnessEntity : all) {
             System.err.println(witnessEntity);
         }

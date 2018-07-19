@@ -27,13 +27,16 @@ import java.util.List;
 @Slf4j
 public class TransactionIndexService implements ITransactionIndexService {
     @Autowired
-    private UTXOService utxoService;
+    private BestUTXOService bestUtxoService;
+
+    @Autowired
+    private UTXOProcessor utxoProcessor;
 
     /**
      * The Transaction index entity dao.
      */
     @Autowired
-    private ITransactionIndexRepository iTransactionIndexRepository;
+    private ITransactionIndexRepository transactionIndexRepository;
 
     /**
      * The Spent transaction out index entity dao.
@@ -43,7 +46,7 @@ public class TransactionIndexService implements ITransactionIndexService {
 
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {
-        return iTransactionIndexRepository.findByTransactionHash(txHash);
+        return transactionIndexRepository.findByTransactionHash(txHash);
     }
 
     @Override
@@ -77,10 +80,10 @@ public class TransactionIndexService implements ITransactionIndexService {
                     spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
-                    if (utxoService.getUTXOOnBestChain(utxoKey) == null) {
+                    if (utxoProcessor.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    utxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
+                    bestUtxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
                 }
             }
 
@@ -91,7 +94,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                 for (int i = 0; i < outputSize; i++) {
                     TransactionOutput output = outputs.get(i);
                     UTXO utxo = new UTXO(tx, (short) i, output);
-                    utxoService.saveUTXO(utxo);
+                    bestUtxoService.saveUTXO(utxo);
                 }
             }
         }
@@ -125,7 +128,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     break;
                 }
 
-                UTXO utxo = utxoService.getUnionUTXO(preBlockHash, preUTXOKey);
+                UTXO utxo = utxoProcessor.getUnionUTXO(preBlockHash, preUTXOKey);
                 if (utxo == null) {
                     unspentUtxoTx = false;
                     LOGGER.warn("utxo data map has no this uxto={},tx={}", preUTXOKey, tx.getHash());
@@ -156,7 +159,7 @@ public class TransactionIndexService implements ITransactionIndexService {
         transactionIndexEntity.setTransactionHash(newTxIndex.getTxHash());
         transactionIndexEntity.setTransactionIndex(newTxIndex.getTxIndex());
 
-        iTransactionIndexRepository.save(transactionIndexEntity);
+        transactionIndexRepository.save(transactionIndexEntity);
     }
 
     /**
@@ -166,7 +169,7 @@ public class TransactionIndexService implements ITransactionIndexService {
      * @return the transaction index
      */
     private TransactionIndex getTransactionIndex(String spentTxHash) {
-        TransactionIndexEntity entity = iTransactionIndexRepository.findByTransactionHash(spentTxHash);
+        TransactionIndexEntity entity = transactionIndexRepository.findByTransactionHash(spentTxHash);
         if (entity == null) {
             return null;
         }
