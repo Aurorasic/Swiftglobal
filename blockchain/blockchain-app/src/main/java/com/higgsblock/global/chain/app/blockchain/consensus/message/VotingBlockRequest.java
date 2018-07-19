@@ -24,4 +24,8 @@ public class VotingBlockRequest extends BaseSerializer {
     private int version = 0;
 
     private Set<String> blockHashs;
+
+    public VotingBlockRequest(Set<String> blockHashs) {
+        this.blockHashs = blockHashs;
+    }
 }

@@ -24,7 +24,13 @@ public class BlockRequest extends BaseSerializer {
 
     private String hash;
 
+    public BlockRequest(long height, String hash) {
+        this.height = height;
+        this.hash = hash;
+    }
+
     public BlockRequest(long height) {
+
         this.height = height;
     }
 

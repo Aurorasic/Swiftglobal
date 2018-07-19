@@ -18,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public class VotingBlockResponse {
+    public VotingBlockResponse(Block block) {
+        this.block = block;
+    }
 
     private int version = 0;
 
