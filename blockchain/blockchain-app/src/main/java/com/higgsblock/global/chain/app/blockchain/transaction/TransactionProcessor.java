@@ -541,8 +541,8 @@ public class TransactionProcessor {
     }
 
     public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
-        Money stakeMinMoney = new Money("1", currency.getCurrency());
         List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
+        Money stakeMinMoney = new Money("1", currency.getCurrency());
         Money money = new Money("0", currency.getCurrency());
         for (UTXO utxo : result) {
             money.add(utxo.getOutput().getMoney());
@@ -552,6 +552,10 @@ public class TransactionProcessor {
         }
 
         return false;
+    }
+
+    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
+        return true;
     }
 
     /**
