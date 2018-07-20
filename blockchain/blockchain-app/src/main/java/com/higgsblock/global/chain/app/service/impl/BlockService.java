@@ -66,6 +66,7 @@ public class BlockService implements IBlockService {
 
 
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
+    public static final int MINIMUM_TRANSACTION_IN_BLOCK = 2;
 
     @Override
     public boolean isExistInDB(long height, String blockHash) {
