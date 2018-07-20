@@ -255,6 +255,7 @@ public class BlockProcessor {
      * 8.Chaining the orphan block to the chain;
      * </P>
      */
+    @Transactional(rollbackFor = Exception.class)
     public synchronized boolean persistBlockAndIndex(Block block, String sourceId, int version) {
         long height = block.getHeight();
         String blockHash = block.getHash();
@@ -294,9 +295,6 @@ public class BlockProcessor {
         //Broadcast persisted event
         broadBlockPersistedEvent(block, newBestBlock, sourceId);
 
-        //Do last job for the block
-        doLastJobForBlock(block, sourceId, version);
-
         return true;
     }
 
@@ -315,7 +313,6 @@ public class BlockProcessor {
         return false;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public Block saveBlockCompletely(Block block) {
         try {
             //step 1
@@ -351,15 +348,6 @@ public class BlockProcessor {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
             throw new IllegalStateException("Save block completely failed");
         }
-    }
-
-    public void doLastJobForBlock(Block block, String sourceId, int version) {
-        chainingOrphanBlock(block, sourceId, version);
-    }
-
-    private void chainingOrphanBlock(Block block, String sourceId, int version) {
-        BlockFullInfo blockFullInfo = new BlockFullInfo(version, sourceId, block);
-        persistPreOrphanBlock(blockFullInfo);
     }
 
     public void broadBlockPersistedEvent(Block block, Block newBestBlock, String sourceId) {
@@ -590,36 +578,6 @@ public class BlockProcessor {
         }
 
         return true;
-    }
-
-
-    public void persistPreOrphanBlock(BlockFullInfo blockFullInfo) {
-        Block block = blockFullInfo.getBlock();
-        long height = block.getHeight();
-        String blockHash = block.getHash();
-        List<BlockFullInfo> nextConnectionBlocks = orphanBlockCacheManager.getNextConnectionBlocks(block.getHash());
-        if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
-            for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
-                Block nextBlock = nextBlockFullInfo.getBlock();
-                long nextHeight = nextBlock.getHeight();
-                String nextBlockHash = nextBlock.getHash();
-                String nextSourceId = nextBlockFullInfo.getSourceId();
-                int nextVersion = nextBlockFullInfo.getVersion();
-                LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
-                        height, blockHash, nextHeight, nextBlockHash);
-                if (!validBasic(block)) {
-                    LOGGER.error("Error next orphan block height={},block={}", nextHeight, nextBlockHash);
-                    orphanBlockCacheManager.remove(nextBlock.getHash());
-                    continue;
-                }
-                if (!validBlockTransactions(block)) {
-                    LOGGER.error("Error orphan next block height={},block={}", nextHeight, nextBlockHash);
-                    orphanBlockCacheManager.remove(nextBlock.getHash());
-                    continue;
-                }
-                persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
-            }
-        }
     }
 
     public boolean validBlockFromProducer(Block data) {
