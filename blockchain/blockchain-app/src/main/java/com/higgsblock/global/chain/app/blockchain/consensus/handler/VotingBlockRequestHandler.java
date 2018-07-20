@@ -29,12 +29,18 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
     private VoteProcessor voteProcessor;
 
     @Override
+    protected boolean check(SocketRequest<VotingBlockRequest> request) {
+        VotingBlockRequest data = request.getData();
+        if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     protected void process(SocketRequest<VotingBlockRequest> request) {
         String sourceId = request.getSourceId();
         VotingBlockRequest data = request.getData();
-        if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
-            return;
-        }
         LOGGER.info("received originalBlockRequest from {} with data {}", sourceId, data);
         data.getBlockHashs().forEach(hash -> {
             Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
@@ -42,7 +48,5 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
                 messageCenter.unicast(sourceId, new VotingBlockResponse(block));
             }
         });
-
-
     }
 }

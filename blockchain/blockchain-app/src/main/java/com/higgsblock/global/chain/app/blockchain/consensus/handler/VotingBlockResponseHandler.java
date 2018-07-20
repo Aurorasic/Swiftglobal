@@ -114,6 +114,4 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         voteProcessor.addOriginalBlock(block);
         messageCenter.dispatchToWitnesses(votingBlockResponse);
     }
-
-
 }
