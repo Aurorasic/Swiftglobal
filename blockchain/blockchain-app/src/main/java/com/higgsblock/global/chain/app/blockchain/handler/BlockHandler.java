@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockFullInfo;
-import com.higgsblock.global.chain.app.blockchain.IBlockChain;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class BlockHandler extends BaseMessageHandler<Block> {
     @Autowired
-    private IBlockChain blockChain;
+    private IBlockChainService blockChain;
 
     @Autowired
     private BlockService blockService;
@@ -89,9 +89,8 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         Block data = request.getData();
         long height = data.getHeight();
         String hash = data.getHash();
-        String sourceId = request.getSourceId();
+        boolean success = blockService.persistBlockAndIndex(data, data.getVersion());
 
-        boolean success = blockService.persistBlockAndIndex(data, sourceId, data.getVersion());
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
     }
 }

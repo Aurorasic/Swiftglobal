@@ -73,7 +73,7 @@ public class DataErrorProcessor {
             }
             blockIndexRepository.deleteAllByHeight(height);
             blockRepository.deleteAllByHeight(height);
-            list.forEach(block -> blockService.persistBlockAndIndex(block, null, block.getVersion()));
+            list.forEach(block -> blockService.persistBlockAndIndex(block, block.getVersion()));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
                 LOGGER.info("stop reimport data ,current hheight={},max height={}", height, maxHeight);

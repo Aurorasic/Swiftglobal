@@ -6,7 +6,7 @@ import java.util.List;
  * @author baizhengwen
  * @date 2018-07-20
  */
-public interface IBlockChain {
+public interface IBlockChainService {
 
     /**
      * Return true if the address belongs to a lucky miner at the specified height.

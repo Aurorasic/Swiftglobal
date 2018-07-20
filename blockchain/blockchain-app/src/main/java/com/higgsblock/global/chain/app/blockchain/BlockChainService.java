@@ -10,7 +10,7 @@ import java.util.List;
  * @author yuguojia
  * @date 2018-07-20
  */
-public class BlockChainService implements IBlockChain {
+public class BlockChainService implements IBlockChainService {
 
     @Autowired
     private BlockService blockService;
@@ -20,42 +20,50 @@ public class BlockChainService implements IBlockChain {
 
     @Override
     public boolean isLuckyMiner(String address, long height) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isMiner(String address, long height) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isWitness(String address, long height) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isGuarder(String address, long height) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isGenesisBlock(Block block) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isGenesisBlock(String blockHash) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isExistPreBlock(String blockHash) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean isExistBlock(String blockHash) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
@@ -65,27 +73,32 @@ public class BlockChainService implements IBlockChain {
 
     @Override
     public boolean checkTransactions(Block block) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean checkWitnessSignature(Block block) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public boolean checkBlockProducer(Block block) {
-
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
     public long getMaxHeight() {
-
+        //// TODO: 2018/7/20/0020
+        return 0;
     }
 
     @Override
     public long getBestMaxHeight() {
-
+        //// TODO: 2018/7/20/0020
+        return 0;
     }
 
     @Override
@@ -104,7 +117,7 @@ public class BlockChainService implements IBlockChain {
     }
 
     @Override
-    public List<Block> getHeightestBlocks() {
+    public List<Block> getHighestBlocks() {
         BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
         long height = lastBlockIndex.getHeight();
         return getBlocks(height);

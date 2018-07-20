@@ -169,7 +169,7 @@ public class BlockService implements IBlockService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public synchronized boolean persistBlockAndIndex(Block block, String sourceId, int version) {
+    public synchronized boolean persistBlockAndIndex(Block block, int version) {
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
 
@@ -180,7 +180,7 @@ public class BlockService implements IBlockService {
         refreshCache(block.getHash(), block);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, newBestBlock, sourceId);
+        broadBlockPersistedEvent(block, newBestBlock);
 
         return true;
     }
@@ -287,7 +287,7 @@ public class BlockService implements IBlockService {
         peerManager.setMinerAddresses(dposGroupBySn);
     }
 
-    public void broadBlockPersistedEvent(Block block, Block newBestBlock, String sourceId) {
+    public void broadBlockPersistedEvent(Block block, Block newBestBlock) {
         BlockPersistedEvent blockPersistedEvent = new BlockPersistedEvent();
         blockPersistedEvent.setHeight(block.getHeight());
         blockPersistedEvent.setBlockHash(block.getHash());

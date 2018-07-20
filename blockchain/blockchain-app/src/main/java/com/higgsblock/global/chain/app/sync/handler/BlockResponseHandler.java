@@ -25,9 +25,14 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     private BlockService blockService;
 
     @Override
+    protected boolean check(SocketRequest<BlockResponse> request) {
+        //// TODO: 2018/7/20/0020
+        return true;
+    }
+
+    @Override
     protected void process(SocketRequest<BlockResponse> request) {
         BlockResponse blockResponse = request.getData();
-        String sourceId = request.getSourceId();
         Block block = blockResponse.getBlock();
         if (null == block) {
             return;
@@ -37,7 +42,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         if (height <= 1) {
             return;
         }
-        boolean success = blockService.persistBlockAndIndex(block, sourceId, block.getVersion());
+        boolean success = blockService.persistBlockAndIndex(block, block.getVersion());
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
     }
 }

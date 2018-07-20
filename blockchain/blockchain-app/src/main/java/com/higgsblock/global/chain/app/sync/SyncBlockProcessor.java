@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.IBlockChain;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
@@ -53,7 +53,7 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
     private MessageCenter messageCenter;
 
     @Autowired
-    private IBlockChain blockChain;
+    private IBlockChainService blockChain;
 
     @Autowired
     private ConnectionManager connectionManager;
