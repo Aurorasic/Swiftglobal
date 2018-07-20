@@ -1,11 +1,16 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
 import com.higgsblock.global.chain.app.utils.ValueSortedMap;
+import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,12 +26,14 @@ import java.util.*;
 @Service
 @Data
 @Slf4j
-public class OrphanBlockCacheManager {
+public class OrphanBlockCacheManager implements IEventBusListener {
     private static final int MAX_CACHE_SIZE = 50;
 
     private final Map<String, BlockFullInfo> orphanBlockMap;
     @Autowired
     private BlockProcessor blockProcessor;
+    @Autowired
+    private BlockService blockService;
     @Autowired
     private SyncBlockProcessor sycBlockService;
 
@@ -54,6 +61,38 @@ public class OrphanBlockCacheManager {
             orphanBlockMap.remove(iterator.next());
         }
         orphanBlockMap.put(blockInfo.getBlock().getHash(), blockInfo);
+    }
+
+    @Subscribe
+    public void process(BlockPersistedEvent event) {
+        Block block = blockService.getBlockByHash(event.getBlockHash());
+        long height = block.getHeight();
+        String blockHash = block.getHash();
+        List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(block.getHash());
+        if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
+            for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
+                Block nextBlock = nextBlockFullInfo.getBlock();
+                long nextHeight = nextBlock.getHeight();
+                String nextBlockHash = nextBlock.getHash();
+                String nextSourceId = nextBlockFullInfo.getSourceId();
+                int nextVersion = nextBlockFullInfo.getVersion();
+                LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
+                        height, blockHash, nextHeight, nextBlockHash);
+                if (!blockProcessor.validBasic(block)) {
+                    LOGGER.error("Error next orphan block height={},block={}", nextHeight, nextBlockHash);
+                    remove(nextBlock.getHash());
+                    continue;
+                }
+                if (!blockProcessor.validBlockTransactions(block)) {
+                    LOGGER.error("Error orphan next block height={},block={}", nextHeight, nextBlockHash);
+                    remove(nextBlock.getHash());
+                    continue;
+                }
+                boolean success = blockProcessor.persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
+                LOGGER.info("orphan manager persisted block all info, success={},height={},block={}",
+                        success, nextHeight, nextBlockHash);
+            }
+        }
     }
 
     public BlockFullInfo remove(final String blockHash) {
