@@ -15,6 +15,7 @@ import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -37,6 +38,12 @@ import java.util.*;
 @Slf4j
 public class VoteProcessor implements IEventBusListener {
 
+    public static final int MAX_SIZE = 5;
+
+    private static final int MIN_VOTE = 7;
+
+    private static final int MIN_SAME_SIGN = 7;
+
     @Autowired
     private KeyPair keyPair;
 
@@ -46,11 +53,8 @@ public class VoteProcessor implements IEventBusListener {
     @Autowired
     private MessageCenter messageCenter;
 
-    public static final int MAX_SIZE = 5;
-
-    private static final int MIN_VOTE = 7;
-
-    private static final int MIN_SAME_SIGN = 7;
+    @Autowired
+    private IWitnessService witnessService;
 
     private Cache<Long, Map<Integer, Set<Vote>>> voteCache = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
@@ -81,9 +85,7 @@ public class VoteProcessor implements IEventBusListener {
         if (height < this.height) {
             return;
         }
-        String pubKey = keyPair.getPubKey();
-        String address = ECKey.pubKey2Base58Address(pubKey);
-        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address)) {
+        if (witnessService.isWitness(keyPair.getAddress())) {
             if (height == this.height) {
                 dealVoteCache();
                 return;

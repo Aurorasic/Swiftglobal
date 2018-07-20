@@ -17,4 +17,8 @@ public interface IWitnessService {
      * @return
      */
     List<Peer> getAllWitnessPeer();
+
+    boolean isWitness(String address);
+
+    int getWitnessSize();
 }

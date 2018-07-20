@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VotePro
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,9 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     @Autowired
     private BlockProcessor blockProcessor;
 
+    @Autowired
+    private IWitnessService witnessService;
+
     @Override
     protected void process(SocketRequest<VotingBlockResponse> request) {
         VotingBlockResponse votingBlockResponse = request.getData();
@@ -44,7 +47,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         }
         long height = block.getHeight();
         LOGGER.info("Received VotingBlockResponse height={}, hash={}", height, block.getHash());
-        if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(votingBlockResponse);
             return;
         }

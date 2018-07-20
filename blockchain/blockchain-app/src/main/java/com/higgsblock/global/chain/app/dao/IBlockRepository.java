@@ -26,6 +26,6 @@ public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
      * @param height
      * @return
      */
-    int deleteByHeight(long height);
+    int deleteAllByHeight(long height);
 
 }

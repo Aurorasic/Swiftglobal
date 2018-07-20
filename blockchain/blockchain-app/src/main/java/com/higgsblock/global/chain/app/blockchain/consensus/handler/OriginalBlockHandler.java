@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VotePro
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +34,9 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     @Autowired
     private BlockProcessor blockProcessor;
 
+    @Autowired
+    private IWitnessService witnessService;
+
     @Override
     protected void process(SocketRequest<OriginalBlock> request) {
 
@@ -47,8 +50,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
         long height = block.getHeight();
         LOGGER.info("Received OriginalBlock height={}, hash={}", height, block.getHash());
-        //todo kongyu 2018-7-19 可以统一调用BlockProcessor isWitness方法判断是否为见证者
-        if (!BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(originalBlock);
             return;
         }
