@@ -71,8 +71,8 @@ public class DataErrorProcessor {
                 LOGGER.info("stop reimport data ,current hheight={},max height={}", height, maxHeight);
                 break;
             }
-            blockIndexRepository.deleteByHeight(height);
-            blockRepository.deleteByHeight(height);
+            blockIndexRepository.deleteAllByHeight(height);
+            blockRepository.deleteAllByHeight(height);
             list.forEach(block -> blockProcessor.persistBlockAndIndex(block, null, block.getVersion()));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
@@ -82,8 +82,8 @@ public class DataErrorProcessor {
         }
 
         for (long height = startDeleteHeight; height < maxHeight; height += 1L) {
-            blockIndexRepository.deleteByHeight(height);
-            blockRepository.deleteByHeight(height);
+            blockIndexRepository.deleteAllByHeight(height);
+            blockRepository.deleteAllByHeight(height);
         }
     }
 
