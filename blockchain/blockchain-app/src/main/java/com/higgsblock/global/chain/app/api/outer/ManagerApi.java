@@ -2,10 +2,8 @@ package com.higgsblock.global.chain.app.api.outer;
 
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.DataErrorProcessor;
-import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +23,7 @@ public class ManagerApi {
 
 
     @RequestMapping("/reimportData")
-    public ResponseData<Boolean> sendTx(@RequestBody Transaction tx) {
+    public ResponseData<Boolean> reimportData() {
         dataErrorProcessor.handleError();
         return ResponseData.success(true);
     }
