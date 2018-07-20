@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -25,14 +26,19 @@ public class WitnessTimerProcessor implements IEventBusListener {
 
     @Autowired
     private TransactionProcessor transactionProcessor;
+
     @Autowired
     private BlockProcessor blockProcessor;
+
     @Autowired
     private PeerManager peerManager;
 
+    @Autowired
+    private IWitnessService witnessService;
+
     public void initWitnessTime() {
         String address = peerManager.getSelf().getId();
-        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address)) {
+        if (witnessService.isWitness(address)) {
             initTime = System.currentTimeMillis();
             currHeight = blockProcessor.getMaxHeight();
         }
@@ -57,7 +63,7 @@ public class WitnessTimerProcessor implements IEventBusListener {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         String address = peerManager.getSelf().getId();
-        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(address) && event.getHeight() > currHeight) {
+        if (witnessService.isWitness(address) && event.getHeight() > currHeight) {
             currHeight = event.getHeight();
             initTime = System.currentTimeMillis();
             LOGGER.info("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);

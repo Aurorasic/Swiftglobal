@@ -3,12 +3,12 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -57,6 +57,9 @@ public class TransactionProcessor {
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
+
+    @Autowired
+    private IWitnessService witnessService;
 
     /**
      * validate coin base tx
@@ -239,7 +242,7 @@ public class TransactionProcessor {
         outputs.forEach(output -> {
             witnessTotalMoney.add(output.getMoney());
         });
-        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(BlockProcessor.WITNESS_ADDRESS_LIST.size() - 1).add(lastWitnessMoney);
+        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(witnessService.getWitnessSize() - 1).add(lastWitnessMoney);
 
         return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
     }

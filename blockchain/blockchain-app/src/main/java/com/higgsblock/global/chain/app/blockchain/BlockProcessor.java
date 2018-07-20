@@ -15,6 +15,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionIndexService;
@@ -52,7 +53,6 @@ public class BlockProcessor {
      * Minimal witness number
      */
     public final static int MIN_WITNESS = 7;
-
 
     @Autowired
     private TransactionProcessor transactionProcessor;
@@ -92,19 +92,20 @@ public class BlockProcessor {
 
     @Autowired
     private WitnessTimerProcessor witnessTimerProcessor;
+
     @Autowired
     private MinerScoreStrategy minerScoreStrategy;
+
     @Autowired
     private PeerManager peerManager;
 
-
-    private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
-
-    public final static List<String> WITNESS_ADDRESS_LIST = new ArrayList<>();
+    @Autowired
+    private IWitnessService witnessService;
 
     @Autowired
     private TransactionFeeProcessor transactionFeeProcessor;
 
+    private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
         BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
@@ -562,7 +563,7 @@ public class BlockProcessor {
 
             tempAddress = ECKey.pubKey2Base58Address(pair.getPubKey());
             //Check if in the witness list
-            if (!WITNESS_ADDRESS_LIST.contains(tempAddress)) {
+            if (!witnessService.isWitness(tempAddress)) {
                 //todo kongyu 2018-7-12 日志打印需要补充区块高度和hash
                 LOGGER.error("The witness is invalid");
                 return false;
@@ -689,9 +690,6 @@ public class BlockProcessor {
         return true;
     }
 
-    public boolean isWitness(String address) {
-        return WITNESS_ADDRESS_LIST.contains(address);
-    }
 
     /**
      * fresh peer's minerAddress to connect ahead

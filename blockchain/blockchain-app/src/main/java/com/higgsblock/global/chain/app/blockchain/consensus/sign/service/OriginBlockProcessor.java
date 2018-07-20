@@ -1,10 +1,9 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.sign.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +27,9 @@ public class OriginBlockProcessor {
     @Autowired
     private KeyPair keyPair;
 
+    @Autowired
+    private IWitnessService witnessService;
+
     /**
      * Creator sends the signed block to other witnesses for resigning.
      */
@@ -36,7 +38,7 @@ public class OriginBlockProcessor {
         OriginalBlock originalBlock = new OriginalBlock();
         originalBlock.setBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
-        if (BlockProcessor.WITNESS_ADDRESS_LIST.contains(ECKey.pubKey2Base58Address(keyPair.getPubKey()))) {
+        if (witnessService.isWitness(keyPair.getAddress())) {
             voteProcessor.addOriginalBlock(block);
         }
     }

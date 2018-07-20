@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.eventbus.Subscribe;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -20,6 +21,7 @@ import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -156,8 +158,11 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
         String sourceId = event.getSourceId();
         Inventory inventory = new Inventory();
         inventory.setHeight(height);
-        Set<String> set = new HashSet<>(blockIndexService.getBlockIndexByHeight(height).getBlockHashs());
-        inventory.setHashs(set);
+        List<String> list = Optional.ofNullable(blockIndexService.getBlockIndexByHeight(height)).map(BlockIndex::getBlockHashs).orElse(null);
+        if (CollectionUtils.isNotEmpty(list)) {
+            Set<String> set = new HashSet<>(list);
+            inventory.setHashs(set);
+        }
         messageCenter.broadcast(new String[]{sourceId}, inventory);
     }
 

@@ -9,7 +9,6 @@ import com.higgsblock.global.chain.network.config.PeerConstant;
 import com.higgsblock.global.chain.network.config.RegistryConfig;
 import com.higgsblock.global.chain.network.socket.PeerCache;
 import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
-import com.higgsblock.global.chain.network.upnp.UpnpManager;
 import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
