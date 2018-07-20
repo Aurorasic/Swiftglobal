@@ -13,20 +13,19 @@ public interface IBlockChainService {
      * Lucky miner can produce a block at a specified height.
      *
      * @param address
-     * @param height
+     * @param preBlockHash
      * @return
      */
-    boolean isLuckyMiner(String address, long height);
+    boolean isLuckyMiner(String address, String preBlockHash);
 
     /**
      * Return true if the address belongs to a miner at the specified height.
      * All miners have a chance to be lucky miner.
      *
      * @param address
-     * @param height
      * @return
      */
-    boolean isMiner(String address, long height);
+    boolean isMinerOnBest(String address);
 
     /**
      * Return true if the address belongs to a witness at the specified height.
@@ -43,10 +42,10 @@ public interface IBlockChainService {
      * Guarders can produce blocks if all lucky miners can not produce a correct block at the specified height.
      *
      * @param address
-     * @param height
+     * @param preBlockHash
      * @return
      */
-    boolean isGuarder(String address, long height);
+    boolean isGuarder(String address, String preBlockHash);
 
     /**
      * Return true if the block is the genesis block on the chain.

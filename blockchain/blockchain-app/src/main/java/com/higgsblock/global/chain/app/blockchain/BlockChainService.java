@@ -19,13 +19,13 @@ public class BlockChainService implements IBlockChainService {
     private BlockIndexService blockIndexService;
 
     @Override
-    public boolean isLuckyMiner(String address, long height) {
+    public boolean isLuckyMiner(String address, String preBlockHash) {
         //// TODO: 2018/7/20/0020
         return true;
     }
 
     @Override
-    public boolean isMiner(String address, long height) {
+    public boolean isMinerOnBest(String address) {
         //// TODO: 2018/7/20/0020
         return true;
     }
@@ -37,7 +37,7 @@ public class BlockChainService implements IBlockChainService {
     }
 
     @Override
-    public boolean isGuarder(String address, long height) {
+    public boolean isGuarder(String address, String preBlockHash) {
         //// TODO: 2018/7/20/0020
         return true;
     }
