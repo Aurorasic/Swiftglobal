@@ -30,7 +30,6 @@ public class BlockRequest extends BaseSerializer {
     }
 
     public BlockRequest(long height) {
-
         this.height = height;
     }
 
@@ -47,5 +46,9 @@ public class BlockRequest extends BaseSerializer {
     @Override
     public int hashCode() {
         return (int) (height + (null == hash ? 0L : hash.hashCode()));
+    }
+
+    public boolean valid() {
+        return height > 1;
     }
 }

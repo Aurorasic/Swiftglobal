@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChain;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
@@ -53,7 +53,7 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChain blockChain;
 
     @Autowired
     private ConnectionManager connectionManager;
@@ -105,10 +105,10 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
             LOGGER.error(e.getMessage(), e);
         }
 
-        if (peersMaxHeight.size() == 0 || getPeersMaxHeight() <= blockProcessor.getMaxHeight()) {
+        if (peersMaxHeight.size() == 0 || getPeersMaxHeight() <= blockChain.getMaxHeight()) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
             LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
-                    , peersMaxHeight.size(), blockProcessor.getMaxHeight(), getPeersMaxHeight());
+                    , peersMaxHeight.size(), blockChain.getMaxHeight(), getPeersMaxHeight());
             return;
         }
 
@@ -117,7 +117,8 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
     }
 
     private void sendInitRequest() {
-        long initHeight = blockProcessor.getMaxHeight();
+        long initHeight = blockChain.getMaxHeight();
+
         for (long i = 1; i <= SYNC_BLOCK_TEMP_SIZE && i + initHeight <= getPeersMaxHeight(); i++) {
             sendGetBlock(initHeight + i);
         }
@@ -181,7 +182,7 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
         if (targetHeight <= getPeersMaxHeight()) {
             sendGetBlock(targetHeight);
         }
-        if (isSyncBlockState() && blockProcessor.getMaxHeight() >= getPeersMaxHeight()) {
+        if (isSyncBlockState() && blockChain.getMaxHeight() >= getPeersMaxHeight()) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
             LOGGER.info("sync block finished !");
         }
@@ -218,7 +219,7 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
             }
         });
 
-        if (height <= blockProcessor.getMaxHeight()) {
+        if (height <= blockChain.getMaxHeight()) {
             requestRecord.get(height, v -> {
                 messageCenter.unicast(sourceId, new BlockRequest(height, hash));
                 LOGGER.info("send block request! height:{},hash:{} ", height, hash);
@@ -233,13 +234,13 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
     }
 
     private void dealTimeOut(long height, String sourceId) {
-        if (height <= blockProcessor.getMaxHeight()) {
+        if (height <= blockChain.getMaxHeight()) {
             return;
         }
         LOGGER.info("time out, remove it .sourceId:{} ", sourceId);
         removePeer(sourceId);
         if (!sendGetBlock(height)) {
-            if (blockProcessor.getMaxHeight() >= getPeersMaxHeight() && isSyncBlockState()) {
+            if (blockChain.getMaxHeight() >= getPeersMaxHeight() && isSyncBlockState()) {
                 systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
                 LOGGER.info("sync block finished !");
             }
@@ -272,7 +273,7 @@ public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
     }
 
     private long getPeersMaxHeight() {
-        long myHeight = blockProcessor.getMaxHeight();
+        long myHeight = blockChain.getMaxHeight();
         long height = myHeight > 1L ? myHeight : 1L;
         for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
             long tempHeight = entry.getValue();

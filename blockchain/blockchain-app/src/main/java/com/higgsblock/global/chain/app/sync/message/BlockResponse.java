@@ -24,4 +24,8 @@ public class BlockResponse {
     public BlockResponse(Block block) {
         this.block = block;
     }
+
+    public boolean valid() {
+        return block.valid();
+    }
 }

@@ -29,9 +29,6 @@ public class Inventory extends BaseSerializer {
     }
 
     public boolean valid() {
-        if (height < 0) {
-            return false;
-        }
-        return true;
+        return height > 0;
     }
 }

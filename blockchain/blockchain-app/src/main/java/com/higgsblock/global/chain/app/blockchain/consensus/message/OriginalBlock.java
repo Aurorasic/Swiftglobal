@@ -28,4 +28,8 @@ public class OriginalBlock extends BaseSerializer {
     public OriginalBlock(Block block) {
         this.block = block;
     }
+
+    public boolean valid() {
+        return block.valid() && version >= 0;
+    }
 }

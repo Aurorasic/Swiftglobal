@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Set;
 
@@ -27,5 +28,9 @@ public class VotingBlockRequest extends BaseSerializer {
 
     public VotingBlockRequest(Set<String> blockHashs) {
         this.blockHashs = blockHashs;
+    }
+
+    public boolean valid() {
+        return CollectionUtils.isNotEmpty(blockHashs) && version >= 0;
     }
 }
