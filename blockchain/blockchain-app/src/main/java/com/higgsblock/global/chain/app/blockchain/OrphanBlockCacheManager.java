@@ -87,7 +87,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                     remove(nextBlockHash);
                     continue;
                 }
-                boolean success = blockProcessor.persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
+                boolean success = blockService.persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
                 LOGGER.info("orphan manager persisted block all info, success={},height={},block={}",
                         success, nextHeight, nextBlockHash);
             }

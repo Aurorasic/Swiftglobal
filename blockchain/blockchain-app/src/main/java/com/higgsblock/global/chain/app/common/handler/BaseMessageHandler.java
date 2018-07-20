@@ -56,7 +56,11 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                     try {
                         SocketRequest request = takeRequest();
                         LOGGER.info("task request for processing; {}", request);
-                        process(request);
+
+                        boolean isValid = check(request);
+                        if (isValid) {
+                            process(request);
+                        }
                     } catch (Exception e) {
                         LOGGER.error(e.getMessage(), e);
                     }
@@ -82,6 +86,8 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
         }
         return false;
     }
+
+    protected abstract boolean check(SocketRequest<T> request);
 
     protected abstract void process(SocketRequest<T> request);
 

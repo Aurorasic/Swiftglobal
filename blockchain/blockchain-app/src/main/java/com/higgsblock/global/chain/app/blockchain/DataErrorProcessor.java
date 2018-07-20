@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.*;
-import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,7 +24,7 @@ public class DataErrorProcessor {
     private SystemStatusManager systemStatusManager;
 
     @Autowired
-    private IBlockService blockService;
+    private BlockService blockService;
 
     @Autowired
     private BlockProcessor blockProcessor;
@@ -73,7 +73,7 @@ public class DataErrorProcessor {
             }
             blockIndexRepository.deleteAllByHeight(height);
             blockRepository.deleteAllByHeight(height);
-            list.forEach(block -> blockProcessor.persistBlockAndIndex(block, null, block.getVersion()));
+            list.forEach(block -> blockService.persistBlockAndIndex(block, null, block.getVersion()));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
                 LOGGER.info("stop reimport data ,current hheight={},max height={}", height, maxHeight);

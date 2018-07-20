@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private BlockProcessor blockProcessor;
 
+    @Autowired
+    private BlockService blockService;
+
     @Override
     protected void process(SocketRequest<BlockResponse> request) {
         BlockResponse blockResponse = request.getData();
@@ -33,7 +37,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         if (height <= 1) {
             return;
         }
-        boolean success = blockProcessor.persistBlockAndIndex(block, sourceId, block.getVersion());
+        boolean success = blockService.persistBlockAndIndex(block, sourceId, block.getVersion());
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
     }
 }

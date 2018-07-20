@@ -39,6 +39,7 @@ import java.util.*;
  * @author baizhengwen
  * @date 2018/2/23
  */
+@Deprecated
 @Service
 @Slf4j
 public class BlockProcessor {
