@@ -65,10 +65,9 @@ public class OrphanBlockCacheManager implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
-        Block block = blockService.getBlockByHash(event.getBlockHash());
-        long height = block.getHeight();
-        String blockHash = block.getHash();
-        List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(block.getHash());
+        long height = event.getHeight();
+        String blockHash = event.getBlockHash();
+        List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(blockHash);
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
                 Block nextBlock = nextBlockFullInfo.getBlock();
@@ -78,14 +77,14 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 int nextVersion = nextBlockFullInfo.getVersion();
                 LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
-                if (!blockProcessor.validBasic(block)) {
+                if (!blockProcessor.validBasic(nextBlock)) {
                     LOGGER.error("Error next orphan block height={},block={}", nextHeight, nextBlockHash);
-                    remove(nextBlock.getHash());
+                    remove(nextBlockHash);
                     continue;
                 }
-                if (!blockProcessor.validBlockTransactions(block)) {
+                if (!blockProcessor.validBlockTransactions(nextBlock)) {
                     LOGGER.error("Error orphan next block height={},block={}", nextHeight, nextBlockHash);
-                    remove(nextBlock.getHash());
+                    remove(nextBlockHash);
                     continue;
                 }
                 boolean success = blockProcessor.persistBlockAndIndex(nextBlock, nextSourceId, nextVersion);
