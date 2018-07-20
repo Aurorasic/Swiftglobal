@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginBlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
@@ -34,7 +34,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
-    private OriginBlockProcessor originBlockProcessor;
+    private OriginalBlockProcessor originalBlockProcessor;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -105,7 +105,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("the expect height={}, but block height={}", expectHeight, block.getHeight());
                     return;
                 }
-                originBlockProcessor.sendOriginBlockToWitness(block);
+                originalBlockProcessor.sendOriginBlockToWitness(block);
             }
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);
