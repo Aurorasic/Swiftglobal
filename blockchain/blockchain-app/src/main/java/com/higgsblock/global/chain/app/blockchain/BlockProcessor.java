@@ -477,7 +477,6 @@ public class BlockProcessor {
             LOGGER.error("Validate block common failed");
             return false;
         }
-        // todo yuguojia 2018-6-4 valid the block whether its pre block is best/main block(if best block exist) for forking blocks
 
         if (block.isGenesisBlock()) {
             LOGGER.info("Block is genesis block, height=>{}", block.getHeight());
@@ -491,52 +490,6 @@ public class BlockProcessor {
 
         if (!validAllWitnessSignatures(block)) {
             LOGGER.error("Validate signatures from witness failed");
-            return false;
-        }
-
-        return true;
-    }
-
-    public boolean validRecommendBlock(Block block) {
-        if (block == null) {
-            LOGGER.error("Validate validRecommendBlock failed,block is null");
-            return false;
-        }
-        if (!validBlockCommon(block)) {
-            LOGGER.error("Validate block common failed");
-            return false;
-        }
-
-        if (!validFirstWitnessSig(block)) {
-            LOGGER.error("Validate witness failed");
-            return false;
-        }
-
-        return true;
-    }
-
-    public boolean validFirstWitnessSig(Block block) {
-        List<BlockWitness> witnessList = block.getOtherWitnessSigPKS();
-        if (CollectionUtils.isEmpty(witnessList)) {
-            LOGGER.error("Witness signature number is empty");
-            return false;
-        }
-
-        if (witnessList.size() != 1) {
-            LOGGER.error("Witness signature number is not correct,blockHash {}, witnessList {}", block.getHash(), witnessList);
-            return false;
-        }
-
-        final BlockWitness blockWitness = witnessList.get(0);
-        if (!ECKey.verifySign(block.getHash(), blockWitness.getSignature(), blockWitness.getPubKey())) {
-            LOGGER.error("Block hash not match signature from witness when validate witness");
-            return false;
-        }
-
-        final String tempAddress = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
-        //Check if in the witness list
-        if (!WITNESS_ADDRESS_LIST.contains(tempAddress)) {
-            LOGGER.error("The witness is invalid when validate witness");
             return false;
         }
 
