@@ -45,6 +45,42 @@ public class BlockIndexService implements IBlockIndexService {
         }
     }
 
+    @Override
+    public BlockIndex getBlockIndexByHeight(long height) {
+        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
+        if (CollectionUtils.isEmpty(blockIndexEntities)) {
+            LOGGER.info("get blockIndex is null by height={}", height);
+            return null;
+        }
+        BlockIndex blockIndex = new BlockIndex();
+        blockIndex.setHeight(height);
+        blockIndex.setBlockHashs(Lists.newArrayList());
+        blockIndexEntities.forEach(blockIndexEntity -> {
+            blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
+            if (blockIndexEntity.getIsBest() != -1) {
+                blockIndex.setBestBlockHash(blockIndexEntity.getBlockHash());
+            }
+        });
+        return blockIndex;
+
+    }
+
+    @Override
+    public BlockIndex getLastBlockIndex() {
+        long maxHeight = blockIndexRepository.queryMaxHeight();
+        return getBlockIndexByHeight(maxHeight);
+    }
+
+    @Override
+    public List<String> getLastHeightBlockHashs() {
+        List<String> result = getLastBlockIndex().getBlockHashs();
+        if (CollectionUtils.isEmpty(result)) {
+            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
+        }
+
+        return result;
+    }
+
     private void insertBlockIndex(Block block) {
         BlockIndexEntity blockIndexDO = new BlockIndexEntity();
         blockIndexDO.setBlockHash(block.getHash());
@@ -67,39 +103,5 @@ public class BlockIndexService implements IBlockIndexService {
                 return;
             }
         }
-    }
-
-    @Override
-    public BlockIndex getBlockIndexByHeight(long height) {
-        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
-        if (CollectionUtils.isEmpty(blockIndexEntities)) {
-            LOGGER.info("get blockIndex is null by height={}", height);
-            return null;
-        }
-        BlockIndex blockIndex = new BlockIndex();
-        blockIndex.setHeight(height);
-        blockIndex.setBlockHashs(Lists.newArrayList());
-        blockIndexEntities.forEach(blockIndexEntity -> {
-            blockIndex.getBlockHashs().add(blockIndexEntity.getBlockHash());
-            if (blockIndexEntity.getIsBest() != -1) {
-                blockIndex.setBestBlockHash(blockIndexEntity.getBlockHash());
-            }
-        });
-        return blockIndex;
-
-    }
-
-
-    public BlockIndex getLastBlockIndex() {
-        long maxHeight = blockIndexRepository.queryMaxHeight();
-        return getBlockIndexByHeight(maxHeight);
-    }
-
-    public List<String> getLastHeightBlockHashs() {
-        List<String> result = getLastBlockIndex().getBlockHashs();
-        if (CollectionUtils.isEmpty(result)) {
-            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
-        }
-        return result;
     }
 }

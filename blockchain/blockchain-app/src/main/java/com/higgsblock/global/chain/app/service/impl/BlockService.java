@@ -1,10 +1,11 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockFormatter;
-import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
@@ -12,65 +13,100 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheMa
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
+ * The type Block service.
+ *
  * @author Zhao xiaogang
- * @date 2018-05-21
+ * @date 2018 -05-21
  */
 @Service
 @Slf4j
 public class BlockService implements IBlockService {
 
+    /**
+     * The minimum number of transactions in the block
+     */
+    public static final int MINIMUM_TRANSACTION_IN_BLOCK = 2;
+    /**
+     * The minimal witness number
+     */
+    public final static int MIN_WITNESS = 7;
+    /**
+     * The starting height of the main chain
+     */
+    private static final int MAIN_CHAIN_START_HEIGHT = 2;
     @Autowired
     private IBlockRepository blockRepository;
-
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
-
     @Autowired
-    private BlockIndexService blockIndexService;
-
+    private IBlockIndexService blockIndexService;
+    @Autowired
+    private IWitnessService witnessService;
     @Autowired
     private EventBus eventBus;
-
     @Autowired
     private TransactionCacheManager txCacheManager;
-
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
-
     @Autowired
     private MinerScoreStrategy minerScoreStrategy;
-
     @Autowired
     private NodeProcessor nodeProcessor;
-
     @Autowired
     private PeerManager peerManager;
-
     @Autowired
     private BlockFormatter blockFormatter;
 
+    /**
+     * Gets witness sing message.
+     *
+     * @param height      the height
+     * @param blockHash   the block hash
+     * @param voteVersion the vote version
+     * @return the witness sing message
+     */
+    public static String getWitnessSingMessage(long height, String blockHash, int voteVersion) {
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder();
+        builder.append(function.hashLong(height))
+                .append(function.hashString(null == blockHash ? Strings.EMPTY : blockHash, Charsets.UTF_8))
+                .append(function.hashInt(voteVersion));
+        return function.hashString(builder.toString(), Charsets.UTF_8).toString();
+    }
 
-    private static final int MAIN_CHAIN_START_HEIGHT = 2;
-    public static final int MINIMUM_TRANSACTION_IN_BLOCK = 2;
+    /**
+     * Valid sign boolean.
+     *
+     * @param height      the height
+     * @param blockHash   the block hash
+     * @param voteVersion the vote version
+     * @param sign        the sign
+     * @param pubKey      the pub key
+     * @return the boolean
+     */
+    public static boolean validSign(long height, String blockHash, int voteVersion, String sign, String pubKey) {
+        String message = getWitnessSingMessage(height, blockHash, voteVersion);
+        return ECKey.verifySign(message, sign, pubKey);
+    }
 
     @Override
     public boolean isExistInDB(long height, String blockHash) {
-
         BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         return blockIndex != null && blockIndex.containsBlockHash(blockHash);
 
@@ -81,9 +117,11 @@ public class BlockService implements IBlockService {
         if (orphanBlockCacheManager.isContains(block.getHash())) {
             return true;
         }
+
         if (isExistInDB(block.getHeight(), block.getHash())) {
             return true;
         }
+
         return false;
     }
 
@@ -92,6 +130,7 @@ public class BlockService implements IBlockService {
         if (block == null) {
             return false;
         }
+
         return blockRepository.findByBlockHash(block.getPrevBlockHash()) != null;
     }
 
@@ -101,8 +140,8 @@ public class BlockService implements IBlockService {
         if (blockEntity != null) {
             return blockFormatter.parse(blockEntity.getData());
         }
-        return null;
 
+        return null;
     }
 
     @Override
@@ -128,18 +167,20 @@ public class BlockService implements IBlockService {
         if (blockIndex == null) {
             return null;
         }
+
         ArrayList<String> blockHashes = blockIndex.getBlockHashs();
         List<Block> blocks = new LinkedList<>();
-
         for (String blockHash : blockHashes) {
             if (StringUtils.equals(blockHash, exceptBlockHash)) {
                 continue;
             }
+
             Block otherBlock = getBlockByHash(blockHash);
             if (otherBlock != null) {
                 blocks.add(otherBlock);
             }
         }
+
         return blocks;
     }
 
@@ -154,13 +195,12 @@ public class BlockService implements IBlockService {
         if (StringUtils.isEmpty(bestBlockHash)) {
             return null;
         }
+
         return getBlockByHash(bestBlockHash);
     }
 
-
     @Override
     public void saveBlock(Block block) throws Exception {
-
         BlockEntity blockEntity = new BlockEntity();
         blockEntity.setBlockHash(block.getHash());
         blockEntity.setHeight(block.getHeight());
@@ -169,6 +209,117 @@ public class BlockService implements IBlockService {
         LOGGER.info("saved block:{}", block.getSimpleInfo());
     }
 
+    @Override
+    public boolean checkBlockNumbers() {
+        //TODO: zhao xiaogang  should optimize  2018-05-22
+        return true;
+    }
+
+    @Override
+    public boolean isFirstBlockByHeight(Block block) {
+        if (block.isGenesisBlock()) {
+            return true;
+        }
+
+        return null == blockIndexService.getBlockIndexByHeight(block.getHeight());
+    }
+
+    @Override
+    public Block getToBeBestBlock(Block block) {
+        if (block.isGenesisBlock()) {
+            return null;
+        }
+
+        if (block.getHeight() - NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
+            return null;
+        }
+
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM);
+        if (bestBlock == null) {
+            LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
+            return null;
+        }
+
+        // h-N-1 block has ready be bestchain
+        Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
+        Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
+        if (preBestBlock == null || bestBlockOfHeight == null) {
+            //todo huangshengli business error ,failure bypass 2018-06-30
+            LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
+            return null;
+        }
+
+        if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
+            LOGGER.warn("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
+            return null;
+        }
+
+        return bestBlock;
+    }
+
+    @Override
+    public BlockIndex getLastBestBlockIndex() {
+        BlockIndex index = blockIndexService.getLastBlockIndex();
+        if (index.hasBestBlock()) {
+            return index;
+        }
+
+        long maxHeight = index.getHeight();
+        while (maxHeight-- > 0) {
+            BlockIndex preBlockIndex = blockIndexService.getBlockIndexByHeight(maxHeight);
+            if (preBlockIndex.hasBestBlock()) {
+                return preBlockIndex;
+            }
+        }
+
+        return blockIndexService.getBlockIndexByHeight(1);
+    }
+
+    @Override
+    public boolean checkWitnessSignatures(Block block) {
+        String blockLogInfo = block.getSimpleInfo();
+
+        List<BlockWitness> witnessSigPKS = block.getOtherWitnessSigPKS();
+        if (CollectionUtils.isEmpty(witnessSigPKS) || witnessSigPKS.size() < MIN_WITNESS) {
+            int signatureSize = CollectionUtils.isEmpty(witnessSigPKS) ? 0 : witnessSigPKS.size();
+            LOGGER.warn("The witness signatures is empty or the signature number is not enough,current size={},{}", signatureSize, blockLogInfo);
+        }
+
+        Set<String> pkSet = Sets.newHashSet();
+        String tempAddress;
+        for (BlockWitness pair : witnessSigPKS) {
+            if (!pair.valid()) {
+                LOGGER.warn("Invalid signature from witness,{}", blockLogInfo);
+                return false;
+            }
+
+            String pubKey = pair.getPubKey();
+            String signature = pair.getSignature();
+            boolean validSign = validSign(block.getHeight(), block.getHash(), block.getVoteVersion(), signature, pubKey);
+            if (!validSign) {
+                LOGGER.warn("Block hash not match signature from witness,{}", blockLogInfo);
+                return false;
+            }
+
+            tempAddress = ECKey.pubKey2Base58Address(pair.getPubKey());
+            if (!witnessService.isWitness(tempAddress)) {
+                LOGGER.warn("The witness is invalid,{}", blockLogInfo);
+                return false;
+            }
+
+            pkSet.add(pair.getPubKey());
+        }
+
+        int trimSize = pkSet.size();
+        if (trimSize < MIN_WITNESS) {
+            LOGGER.warn("The witness's valid signature number is not enough : current size={}", trimSize);
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public synchronized boolean persistBlockAndIndex(Block block, int version) {
         //Save block and index
@@ -295,51 +446,6 @@ public class BlockService implements IBlockService {
         blockPersistedEvent.setConfirmedNewBestBlock(newBestBlock == null ? false : true);
         eventBus.post(blockPersistedEvent);
         LOGGER.info("sent broad BlockPersistedEvent,height={},block={}", block.getHeight(), block.getHash());
-    }
-
-    @Override
-    public boolean checkBlockNumbers() {
-        //TODO: zhao xiaogang  should optimize  2018-05-22
-        return true;
-    }
-
-
-    @Override
-    public boolean isFirstBlockByHeight(Block block) {
-        if (block.isGenesisBlock()) {
-            return true;
-        }
-        return null == blockIndexService.getBlockIndexByHeight(block.getHeight());
-    }
-
-
-    @Override
-    public Block getToBeBestBlock(Block block) {
-        if (block.isGenesisBlock()) {
-            return null;
-        }
-        if (block.getHeight() - NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
-            return null;
-        }
-        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM);
-        if (bestBlock == null) {
-            LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
-            return null;
-        }
-        // h-N-1 block has ready be bestchain
-        Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
-        Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
-        if (preBestBlock == null || bestBlockOfHeight == null) {
-            //todo huangshengli business error ,failure bypass 2018-06-30
-            LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
-            return null;
-        }
-        if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
-            LOGGER.warn("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
-            return null;
-        }
-
-        return bestBlock;
     }
 
     private Block recursePreBlock(String preBlockHash, int preHeightNum) {

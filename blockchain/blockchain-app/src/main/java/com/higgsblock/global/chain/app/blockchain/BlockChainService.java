@@ -1,7 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -13,10 +14,13 @@ import java.util.List;
 public class BlockChainService implements IBlockChainService {
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
 
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
+
+    @Autowired
+    private ITransactionService transactionService;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
@@ -73,15 +77,14 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkTransactions(Block block) {
-
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = transactionService.validTransactions(block);
+        return result;
     }
 
     @Override
     public boolean checkWitnessSignature(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = blockService.checkWitnessSignatures(block);
+        return result;
     }
 
     @Override
@@ -92,14 +95,15 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        BlockIndex index = blockIndexService.getLastBlockIndex();
+        long height = index == null ? 0 : index.getHeight();
+        return height;
     }
 
     @Override
     public long getBestMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        long height = blockService.getLastBestBlockIndex().getHeight();
+        return height;
     }
 
     @Override
