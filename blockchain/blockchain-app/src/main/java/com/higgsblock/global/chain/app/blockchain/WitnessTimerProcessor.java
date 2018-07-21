@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.Subscribe;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -25,10 +25,10 @@ public class WitnessTimerProcessor implements IEventBusListener {
     public final long WAIT_WITNESS_TIME = 20;
 
     @Autowired
-    private TransactionProcessor transactionProcessor;
+    private ITransactionService transactionService;
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private PeerManager peerManager;
@@ -40,7 +40,7 @@ public class WitnessTimerProcessor implements IEventBusListener {
         String address = peerManager.getSelf().getId();
         if (witnessService.isWitness(address)) {
             initTime = System.currentTimeMillis();
-            currHeight = blockProcessor.getMaxHeight();
+            currHeight = blockChainService.getMaxHeight();
         }
         LOGGER.info("init time={},currHeight={} ", initTime, currHeight);
     }
@@ -71,6 +71,6 @@ public class WitnessTimerProcessor implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongGuarder(Block block) {
-        return transactionProcessor.hasStake(block.getPrevBlockHash(), block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
+        return transactionService.hasStake(block.getPrevBlockHash(), block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
     }
 }
