@@ -20,6 +20,7 @@ import java.util.Set;
  * @author yuguojia
  * @date 2018/03/02
  **/
+@Deprecated
 @Component
 @Slf4j
 public class MinerScoreStrategy {

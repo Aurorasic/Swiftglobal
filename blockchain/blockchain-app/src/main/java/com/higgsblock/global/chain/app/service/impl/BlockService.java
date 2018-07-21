@@ -6,17 +6,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.*;
-import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
-import com.higgsblock.global.chain.app.service.IBlockIndexService;
-import com.higgsblock.global.chain.app.service.IBlockService;
-import com.higgsblock.global.chain.app.service.IDposService;
-import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +61,7 @@ public class BlockService implements IBlockService {
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
     @Autowired
-    private MinerScoreStrategy minerScoreStrategy;
+    private IScoreService scoreService;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -230,17 +225,14 @@ public class BlockService implements IBlockService {
         if (block.isGenesisBlock()) {
             return null;
         }
-
-        if (block.getHeight() - NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
+        if (block.getHeight() - DposService.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
             return null;
         }
-
-        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM);
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), DposService.CONFIRM_BEST_BLOCK_MIN_NUM);
         if (bestBlock == null) {
             LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
             return null;
         }
-
         // h-N-1 block has ready be bestchain
         Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
         Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
@@ -249,7 +241,6 @@ public class BlockService implements IBlockService {
             LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
             return null;
         }
-
         if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
             LOGGER.warn("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
             return null;
@@ -375,16 +366,16 @@ public class BlockService implements IBlockService {
 
             if (block.isGenesisBlock()) {
                 //step 3
-                minerScoreStrategy.refreshMinersScore(block);
+                scoreService.refreshMinersScore(block);
                 //step 4
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
-                minerScoreStrategy.refreshMinersScore(newBestBlock);
+                scoreService.refreshMinersScore(newBestBlock);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
-                minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
+                scoreService.setSelectedDposScore(nextDposAddressList);
                 //step5
                 freshPeerMinerAddr(newBestBlock);
             }
