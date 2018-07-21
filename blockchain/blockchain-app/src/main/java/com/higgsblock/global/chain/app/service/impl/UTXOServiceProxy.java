@@ -3,9 +3,6 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.service.IBestUTXOService;
-import com.higgsblock.global.chain.app.service.IBlockIndexService;
-import com.higgsblock.global.chain.app.service.IBlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +20,13 @@ import java.util.*;
 @Slf4j
 public class UTXOServiceProxy {
     @Autowired
-    private IBlockService blockService;
+    private BlockService blockService;
 
     @Autowired
-    private IBlockIndexService blockIndexService;
+    private BlockIndexService blockIndexService;
 
     @Autowired
-    private IBestUTXOService bestUtxoService;
+    private BestUTXOService bestUtxoService;
 
     /**
      * key1: unconfirmed blockhash

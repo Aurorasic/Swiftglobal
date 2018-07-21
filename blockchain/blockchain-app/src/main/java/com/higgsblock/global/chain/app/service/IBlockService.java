@@ -1,15 +1,12 @@
 package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 
 import java.util.List;
 
 /**
- * The interface Block service.
- *
  * @author Zhao xiaogang
- * @date 2018 -05-21
+ * @date 2018-05-21
  */
 public interface IBlockService {
 
@@ -18,7 +15,7 @@ public interface IBlockService {
      *
      * @param height    block height
      * @param blockHash the block hash
-     * @return boolean boolean
+     * @return boolean
      */
     boolean isExistInDB(long height, String blockHash);
 
@@ -26,7 +23,7 @@ public interface IBlockService {
      * Check if the block exist in the database
      *
      * @param block the block
-     * @return boolean boolean
+     * @return boolean
      */
     boolean isExist(Block block);
 
@@ -34,7 +31,7 @@ public interface IBlockService {
      * Check if the pre-block exist in the database
      *
      * @param block the block
-     * @return boolean boolean
+     * @return boolean
      */
     boolean preIsExistInDB(Block block);
 
@@ -42,7 +39,7 @@ public interface IBlockService {
      * Get block by block hash
      *
      * @param blockHash the block hash
-     * @return Block block by hash
+     * @return Block
      */
     Block getBlockByHash(String blockHash);
 
@@ -51,7 +48,7 @@ public interface IBlockService {
      * Get blocks by height
      *
      * @param height height
-     * @return List<Block>  blocks by height
+     * @return List<Block>
      */
     List<Block> getBlocksByHeight(long height);
 
@@ -60,7 +57,7 @@ public interface IBlockService {
      *
      * @param height          the height
      * @param exceptBlockHash the excluding block hash
-     * @return List<Block>  blocks except
+     * @return List<Block>
      */
     List<Block> getBlocksExcept(long height, String exceptBlockHash);
 
@@ -68,7 +65,7 @@ public interface IBlockService {
      * Get the best block by height
      *
      * @param height height
-     * @return Block best block by height
+     * @return Block
      */
     Block getBestBlockByHeight(long height);
 
@@ -77,55 +74,31 @@ public interface IBlockService {
      *
      * @param block the block
      * @return block
-     * @throws Exception the exception
+     * @throws Exception
      */
     void saveBlock(Block block) throws Exception;
 
     /**
      * Check the block numbers
      *
-     * @return boolean boolean
+     * @return boolean
      */
     boolean checkBlockNumbers();
 
     /**
      * whether the block is first block at its height
      *
-     * @param block the block
-     * @return boolean boolean
+     * @param block
+     * @return
      */
     boolean isFirstBlockByHeight(Block block);
 
     /**
      * find the best block (h-N) when a block is confirmed
      *
-     * @param block the block
-     * @return to be best block
+     * @param block
+     * @return
      */
     Block getToBeBestBlock(Block block);
-
-    /**
-     * get last best BlockIndex
-     *
-     * @return the last best blockIndex
-     */
-    BlockIndex getLastBestBlockIndex();
-
-    /**
-     * Check witness signatures
-     *
-     * @param block the block
-     * @return the boolean
-     */
-    boolean checkWitnessSignatures(Block block);
-
-    /**
-     * Persist block and index
-     *
-     * @param block   the block
-     * @param version the version
-     * @return the boolean
-     */
-    boolean persistBlockAndIndex(Block block, int version);
 
 }

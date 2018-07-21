@@ -2,7 +2,10 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -22,16 +25,19 @@ public class BlockChainService implements IBlockChainService {
     @Autowired
     private ITransactionService transactionService;
 
+    private IDposService dposService;
+
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        // get lucky miners address at branch which the preblock belonged to
+        List<String> luckyAddresses = dposService.getDposGroupByHeihgt(preBlockHash);
+        return CollectionUtils.isNotEmpty(luckyAddresses) && luckyAddresses.contains(address);
     }
 
     @Override
     public boolean isMinerOnBest(String address) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        ////check the miner own the MINER
+        return transactionService.hasStake(address, SystemCurrencyEnum.MINER);
     }
 
     @Override
@@ -42,8 +48,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGuarder(String address, String preBlockHash) {
-
-        return true;
+        return transactionService.hasStake(preBlockHash, address, SystemCurrencyEnum.GUARDER);
     }
 
     @Override
@@ -83,8 +88,8 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkWitnessSignature(Block block) {
-        boolean result = blockService.checkWitnessSignatures(block);
-        return result;
+        //// TODO: 2018/7/20/0020
+        return true;
     }
 
     @Override
@@ -95,15 +100,14 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        BlockIndex index = blockIndexService.getLastBlockIndex();
-        long height = index == null ? 0 : index.getHeight();
-        return height;
+        //// TODO: 2018/7/20/0020
+        return 0;
     }
 
     @Override
     public long getBestMaxHeight() {
-        long height = blockService.getLastBestBlockIndex().getHeight();
-        return height;
+        //// TODO: 2018/7/20/0020
+        return 0;
     }
 
     @Override

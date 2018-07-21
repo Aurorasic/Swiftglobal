@@ -4,11 +4,10 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -32,13 +31,13 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
 
 
     @Autowired
+    private IBlockChainService blockChainService;
+    @Autowired
     private BlockProcessor blockProcessor;
     @Autowired
     private OriginalBlockProcessor originalBlockProcessor;
     @Autowired
     private PeerManager peerManager;
-    @Autowired
-    private ITransactionService transactionService;
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -85,7 +84,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
             }
             for (String blockHash : maxBlockIndex.getBlockHashs()) {
                 String address = peerManager.getSelf().getId();
-                if (!transactionService.hasStake(blockHash, address, SystemCurrencyEnum.GUARDER)) {
+                if (!blockChainService.isGuarder(address, blockHash)) {
                     LOGGER.warn("this miner no guarder currency");
                     return;
                 }
@@ -95,7 +94,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
                     return;
                 }
-                long maxHeight = blockProcessor.getMaxHeight();
+                long maxHeight = blockChainService.getMaxHeight();
                 if (block.getHeight() <= maxHeight) {
                     LOGGER.warn("the expect block height={}, but max height={}", block.getHeight(), maxHeight);
                     return;

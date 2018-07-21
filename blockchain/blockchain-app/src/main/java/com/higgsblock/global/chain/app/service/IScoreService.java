@@ -18,11 +18,6 @@ public interface IScoreService {
      */
     int INIT_SCORE = 600;
 
-    /**
-     * old score strategy
-     */
-    int MINUS_SCORE_PACKAGED_BEST = -20;
-
     //new score strategy
     /**
      * init score for lucky miner
