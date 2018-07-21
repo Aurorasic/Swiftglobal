@@ -73,6 +73,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkTransactions(Block block) {
+
         //// TODO: 2018/7/20/0020
         return true;
     }

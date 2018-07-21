@@ -21,7 +21,30 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     private TransactionProcessor transactionProcessor;
 
     @Override
+    protected boolean check(SocketRequest<Transaction> request) {
+        Transaction tx = request.getData();
+        String hash = tx.getHash();
+
+        //step1 check transaction baseinfo
+        if (!tx.valid()) {
+            return false;
+        }
+        //step2 check transaction version
+        int version = tx.getVersion();
+        if (version < 0) {
+            return false;
+        }
+        //step3 check transaction size
+        if (!tx.sizeAllowed()) {
+            LOGGER.info("Size of the transaction is illegal.");
+            return false;
+        }
+        return false;
+    }
+
+    @Override
     protected void process(SocketRequest<Transaction> request) {
         transactionProcessor.receivedTransaction(request.getData());
     }
+
 }
