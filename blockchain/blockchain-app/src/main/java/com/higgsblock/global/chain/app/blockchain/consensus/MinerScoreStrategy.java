@@ -3,8 +3,9 @@ package com.higgsblock.global.chain.app.blockchain.consensus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -36,9 +37,9 @@ public class MinerScoreStrategy {
     @Autowired
     private IScoreService scoreDaoService;
     @Autowired
-    private TransactionProcessor transactionProcessor;
+    private ITransactionService transactionService;
     @Autowired
-    private NodeProcessor nodeProcessor;
+    private IDposService dposService;
 
     public void setSelectedDposScore(List<String> addressList) {
         if (CollectionUtils.isEmpty(addressList)) {
@@ -59,12 +60,12 @@ public class MinerScoreStrategy {
         List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
             LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
-            Set<String> removedMiners = transactionProcessor.getRemovedMiners(tx);
+            Set<String> removedMiners = transactionService.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 scoreDaoService.remove(removedMiner);
             }
 
-            Set<String> addedMiners = transactionProcessor.getAddedMiners(tx);
+            Set<String> addedMiners = transactionService.getAddedMiners(tx);
             for (String addedMiner : addedMiners) {
                 scoreDaoService.putIfAbsent(addedMiner, INIT_SCORE);
             }
@@ -75,7 +76,7 @@ public class MinerScoreStrategy {
     private void oldScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner
-        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             //set miner score to 600
             plusScore(minerPKSig.getAddress(), MINUS_SCORE_PACKAGED_BEST);
         }
@@ -84,12 +85,12 @@ public class MinerScoreStrategy {
     private void newScoreStrategy(Block toBeBestBlock) {
         BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
         //if the block is only mined by  miner, set score
-        if (transactionProcessor.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             setScore(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
-            List<String> dposAddressList = nodeProcessor.getDposGroupByHeihgt(prevBlockHash);
+            List<String> dposAddressList = dposService.getDposGroupByHeihgt(prevBlockHash);
             scoreDaoService.updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
         }
         scoreDaoService.plusAll(ONE_BLOCK_ADD_SCORE);

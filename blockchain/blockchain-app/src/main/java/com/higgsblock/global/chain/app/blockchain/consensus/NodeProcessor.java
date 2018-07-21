@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * @deta 2018/3/7
  * @description
  */
+@Deprecated
 @Component
 @Slf4j
 public class NodeProcessor implements InitializingBean {
@@ -169,7 +170,7 @@ public class NodeProcessor implements InitializingBean {
 
     public void persistDposNodes(long sn, List<String> dposNodes) {
         dposNodeMap.put(sn + 1, dposNodes);
-        dposService.put(sn + 1, dposNodes);
+        dposService.save(sn + 1, dposNodes);
         LOGGER.info("persist dposNode,sn+1:{},dposNode:{}", sn + 1, dposNodes);
     }
 

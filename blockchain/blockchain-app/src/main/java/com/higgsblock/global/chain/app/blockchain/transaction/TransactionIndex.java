@@ -71,6 +71,6 @@ public class TransactionIndex extends BaseSerializer {
 //        if (outsSpend == null) {
 //            outsSpend = new HashMap<>(8);
 //        }
-//        outsSpend.put(outIndex, spendTxHash);
+//        outsSpend.save(outIndex, spendTxHash);
 //    }
 }

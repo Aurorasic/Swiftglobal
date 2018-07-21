@@ -1,11 +1,14 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -17,10 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @description:
@@ -66,7 +66,7 @@ public class TransactionService implements ITransactionService {
     public boolean validTransactions(Block block) {
         LOGGER.info("begin to check the transactions of block {}", block.getHeight());
 
-        //step 1 valid block transaction is null
+        //step1 valid block transaction is null
         List<Transaction> transactions = block.getTransactions();
         if (CollectionUtils.isEmpty(transactions)) {
             LOGGER.error("transactions is empty, block_hash={}", block.getHash());
@@ -104,6 +104,143 @@ public class TransactionService implements ITransactionService {
         return true;
     }
 
+    @Override
+    public void receivedTransaction(Transaction tx) {
+        {
+            String hash = tx.getHash();
+            LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
+            Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
+            if (transactionMap.containsKey(hash)) {
+                LOGGER.info("the transaction is exist in cache with hash {}", hash);
+                return;
+            }
+            TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(hash);
+            TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+            if (transactionIndex != null) {
+                LOGGER.info("the transaction is exist in block with hash {}", hash);
+                return;
+            }
+            boolean valid = verifyTransactionInputAndOutputInfo(tx, null);
+            if (!valid) {
+                LOGGER.info("the transaction is not valid {}", tx);
+                return;
+            }
+            txCacheManager.addTransaction(tx);
+            broadcastTransaction(tx);
+        }
+    }
+
+    @Override
+    public boolean hasStake(String address, SystemCurrencyEnum currency) {
+        List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+    }
+
+    @Override
+    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
+        List<UTXO> result = utxoServiceProxy.getUnionUTXO(preBlockHash, address, currency.getCurrency());
+        return getUTXOCurrency(result, currency);
+    }
+
+    @Override
+    public Set<String> getRemovedMiners(Transaction tx) {
+        Set<String> result = new HashSet<>();
+        List<TransactionInput> inputs = tx.getInputs();
+        if (CollectionUtils.isEmpty(inputs)) {
+            return result;
+        }
+        for (TransactionInput input : inputs) {
+            TransactionOutPoint prevOutPoint = input.getPrevOut();
+
+            String txHash = prevOutPoint.getHash();
+            TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(txHash);
+            TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+            if (transactionIndex == null) {
+                continue;
+            }
+
+            String blockHash = transactionIndex.getBlockHash();
+            Block block = blockService.getBlockByHash(blockHash);
+            Transaction transactionByHash = block.getTransactionByHash(txHash);
+            short index = prevOutPoint.getIndex();
+            TransactionOutput preOutput = null;
+            if (transactionByHash != null) {
+                preOutput = transactionByHash.getTransactionOutputByIndex(index);
+            }
+            if (preOutput == null || !preOutput.isMinerCurrency()) {
+                continue;
+            }
+            String address = preOutput.getLockScript().getAddress();
+            if (result.contains(address)) {
+                continue;
+            }
+            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
+                result.add(address);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<String> getAddedMiners(Transaction tx) {
+        Set<String> result = new HashSet<>();
+        List<TransactionOutput> outputs = tx.getOutputs();
+        for (int i = 0; i < outputs.size(); i++) {
+            if (!outputs.get(i).isMinerCurrency()) {
+                continue;
+            }
+
+            UTXO utxo = null;
+            utxo = utxoServiceProxy.getUTXOOnBestChain(UTXO.buildKey(tx.getHash(), (short) i));
+            if (utxo == null) {
+                LOGGER.warn("cannot find utxo when get added miners, tx={},i={}", tx.getHash(), i);
+                continue;
+            }
+            String address = utxo.getAddress();
+            if (result.contains(address)) {
+                continue;
+            }
+            if (hasStake(address, SystemCurrencyEnum.MINER)) {
+                result.add(address);
+            }
+        }
+        return result;
+    }
+
+
+    public boolean getUTXOCurrency(List<UTXO> result, SystemCurrencyEnum currency) {
+        Money stakeMinMoney = new Money("1", currency.getCurrency());
+        Money money = new Money("0", currency.getCurrency());
+        for (UTXO utxo : result) {
+            money.add(utxo.getOutput().getMoney());
+            if (money.compareTo(stakeMinMoney) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<UTXO> getBestUTXOList(String address, String currency) {
+        List<UTXOEntity> utxoEntities = bestUtxoService.findByLockScriptAndCurrency(address, currency);
+        List<UTXO> utxos = Lists.newArrayList();
+        utxoEntities.forEach(entity -> {
+            Money money = new Money(entity.getAmount(), entity.getCurrency());
+            LockScript lockScript = new LockScript();
+            lockScript.setAddress(entity.getLockScript());
+            lockScript.setType((short) entity.getScriptType());
+            TransactionOutput output = new TransactionOutput();
+            output.setMoney(money);
+            output.setLockScript(lockScript);
+
+            UTXO utxo = new UTXO();
+            utxo.setHash(entity.getTransactionHash());
+            utxo.setIndex((short) entity.getOutIndex());
+            utxo.setAddress(entity.getLockScript());
+            utxo.setOutput(output);
+            utxos.add(utxo);
+        });
+        return utxos;
+    }
 
     /**
      * validate tx
@@ -112,6 +249,7 @@ public class TransactionService implements ITransactionService {
      * @param block current block
      * @return return result
      */
+
     public boolean verifyTransactionInputAndOutputInfo(Transaction tx, Block block) {
         if (null == tx) {
             LOGGER.error("transaction is null");
@@ -462,5 +600,13 @@ public class TransactionService implements ITransactionService {
         return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
     }
 
-
+    /**
+     * received transaction if validate success and board
+     *
+     * @param tx received tx
+     */
+    public void broadcastTransaction(Transaction tx) {
+        messageCenter.broadcast(tx);
+        LOGGER.info("broadcast transaction success: {}", tx.getHash());
+    }
 }

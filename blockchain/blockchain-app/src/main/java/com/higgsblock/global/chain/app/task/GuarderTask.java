@@ -5,8 +5,8 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -38,7 +38,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private TransactionProcessor transactionProcessor;
+    private ITransactionService transactionService;
     @Autowired
     private BlockIndexService blockIndexService;
 
@@ -85,7 +85,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
             }
             for (String blockHash : maxBlockIndex.getBlockHashs()) {
                 String address = peerManager.getSelf().getId();
-                if (!transactionProcessor.hasStake(blockHash, address, SystemCurrencyEnum.GUARDER)) {
+                if (!transactionService.hasStake(blockHash, address, SystemCurrencyEnum.GUARDER)) {
                     LOGGER.warn("this miner no guarder currency");
                     return;
                 }

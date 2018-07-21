@@ -5,8 +5,8 @@ import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
 import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.network.Peer;
@@ -33,7 +33,7 @@ public class StatusController {
     @Autowired
     private IScoreService scoreService;
     @Autowired
-    private NodeProcessor nodeProcessor;
+    private IDposService dposService;
     @Autowired
     private ConnectionManager connectionManager;
     @Autowired
@@ -89,7 +89,7 @@ public class StatusController {
             return null;
         }
         long height = block.getHeight();
-        long startHeight = nodeProcessor.getStartHeight(height);
+        long startHeight = dposService.getStartHeight(height);
         DposGroupVO dposGroupVO = buildDposGroup(block);
 
         while (height-- > startHeight) {
@@ -125,13 +125,13 @@ public class StatusController {
 
 
     private DposGroupVO buildDposGroup(Block block) {
-        long sn = nodeProcessor.getSn(block.getHeight());
+        long sn = dposService.getSn(block.getHeight());
         DposGroupVO dposGroupVO = new DposGroupVO();
         dposGroupVO.setSn(sn);
-        dposGroupVO.setStartHeight(nodeProcessor.getStartHeight(block.getHeight()));
-        dposGroupVO.setEndHeight(nodeProcessor.getEndHeight((block.getHeight())));
+        dposGroupVO.setStartHeight(dposService.getStartHeight(block.getHeight()));
+        dposGroupVO.setEndHeight(dposService.getEndHeight((block.getHeight())));
         dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
-        dposGroupVO.setDposNodes(nodeProcessor.getDposGroupBySn(sn));
+        dposGroupVO.setDposNodes(dposService.getDposGroupBySn(sn));
         dposGroupVO.getLeftDposNodes().addAll(dposGroupVO.getDposNodes());
         dposGroupVO.getLeftDposNodes().remove(dposGroupVO.getBlockVOS().get(0).getMinerAddress());
         return dposGroupVO;
