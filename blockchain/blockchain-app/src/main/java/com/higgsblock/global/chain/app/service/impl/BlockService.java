@@ -11,10 +11,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheMa
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
-import com.higgsblock.global.chain.app.service.IBlockService;
-import com.higgsblock.global.chain.app.service.IDposService;
-import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +50,7 @@ public class BlockService implements IBlockService {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
     @Autowired
     private EventBus eventBus;
     @Autowired
@@ -320,6 +317,30 @@ public class BlockService implements IBlockService {
         return true;
     }
 
+    /**
+     * Check the producer of the block.
+     *
+     * @param block
+     * @return the boolean
+     */
+    @Override
+    public boolean checkBlockProducer(Block block) {
+        // 1.check the miner signature
+        boolean result = checkProducerSignature(block);
+        if (!result) {
+            return false;
+        }
+
+        // 2.check the current rotation whether the miner should produce the block
+        result = dposService.checkProducer(block);
+        if (!result) {
+            return false;
+        }
+
+        LOGGER.info("successfully validate block from producer");
+        return true;
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public synchronized boolean persistBlockAndIndex(Block block, int version) {
         //Save block and index
@@ -392,6 +413,20 @@ public class BlockService implements IBlockService {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
             throw new IllegalStateException("Save block completely failed");
         }
+    }
+
+    private boolean checkProducerSignature(Block block) {
+        final BlockWitness minerPKSig = block.getMinerFirstPKSig();
+        if (minerPKSig == null || !minerPKSig.valid()) {
+            LOGGER.error("The miner signature is invalid:{}", block.getSimpleInfo());
+            return false;
+        }
+        if (!ECKey.verifySign(block.getHash(), minerPKSig.getSignature(), minerPKSig.getPubKey())) {
+            LOGGER.error("Validate the signature of miner failed:{}", block.getSimpleInfo());
+            return false;
+        }
+
+        return true;
     }
 
     /**

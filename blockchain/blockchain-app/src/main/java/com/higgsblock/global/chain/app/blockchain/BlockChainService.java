@@ -25,7 +25,11 @@ public class BlockChainService implements IBlockChainService {
     @Autowired
     private ITransactionService transactionService;
 
+    @Autowired
     private IDposService dposService;
+
+    @Autowired
+    private WitnessTimerProcessor witnessTimerProcessor;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
@@ -94,8 +98,19 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkBlockProducer(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        // 1.check the producer of the block.
+        boolean result = blockService.checkBlockProducer(block);
+        if (result) {
+            return true;
+        }
+
+        // 2.check the guarder permission
+        result = witnessTimerProcessor.acceptBlock(block);
+        if (result) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override

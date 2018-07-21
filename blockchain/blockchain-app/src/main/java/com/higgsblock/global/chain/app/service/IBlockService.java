@@ -117,4 +117,12 @@ public interface IBlockService {
      */
     boolean checkWitnessSignatures(Block block);
 
+    /**
+     * Check the producer of the block.
+     *
+     * @param block
+     * @return the boolean
+     */
+    boolean checkBlockProducer(Block block);
+
 }
