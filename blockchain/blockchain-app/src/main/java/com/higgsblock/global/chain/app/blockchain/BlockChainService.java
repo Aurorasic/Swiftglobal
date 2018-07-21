@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.impl.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -17,6 +18,9 @@ public class BlockChainService implements IBlockChainService {
 
     @Autowired
     private BlockIndexService blockIndexService;
+
+    @Autowired
+    private TransactionService transactionService;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
@@ -73,9 +77,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkTransactions(Block block) {
-
-        //// TODO: 2018/7/20/0020
-        return true;
+        return transactionService.validTransactions(block);
     }
 
     @Override

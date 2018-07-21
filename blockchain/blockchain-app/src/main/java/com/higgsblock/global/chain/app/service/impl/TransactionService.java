@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -66,7 +67,7 @@ public class TransactionService implements ITransactionService {
     public boolean validTransactions(Block block) {
         LOGGER.info("begin to check the transactions of block {}", block.getHeight());
 
-        //step 1 valid block transaction is null
+        //step1 valid block transaction is null
         List<Transaction> transactions = block.getTransactions();
         if (CollectionUtils.isEmpty(transactions)) {
             LOGGER.error("transactions is empty, block_hash={}", block.getHash());
@@ -103,6 +104,33 @@ public class TransactionService implements ITransactionService {
         LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }
+
+    @Override
+    public void receivedTransaction(Transaction tx) {
+        {
+            String hash = tx.getHash();
+            LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
+            Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
+            if (transactionMap.containsKey(hash)) {
+                LOGGER.info("the transaction is exist in cache with hash {}", hash);
+                return;
+            }
+            TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(hash);
+            TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
+            if (transactionIndex != null) {
+                LOGGER.info("the transaction is exist in block with hash {}", hash);
+                return;
+            }
+            boolean valid = verifyTransactionInputAndOutputInfo(tx, null);
+            if (!valid) {
+                LOGGER.info("the transaction is not valid {}", tx);
+                return;
+            }
+            txCacheManager.addTransaction(tx);
+            broadcastTransaction(tx);
+        }
+    }
+
 
 
     /**
@@ -462,5 +490,13 @@ public class TransactionService implements ITransactionService {
         return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
     }
 
-
+    /**
+     * received transaction if validate success and board
+     *
+     * @param tx received tx
+     */
+    public void broadcastTransaction(Transaction tx) {
+        messageCenter.broadcast(tx);
+        LOGGER.info("broadcast transaction success: {}", tx.getHash());
+    }
 }

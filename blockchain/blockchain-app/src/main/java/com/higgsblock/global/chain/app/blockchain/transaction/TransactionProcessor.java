@@ -25,6 +25,7 @@ import java.util.*;
  * @author baizhengwen
  * @date 2018/2/24
  */
+@Deprecated
 @Service
 @Slf4j
 public class TransactionProcessor {

@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 
 /**
  * @description:
@@ -10,4 +11,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 public interface ITransactionService {
 
     public boolean validTransactions(Block block);
+
+
+    public void receivedTransaction(Transaction tx);
 }
