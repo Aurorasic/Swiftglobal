@@ -26,6 +26,7 @@ import java.util.*;
  * @author: yezaiyong
  * @create: 2018-05-21 10:18
  **/
+@Deprecated
 @Slf4j
 @Service
 public class TransactionFeeProcessor {

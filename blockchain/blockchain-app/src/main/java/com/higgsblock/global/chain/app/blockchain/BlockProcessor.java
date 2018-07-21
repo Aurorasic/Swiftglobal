@@ -9,12 +9,16 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
 import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
-import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
+import com.higgsblock.global.chain.app.service.ITransactionFeeService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
@@ -104,7 +108,7 @@ public class BlockProcessor {
     private IWitnessService witnessService;
 
     @Autowired
-    private TransactionFeeProcessor transactionFeeProcessor;
+    private ITransactionFeeService transactionFeeService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -129,12 +133,12 @@ public class BlockProcessor {
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeProcessor.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
         List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
         Map<String, Money> feeTempMap = sortResult.getFeeMap();
         // if sort result overrun is true so do sub cache transaction
         if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeProcessor.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
+            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
             feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
             for (Transaction tx : canPackageTransactionsOfBlock) {
                 feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
@@ -142,7 +146,7 @@ public class BlockProcessor {
         }
 
         if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeProcessor.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
+            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
             transactions.add(coinBaseTx);
         }
 
