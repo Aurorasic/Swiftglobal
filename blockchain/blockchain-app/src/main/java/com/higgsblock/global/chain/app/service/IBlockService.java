@@ -117,4 +117,12 @@ public interface IBlockService {
      */
     boolean checkWitnessSignatures(Block block);
 
+    /**
+     * packageNewBlock
+     *
+     * @param preBlockHash
+     * @return
+     */
+    Block packageNewBlock(String preBlockHash);
+
 }

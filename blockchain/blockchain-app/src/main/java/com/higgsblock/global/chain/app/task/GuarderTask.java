@@ -3,10 +3,10 @@ package com.higgsblock.global.chain.app.task;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -33,7 +33,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private IBlockChainService blockChainService;
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockService blockService;
     @Autowired
     private OriginalBlockProcessor originalBlockProcessor;
     @Autowired
@@ -89,7 +89,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                     return;
                 }
                 LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={},this guarder address ={}", expectHeight, blockHash, address);
-                Block block = blockProcessor.packageNewBlock(blockHash);
+                Block block = blockService.packageNewBlock(blockHash);
                 if (block == null) {
                     LOGGER.warn("can not produce a new block,height={},preBlcokHash={}", expectHeight, blockHash);
                     return;
