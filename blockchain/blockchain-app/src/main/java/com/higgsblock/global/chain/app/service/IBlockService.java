@@ -125,4 +125,11 @@ public interface IBlockService {
      */
     boolean checkBlockProducer(Block block);
 
+    /**
+     * packageNewBlock
+     *
+     * @param preBlockHash
+     * @return
+     */
+    Block packageNewBlock(String preBlockHash);
 }

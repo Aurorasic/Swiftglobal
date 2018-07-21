@@ -1,18 +1,24 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.*;
+import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -31,7 +37,6 @@ import java.util.*;
 @Service
 @Slf4j
 public class BlockService implements IBlockService {
-
     /**
      * The minimum number of transactions in the block
      */
@@ -40,6 +45,7 @@ public class BlockService implements IBlockService {
      * The minimal witness number
      */
     public final static int MIN_WITNESS = 7;
+    private static final int LRU_CACHE_SIZE = 5;
     /**
      * The starting height of the main chain
      */
@@ -67,6 +73,14 @@ public class BlockService implements IBlockService {
     private IDposService dposService;
     @Autowired
     private IWitnessService witnessService;
+    @Autowired
+    private KeyPair peerKeyPair;
+    @Autowired
+    private ITransactionIndexService transactionIndexService;
+    @Autowired
+    private ITransactionFeeService transactionFeeService;
+
+    private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
     /**
      * Gets witness sing message.
@@ -339,6 +353,77 @@ public class BlockService implements IBlockService {
 
         LOGGER.info("successfully validate block from producer");
         return true;
+    }
+
+    /**
+     * packageNewBlock
+     *
+     * @param preBlockHash
+     * @return
+     */
+    @Override
+    public Block packageNewBlock(String preBlockHash) {
+        Block block = packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
+        if (block == null) {
+            LOGGER.error("cannot packageNewBlock on preBlockHash:{} ", preBlockHash);
+        }
+        return block;
+    }
+
+    public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
+        BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
+        if (lastBlockIndex == null) {
+            throw new IllegalStateException("The best block index can not be null");
+        }
+
+        Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
+        ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
+
+        List txOfUnSpentUtxos = transactionIndexService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
+
+        if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
+            LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);
+            return null;
+        }
+
+        long nextBestBlockHeight = lastBlockIndex.getHeight() + 1;
+        LOGGER.info("try to packageNewBlock, height={}", nextBestBlockHeight);
+        List<Transaction> transactions = Lists.newLinkedList();
+
+        //added by tangKun: order transaction by fee weight
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
+        List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
+        Map<String, Money> feeTempMap = sortResult.getFeeMap();
+        // if sort result overrun is true so do sub cache transaction
+        if (sortResult.isOverrun()) {
+            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
+            feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
+            for (Transaction tx : canPackageTransactionsOfBlock) {
+                feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
+            }
+        }
+
+        if (lastBlockIndex.getHeight() >= 1) {
+            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
+            transactions.add(coinBaseTx);
+        }
+
+        transactions.addAll(canPackageTransactionsOfBlock);
+
+        Block block = new Block();
+        block.setVersion((short) 1);
+        block.setBlockTime(System.currentTimeMillis());
+        block.setPrevBlockHash(preBlockHash);
+        block.setTransactions(transactions);
+        block.setHeight(nextBestBlockHeight);
+        block.setPubKey(keyPair.getPubKey());
+
+        //Before collecting signs from witnesses just cache the block firstly.
+        String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
+        block.initMinerPkSig(keyPair.getPubKey(), sig);
+        blockCache.put(block.getHash(), block);
+        LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
+        return block;
     }
 
     @Transactional(rollbackFor = Exception.class)

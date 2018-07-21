@@ -1,16 +1,16 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Lists;
+import com.higgsblock.global.chain.app.blockchain.Rewards;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.service.ITransactionFeeService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import java.util.*;
  **/
 @Slf4j
 @Service
-public class TransactionFeeService {
+public class TransactionFeeService implements ITransactionFeeService {
     public static final Money MINER_REWARDS_RATION = new Money("0.8");
 
     public static final Money WITNESS_REWARDS_RATION = new Money("0.2");
@@ -66,6 +66,7 @@ public class TransactionFeeService {
      * @param feeMap fee map
      * @return minerRewards, witnessRewards
      */
+    @Override
     public Rewards countMinerAndWitnessRewards(Map<String, Money> feeMap, long height) {
 
         Money minerTotal;
@@ -111,30 +112,6 @@ public class TransactionFeeService {
         return rewards;
     }
 
-    @Getter
-    @Setter
-    class Rewards {
-        private Money totalFee;
-        private Money minerTotal;
-        private Money topTenSingleWitnessMoney;
-        private Money lastWitnessMoney;
-        private Money totalMoney;
-
-        /**
-         * check count whether true
-         *
-         * @return countMoney == totalFee add total rewards return true else return false
-         */
-        public boolean check() {
-            Money countMoney = new Money();
-            countMoney.add(minerTotal);
-            countMoney.add(new Money(topTenSingleWitnessMoney.getValue()).multiply(WITNESS_NUM - 1));
-            countMoney.add(lastWitnessMoney);
-            return totalMoney.compareTo(countMoney) == 0;
-        }
-    }
-
-
     /**
      * computer fee by  transaction size
      *
@@ -154,6 +131,7 @@ public class TransactionFeeService {
      * @param cacheTransactions cache transactions
      * @return transaction order by fee weight desc
      */
+    @Override
     public List<Transaction> getCanPackageTransactionsOfBlock(List<Transaction> cacheTransactions) {
 
         final List<Transaction> packageTransactionIng = new ArrayList<>();
@@ -175,6 +153,7 @@ public class TransactionFeeService {
      * @param tx tx
      * @return fee
      */
+    @Override
     public Money getCurrencyFee(Transaction tx) {
 
         return computerFeeBySize(sizeCounter.calculateSize(tx));
@@ -187,6 +166,7 @@ public class TransactionFeeService {
      * @param feeMap   fee map
      * @return return coin base transaction
      */
+    @Override
     public Transaction buildCoinBaseTx(long lockTime, short version, Map<String, Money> feeMap, long height) {
         LOGGER.info("begin to build coinBase transaction");
 
@@ -222,6 +202,7 @@ public class TransactionFeeService {
      * @param cacheTransactions cache transactions
      * @return return key is hash and  value is fee
      */
+    @Override
     public SortResult orderTransaction(String preBlockHash, List<Transaction> cacheTransactions) {
 
         final Map<String, Money> transactionFees = new HashMap<>(cacheTransactions.size());
