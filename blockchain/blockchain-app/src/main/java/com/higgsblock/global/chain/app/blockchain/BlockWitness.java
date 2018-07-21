@@ -15,13 +15,19 @@ import org.apache.logging.log4j.util.Strings;
  * Paired public key and signature
  *
  * @author baizhengwen
- * @date 2018/2/22
+ * @date 2018 /2/22
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class BlockWitness extends BaseSerializer {
+    /**
+     * The Pub key.
+     */
     private String pubKey;
+    /**
+     * The Signature.
+     */
     private String signature;
     /**
      * the signature comes from witch block.
@@ -29,24 +35,37 @@ public class BlockWitness extends BaseSerializer {
      */
     private String blockHash;
 
+    /**
+     * Valid boolean.
+     *
+     * @return the boolean
+     */
     public boolean valid() {
         if (StringUtils.isEmpty(signature)) {
             return false;
         }
+
         if (StringUtils.isEmpty(pubKey)) {
             return false;
         }
         return true;
     }
 
+    /**
+     * Gets address.
+     *
+     * @return the address
+     */
     public String getAddress() {
-        String address = null;
-
-        address = ECKey.pubKey2Base58Address(pubKey);
-
+        String address = ECKey.pubKey2Base58Address(pubKey);
         return address;
     }
 
+    /**
+     * Gets block witness hash.
+     *
+     * @return the block witness hash
+     */
     public String getBlockWitnessHash() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();

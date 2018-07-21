@@ -15,7 +15,6 @@ import com.higgsblock.global.chain.app.dao.entity.DposEntity;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -39,23 +38,19 @@ import java.util.stream.Collectors;
 public class DposService implements IDposService, InitializingBean {
 
 
+    private final int maxScore = 1000;
+    private final int midScore = 800;
+    private final int mixScore = 600;
     @Autowired
     private IDposRepository dposRepository;
     @Autowired
     private IScoreService scoreService;
     @Autowired
     private BlockService blockService;
-
-
     private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
     private Function<Long, List<String>> function = null;
-
-    private final int maxScore = 1000;
-    private final int midScore = 800;
-    private final int mixScore = 600;
-
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -109,6 +104,7 @@ public class DposService implements IDposService, InitializingBean {
 
     /**
      * find lucky miners by pre blockhash
+     * TODO 20180721 yanghuadong 需要改变方法名称
      *
      * @param preBlockHash
      * @return
@@ -149,13 +145,21 @@ public class DposService implements IDposService, InitializingBean {
      */
     @Override
     public boolean checkProducer(Block block) {
-        BlockWitness blockWitness = block.getMinerFirstPKSig();
-        if (blockWitness == null || StringUtils.isEmpty(blockWitness.getPubKey())) {
+        BlockWitness minerPKSig = block.getMinerFirstPKSig();
+        if (minerPKSig == null || !minerPKSig.valid()) {
+            LOGGER.warn("the miner signature is invalid:{}", block.getSimpleInfo());
             return false;
         }
-        String address = ECKey.pubKey2Base58Address(blockWitness.getPubKey());
+
+        String address = minerPKSig.getAddress();
         List<String> currentGroup = getDposGroupByHeihgt(block.getPrevBlockHash());
-        return CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
+        boolean result = CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
+        if (!result) {
+            LOGGER.error("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
+            return false;
+        }
+
+        return result;
     }
 
     /**

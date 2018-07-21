@@ -37,7 +37,6 @@ import java.util.*;
 @Service
 @Slf4j
 public class BlockService implements IBlockService {
-    private static final int LRU_CACHE_SIZE = 5;
     /**
      * The minimum number of transactions in the block
      */
@@ -46,6 +45,7 @@ public class BlockService implements IBlockService {
      * The minimal witness number
      */
     public final static int MIN_WITNESS = 7;
+    private static final int LRU_CACHE_SIZE = 5;
     /**
      * The starting height of the main chain
      */
@@ -56,7 +56,7 @@ public class BlockService implements IBlockService {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
     @Autowired
     private EventBus eventBus;
     @Autowired
@@ -332,6 +332,30 @@ public class BlockService implements IBlockService {
     }
 
     /**
+     * Check the producer of the block.
+     *
+     * @param block
+     * @return the boolean
+     */
+    @Override
+    public boolean checkBlockProducer(Block block) {
+        // 1.check the miner signature
+        boolean result = checkProducerSignature(block);
+        if (!result) {
+            return false;
+        }
+
+        // 2.check the current rotation whether the miner should produce the block
+        result = dposService.checkProducer(block);
+        if (!result) {
+            return false;
+        }
+
+        LOGGER.info("successfully validate block from producer");
+        return true;
+    }
+
+    /**
      * packageNewBlock
      *
      * @param preBlockHash
@@ -474,6 +498,20 @@ public class BlockService implements IBlockService {
             LOGGER.error(String.format("Save block and block index failed, height=%s_hash=%s", block.getHeight(), block.getHash()), e);
             throw new IllegalStateException("Save block completely failed");
         }
+    }
+
+    private boolean checkProducerSignature(Block block) {
+        final BlockWitness minerPKSig = block.getMinerFirstPKSig();
+        if (minerPKSig == null || !minerPKSig.valid()) {
+            LOGGER.error("The miner signature is invalid:{}", block.getSimpleInfo());
+            return false;
+        }
+        if (!ECKey.verifySign(block.getHash(), minerPKSig.getSignature(), minerPKSig.getPubKey())) {
+            LOGGER.error("Validate the signature of miner failed:{}", block.getSimpleInfo());
+            return false;
+        }
+
+        return true;
     }
 
     /**
