@@ -1,9 +1,11 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IDposService;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -15,24 +17,27 @@ import java.util.List;
 public class BlockChainService implements IBlockChainService {
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
 
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionService transactionService;
+    private ITransactionService transactionService;
+
+    private IDposService dposService;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        // get lucky miners address at branch which the preblock belonged to
+        List<String> luckyAddresses = dposService.getDposGroupByHeihgt(preBlockHash);
+        return CollectionUtils.isNotEmpty(luckyAddresses) && luckyAddresses.contains(address);
     }
 
     @Override
     public boolean isMinerOnBest(String address) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        ////check the miner own the MINER
+        return transactionService.hasStake(address, SystemCurrencyEnum.MINER);
     }
 
     @Override

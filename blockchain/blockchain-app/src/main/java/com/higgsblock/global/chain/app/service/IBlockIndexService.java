@@ -25,4 +25,11 @@ public interface IBlockIndexService {
      */
     void addBlockIndex(Block block, Block bestBlock);
 
+    /**
+     * get maxheight block index
+     *
+     * @return
+     */
+    BlockIndex getLastBlockIndex();
+
 }
