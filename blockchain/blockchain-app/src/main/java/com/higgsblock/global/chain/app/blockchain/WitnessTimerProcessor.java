@@ -2,9 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +21,6 @@ public class WitnessTimerProcessor implements IEventBusListener {
     public static long initTime;
     public static long currHeight;
     public final long WAIT_WITNESS_TIME = 20;
-
-    @Autowired
-    private ITransactionService transactionService;
 
     @Autowired
     private IBlockChainService blockChainService;
@@ -71,6 +66,6 @@ public class WitnessTimerProcessor implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongGuarder(Block block) {
-        return transactionService.hasStake(block.getPrevBlockHash(), block.getMinerFirstPKSig().getAddress(), SystemCurrencyEnum.GUARDER);
+        return blockChainService.isGuarder(block.getMinerFirstPKSig().getAddress(), block.getPrevBlockHash());
     }
 }

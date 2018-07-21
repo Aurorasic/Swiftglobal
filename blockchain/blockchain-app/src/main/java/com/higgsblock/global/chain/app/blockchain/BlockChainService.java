@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -42,8 +43,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGuarder(String address, String preBlockHash) {
-
-        return true;
+        return transactionService.hasStake(preBlockHash, address, SystemCurrencyEnum.GUARDER);
     }
 
     @Override
