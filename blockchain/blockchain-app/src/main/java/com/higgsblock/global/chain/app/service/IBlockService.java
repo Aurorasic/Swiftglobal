@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 
 import java.util.List;
 
@@ -100,5 +101,20 @@ public interface IBlockService {
      * @return
      */
     Block getToBeBestBlock(Block block);
+
+    /**
+     * get last best BlockIndex
+     *
+     * @return the last best blockIndex
+     */
+    BlockIndex getLastBestBlockIndex();
+
+    /**
+     * Check witness signatures
+     *
+     * @param block the block
+     * @return the boolean
+     */
+    boolean checkWitnessSignatures(Block block);
 
 }

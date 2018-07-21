@@ -1,9 +1,11 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.service.impl.TransactionService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IDposService;
+import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -15,24 +17,27 @@ import java.util.List;
 public class BlockChainService implements IBlockChainService {
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
 
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
 
     @Autowired
-    private TransactionService transactionService;
+    private ITransactionService transactionService;
+
+    private IDposService dposService;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        // get lucky miners address at branch which the preblock belonged to
+        List<String> luckyAddresses = dposService.getDposGroupByHeihgt(preBlockHash);
+        return CollectionUtils.isNotEmpty(luckyAddresses) && luckyAddresses.contains(address);
     }
 
     @Override
     public boolean isMinerOnBest(String address) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        ////check the miner own the MINER
+        return transactionService.hasStake(address, SystemCurrencyEnum.MINER);
     }
 
     @Override
@@ -48,26 +53,27 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGenesisBlock(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = null != block && block.isGenesisBlock();
+        return result;
     }
 
     @Override
     public boolean isGenesisBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = getBlock(blockHash);
+        return isGenesisBlock(block);
     }
 
     @Override
     public boolean isExistPreBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = getBlock(blockHash);
+        boolean result = blockService.preIsExistInDB(block);
+        return result;
     }
 
     @Override
     public boolean isExistBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = blockService.getBlockByHash(blockHash);
+        return null != block;
     }
 
     @Override
@@ -82,8 +88,8 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkWitnessSignature(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = blockService.checkWitnessSignatures(block);
+        return result;
     }
 
     @Override
@@ -94,14 +100,15 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        BlockIndex index = blockIndexService.getLastBlockIndex();
+        long height = index == null ? 0 : index.getHeight();
+        return height;
     }
 
     @Override
     public long getBestMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        long height = blockService.getLastBestBlockIndex().getHeight();
+        return height;
     }
 
     @Override
