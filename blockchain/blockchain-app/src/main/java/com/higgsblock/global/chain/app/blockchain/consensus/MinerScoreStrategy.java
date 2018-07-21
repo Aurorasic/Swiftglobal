@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionProcessor;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,7 @@ public class MinerScoreStrategy {
     @Autowired
     private TransactionProcessor transactionProcessor;
     @Autowired
-    private NodeProcessor nodeProcessor;
+    private IDposService dposService;
 
     public void setSelectedDposScore(List<String> addressList) {
         if (CollectionUtils.isEmpty(addressList)) {
@@ -89,7 +90,7 @@ public class MinerScoreStrategy {
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
-            List<String> dposAddressList = nodeProcessor.getDposGroupByHeihgt(prevBlockHash);
+            List<String> dposAddressList = dposService.getDposGroupByHeihgt(prevBlockHash);
             scoreDaoService.updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
         }
         scoreDaoService.plusAll(ONE_BLOCK_ADD_SCORE);

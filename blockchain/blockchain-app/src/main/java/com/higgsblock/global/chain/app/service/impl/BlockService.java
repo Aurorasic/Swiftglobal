@@ -13,6 +13,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -56,13 +57,12 @@ public class BlockService implements IBlockService {
     private MinerScoreStrategy minerScoreStrategy;
 
     @Autowired
-    private NodeProcessor nodeProcessor;
-
-    @Autowired
     private PeerManager peerManager;
 
     @Autowired
     private BlockFormatter blockFormatter;
+    @Autowired
+    private IDposService dposService;
 
 
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
@@ -225,13 +225,13 @@ public class BlockService implements IBlockService {
                 //step 3
                 minerScoreStrategy.refreshMinersScore(block);
                 //step 4
-                nodeProcessor.calcNextDposNodes(block, block.getHeight());
+                dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
                 minerScoreStrategy.refreshMinersScore(newBestBlock);
-                List<String> nextDposAddressList = nodeProcessor.calcNextDposNodes(newBestBlock, block.getHeight());
+                List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
                 minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
                 //step5
                 freshPeerMinerAddr(newBestBlock);
@@ -276,12 +276,12 @@ public class BlockService implements IBlockService {
      */
     private void freshPeerMinerAddr(Block toBeBestBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
-        long sn = nodeProcessor.getSn(toBeBestBlock.getHeight());
-        List<String> dpos = nodeProcessor.getDposGroupBySn(sn);
+        long sn = dposService.getSn(toBeBestBlock.getHeight());
+        List<String> dpos = dposService.getDposGroupBySn(sn);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
         }
-        dpos = nodeProcessor.getDposGroupBySn(sn + 1);
+        dpos = dposService.getDposGroupBySn(sn + 1);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
         }

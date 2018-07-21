@@ -9,7 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.List;
 
 /**
- * P2PKH or P2SH or multi-sig address script for in-put coin unlocking such as
+ * P2PKH or P2SH or multi-sig address script for in-save coin unlocking such as
  * sig1,sig2
  * PK1,PK2,PK3
  *
