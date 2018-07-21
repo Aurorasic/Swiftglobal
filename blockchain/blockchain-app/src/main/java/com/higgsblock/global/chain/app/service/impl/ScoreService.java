@@ -1,9 +1,16 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.dao.IScoreRepository;
+import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
+import com.higgsblock.global.chain.app.service.ITransactionService;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author HuangShengli
@@ -22,6 +30,11 @@ public class ScoreService implements IScoreService {
 
     @Autowired
     private IScoreRepository scoreRepository;
+
+    @Autowired
+    private ITransactionService transactionService;
+    @Autowired
+    private IDposService dposService;
 
     /**
      * get score by address
@@ -106,5 +119,61 @@ public class ScoreService implements IScoreService {
     @Override
     public List<ScoreEntity> all() {
         return scoreRepository.findAll();
+    }
+
+    /**
+     * set score for lucky miners
+     *
+     * @param addressList
+     */
+    @Override
+    public void setSelectedDposScore(List<String> addressList) {
+        if (CollectionUtils.isEmpty(addressList)) {
+            return;
+        }
+        updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
+    }
+
+    /**
+     * refresh score for miner who produced the best block
+     *
+     * @param toBeBestBlock
+     */
+    @Override
+    public void refreshMinersScore(Block toBeBestBlock) {
+
+
+        newScoreStrategy(toBeBestBlock);
+
+        //handle joined miner and removed miner
+        LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+        List<Transaction> transactions = toBeBestBlock.getTransactions();
+        for (Transaction tx : transactions) {
+            LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
+            Set<String> removedMiners = transactionService.getRemovedMiners(tx);
+            for (String removedMiner : removedMiners) {
+                remove(removedMiner);
+            }
+
+            Set<String> addedMiners = transactionService.getAddedMiners(tx);
+            for (String addedMiner : addedMiners) {
+                putIfAbsent(addedMiner, INIT_SCORE);
+            }
+        }
+        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+    }
+
+    private void newScoreStrategy(Block toBeBestBlock) {
+        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
+        //if the block is only mined by  miner, set score
+        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
+        } else {
+            //mined by backup peer node
+            String prevBlockHash = toBeBestBlock.getPrevBlockHash();
+            List<String> dposAddressList = dposService.getDposGroupByHeihgt(prevBlockHash);
+            updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
+        }
+        plusAll(ONE_BLOCK_ADD_SCORE);
     }
 }

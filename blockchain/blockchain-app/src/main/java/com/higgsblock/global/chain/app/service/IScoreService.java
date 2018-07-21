@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service;
 
 
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 
 import java.util.List;
@@ -98,5 +99,25 @@ public interface IScoreService {
      */
     Map<String, Integer> loadAll();
 
+    /**
+     * load all score of miners
+     *
+     * @return
+     */
     List<ScoreEntity> all();
+
+    /**
+     * set score for lucky miners
+     *
+     * @param addressList
+     */
+    void setSelectedDposScore(List<String> addressList);
+
+    /**
+     * refresh score for miner who produced the best block
+     *
+     * @param toBeBestBlock
+     */
+    void refreshMinersScore(Block toBeBestBlock);
+
 }

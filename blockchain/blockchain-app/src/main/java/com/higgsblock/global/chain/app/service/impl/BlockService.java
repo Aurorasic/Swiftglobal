@@ -5,8 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockFormatter;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
-import com.higgsblock.global.chain.app.blockchain.consensus.MinerScoreStrategy;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
@@ -14,6 +12,7 @@ import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.service.IDposService;
+import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -54,7 +53,7 @@ public class BlockService implements IBlockService {
     private UTXOServiceProxy utxoServiceProxy;
 
     @Autowired
-    private MinerScoreStrategy minerScoreStrategy;
+    private IScoreService scoreService;
 
     @Autowired
     private PeerManager peerManager;
@@ -223,16 +222,16 @@ public class BlockService implements IBlockService {
 
             if (block.isGenesisBlock()) {
                 //step 3
-                minerScoreStrategy.refreshMinersScore(block);
+                scoreService.refreshMinersScore(block);
                 //step 4
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
-                minerScoreStrategy.refreshMinersScore(newBestBlock);
+                scoreService.refreshMinersScore(newBestBlock);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
-                minerScoreStrategy.setSelectedDposScore(nextDposAddressList);
+                scoreService.setSelectedDposScore(nextDposAddressList);
                 //step5
                 freshPeerMinerAddr(newBestBlock);
             }
@@ -318,10 +317,10 @@ public class BlockService implements IBlockService {
         if (block.isGenesisBlock()) {
             return null;
         }
-        if (block.getHeight() - NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
+        if (block.getHeight() - DposService.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
             return null;
         }
-        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), NodeProcessor.CONFIRM_BEST_BLOCK_MIN_NUM);
+        Block bestBlock = recursePreBlock(block.getPrevBlockHash(), DposService.CONFIRM_BEST_BLOCK_MIN_NUM);
         if (bestBlock == null) {
             LOGGER.info("h-N block has be confirmed,current height:{}", block.getHeight());
             return null;
