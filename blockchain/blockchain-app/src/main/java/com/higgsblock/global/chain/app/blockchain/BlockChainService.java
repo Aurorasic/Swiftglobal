@@ -88,8 +88,8 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean checkWitnessSignature(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = blockService.checkWitnessSignatures(block);
+        return result;
     }
 
     @Override
@@ -100,14 +100,15 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        BlockIndex index = blockIndexService.getLastBlockIndex();
+        long height = index == null ? 0 : index.getHeight();
+        return height;
     }
 
     @Override
     public long getBestMaxHeight() {
-        //// TODO: 2018/7/20/0020
-        return 0;
+        long height = blockService.getLastBestBlockIndex().getHeight();
+        return height;
     }
 
     @Override
