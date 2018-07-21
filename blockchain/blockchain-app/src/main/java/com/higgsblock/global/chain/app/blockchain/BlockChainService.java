@@ -42,7 +42,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGuarder(String address, String preBlockHash) {
-        //// TODO: 2018/7/20/0020
+
         return true;
     }
 

@@ -2,6 +2,9 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+
+import java.util.Set;
 
 /**
  * @description:
@@ -14,4 +17,12 @@ public interface ITransactionService {
 
 
     public void receivedTransaction(Transaction tx);
+
+    public boolean hasStake(String address, SystemCurrencyEnum currency);
+
+    public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency);
+
+    public Set<String> getRemovedMiners(Transaction tx);
+
+    public Set<String> getAddedMiners(Transaction tx);
 }
