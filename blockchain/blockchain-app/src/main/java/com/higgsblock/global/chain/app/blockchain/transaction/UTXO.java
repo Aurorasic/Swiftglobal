@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * For checking a spending transaction that it can spend an out put without spending on the most long chain.
+ * For checking a spending transaction that it can spend an out save without spending on the most long chain.
  *
  * @author yuguojia
  * @create 2018-02-23

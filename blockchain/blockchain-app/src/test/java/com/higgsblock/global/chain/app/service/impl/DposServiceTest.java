@@ -35,7 +35,7 @@
 //    @Test
 //    public void get() throws RocksDBException {
 //        Map<String, String> dposJsonMap = new HashMap<>(1);
-//        dposJsonMap.put("dpos", "I Want to be dpos node");
+//        dposJsonMap.save("dpos", "I Want to be dpos node");
 //        String expected = JSONObject.toJSONString(dposJsonMap);
 //        String dpos = "[" + expected + "]";
 //        PowerMockito.when(dposDao.get(anyLong())).thenReturn(dpos);
@@ -52,10 +52,10 @@
 //    }
 //
 //    @Test
-//    public void put() {
+//    public void save() {
 //        BaseDaoEntity baseDaoEntity = PowerMockito.mock(BaseDaoEntity.class);
 //        PowerMockito.when(dposDao.getEntity(anyLong(), any())).thenReturn(baseDaoEntity);
-//        Assert.assertEquals(baseDaoEntity, dposService.put(1L, new ArrayList<>(1)));
+//        Assert.assertEquals(baseDaoEntity, dposService.save(1L, new ArrayList<>(1)));
 //    }
 //
 //    @Test

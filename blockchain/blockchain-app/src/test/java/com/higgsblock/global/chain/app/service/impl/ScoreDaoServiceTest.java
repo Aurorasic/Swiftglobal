@@ -34,12 +34,12 @@
 //    }
 //
 //    @Test
-//    public void put() {
+//    public void save() {
 //        String address = "address";
 //        int score = 123;
 //        BaseDaoEntity baseDaoEntity = new BaseDaoEntity(address, score, "score");
 //        PowerMockito.when(scoreDao.getEntity(address, score)).thenReturn(baseDaoEntity);
-//        BaseDaoEntity result = scoreDaoService.put(address, score);
+//        BaseDaoEntity result = scoreDaoService.save(address, score);
 //        Assert.assertEquals("address", result.getKey());
 //        Assert.assertEquals(123, result.getValue());
 //        Assert.assertEquals("score", result.getColumnFamilyName());

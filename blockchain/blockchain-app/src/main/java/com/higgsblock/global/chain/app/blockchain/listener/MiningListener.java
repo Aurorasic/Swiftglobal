@@ -4,12 +4,12 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.NodeProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -37,7 +37,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private NodeProcessor nodeProcessor;
+    private IDposService dposService;
     @Autowired
     private VoteProcessor voteProcessor;
 
@@ -88,11 +88,12 @@ public class MiningListener implements IEventBusListener {
     private void calculateDpos() {
         long maxHeight = blockProcessor.getMaxHeight();
         if (maxHeight == 1L) {
-            List<String> dposGroupBySn = nodeProcessor.getDposGroupBySn(2);
+            List<String> dposGroupBySn = dposService.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
                 Block block = blockProcessor.getBestBlockByHeight(1L);
-                List<String> dposAddresses = nodeProcessor.calculateDposAddresses(block, 1L);
-                nodeProcessor.persistDposNodes(0L, dposAddresses);
+//                List<String> dposAddresses = dposService.calculateDposAddresses(block, 1L);
+//                nodeProcessor.persistDposNodes(0L, dposAddresses);
+                dposService.calcNextDposNodes(block, 1L);
             }
         }
     }
@@ -120,7 +121,7 @@ public class MiningListener implements IEventBusListener {
         }
         // check if my turn now
         String address = peerManager.getSelf().getId();
-        boolean isMyTurn = nodeProcessor.canPackBlock(expectHeight, address, persistBlockHash);
+        boolean isMyTurn = dposService.canPackBlock(expectHeight, address, persistBlockHash);
         if (!isMyTurn) {
             return;
         }

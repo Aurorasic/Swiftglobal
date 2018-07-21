@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * P2PKH or P2SH or multi-sig address script for out-put coin locking
+ * P2PKH or P2SH or multi-sig address script for out-save coin locking
  *
  * @author yuguojia
  * @create 2018-02-26
