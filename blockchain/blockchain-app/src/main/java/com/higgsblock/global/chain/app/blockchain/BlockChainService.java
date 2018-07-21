@@ -48,26 +48,27 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGenesisBlock(Block block) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        boolean result = null != block && block.isGenesisBlock();
+        return result;
     }
 
     @Override
     public boolean isGenesisBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = getBlock(blockHash);
+        return isGenesisBlock(block);
     }
 
     @Override
     public boolean isExistPreBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = getBlock(blockHash);
+        boolean result = blockService.preIsExistInDB(block);
+        return result;
     }
 
     @Override
     public boolean isExistBlock(String blockHash) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        Block block = blockService.getBlockByHash(blockHash);
+        return null != block;
     }
 
     @Override
