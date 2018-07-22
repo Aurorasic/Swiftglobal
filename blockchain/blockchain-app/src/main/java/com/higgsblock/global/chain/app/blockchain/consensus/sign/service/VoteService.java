@@ -4,18 +4,16 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -36,7 +34,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class VoteProcessor implements IEventBusListener {
+public class VoteService implements IEventBusListener {
 
     public static final int MAX_SIZE = 5;
 
@@ -46,9 +44,6 @@ public class VoteProcessor implements IEventBusListener {
 
     @Autowired
     private KeyPair keyPair;
-
-    @Autowired
-    private EventBus eventBus;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -92,9 +87,9 @@ public class VoteProcessor implements IEventBusListener {
             }
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
-            this.voteTable = new VoteTable(new HashMap<>());
+            this.voteTable = new VoteTable(new HashMap<>(7), this.height);
             this.blockWithEnoughSign = null;
-            this.blockCache.get(height, k -> new HashMap<>()).values().forEach(this::voteFirstVote);
+            this.blockCache.get(height, k -> new HashMap<>(7)).values().forEach(this::voteFirstVote);
             voteCache.invalidate(height - 3);
             blockCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
@@ -108,8 +103,7 @@ public class VoteProcessor implements IEventBusListener {
         if (this.height > block.getHeight()) {
             return;
         }
-
-        this.blockCache.get(block.getHeight(), k -> new HashMap<>()).put(block.getHash(), block);
+        this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
         voteFirstVote(block);
         dealVoteCache();
     }
@@ -119,7 +113,7 @@ public class VoteProcessor implements IEventBusListener {
             return;
         }
         Map<String, Vote> voteMap = this.voteTable.getVoteMap(1, keyPair.getPubKey());
-        if (voteMap == null || voteMap.size() == 0) {
+        if (MapUtils.isEmpty(voteMap)) {
             String blockHash = block.getHash();
             long blockHeight = block.getHeight();
             LOGGER.info("start vote first vote, height={}, {}", blockHeight, blockHash);
@@ -139,7 +133,7 @@ public class VoteProcessor implements IEventBusListener {
     private void dealVoteCache() {
         LOGGER.info("deal vote cache");
         Map<Integer, Set<Vote>> cache = voteCache.getIfPresent(this.height);
-        if (null == cache || cache.isEmpty()) {
+        if (MapUtils.isEmpty(cache)) {
             return;
         }
         int rowSize = cache.size();
@@ -154,8 +148,7 @@ public class VoteProcessor implements IEventBusListener {
             Set<Vote> leaderVotes = new HashSet<>(11);
             Set<Vote> followerVotes = new HashSet<>(11);
             set.forEach(vote -> {
-                if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
-                        .map(map -> map.containsKey(vote.getBlockHash())).orElse(false)) {
+                if (isExistInVoteCache(vote)) {
                     return;
                 }
                 if (vote.isLeaderVote()) {
@@ -166,41 +159,28 @@ public class VoteProcessor implements IEventBusListener {
             });
             leaderVotes.forEach(vote -> {
                 if (vote.getVoteVersion() == 1) {
-                    if (!blockCache.get(this.height, k -> new HashMap<>()).containsKey(vote.getBlockHash())) {
+                    if (!isExistInBlockCache(this.height, vote.getBlockHash())) {
                         Set<String> set1 = new HashSet<>();
                         set1.add(vote.getBlockHash());
                         messageCenter.dispatchToWitnesses(new VotingBlockRequest(set1));
                         setTemp.add(vote);
                         return;
                     }
-                } else if (vote.getVoteVersion() > 1) {
-                    if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getProofVersion(), vote.getProofPubKey()))
-                            .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
-                        setTemp.add(vote);
-                        return;
-                    }
-                    if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
-                            .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
-                        setTemp.add(vote);
-                        return;
-                    }
                 }
-                this.voteTable.addVote(vote);
+                if (checkProofAndPreVote(vote)) {
+                    this.voteTable.addVote(vote);
+                } else {
+                    setTemp.add(vote);
+                }
             });
             followerVotes.forEach(vote -> {
-                if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getProofVersion(), vote.getProofPubKey()))
-                        .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
+                if (checkProofAndPreVote(vote)) {
+                    this.voteTable.addVote(vote);
+                } else {
                     setTemp.add(vote);
-                    return;
                 }
-                if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
-                        .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
-                    setTemp.add(vote);
-                    return;
-                }
-                this.voteTable.addVote(vote);
             });
-            this.voteCache.get(this.height, k -> new HashMap<>()).put(version, setTemp);
+            this.voteCache.get(this.height, k -> new HashMap<>(6)).put(version, setTemp);
             if (this.voteTable.getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, height)) {
                 return;
             }
@@ -211,22 +191,22 @@ public class VoteProcessor implements IEventBusListener {
         }
     }
 
-    private void updateVoteCache(long height, VoteTable otherVoteTable) {
+    public synchronized void updateVoteCache(VoteTable otherVoteTable) {
+        long height = otherVoteTable.getHeight();
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
-        voteMap.values().stream().forEach(map -> {
+        voteMap.values().forEach(map -> {
             if (MapUtils.isEmpty(map)) {
                 return;
             }
             map.values().forEach(map1 -> {
-                if (null == map1) {
+                if (MapUtils.isEmpty(map1)) {
                     return;
                 }
                 map1.values().forEach(vote -> {
-                    if (null == vote || !vote.valid()) {
+                    if (null == vote) {
                         return;
                     }
-                    if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
-                            .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false)) {
+                    if (isExistInVoteCache(vote)) {
                         return;
                     }
                     voteCache.get(height, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
@@ -241,62 +221,17 @@ public class VoteProcessor implements IEventBusListener {
         });
     }
 
-    public synchronized void dealVoteTable(String sourceId, long voteHeight, VoteTable otherVoteTable) {
-
-        boolean isOver = this.height > voteHeight || (this.height == voteHeight && blockWithEnoughSign != null);
+    public synchronized void dealVoteTable(VoteTable otherVoteTable) {
+        long voteHeight = otherVoteTable.getHeight();
+        boolean isOver = this.height != voteHeight || blockWithEnoughSign != null;
         if (isOver) {
             LOGGER.info("the voting process of {} is over , current height={}", voteHeight, height);
             return;
         }
-        if (voteHeight > this.height) {
-            eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
-            LOGGER.info("the height is greater than local , sync block");
-            return;
-        }
-
-        if (!checkOriginalBlock(sourceId, voteHeight, otherVoteTable)) {
-            return;
-        }
 
         int startAllVoteSize = voteTable.getAllVoteSize();
-        dealVoteTable(voteHeight, otherVoteTable);
-        if (voteTable.getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteHashTable with height={} ,is : {}", voteHeight, voteTable);
-            messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
-        }
-    }
 
-    private boolean checkOriginalBlock(String sourceId, long voteHeight, VoteTable otherVoteTable) {
-        Map<String, Map<String, Vote>> map = otherVoteTable.getVoteMapOfPubKeyByVersion(1);
-        if (null == map || map.isEmpty()) {
-            return false;
-        }
-        Set<String> blockHashs = new HashSet<>();
-        map.values().forEach(map1 -> {
-            if (null == map1) {
-                return;
-            }
-            map1.forEach((k, v) -> {
-                if (!blockCache.get(height, kk -> new HashMap<>()).containsKey(k)) {
-                    blockHashs.add(k);
-                }
-            });
-        });
-        if (blockHashs.size() > 0) {
-            updateVoteCache(voteHeight, otherVoteTable);
-            if (null != sourceId) {
-                messageCenter.unicast(sourceId, new VotingBlockRequest(blockHashs));
-            } else {
-                messageCenter.dispatchToWitnesses(new VotingBlockRequest(blockHashs));
-            }
-            LOGGER.info("source blocks is not enough,add vote table to cache");
-            return false;
-        }
-        return true;
-    }
-
-    private void dealVoteTable(long voteHeight, VoteTable otherVoteTable) {
-        LOGGER.info("add voteMap to task with voteHeight={} ,otherVoteTable {}", voteHeight, otherVoteTable);
+        LOGGER.info("add voteTable with voteHeight {}", otherVoteTable.toJson());
 
         int versionSize = otherVoteTable.getVersionSize();
         for (int version = 1; version <= versionSize; version++) {
@@ -313,11 +248,11 @@ public class VoteProcessor implements IEventBusListener {
             Set<Vote> leaderVotes = new HashSet<>(11);
             Set<Vote> followerVotes = new HashSet<>(11);
             newRows.values().forEach(v -> {
-                if (null == v || v.isEmpty()) {
+                if (MapUtils.isEmpty(v)) {
                     return;
                 }
                 v.values().forEach(vote -> {
-                    if (null == vote || !vote.valid()) {
+                    if (null == vote || isExistInVoteCache(vote)) {
                         return;
                     }
                     if (vote.isLeaderVote()) {
@@ -330,40 +265,29 @@ public class VoteProcessor implements IEventBusListener {
             if (leaderVotes.isEmpty()) {
                 return;
             }
-            dealVotes(version, leaderVotes);
-            dealVotes(version, followerVotes);
-            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, voteHeight)) {
+            leaderVotes.forEach(vote -> {
+                if (checkProofAndPreVote(vote)) {
+                    this.voteTable.addVote(vote);
+                }
+            });
+            followerVotes.forEach(vote -> {
+                if (checkProofAndPreVote(vote)) {
+                    this.voteTable.addVote(vote);
+                }
+            });
+            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, this.height)) {
                 return;
             }
         }
-    }
-
-    private void dealVotes(int version, Set<Vote> set) {
-        set.forEach(vote -> {
-            if (version != vote.getVoteVersion()) {
-                return;
-            }
-            if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
-                    .map(map -> map.containsKey(vote.getBlockHash())).orElse(false)) {
-                return;
-            }
-            if (version > 1) {
-                if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getProofVersion(), vote.getProofPubKey()))
-                        .map(map -> !map.containsKey(vote.getProofBlockHash())).orElse(true)) {
-                    return;
-                }
-                if (Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
-                        .map(map -> !map.containsKey(vote.getPreBlockHash())).orElse(true)) {
-                    return;
-                }
-            }
-            this.voteTable.addVote(vote);
-        });
+        if (voteTable.getAllVoteSize() > startAllVoteSize) {
+            LOGGER.info("local voteHashTable with height={} ,is : {}", voteHeight, voteTable);
+            messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
+        }
     }
 
     private boolean collectionVoteSign(int version, long voteHeight) {
         Map<String, Map<String, Vote>> rowVersion = this.voteTable.getVoteMapOfPubKeyByVersion(version);
-        if (rowVersion == null || rowVersion.size() == 0) {
+        if (MapUtils.isEmpty(rowVersion)) {
             LOGGER.info("the vote is empty {},{}", this.height, version);
             return false;
         }
@@ -472,7 +396,7 @@ public class VoteProcessor implements IEventBusListener {
         vote.setProofVersion(proofVersion);
         vote.setProofBlockHash(proofBlockHash);
         vote.setPreBlockHash(preBlockHash);
-        String msg = BlockProcessor.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
+        String msg = BlockService.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
         String sign = ECKey.signMessage(msg, keyPair.getPriKey());
         vote.setSignature(sign);
         return vote;
@@ -480,6 +404,24 @@ public class VoteProcessor implements IEventBusListener {
 
     public boolean isExistInBlockCache(long height, String hash) {
         Map<String, Block> map = blockCache.getIfPresent(height);
-        return null != map && map.containsKey(hash);
+        return MapUtils.isNotEmpty(map) && map.containsKey(hash);
     }
+
+    private boolean checkProofAndPreVote(Vote vote) {
+        if (vote.getVoteVersion() == 1) {
+            return true;
+        }
+        boolean proof = Optional.ofNullable(this.voteTable.getVoteMap(vote.getProofVersion(), vote.getProofPubKey()))
+                .map(map -> map.containsKey(vote.getProofBlockHash())).orElse(false);
+        boolean pre = Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion() - 1, vote.getWitnessPubKey()))
+                .map(map -> map.containsKey(vote.getPreBlockHash())).orElse(false);
+        return proof && pre;
+    }
+
+    private boolean isExistInVoteCache(Vote vote) {
+        return Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
+                .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false);
+    }
+
+
 }

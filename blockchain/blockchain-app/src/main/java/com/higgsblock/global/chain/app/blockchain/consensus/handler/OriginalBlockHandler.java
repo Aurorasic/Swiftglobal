@@ -2,15 +2,13 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -28,7 +26,7 @@ import org.springframework.stereotype.Component;
 public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Autowired
-    private VoteProcessor voteProcessor;
+    private VoteService voteService;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -67,7 +65,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             LOGGER.error("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
             return false;
         }
-        if (voteProcessor.isExistInBlockCache(height, blockHash)) {
+        if (voteService.isExistInBlockCache(height, blockHash)) {
             LOGGER.error("this block is exist in block cache, height={}, hash={}", height, blockHash);
             return false;
         }
@@ -114,7 +112,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             return;
         }
         LOGGER.info("add OriginalBlock height={}, hash={}", block.getHeight(), block.getHash());
-        voteProcessor.addOriginalBlock(block);
+        voteService.addOriginalBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
     }
 }

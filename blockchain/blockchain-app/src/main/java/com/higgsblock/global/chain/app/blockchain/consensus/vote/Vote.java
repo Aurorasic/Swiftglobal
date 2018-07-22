@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,15 +19,15 @@ import org.apache.commons.lang.StringUtils;
 @Slf4j
 public class Vote extends BaseSerializer {
 
+
+    /**
+     * current height
+     */
+    private long height;
     /**
      * current version
      */
     private int voteVersion;
-
-    /**
-     * the block's height the witness vote for in current version
-     */
-    private long height;
 
     /**
      * the witness's pubKey
@@ -92,7 +92,7 @@ public class Vote extends BaseSerializer {
     }
 
     public boolean valid() {
-        if (height < 0) {
+        if (height <= 1L) {
             return false;
         }
         if (voteVersion < 0 || proofVersion < 0 || proofVersion > voteVersion) {
@@ -107,7 +107,7 @@ public class Vote extends BaseSerializer {
         if (StringUtils.isEmpty(signature)) {
             return false;
         }
-        if (!BlockProcessor.validSign(height, blockHash, voteVersion, signature, witnessPubKey)) {
+        if (!BlockService.validSign(height, blockHash, voteVersion, signature, witnessPubKey)) {
             return false;
         }
         if (voteVersion > 1) {

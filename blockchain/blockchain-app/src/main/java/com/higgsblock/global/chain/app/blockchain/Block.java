@@ -95,6 +95,14 @@ public class Block extends BaseSerializer {
         }
         if (height <= 0) {
             return false;
+        } else if (height == 1L) {
+            if (null != prevBlockHash) {
+                return false;
+            }
+        } else {
+            if (null == prevBlockHash) {
+                return false;
+            }
         }
         if (blockTime < 0) {
             return false;

@@ -27,8 +27,8 @@ public class DataErrorProcessor {
     @Autowired
     private BlockService blockService;
 
-    @Autowired
-    private BlockProcessor blockProcessor;
+//    @Autowired
+//    private BlockProcessor blockProcessor;
 
     @Autowired
     private IBlockRepository blockRepository;
@@ -107,7 +107,8 @@ public class DataErrorProcessor {
         reimportData();
 
         //load all data
-        blockProcessor.loadAllBlockData();
+//
+        // TODO: yuanjiantao 7/22/2018  blockProcessor.loadAllBlockData();
         systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
 
         //start sync block

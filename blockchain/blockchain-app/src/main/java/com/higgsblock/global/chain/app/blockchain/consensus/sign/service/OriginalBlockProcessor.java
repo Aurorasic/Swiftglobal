@@ -22,7 +22,7 @@ public class OriginalBlockProcessor {
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteProcessor voteProcessor;
+    private VoteService voteService;
 
     @Autowired
     private KeyPair keyPair;
@@ -39,7 +39,7 @@ public class OriginalBlockProcessor {
         originalBlock.setBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
         if (witnessService.isWitness(keyPair.getAddress())) {
-            voteProcessor.addOriginalBlock(block);
+            voteService.addOriginalBlock(block);
         }
     }
 }

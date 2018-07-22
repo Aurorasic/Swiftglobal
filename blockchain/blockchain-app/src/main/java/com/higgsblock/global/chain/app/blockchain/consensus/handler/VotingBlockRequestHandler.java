@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteProcessor;
+import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -26,7 +26,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteProcessor voteProcessor;
+    private VoteService voteService;
 
     @Override
     protected boolean check(SocketRequest<VotingBlockRequest> request) {
@@ -43,7 +43,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
         VotingBlockRequest data = request.getData();
         LOGGER.info("received originalBlockRequest from {} with data {}", sourceId, data);
         data.getBlockHashs().forEach(hash -> {
-            Block block = voteProcessor.getBlockCache().get(voteProcessor.getHeight(), k -> new HashMap<>()).get(hash);
+            Block block = voteService.getBlockCache().get(voteService.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new VotingBlockResponse(block));
             }

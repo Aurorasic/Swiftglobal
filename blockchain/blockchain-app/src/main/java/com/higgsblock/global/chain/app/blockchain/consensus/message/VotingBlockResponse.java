@@ -27,6 +27,6 @@ public class VotingBlockResponse {
     private Block block;
 
     public boolean valid() {
-        return block.valid() && version >= 0;
+        return null != block && block.valid() && version >= 0;
     }
 }
