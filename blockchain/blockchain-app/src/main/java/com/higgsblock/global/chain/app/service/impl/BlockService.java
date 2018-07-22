@@ -12,7 +12,10 @@ import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.common.SystemStatusManager;
+import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.service.*;
@@ -52,6 +55,8 @@ public class BlockService implements IBlockService {
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
 
     @Autowired
+    private AppConfig config;
+    @Autowired
     private IBlockRepository blockRepository;
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
@@ -79,6 +84,8 @@ public class BlockService implements IBlockService {
     private ITransactionIndexService transactionIndexService;
     @Autowired
     private ITransactionFeeService transactionFeeService;
+    @Autowired
+    private SystemStatusManager systemStatusManager;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -586,4 +593,28 @@ public class BlockService implements IBlockService {
         return preBlock;
     }
 
+    public void loadAllBlockData() {
+        //todo kongyu 2018-7-17 loadAllBlockData backup
+        /*
+        1.先校验创世块
+        2.然后再校验区块索引信息
+        3.最后设置系统状态为LOADED_ALL_DATA
+         */
+        if (!checkBlockNumbers()) {
+            throw new RuntimeException("blockMap size is not equal blockIndexMap count number");
+        }
+
+        if (!validateGenesisBlock()) {
+            throw new RuntimeException("genesis block is incorrect");
+        }
+
+        systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
+    }
+
+    private boolean validateGenesisBlock() {
+        Block block = getBlockByHash(config.getGenesisBlockHash());
+        return null != block &&
+                block.getHeight() == 1 &&
+                block.getPrevBlockHash() == null;
+    }
 }

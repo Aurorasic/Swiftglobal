@@ -31,7 +31,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
 
     private final Map<String, BlockFullInfo> orphanBlockMap;
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
     @Autowired
     private BlockService blockService;
     @Autowired
@@ -73,20 +73,17 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 Block nextBlock = nextBlockFullInfo.getBlock();
                 long nextHeight = nextBlock.getHeight();
                 String nextBlockHash = nextBlock.getHash();
-                String nextSourceId = nextBlockFullInfo.getSourceId();
                 int nextVersion = nextBlockFullInfo.getVersion();
                 LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
-                if (!blockProcessor.validBasic(nextBlock)) {
-                    LOGGER.error("Error next orphan block height={},block={}", nextHeight, nextBlockHash);
+
+                //check: transactions
+                boolean validTransactions = blockChainService.checkTransactions(nextBlock);
+                if (!validTransactions) {
+                    LOGGER.error("the orphan block transactions are error: ", nextBlock.getSimpleInfo());
                     remove(nextBlockHash);
-                    continue;
                 }
-                if (!blockProcessor.validBlockTransactions(nextBlock)) {
-                    LOGGER.error("Error orphan next block height={},block={}", nextHeight, nextBlockHash);
-                    remove(nextBlockHash);
-                    continue;
-                }
+
                 boolean success = blockService.persistBlockAndIndex(nextBlock, nextVersion);
                 LOGGER.info("orphan manager persisted block all info, success={},height={},block={}",
                         success, nextHeight, nextBlockHash);

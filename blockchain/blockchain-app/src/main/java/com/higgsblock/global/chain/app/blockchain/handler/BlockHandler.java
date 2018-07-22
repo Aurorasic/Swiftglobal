@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class BlockHandler extends BaseMessageHandler<Block> {
     @Autowired
-    private IBlockChainService blockChain;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private BlockService blockService;
@@ -32,35 +32,41 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         String hash = block.getHash();
 
         //1. check: isGenesisBlock
-        boolean isGenesisBlock = blockChain.isGenesisBlock(block);
+        boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
         if (isGenesisBlock) {
             return false;
         }
 
         //2. check: base info
-        boolean isBasicValid = blockChain.checkBlockBasicInfo(block);
+        boolean isBasicValid = blockChainService.checkBlockBasicInfo(block);
         if (!isBasicValid) {
             LOGGER.error("error basic info block: ", block.getSimpleInfo());
             return false;
         }
 
         //3.check: exist
-        boolean isExist = orphanBlockCacheManager.isContains(hash) || blockChain.isExistBlock(hash);
+        boolean isExist = orphanBlockCacheManager.isContains(hash) || blockChainService.isExistBlock(hash);
         if (isExist) {
             LOGGER.info("the block is exist: ", block.getSimpleInfo());
             return false;
         }
 
+        //4. check: producer stake
+        boolean producerValid = blockChainService.checkBlockProducer(block);
+        if (!producerValid) {
+            LOGGER.error("the block produce stack is error: ", block.getSimpleInfo());
+            return false;
+        }
 
-        //4.check: witness signatures
-        boolean validWitnessSignature = blockChain.checkWitnessSignature(block);
+        //5.check: witness signatures
+        boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
             LOGGER.error("the block witness sig is error: ", block.getSimpleInfo());
             return false;
         }
 
-        //5.check: orphan block
-        boolean isOrphanBlock = blockChain.isExistPreBlock(hash);
+        //6.check: orphan block
+        boolean isOrphanBlock = blockChainService.isExistPreBlock(hash);
         if (isOrphanBlock) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
@@ -68,15 +74,8 @@ public class BlockHandler extends BaseMessageHandler<Block> {
             return false;
         }
 
-        //6. check: producer stake
-        boolean producerValid = blockChain.checkBlockProducer(block);
-        if (!producerValid) {
-            LOGGER.error("the block produce stack is error: ", block.getSimpleInfo());
-            return false;
-        }
-
         //7. check: transactions
-        boolean validTransactions = blockChain.checkTransactions(block);
+        boolean validTransactions = blockChainService.checkTransactions(block);
         if (!validTransactions) {
             LOGGER.error("the block transactions are error: ", block.getSimpleInfo());
             return false;
