@@ -36,6 +36,7 @@ public class VoteTable extends BaseSerializer {
 
     public VoteTable(Map<Integer, Map<String, Map<String, Vote>>> voteTable, long height) {
         this.voteTable = voteTable;
+        this.height = height;
     }
 
     @JSONField(serialize = false)
