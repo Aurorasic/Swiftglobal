@@ -1,11 +1,10 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.higgsblock.global.chain.app.service.IBlockIndexService;
-import com.higgsblock.global.chain.app.service.IBlockService;
-import com.higgsblock.global.chain.app.service.IDposService;
-import com.higgsblock.global.chain.app.service.ITransactionService;
+import com.higgsblock.global.chain.app.config.AppConfig;
+import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -15,6 +14,9 @@ import java.util.List;
  * @date 2018-07-20
  */
 public class BlockChainService implements IBlockChainService {
+
+    @Autowired
+    private AppConfig config;
 
     @Autowired
     private IBlockService blockService;
@@ -27,6 +29,9 @@ public class BlockChainService implements IBlockChainService {
 
     @Autowired
     private IDposService dposService;
+
+    @Autowired
+    private IWitnessService witnessService;
 
     @Autowired
     private WitnessTimerProcessor witnessTimerProcessor;
@@ -46,8 +51,8 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isWitness(String address, long height) {
-        //// TODO: 2018/7/20/0020
-        return true;
+        //todo yuguojia 2018-7-22 judge by address and height
+        return witnessService.isWitness(address);
     }
 
     @Override
@@ -57,14 +62,20 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGenesisBlock(Block block) {
-        boolean result = null != block && block.isGenesisBlock();
-        return result;
+        if (block == null) {
+            return false;
+        }
+        if (block.getHeight() == 1 &&
+                block.getPrevBlockHash() == null &&
+                StringUtils.equals(config.getGenesisBlockHash(), block.getHash())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean isGenesisBlock(String blockHash) {
-        Block block = getBlock(blockHash);
-        return isGenesisBlock(block);
+        return StringUtils.equals(config.getGenesisBlockHash(), blockHash);
     }
 
     @Override
