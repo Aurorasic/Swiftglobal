@@ -3,11 +3,9 @@ package com.higgsblock.global.chain.app.sync.handler;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.SystemStatus;
-import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.sync.message.BlockRequest;
@@ -31,13 +29,10 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
     private static final long SYNC_BLOCK_EXPIRATION_IN_RUNNING = 1000L;
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private MessageCenter messageCenter;
-
-    @Autowired
-    private SystemStatusManager systemStatusManager;
 
     @Autowired
     private EventBus eventBus;
@@ -47,27 +42,28 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
             .build();
 
     @Override
+    protected boolean check(SocketRequest<Inventory> request) {
+        Inventory data = request.getData();
+        return null != data && data.valid();
+    }
+
+    @Override
     protected void process(SocketRequest<Inventory> request) {
-        if (!systemStatusManager.getSystemStatus().equals(SystemStatus.RUNNING)) {
-            return;
-        }
         Inventory data = request.getData();
         String sourceId = request.getSourceId();
         long height = data.getHeight();
         Set<String> hashs = data.getHashs();
-        if (height <= blockProcessor.getMaxHeight() + 1L) {
+        if (height <= blockChainService.getMaxHeight() + 1L) {
             hashs.forEach(hash -> requestRecord.get(hash, v -> {
-                if (!blockProcessor.isExistInDB(height, hash)) {
+                if (!blockChainService.isExistBlock(hash)) {
                     BlockRequest blockRequest = new BlockRequest(height, hash);
                     messageCenter.unicast(sourceId, blockRequest);
                     return height;
                 }
                 return null;
             }));
-        } else if (height > blockProcessor.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
+        } else if (height > blockChainService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
             eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
         }
-
-
     }
 }

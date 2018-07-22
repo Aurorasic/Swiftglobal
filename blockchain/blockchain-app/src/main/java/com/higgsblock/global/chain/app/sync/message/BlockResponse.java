@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.common.message.Message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * @author yuanjiantao
@@ -26,6 +27,6 @@ public class BlockResponse {
     }
 
     public boolean valid() {
-        return block.valid();
+        return block.valid() && CollectionUtils.isNotEmpty(block.getOtherWitnessSigPKS());
     }
 }

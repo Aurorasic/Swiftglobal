@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.task;
 
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
@@ -26,23 +26,22 @@ public class InventoryTask extends BaseTask {
     private MessageCenter messageCenter;
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private BlockIndexService blockIndexService;
 
     @Override
     protected void task() {
-        long height = blockProcessor.getMaxHeight();
-        Inventory inventory = new Inventory();
-        inventory.setHeight(height);
+        long height = blockChainService.getMaxHeight();
         BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
         if (blockIndex != null &&
                 CollectionUtils.isNotEmpty(blockIndex.getBlockHashs())) {
             Set<String> set = new HashSet<>(blockIndex.getBlockHashs());
-            inventory.setHashs(set);
+            Inventory inventory = new Inventory(height, set);
+            messageCenter.broadcast(inventory);
         }
-        messageCenter.broadcast(inventory);
+
     }
 
     @Override

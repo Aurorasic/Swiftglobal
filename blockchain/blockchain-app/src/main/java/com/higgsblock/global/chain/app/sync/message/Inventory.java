@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Set;
 
@@ -29,6 +30,6 @@ public class Inventory extends BaseSerializer {
     }
 
     public boolean valid() {
-        return height > 0;
+        return height > 0 && CollectionUtils.isNotEmpty(hashs);
     }
 }

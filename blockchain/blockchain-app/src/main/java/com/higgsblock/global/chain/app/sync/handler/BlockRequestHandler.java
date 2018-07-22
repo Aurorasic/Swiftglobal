@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -30,12 +30,15 @@ public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
     private BlockService blockService;
 
     @Override
+    protected boolean check(SocketRequest<BlockRequest> request) {
+        BlockRequest data = request.getData();
+        return null != data && data.valid();
+    }
+
+    @Override
     protected void process(SocketRequest<BlockRequest> request) {
         BlockRequest data = request.getData();
         long height = data.getHeight();
-        if (height <= 0L) {
-            return;
-        }
         String sourceId = request.getSourceId();
         String hash = data.getHash();
         /**
@@ -47,7 +50,7 @@ public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
                 messageCenter.unicast(sourceId, new BlockResponse(block));
             }
         } else {
-            blockProcessor.getBlocksByHeight(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResponse(block)));
+            blockChainService.getBlocks(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResponse(block)));
         }
     }
 }

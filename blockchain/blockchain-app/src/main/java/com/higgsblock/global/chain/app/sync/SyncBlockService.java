@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class SyncBlockProcessor implements IEventBusListener, InitializingBean {
+public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     /**
      * the num of active connections to trigger sync data

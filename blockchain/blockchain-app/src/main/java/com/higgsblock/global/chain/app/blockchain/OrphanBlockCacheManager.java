@@ -5,7 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
+import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.utils.ValueSortedMap;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import lombok.Data;
@@ -35,7 +35,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     @Autowired
     private BlockService blockService;
     @Autowired
-    private SyncBlockProcessor sycBlockService;
+    private SyncBlockService sycBlockService;
 
     @Autowired
     private EventBus eventBus;

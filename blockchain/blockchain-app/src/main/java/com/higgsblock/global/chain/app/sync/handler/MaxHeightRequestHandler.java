@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -19,13 +19,19 @@ import org.springframework.stereotype.Component;
 public class MaxHeightRequestHandler extends BaseMessageHandler<MaxHeightRequest> {
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private MessageCenter messageCenter;
 
     @Override
+    protected boolean check(SocketRequest<MaxHeightRequest> request) {
+        MaxHeightRequest data = request.getData();
+        return null != data;
+    }
+
+    @Override
     protected void process(SocketRequest<MaxHeightRequest> request) {
-        messageCenter.unicast(request.getSourceId(), new MaxHeightResponse(blockProcessor.getMaxHeight()));
+        messageCenter.unicast(request.getSourceId(), new MaxHeightResponse(blockChainService.getMaxHeight()));
     }
 }

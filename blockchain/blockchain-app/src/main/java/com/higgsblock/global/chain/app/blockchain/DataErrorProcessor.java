@@ -1,10 +1,11 @@
 package com.higgsblock.global.chain.app.blockchain;
 
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.*;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.sync.SyncBlockProcessor;
+import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,10 @@ public class DataErrorProcessor {
     private ITransactionIndexRepository transactionIndexRepository;
 
     @Autowired
-    private SyncBlockProcessor syncBlockProcessor;
+    private SyncBlockService syncBlockService;
+
+    @Autowired
+    private MessageCenter messageCenter;
 
     /**
      * delete data except block and witness
@@ -73,7 +77,7 @@ public class DataErrorProcessor {
             }
             blockIndexRepository.deleteAllByHeight(height);
             blockRepository.deleteAllByHeight(height);
-            list.forEach(block -> blockService.persistBlockAndIndex(block, block.getVersion()));
+            list.forEach(block -> messageCenter.dispatch(block));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
                 LOGGER.info("stop reimport data ,current hheight={},max height={}", height, maxHeight);
@@ -107,7 +111,7 @@ public class DataErrorProcessor {
         systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
 
         //start sync block
-        syncBlockProcessor.startSyncBlock();
+        syncBlockService.startSyncBlock();
     }
 
 }
