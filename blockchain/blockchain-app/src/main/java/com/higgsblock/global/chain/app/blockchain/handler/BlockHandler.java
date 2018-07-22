@@ -1,15 +1,21 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockFullInfo;
-import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author baizhengwen
@@ -23,6 +29,10 @@ public class BlockHandler extends BaseMessageHandler<Block> {
 
     @Autowired
     private BlockService blockService;
+    @Autowired
+    private BlockIndexService blockIndexService;
+    @Autowired
+    private MessageCenter messageCenter;
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
@@ -89,7 +99,24 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         long height = data.getHeight();
         String hash = data.getHash();
         boolean success = blockService.persistBlockAndIndex(data, data.getVersion());
-
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
+        if (success) {
+            broadcastInventory(request);
+        }
+    }
+
+    private void broadcastInventory(SocketRequest<Block> request) {
+        Block data = request.getData();
+        long height = data.getHeight();
+        String sourceId = request.getSourceId();
+        Inventory inventory = new Inventory();
+        inventory.setHeight(height);
+        List<String> list = Optional.ofNullable(blockIndexService.getBlockIndexByHeight(height)).map(BlockIndex::getBlockHashs).orElse(null);
+        if (CollectionUtils.isNotEmpty(list)) {
+            Set<String> set = new HashSet<>(list);
+            inventory.setHashs(set);
+        }
+        messageCenter.broadcast(new String[]{sourceId}, inventory);
+        LOGGER.info("after persisted block, broadcast block : " + inventory);
     }
 }

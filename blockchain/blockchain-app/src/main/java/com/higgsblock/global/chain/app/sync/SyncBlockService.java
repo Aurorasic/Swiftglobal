@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.eventbus.Subscribe;
-import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -16,17 +15,18 @@ import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.sync.message.BlockRequest;
-import com.higgsblock.global.chain.app.sync.message.Inventory;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
@@ -150,21 +150,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         LOGGER.info("process event: {}", event);
-        broadcastInventory(event);
         continueSyncBlock(event);
-    }
-
-    private void broadcastInventory(BlockPersistedEvent event) {
-        long height = event.getHeight();
-        String sourceId = event.getSourceId();
-        Inventory inventory = new Inventory();
-        inventory.setHeight(height);
-        List<String> list = Optional.ofNullable(blockIndexService.getBlockIndexByHeight(height)).map(BlockIndex::getBlockHashs).orElse(null);
-        if (CollectionUtils.isNotEmpty(list)) {
-            Set<String> set = new HashSet<>(list);
-            inventory.setHashs(set);
-        }
-        messageCenter.broadcast(new String[]{sourceId}, inventory);
     }
 
     /**
