@@ -1,10 +1,10 @@
 package com.higgsblock.global.chain.app.context;
 
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimerProcessor;
 import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.task.BaseTask;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -23,7 +23,7 @@ import java.util.List;
 public class AppContext {
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private BlockService blockService;
 
     @Autowired
     private ConnectionManager connectionManager;
@@ -71,7 +71,7 @@ public class AppContext {
     }
 
     private void checkAndRecoveryBlockData() {
-        blockProcessor.loadAllBlockData();
+        blockService.loadAllBlockData();
     }
 
     private void startHandlers() {

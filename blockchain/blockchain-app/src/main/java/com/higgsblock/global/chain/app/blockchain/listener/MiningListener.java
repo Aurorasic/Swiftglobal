@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -11,6 +11,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,9 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private OriginalBlockProcessor originalBlockProcessor;
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
+    @Autowired
+    private BlockService blockService;
     @Autowired
     private PeerManager peerManager;
     @Autowired
@@ -86,11 +89,11 @@ public class MiningListener implements IEventBusListener {
     }
 
     private void calculateDpos() {
-        long maxHeight = blockProcessor.getMaxHeight();
+        long maxHeight = blockChainService.getMaxHeight();
         if (maxHeight == 1L) {
             List<String> dposGroupBySn = dposService.getDposGroupBySn(2);
             if (CollectionUtils.isEmpty(dposGroupBySn)) {
-                Block block = blockProcessor.getBestBlockByHeight(1L);
+                Block block = blockService.getBestBlockByHeight(1L);
 //                List<String> dposAddresses = dposService.calculateDposAddresses(block, 1L);
 //                nodeProcessor.persistDposNodes(0L, dposAddresses);
                 dposService.calcNextDposNodes(block, 1L);
@@ -148,7 +151,7 @@ public class MiningListener implements IEventBusListener {
     private boolean doMining(long expectHeight, String blockHash) {
         try {
             LOGGER.info("begin to packageNewBlock,height={}", expectHeight);
-            Block block = blockProcessor.packageNewBlock(blockHash);
+            Block block = blockService.packageNewBlock(blockHash);
             if (block == null) {
                 LOGGER.info("can not produce a new block,height={}", expectHeight);
                 return false;
