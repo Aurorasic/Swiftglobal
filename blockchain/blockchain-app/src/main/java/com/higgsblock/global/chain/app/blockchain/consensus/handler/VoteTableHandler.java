@@ -121,11 +121,11 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
 
     private boolean checkVersion1Witness(VoteTable voteTable) {
         Map<Integer, Map<String, Map<String, Vote>>> map = voteTable.getVoteTable();
-        if (MapUtils.isNotEmpty(map)) {
+        if (MapUtils.isEmpty(map)) {
             return false;
         }
         Map<String, Map<String, Vote>> map1 = map.get(1);
-        if (MapUtils.isNotEmpty(map1)) {
+        if (MapUtils.isEmpty(map1)) {
             return false;
         }
         for (String witnessPubKey : map1.keySet()) {
