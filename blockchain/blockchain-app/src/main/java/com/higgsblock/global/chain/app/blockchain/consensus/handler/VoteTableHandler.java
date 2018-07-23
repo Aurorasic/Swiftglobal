@@ -8,8 +8,9 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.service.IVoteService;
-import com.higgsblock.global.chain.app.service.impl.WitnessService;
+import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,31 +37,51 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     @Autowired
     private EventBus eventBus;
 
+    @Autowired
+    private KeyPair keyPair;
+
+    @Autowired
+    private IWitnessService witnessService;
+
     @Override
     protected boolean check(SocketRequest<VoteTable> request) {
+
         String sourceId = request.getSourceId();
         VoteTable data = request.getData();
 
+        //check if this is witness
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(data);
+            return false;
+        }
+
         //step1:check basic info
         if (null == data
-                || !data.valid(WitnessService.WITNESS_ADDRESS_LIST)) {
+                || !data.valid()) {
+            LOGGER.info("valid basic info , false");
+            return false;
+        }
+
+        //step2:check witness
+        if (!checkVersion1Witness(data)) {
+            LOGGER.info("valid witness info , false");
             return false;
         }
 
         long voteHeight = data.getHeight();
-        //step2: check height
+        //step3: check height
         if (voteHeight < voteService.getHeight()) {
             return false;
         }
 
-        //step3:if height > my vote height, sync block
+        //step4:if height > my vote height, sync block
         if (voteHeight > voteService.getHeight()) {
             eventBus.post(new ReceiveOrphanBlockEvent(voteHeight, null, sourceId));
             LOGGER.info("the height is greater than local , sync block");
             return false;
         }
-        //step4: check original block
-        if (checkOriginalBlock(sourceId, data)) {
+        //step5: check original block
+        if (!checkOriginalBlock(sourceId, data)) {
             return false;
         }
         return true;
@@ -99,5 +120,23 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
             return false;
         }
         return true;
+    }
+
+    private boolean checkVersion1Witness(VoteTable voteTable) {
+        Map<Integer, Map<String, Map<String, Vote>>> map = voteTable.getVoteTable();
+        if (MapUtils.isNotEmpty(map)) {
+            return false;
+        }
+        Map<String, Map<String, Vote>> map1 = map.get(1);
+        if (MapUtils.isNotEmpty(map1)) {
+            return false;
+        }
+        for (String witnessPubKey : map1.keySet()) {
+            if (!witnessService.isWitness(ECKey.pubKey2Base58Address(witnessPubKey))) {
+                return false;
+            }
+        }
+        return true;
+
     }
 }

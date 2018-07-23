@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
-import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,8 +13,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author yuanjiantao
@@ -41,17 +41,14 @@ public class VoteTable extends BaseSerializer {
 
     @JSONField(serialize = false)
     public int getVersionSize() {
-//        if (!valid()) {
-//            return 0;
-//        }
-        return voteTable.size();
+        return MapUtils.isEmpty(voteTable) ? 0 : voteTable.size();
     }
 
     @JSONField(serialize = false)
     public int getAllVoteSize() {
-//        if (!valid()) {
-//            return 0;
-//        }
+        if (MapUtils.isEmpty(voteTable)) {
+            return 0;
+        }
         int size = 0;
         for (Map<String, Map<String, Vote>> versionVoteMap : voteTable.values()) {
             if (MapUtils.isEmpty(versionVoteMap)) {
@@ -69,9 +66,9 @@ public class VoteTable extends BaseSerializer {
 
     @JSONField(serialize = false)
     public int getARowVoteSize(int version) {
-//        if (!valid()) {
-//            return 0;
-//        }
+        if (MapUtils.isEmpty(voteTable)) {
+            return 0;
+        }
         Map<String, Map<String, Vote>> versionVoteMap = voteTable.get(version);
         if (MapUtils.isEmpty(versionVoteMap)) {
             return 0;
@@ -89,9 +86,9 @@ public class VoteTable extends BaseSerializer {
     @JSONField(serialize = false)
     public Map<String, Map<String, Vote>> getVoteMapOfPubKeyByVersion(int version) {
         Map<String, Map<String, Vote>> result = new HashMap<>();
-//        if (!valid()) {
-//            throw new RuntimeException("the voteTable is not valid");
-//        }
+        if (MapUtils.isEmpty(voteTable)) {
+            return result;
+        }
         Map<String, Map<String, Vote>> voteMapOfPubKey = voteTable.get(version);
         if (MapUtils.isEmpty(voteMapOfPubKey)) {
             return result;
@@ -127,10 +124,12 @@ public class VoteTable extends BaseSerializer {
         pubKeyVoteMap.putIfAbsent(blockHash, vote);
     }
 
-    public boolean valid(List<String> witnesses) {
+    public boolean valid() {
         if (height <= 1L || MapUtils.isEmpty(voteTable)) {
             return false;
         }
+
+        Set<String> version1Witnesses = new HashSet<>(11);
 
         //check all votes
         for (int version = 1; version <= voteTable.size(); version++) {
@@ -147,16 +146,24 @@ public class VoteTable extends BaseSerializer {
                 String witnessPubKey = entry.getKey();
                 Map<String, Vote> map1 = entry.getValue();
                 //check witness
-                if (!witnesses.contains(ECKey.pubKey2Base58Address(witnessPubKey)) || MapUtils.isEmpty(map1)) {
+                if (MapUtils.isEmpty(map1)) {
                     return false;
                 }
                 //check every vote
                 for (Vote vote : map1.values()) {
+
                     if (height != vote.getHeight()
                             || version != vote.getVoteVersion()
                             || !StringUtils.equals(vote.getWitnessPubKey(), witnessPubKey)) {
                         return false;
                     }
+
+                    if (version == 1) {
+                        version1Witnesses.add(witnessPubKey);
+                    } else if (!version1Witnesses.contains(witnessPubKey)) {
+                        return false;
+                    }
+
                     if (!vote.valid()) {
                         return false;
                     }
