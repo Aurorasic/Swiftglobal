@@ -13,7 +13,6 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.sync.message.BlockRequest;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -60,9 +59,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Autowired
     private SystemStatusManager systemStatusManager;
-
-    @Autowired
-    private BlockIndexService blockIndexService;
 
     private CountDownLatch countDownLatch = new CountDownLatch(ACTIVE_CONNECTION_NUM);
 
