@@ -31,7 +31,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
     @Override
     protected boolean check(SocketRequest<VotingBlockRequest> request) {
         VotingBlockRequest data = request.getData();
-        if (null == data || CollectionUtils.isEmpty(data.getBlockHashs())) {
+        if (null == data || CollectionUtils.isEmpty(data.getBlockHashes())) {
             return false;
         }
         return true;
@@ -42,7 +42,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
         String sourceId = request.getSourceId();
         VotingBlockRequest data = request.getData();
         LOGGER.info("received originalBlockRequest from {} with data {}", sourceId, data);
-        data.getBlockHashs().forEach(hash -> {
+        data.getBlockHashes().forEach(hash -> {
             Block block = voteService.getBlockCache().get(voteService.getHeight(), k -> new HashMap<>()).get(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new VotingBlockResponse(block));

@@ -77,23 +77,23 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         if (MapUtils.isEmpty(map)) {
             return false;
         }
-        Set<String> blockHashs = new HashSet<>();
+        Set<String> blockHashes = new HashSet<>();
         map.values().forEach(map1 -> {
             if (MapUtils.isEmpty(map1)) {
                 return;
             }
             map1.forEach((k, v) -> {
                 if (!voteService.isExistInBlockCache(voteHeight, k)) {
-                    blockHashs.add(k);
+                    blockHashes.add(k);
                 }
             });
         });
-        if (blockHashs.size() > 0) {
+        if (blockHashes.size() > 0) {
             voteService.updateVoteCache(otherVoteTable);
             if (null != sourceId) {
-                messageCenter.unicast(sourceId, new VotingBlockRequest(blockHashs));
+                messageCenter.unicast(sourceId, new VotingBlockRequest(blockHashes));
             } else {
-                messageCenter.dispatchToWitnesses(new VotingBlockRequest(blockHashs));
+                messageCenter.dispatchToWitnesses(new VotingBlockRequest(blockHashes));
             }
             LOGGER.info("source blocks is not enough,add vote table to cache");
             return false;
