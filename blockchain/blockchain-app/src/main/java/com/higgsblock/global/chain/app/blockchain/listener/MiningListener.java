@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.common.SystemStatus;
@@ -15,12 +14,10 @@ import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -33,8 +30,6 @@ public class MiningListener implements IEventBusListener {
 
     @Autowired
     private OriginalBlockProcessor originalBlockProcessor;
-    @Autowired
-    private IBlockChainService blockChainService;
     @Autowired
     private BlockService blockService;
     @Autowired
@@ -70,7 +65,6 @@ public class MiningListener implements IEventBusListener {
     public void process(SystemStatusEvent event) {
         LOGGER.info("process event: {}", event);
         SystemStatus state = event.getSystemStatus();
-        calculateDpos();
         if (SystemStatus.RUNNING == state) {
             isMining = true;
             //add by huangshengli  input pre blockhash when try to produce new block 2018-07-09
@@ -85,19 +79,6 @@ public class MiningListener implements IEventBusListener {
         } else {
             isMining = false;
             LOGGER.info("The system state is changed to {}, stop mining", state);
-        }
-    }
-
-    private void calculateDpos() {
-        long maxHeight = blockChainService.getMaxHeight();
-        if (maxHeight == 1L) {
-            List<String> dposGroupBySn = dposService.getDposGroupBySn(2);
-            if (CollectionUtils.isEmpty(dposGroupBySn)) {
-                Block block = blockService.getBestBlockByHeight(1L);
-//                List<String> dposAddresses = dposService.calculateDposAddresses(block, 1L);
-//                nodeProcessor.persistDposNodes(0L, dposAddresses);
-                dposService.calcNextDposNodes(block, 1L);
-            }
         }
     }
 
