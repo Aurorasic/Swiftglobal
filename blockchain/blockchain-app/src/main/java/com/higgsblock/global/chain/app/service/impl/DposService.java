@@ -104,13 +104,11 @@ public class DposService implements IDposService, InitializingBean {
 
     /**
      * find lucky miners by pre blockhash
-     * TODO 20180721 yanghuadong 需要改变方法名称
-     *
      * @param preBlockHash
      * @return
      */
     @Override
-    public List<String> getDposGroupByHeihgt(String preBlockHash) {
+    public List<String> getDposGroupByPreBlockHash(String preBlockHash) {
         if (preBlockHash == null) {
             return Lists.newLinkedList();
         }
@@ -152,7 +150,7 @@ public class DposService implements IDposService, InitializingBean {
         }
 
         String address = minerPKSig.getAddress();
-        List<String> currentGroup = getDposGroupByHeihgt(block.getPrevBlockHash());
+        List<String> currentGroup = getDposGroupByPreBlockHash(block.getPrevBlockHash());
         boolean result = CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
         if (!result) {
             LOGGER.error("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
@@ -176,7 +174,7 @@ public class DposService implements IDposService, InitializingBean {
         if (startHeight > height) {
             throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + startHeight + ",the height=" + height);
         }
-        List<String> dposNodes = getDposGroupByHeihgt(preBlockHash);
+        List<String> dposNodes = getDposGroupByPreBlockHash(preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.warn("the dpos node is empty with the height={}", height);
             return false;

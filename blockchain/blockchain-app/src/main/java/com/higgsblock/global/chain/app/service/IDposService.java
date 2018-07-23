@@ -73,7 +73,7 @@ public interface IDposService {
      * @param preBlockHash
      * @return
      */
-    List<String> getDposGroupByHeihgt(String preBlockHash);
+    List<String> getDposGroupByPreBlockHash(String preBlockHash);
 
     /**
      * validate the producer
