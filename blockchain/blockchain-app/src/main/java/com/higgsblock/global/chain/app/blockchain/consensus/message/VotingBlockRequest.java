@@ -24,13 +24,13 @@ public class VotingBlockRequest extends BaseSerializer {
 
     private int version = 0;
 
-    private Set<String> blockHashs;
+    private Set<String> blockHashes;
 
-    public VotingBlockRequest(Set<String> blockHashs) {
-        this.blockHashs = blockHashs;
+    public VotingBlockRequest(Set<String> blockHashes) {
+        this.blockHashes = blockHashes;
     }
 
     public boolean valid() {
-        return CollectionUtils.isNotEmpty(blockHashs) && version >= 0;
+        return CollectionUtils.isNotEmpty(blockHashes) && version >= 0;
     }
 }
