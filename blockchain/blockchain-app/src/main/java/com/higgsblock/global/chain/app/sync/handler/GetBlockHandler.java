@@ -6,8 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.sync.message.BlockRequest;
-import com.higgsblock.global.chain.app.sync.message.BlockResponse;
+import com.higgsblock.global.chain.app.sync.message.GetBlock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
+public class GetBlockHandler extends BaseMessageHandler<GetBlock> {
 
     @Autowired
     private IBlockChainService blockChainService;
@@ -30,14 +29,14 @@ public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
     private BlockService blockService;
 
     @Override
-    protected boolean check(SocketRequest<BlockRequest> request) {
-        BlockRequest data = request.getData();
+    protected boolean check(SocketRequest<GetBlock> request) {
+        GetBlock data = request.getData();
         return null != data && data.valid();
     }
 
     @Override
-    protected void process(SocketRequest<BlockRequest> request) {
-        BlockRequest data = request.getData();
+    protected void process(SocketRequest<GetBlock> request) {
+        GetBlock data = request.getData();
         long height = data.getHeight();
         String sourceId = request.getSourceId();
         String hash = data.getHash();
@@ -47,10 +46,10 @@ public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
         if (null != hash) {
             Block block = blockService.getBlockByHash(hash);
             if (null != block) {
-                messageCenter.unicast(sourceId, new BlockResponse(block));
+                messageCenter.unicast(sourceId, block);
             }
         } else {
-            blockChainService.getBlocks(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResponse(block)));
+            blockChainService.getBlocks(height).forEach(block -> messageCenter.unicast(sourceId, block));
         }
     }
 }

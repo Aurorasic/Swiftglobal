@@ -8,7 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.sync.message.BlockRequest;
+import com.higgsblock.global.chain.app.sync.message.GetBlock;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -56,8 +56,8 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
         if (height <= blockChainService.getMaxHeight() + 1L) {
             hashes.forEach(hash -> requestRecord.get(hash, v -> {
                 if (!blockChainService.isExistBlock(hash)) {
-                    BlockRequest blockRequest = new BlockRequest(height, hash);
-                    messageCenter.unicast(sourceId, blockRequest);
+                    GetBlock getBlock = new GetBlock(height, hash);
+                    messageCenter.unicast(sourceId, getBlock);
                     return height;
                 }
                 return null;

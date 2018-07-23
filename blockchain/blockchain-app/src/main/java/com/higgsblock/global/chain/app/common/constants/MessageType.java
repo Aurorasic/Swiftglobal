@@ -31,7 +31,7 @@ public enum MessageType {
     MAX_HEIGHT_REQUEST("501"),
     MAX_HEIGHT_RESPONSE("502"),
 
-    BLOCK_REQUEST("503"),
+    GET_BLOCK("503"),
     BLOCK_RESPONSE("504"),
 
     VOTING_BLOCK_REQUEST("505"),
