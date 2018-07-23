@@ -117,11 +117,7 @@ public class BlockChainService implements IBlockChainService {
 
         // 2.check the guarder permission
         result = witnessTimerProcessor.acceptBlock(block);
-        if (result) {
-            return true;
-        }
-
-        return false;
+        return result;
     }
 
     @Override
