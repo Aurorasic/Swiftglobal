@@ -50,31 +50,22 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         String sourceId = request.getSourceId();
         VoteTable data = request.getData();
 
-        //check if this is witness
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(data);
-            return false;
-        }
-
         //step1:check basic info
         if (null == data
                 || !data.valid()) {
             LOGGER.info("valid basic info , false");
             return false;
         }
-
         //step2:check witness
         if (!checkVersion1Witness(data)) {
             LOGGER.info("valid witness info , false");
             return false;
         }
-
         long voteHeight = data.getHeight();
         //step3: check height
         if (voteHeight < voteService.getHeight()) {
             return false;
         }
-
         //step4:if height > my vote height, sync block
         if (voteHeight > voteService.getHeight()) {
             eventBus.post(new ReceiveOrphanBlockEvent(voteHeight, null, sourceId));
@@ -90,6 +81,11 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
 
     @Override
     protected void process(SocketRequest<VoteTable> request) {
+        //check if this is witness
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(request.getData());
+            return;
+        }
         voteService.dealVoteTable(request.getData());
     }
 
