@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.api.outer;
 
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
-import com.higgsblock.global.chain.app.blockchain.DataErrorProcessor;
+import com.higgsblock.global.chain.app.blockchain.DataErrorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ManagerApi {
 
     @Autowired
-    private DataErrorProcessor dataErrorProcessor;
+    private DataErrorService dataErrorService;
 
 
     @RequestMapping("/reimportData")
     public ResponseData<Boolean> reimportData() {
-        dataErrorProcessor.handleError();
+        dataErrorService.handleError();
         return ResponseData.success(true);
     }
 }
