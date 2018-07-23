@@ -41,10 +41,10 @@ public class BlockChainService implements IBlockChainService {
     private WitnessTimer witnessTimer;
 
     @Override
-    public boolean isLuckyMiner(String address, String preBlockHash) {
-        // get lucky miners address at branch which the preblock belonged to
-        List<String> luckyAddresses = dposService.getDposGroupByHeihgt(preBlockHash);
-        return CollectionUtils.isNotEmpty(luckyAddresses) && luckyAddresses.contains(address);
+    public boolean isDposMiner(String address, String preBlockHash) {
+        // get dpos miners address at branch which the preblock belonged to
+        List<String> dposAddressList = dposService.getDposGroupByHeihgt(preBlockHash);
+        return CollectionUtils.isNotEmpty(dposAddressList) && dposAddressList.contains(address);
     }
 
     @Override

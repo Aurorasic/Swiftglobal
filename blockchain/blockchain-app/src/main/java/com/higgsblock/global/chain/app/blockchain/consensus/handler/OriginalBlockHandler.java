@@ -88,8 +88,8 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isLuckyMiner = blockChainService.isLuckyMiner(minerAddress, prevBlockHash);
-        if (!isLuckyMiner) {
+        boolean isDposMiner = blockChainService.isDposMiner(minerAddress, prevBlockHash);
+        if (!isDposMiner) {
             LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {

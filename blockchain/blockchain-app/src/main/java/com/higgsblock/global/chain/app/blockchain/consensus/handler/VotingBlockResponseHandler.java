@@ -83,8 +83,8 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isLuckyMiner = blockChainService.isLuckyMiner(minerAddress, prevBlockHash);
-        if (!isLuckyMiner) {
+        boolean isDposMiner = blockChainService.isDposMiner(minerAddress, prevBlockHash);
+        if (!isDposMiner) {
             boolean isGuarder = blockChainService.isGuarder(minerAddress, prevBlockHash);
             if (!isGuarder) {
                 return false;

@@ -16,7 +16,7 @@ public interface IBlockChainService {
      * @param preBlockHash
      * @return
      */
-    boolean isLuckyMiner(String address, String preBlockHash);
+    boolean isDposMiner(String address, String preBlockHash);
 
     /**
      * Return true if the address belongs to a miner at the specified height.
