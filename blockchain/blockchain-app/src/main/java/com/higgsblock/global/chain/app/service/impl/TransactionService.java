@@ -69,33 +69,33 @@ public class TransactionService implements ITransactionService {
     public boolean validTransactions(Block block) {
         LOGGER.info("begin to check the transactions of block {}", block.getHeight());
 
-        //step1 valid block transaction is null
+        //step1 verify block transaction is null
         List<Transaction> transactions = block.getTransactions();
         if (CollectionUtils.isEmpty(transactions)) {
             LOGGER.error("transactions is empty, block_hash={}", block.getHash());
             return false;
         }
 
-        //step2 valid transaction size
+        //step2 verify transaction size
         int tx_number = transactions.size();
         if (TRANSACTION_NUMBER > tx_number) {
             LOGGER.error("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
-        //step3 valid info
+        //step3 verify info
         for (int index = 0; index < tx_number; index++) {
             boolean isCoinBaseTx = index == 0 ? true : false;
-            //step1 valid tx isCoinBase
+            //step1 verify tx isCoinBase
             if (isCoinBaseTx) {
-                if (!validCoinBaseTx(transactions.get(index), block)) {
+                if (!verifyCoinBaseTx(transactions.get(index), block)) {
                     LOGGER.error("Invalidate Coinbase transaction");
                     return false;
                 }
                 continue;
             }
-            //step2 valid tx business info
-            if (!verifyTransactionInputAndOutputInfo(transactions.get(index), block)) {
+            //step2 verify tx business info
+            if (!verifyTransaction(transactions.get(index), block)) {
                 return false;
             }
         }
@@ -113,7 +113,7 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("the transaction is exist in cache with hash {}", hash);
                 return;
             }
-            boolean valid = verifyTransactionInputAndOutputInfo(tx, null);
+            boolean valid = verifyTransaction(tx, null);
             if (!valid) {
                 LOGGER.info("the transaction is not valid {}", tx);
                 return;
@@ -243,7 +243,7 @@ public class TransactionService implements ITransactionService {
      * @return return result
      */
 
-    public boolean verifyTransactionInputAndOutputInfo(Transaction tx, Block block) {
+    public boolean verifyTransaction(Transaction tx, Block block) {
         if (null == tx) {
             LOGGER.info("transaction is null");
             return false;
@@ -424,7 +424,7 @@ public class TransactionService implements ITransactionService {
      * @param block current block
      * @return validate success return true else false
      */
-    public boolean validCoinBaseTx(Transaction tx, Block block) {
+    public boolean verifyCoinBaseTx(Transaction tx, Block block) {
         if (!tx.isEmptyInputs()) {
             LOGGER.error("Invalidate Coinbase transaction");
             return false;
