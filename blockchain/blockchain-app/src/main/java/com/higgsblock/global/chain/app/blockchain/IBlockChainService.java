@@ -64,14 +64,6 @@ public interface IBlockChainService {
     boolean isGenesisBlock(String blockHash);
 
     /**
-     * Return true if the prev block is already on the chain.
-     *
-     * @param blockHash
-     * @return
-     */
-    boolean isExistPreBlock(String blockHash);
-
-    /**
      * Return true if the block is already on the chain.
      *
      * @param blockHash
