@@ -36,6 +36,8 @@ public class TransactionService implements ITransactionService {
      */
     private static final int MIN_OUTPUT_SIZE = 11 + 1;
 
+    private static final int TRANSACTION_NUMBER = 2;
+
     @Autowired
     private TransactionCacheManager txCacheManager;
 
@@ -75,14 +77,14 @@ public class TransactionService implements ITransactionService {
         }
 
         //step2 valid transaction size
-        int size = transactions.size();
-        if (1 >= size) {
-            LOGGER.error("transactions is less than two, block_hash={}", block.getHash());
+        int tx_number = transactions.size();
+        if (TRANSACTION_NUMBER > tx_number) {
+            LOGGER.error("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
         //step3 valid info
-        for (int index = 0; index < size; index++) {
+        for (int index = 0; index < tx_number; index++) {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 valid tx isCoinBase
             if (isCoinBaseTx) {
