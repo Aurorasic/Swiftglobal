@@ -113,12 +113,6 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("the transaction is exist in cache with hash {}", hash);
                 return;
             }
-            TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(hash);
-            TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
-            if (transactionIndex != null) {
-                LOGGER.info("the transaction is exist in block with hash {}", hash);
-                return;
-            }
             boolean valid = verifyTransactionInputAndOutputInfo(tx, null);
             if (!valid) {
                 LOGGER.info("the transaction is not valid {}", tx);
@@ -256,11 +250,6 @@ public class TransactionService implements ITransactionService {
         }
         if (!tx.valid()) {
             LOGGER.info("transaction is valid error");
-            return false;
-        }
-        TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(tx.getHash());
-        if (null != entity) {
-            LOGGER.info("transaction is already existed,this transaction hash ={}", tx.getHash());
             return false;
         }
         List<TransactionInput> inputs = tx.getInputs();
