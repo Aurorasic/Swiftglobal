@@ -3,12 +3,12 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.impl.WitnessService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
@@ -28,7 +28,7 @@ import java.util.Set;
 public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
 
     @Autowired
-    private VoteService voteService;
+    private IVoteService voteService;
 
     @Autowired
     private MessageCenter messageCenter;

@@ -4,11 +4,11 @@ import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Autowired
-    private VoteService voteService;
+    private IVoteService voteService;
 
     @Autowired
     private MessageCenter messageCenter;

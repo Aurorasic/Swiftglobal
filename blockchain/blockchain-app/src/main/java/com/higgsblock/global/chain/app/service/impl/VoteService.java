@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.sign.service;
+package com.higgsblock.global.chain.app.service.impl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -12,8 +12,8 @@ import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockR
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -34,7 +34,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class VoteService implements IEventBusListener {
+public class VoteService implements IEventBusListener, IVoteService {
 
     public static final int MAX_SIZE = 5;
 
@@ -76,6 +76,7 @@ public class VoteService implements IEventBusListener {
         initWitnessTask(event.getHeight() + 1L);
     }
 
+    @Override
     public synchronized void initWitnessTask(long height) {
         if (height < this.height) {
             return;
@@ -96,6 +97,7 @@ public class VoteService implements IEventBusListener {
         }
     }
 
+    @Override
     public synchronized void addOriginalBlock(Block block) {
         if (block == null) {
             return;
@@ -191,6 +193,7 @@ public class VoteService implements IEventBusListener {
         }
     }
 
+    @Override
     public synchronized void updateVoteCache(VoteTable otherVoteTable) {
         long height = otherVoteTable.getHeight();
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
@@ -221,6 +224,7 @@ public class VoteService implements IEventBusListener {
         });
     }
 
+    @Override
     public synchronized void dealVoteTable(VoteTable otherVoteTable) {
         long voteHeight = otherVoteTable.getHeight();
         boolean isOver = this.height != voteHeight || blockWithEnoughSign != null;
@@ -402,6 +406,7 @@ public class VoteService implements IEventBusListener {
         return vote;
     }
 
+    @Override
     public boolean isExistInBlockCache(long height, String hash) {
         Map<String, Block> map = blockCache.getIfPresent(height);
         return MapUtils.isNotEmpty(map) && map.containsKey(hash);
@@ -423,5 +428,8 @@ public class VoteService implements IEventBusListener {
                 .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false);
     }
 
-
+    @Override
+    public Block getVotingBlock(String blockHash) {
+        return blockCache.get(getHeight(), k -> new HashMap<>()).get(blockHash);
+    }
 }

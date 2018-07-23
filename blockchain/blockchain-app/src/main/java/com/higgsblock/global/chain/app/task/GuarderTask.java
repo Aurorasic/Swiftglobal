@@ -4,9 +4,9 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.IOriginalBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -35,7 +35,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Autowired
     private IBlockService blockService;
     @Autowired
-    private OriginalBlockProcessor originalBlockProcessor;
+    private IOriginalBlockService originalBlockProcessor;
     @Autowired
     private PeerManager peerManager;
     @Autowired
