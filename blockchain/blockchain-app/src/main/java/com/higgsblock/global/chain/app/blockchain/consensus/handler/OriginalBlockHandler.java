@@ -90,8 +90,10 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         }
         boolean isLuckyMiner = blockChainService.isLuckyMiner(minerAddress, prevBlockHash);
         if (!isLuckyMiner) {
+            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {
+                LOGGER.info("can not accept this block, height={}, hash={}", height, blockHash);
                 return false;
             }
         }
