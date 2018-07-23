@@ -80,7 +80,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         if (isOrphanBlock) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
-            LOGGER.warn("it is orphan block: ", block.getSimpleInfo());
+            LOGGER.warn("it is orphan block {}", block.getSimpleInfo());
             return false;
         }
 

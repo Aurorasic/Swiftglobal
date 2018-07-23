@@ -63,7 +63,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         //3.check: exist
         boolean isExist = orphanBlockCacheManager.isContains(hash) || blockChainService.isExistBlock(hash);
         if (isExist) {
-            LOGGER.info("the block is exist: ", block.getSimpleInfo());
+            LOGGER.info("the block is exist {}", block.getSimpleInfo());
             return false;
         }
 

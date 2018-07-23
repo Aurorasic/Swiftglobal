@@ -79,7 +79,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 //check: transactions
                 boolean validTransactions = blockChainService.checkTransactions(nextBlock);
                 if (!validTransactions) {
-                    LOGGER.error("the orphan block transactions are error: ", nextBlock.getSimpleInfo());
+                    LOGGER.error("the orphan block transactions are error: {}", nextBlock.getSimpleInfo());
                     remove(nextBlockHash);
                 }
 
