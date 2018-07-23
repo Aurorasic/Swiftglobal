@@ -90,10 +90,6 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
                 return false;
             }
         }
-        if (!blockChainService.checkWitnessSignature(block)) {
-            LOGGER.error("the signature of all witnesses is not valid, height={}, hash={}", height, blockHash);
-            return false;
-        }
         if (!blockChainService.checkTransactions(block)) {
             LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
             return false;
