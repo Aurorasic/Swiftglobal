@@ -88,14 +88,11 @@ public class TransactionService implements ITransactionService {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 valid tx isCoinBase
             if (isCoinBaseTx) {
-                if (!transactions.get(index).isEmptyInputs()) {
-                    LOGGER.error("Invalidate Coinbase transaction");
-                    return false;
-                }
                 if (!validCoinBaseTx(transactions.get(index), block)) {
                     LOGGER.error("Invalidate Coinbase transaction");
                     return false;
                 }
+                continue;
             }
             //step2 valid tx business info
             if (!verifyTransactionInputAndOutputInfo(transactions.get(index), block)) {
@@ -254,11 +251,11 @@ public class TransactionService implements ITransactionService {
 
     public boolean verifyTransactionInputAndOutputInfo(Transaction tx, Block block) {
         if (null == tx) {
-            LOGGER.error("transaction is null");
+            LOGGER.info("transaction is null");
             return false;
         }
-        int version = tx.getVersion();
-        if (version < 0) {
+        if (!tx.valid()) {
+            LOGGER.info("transaction is valid error");
             return false;
         }
         List<TransactionInput> inputs = tx.getInputs();
@@ -434,6 +431,10 @@ public class TransactionService implements ITransactionService {
      * @return validate success return true else false
      */
     public boolean validCoinBaseTx(Transaction tx, Block block) {
+        if (!tx.isEmptyInputs()) {
+            LOGGER.error("Invalidate Coinbase transaction");
+            return false;
+        }
         List<TransactionOutput> outputs = tx.getOutputs();
         if (CollectionUtils.isEmpty(outputs)) {
             LOGGER.info("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());
