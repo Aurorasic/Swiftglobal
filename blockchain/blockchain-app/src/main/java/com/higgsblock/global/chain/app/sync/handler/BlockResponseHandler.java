@@ -36,6 +36,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
             return false;
         }
         String hash = block.getHash();
+        String prevBlockHash = block.getPrevBlockHash();
         //1. check: isGenesisBlock
         boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
         if (isGenesisBlock) {
@@ -65,7 +66,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         }
 
         //5.check: orphan block
-        boolean isOrphanBlock = blockChainService.isExistPreBlock(hash);
+        boolean isOrphanBlock = blockChainService.isExistBlock(prevBlockHash);
         if (isOrphanBlock) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
