@@ -298,8 +298,8 @@ public class VoteService implements IEventBusListener, IVoteService {
                     this.voteTable.addVote(vote);
                 }
             });
-            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize) {
-                collectionVoteSign(version, this.height);
+            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, this.height)) {
+                return;
             }
         }
         if (voteTable.getAllVoteSize() > startAllVoteSize) {
