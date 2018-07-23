@@ -1,16 +1,22 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockFullInfo;
-import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
+import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author yuanjiantao
@@ -24,19 +30,23 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     private IBlockChainService blockChainService;
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
+
+    @Autowired
+    private IBlockIndexService blockIndexService;
+
+    @Autowired
+    private MessageCenter messageCenter;
+
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Override
     protected boolean check(SocketRequest<BlockResponse> request) {
-        BlockResponse response = request.getData();
-        Block block = response.getBlock();
-        if (null == block) {
-            return false;
-        }
+        BlockResponse blockResponse = request.getData();
+        Block block = blockResponse.getBlock();
         String hash = block.getHash();
-        String prevBlockHash = block.getPrevBlockHash();
+
         //1. check: isGenesisBlock
         boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
         if (isGenesisBlock) {
@@ -57,27 +67,26 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
             return false;
         }
 
+        //4. check: producer stake
+        boolean producerValid = blockChainService.checkBlockProducer(block);
+        if (!producerValid) {
+            LOGGER.error("the block produce stack is error: ", block.getSimpleInfo());
+            return false;
+        }
 
-        //4.check: witness signatures
+        //5.check: witness signatures
         boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
             LOGGER.error("the block witness sig is error: ", block.getSimpleInfo());
             return false;
         }
 
-        //5.check: orphan block
-        boolean isOrphanBlock = blockChainService.isExistBlock(prevBlockHash);
+        //6.check: orphan block
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
         if (isOrphanBlock) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
             LOGGER.warn("it is orphan block: ", block.getSimpleInfo());
-            return false;
-        }
-
-        //6. check: producer stake
-        boolean producerValid = blockChainService.checkBlockProducer(block);
-        if (!producerValid) {
-            LOGGER.error("the block produce stack is error: ", block.getSimpleInfo());
             return false;
         }
 
@@ -93,11 +102,29 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Override
     protected void process(SocketRequest<BlockResponse> request) {
         BlockResponse blockResponse = request.getData();
-        Block data = blockResponse.getBlock();
-        long height = data.getHeight();
-        String hash = data.getHash();
-        boolean success = blockService.persistBlockAndIndex(data);
-
+        Block block = blockResponse.getBlock();
+        long height = block.getHeight();
+        String hash = block.getHash();
+        boolean success = blockService.persistBlockAndIndex(block);
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
+        if (success) {
+            broadcastInventory(request);
+        }
+    }
+
+    private void broadcastInventory(SocketRequest<BlockResponse> request) {
+        BlockResponse blockResponse = request.getData();
+        Block block = blockResponse.getBlock();
+        long height = block.getHeight();
+        String sourceId = request.getSourceId();
+        Inventory inventory = new Inventory();
+        inventory.setHeight(height);
+        List<String> list = Optional.ofNullable(blockIndexService.getBlockIndexByHeight(height)).map(BlockIndex::getBlockHashs).orElse(null);
+        if (CollectionUtils.isNotEmpty(list)) {
+            Set<String> set = new HashSet<>(list);
+            inventory.setHashs(set);
+        }
+        messageCenter.broadcast(new String[]{sourceId}, inventory);
+        LOGGER.info("after persisted block, broadcast block : " + inventory);
     }
 }

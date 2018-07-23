@@ -52,9 +52,9 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
         Inventory data = request.getData();
         String sourceId = request.getSourceId();
         long height = data.getHeight();
-        Set<String> hashs = data.getHashs();
+        Set<String> hashes = data.getHashs();
         if (height <= blockChainService.getMaxHeight() + 1L) {
-            hashs.forEach(hash -> requestRecord.get(hash, v -> {
+            hashes.forEach(hash -> requestRecord.get(hash, v -> {
                 if (!blockChainService.isExistBlock(hash)) {
                     BlockRequest blockRequest = new BlockRequest(height, hash);
                     messageCenter.unicast(sourceId, blockRequest);
@@ -62,7 +62,7 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
                 }
                 return null;
             }));
-        } else if (height > blockChainService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashs)) {
+        } else if (height > blockChainService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashes)) {
             eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
         }
     }
