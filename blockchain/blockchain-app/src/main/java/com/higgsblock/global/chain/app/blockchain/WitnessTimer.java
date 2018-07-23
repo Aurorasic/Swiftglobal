@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  **/
 @Component
 @Slf4j
-public class WitnessTimerProcessor implements IEventBusListener {
+public class WitnessTimer implements IEventBusListener {
 
     public static long initTime;
     public static long currHeight;

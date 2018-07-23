@@ -96,7 +96,7 @@ public class BlockProcessor {
     private TransactionIndexService transactionIndexService;
 
     @Autowired
-    private WitnessTimerProcessor witnessTimerProcessor;
+    private WitnessTimer witnessTimer;
 
     @Autowired
     private MinerScoreStrategy minerScoreStrategy;
@@ -680,7 +680,7 @@ public class BlockProcessor {
         boolean minerPermission = nodeProcessor.checkProducer(block);
         if (!minerPermission) {
             LOGGER.info("the miner can not package the height block, height={}, hash={}", block.getHeight(), blockHash);
-            boolean isGuarderBlock = witnessTimerProcessor.acceptBlock(block);
+            boolean isGuarderBlock = witnessTimer.acceptBlock(block);
             LOGGER.info("verify witness timer block is sure {} block hash={}", isGuarderBlock, block.getHash());
             if (!isGuarderBlock) {
                 LOGGER.info("verify witness timer block is accept {} ", isGuarderBlock);
