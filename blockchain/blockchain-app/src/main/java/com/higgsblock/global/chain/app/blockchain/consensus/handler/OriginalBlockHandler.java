@@ -71,7 +71,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             return false;
         }
         if (voteService.isExistInBlockCache(height, blockHash)) {
-            LOGGER.error("this block is exist in block cache, height={}, hash={}", height, blockHash);
+            LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
             return false;
         }
         if (blockChainService.isExistBlock(blockHash)) {
