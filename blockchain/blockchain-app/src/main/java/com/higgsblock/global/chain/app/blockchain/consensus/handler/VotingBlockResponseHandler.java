@@ -65,7 +65,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         }
         int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
         if (block.getTransactions().size() < minTransactionNum) {
-            LOGGER.error("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
+            LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
             return false;
         }
         if (voteService.isExistInBlockCache(height, blockHash)) {
@@ -73,26 +73,26 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             return false;
         }
         if (blockChainService.isExistBlock(blockHash)) {
-            LOGGER.error("the block is already on the chain, height={}, hash={}", height, blockHash);
+            LOGGER.info("the block is already on the chain, height={}, hash={}", height, blockHash);
             return false;
         }
         long maxHeight = blockChainService.getMaxHeight();
         if (height <= maxHeight) {
-            LOGGER.error("the height is already on the chain, height={}, hash={}", height, blockHash);
+            LOGGER.info("the height is already on the chain, height={}, hash={}", height, blockHash);
             return false;
         }
         if (!blockChainService.isExistBlock(prevBlockHash)) {
-            LOGGER.error("the prev block is not on the chain, height={}, hash={},prevHash ", height, blockHash, prevBlockHash);
+            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash ", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
         boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
         if (!isDposMiner) {
-            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
+            LOGGER.error("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {
-                LOGGER.info("can not accept this block, height={}, hash={} ", height, blockHash);
+                LOGGER.error("can not accept this block, height={}, hash={} ", height, blockHash);
                 return false;
             }
         }
