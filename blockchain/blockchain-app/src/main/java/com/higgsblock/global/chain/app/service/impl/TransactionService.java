@@ -94,8 +94,6 @@ public class TransactionService implements ITransactionService {
                     LOGGER.error("Invalidate Coinbase transaction");
                     return false;
                 }
-                //todo kongyu 2018-7-22 遇到coinbase直接return了？后面的tx还需要校验！！！
-                return true;
             }
             //step2 valid tx business info
             if (!verifyTransactionInputAndOutputInfo(transactions.get(index), block)) {
