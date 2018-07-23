@@ -288,10 +288,6 @@ public class VoteService implements IEventBusListener, IVoteService {
                     }
                 });
             });
-            if (leaderVotes.isEmpty()) {
-                LOGGER.info("leader votes has no new vote ,version={},voteHeight", version, height);
-                continue;
-            }
             leaderVotes.forEach(vote -> {
                 if (checkProofAndPreVote(vote)) {
                     this.voteTable.addVote(vote);
