@@ -262,6 +262,7 @@ public class VoteService implements IEventBusListener, IVoteService {
         for (int version = 1; version <= versionSize; version++) {
             Map<String, Map<String, Vote>> newRows = otherVoteTable.getVoteMapOfPubKeyByVersion(version);
             if (MapUtils.isEmpty(newRows)) {
+                LOGGER.info("current version has no vote ,version={},voteHeight", version, height);
                 return;
             }
             if (version > 1 && otherVoteTable.getVoteMapOfPubKeyByVersion(version - 1).size() < MIN_VOTE) {
@@ -288,7 +289,8 @@ public class VoteService implements IEventBusListener, IVoteService {
                 });
             });
             if (leaderVotes.isEmpty()) {
-                return;
+                LOGGER.info("leader votes has no new vote ,version={},voteHeight", version, height);
+                continue;
             }
             leaderVotes.forEach(vote -> {
                 if (checkProofAndPreVote(vote)) {
@@ -300,8 +302,8 @@ public class VoteService implements IEventBusListener, IVoteService {
                     this.voteTable.addVote(vote);
                 }
             });
-            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize && collectionVoteSign(version, this.height)) {
-                return;
+            if (this.voteTable.getARowVoteSize(version) > startARowVoteSize) {
+                collectionVoteSign(version, this.height);
             }
         }
         if (voteTable.getAllVoteSize() > startAllVoteSize) {
