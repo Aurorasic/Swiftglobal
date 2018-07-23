@@ -8,7 +8,6 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IOriginalBlockService;
-import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -36,8 +35,6 @@ public class MiningListener implements IEventBusListener {
     private PeerManager peerManager;
     @Autowired
     private IDposService dposService;
-    @Autowired
-    private IVoteService voteService;
 
     @Autowired
     private BlockIndexService blockIndexService;
