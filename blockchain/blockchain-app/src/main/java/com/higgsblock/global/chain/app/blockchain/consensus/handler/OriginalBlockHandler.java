@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -42,6 +43,9 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Autowired
     private EventBus eventBus;
+
+    @Autowired
+    private WitnessTimer witnessTimer;
 
     @Override
     protected boolean check(SocketRequest<OriginalBlock> request) {
@@ -86,8 +90,8 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         }
         boolean isLuckyMiner = blockChainService.isLuckyMiner(minerAddress, prevBlockHash);
         if (!isLuckyMiner) {
-            boolean isGuarder = blockChainService.isGuarder(minerAddress, prevBlockHash);
-            if (!isGuarder) {
+            boolean acceptBlock = witnessTimer.acceptBlock(block);
+            if (!acceptBlock) {
                 return false;
             }
         }

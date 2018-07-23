@@ -111,7 +111,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             return;
         }
         LOGGER.info("add VotingBlockResponse height={}, hash={}", block.getHeight(), block.getHash());
-        voteService.addOriginalBlock(block);
+        voteService.addVotingBlock(block);
         messageCenter.dispatchToWitnesses(votingBlockResponse);
     }
 }

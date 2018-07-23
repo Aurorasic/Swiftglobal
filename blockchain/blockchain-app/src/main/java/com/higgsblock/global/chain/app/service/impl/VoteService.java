@@ -98,6 +98,11 @@ public class VoteService implements IEventBusListener, IVoteService {
     }
 
     @Override
+    public synchronized void addVotingBlock(Block block) {
+        addOriginalBlock(block);
+    }
+
+    @Override
     public synchronized void addOriginalBlock(Block block) {
         if (block == null) {
             return;

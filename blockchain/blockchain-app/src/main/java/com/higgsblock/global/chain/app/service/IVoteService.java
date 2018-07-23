@@ -36,6 +36,13 @@ public interface IVoteService {
     void addOriginalBlock(Block block);
 
     /**
+     * received new Voting Block from other witness
+     *
+     * @param block the block without witness sing
+     */
+    void addVotingBlock(Block block);
+
+    /**
      * received VoteTable from other witness
      *
      * @param otherVoteTable the voteTable to merge
