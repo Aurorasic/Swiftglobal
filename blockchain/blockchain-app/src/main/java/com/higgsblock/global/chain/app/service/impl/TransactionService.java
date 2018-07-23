@@ -477,7 +477,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
         //verify reward count
-        if (!validateWitnessRewards(outputs, rewards.getTopTenSingleWitnessMoney(), rewards.getLastWitnessMoney())) {
+        if (!validateRewards(outputs, rewards)) {
             LOGGER.info("Validate witness reward failed");
             return false;
         }
@@ -587,20 +587,20 @@ public class TransactionService implements ITransactionService {
     /**
      * validate witness rewards
      *
-     * @param outputs                  witness reward  outputs
-     * @param topTenSingleWitnessMoney 10 of 11   reward
-     * @param lastWitnessMoney         1 of 11    reward
+     * @param outputs witness reward  outputs
+     * @param rewards
      * @return if count outputs money == （topTenSingleWitnessMoney*10+lastWitnessMoney） return true else false
      */
-    private boolean validateWitnessRewards(List<TransactionOutput> outputs, Money topTenSingleWitnessMoney, Money lastWitnessMoney) {
-
-        Money witnessTotalMoney = new Money("0");
+    private boolean validateRewards(List<TransactionOutput> outputs, Rewards rewards) {
+        Money outputsTotalMoney = new Money("0");
         outputs.forEach(output -> {
-            witnessTotalMoney.add(output.getMoney());
+            outputsTotalMoney.add(output.getMoney());
         });
-        Money countWitnessMoney = new Money(topTenSingleWitnessMoney.getValue()).multiply(witnessService.getWitnessSize() - 1).add(lastWitnessMoney);
+        Money minerAndWitnessTotalMoney = new Money("0");
+        Money countWitnessMoney = new Money(rewards.getTopTenSingleWitnessMoney().getValue()).multiply(witnessService.getWitnessSize() - 1).add(rewards.getLastWitnessMoney());
+        minerAndWitnessTotalMoney = countWitnessMoney.add(rewards.getMinerTotal());
 
-        return countWitnessMoney.compareTo(witnessTotalMoney) == 0;
+        return minerAndWitnessTotalMoney.compareTo(outputsTotalMoney) == 0;
     }
 
     /**
