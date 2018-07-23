@@ -88,7 +88,7 @@ public class VoteService implements IEventBusListener, IVoteService {
         LOGGER.info("process event: {}", event);
         SystemStatus state = event.getSystemStatus();
         if (SystemStatus.RUNNING == state) {
-            initWitnessTask(blockChainService.getMaxHeight() + 1);
+            initWitnessTask(blockChainService.getMaxHeight() + 1L);
         }
     }
 
