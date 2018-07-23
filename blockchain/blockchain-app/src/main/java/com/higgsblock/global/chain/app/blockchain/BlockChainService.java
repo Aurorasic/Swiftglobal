@@ -34,7 +34,7 @@ public class BlockChainService implements IBlockChainService {
     private IWitnessService witnessService;
 
     @Autowired
-    private WitnessTimerProcessor witnessTimerProcessor;
+    private WitnessTimer witnessTimer;
 
     @Override
     public boolean isLuckyMiner(String address, String preBlockHash) {
@@ -116,8 +116,12 @@ public class BlockChainService implements IBlockChainService {
         }
 
         // 2.check the guarder permission
-        result = witnessTimerProcessor.acceptBlock(block);
-        return result;
+        result = witnessTimer.acceptBlock(block);
+        if (result) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override

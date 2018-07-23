@@ -36,6 +36,8 @@ public class TransactionService implements ITransactionService {
      */
     private static final int MIN_OUTPUT_SIZE = 11 + 1;
 
+    private static final int TRANSACTION_NUMBER = 2;
+
     @Autowired
     private TransactionCacheManager txCacheManager;
 
@@ -75,28 +77,23 @@ public class TransactionService implements ITransactionService {
         }
 
         //step2 valid transaction size
-        int size = transactions.size();
-        if (1 >= size) {
-            LOGGER.error("transactions is less than two, block_hash={}", block.getHash());
+        int tx_number = transactions.size();
+        if (TRANSACTION_NUMBER > tx_number) {
+            LOGGER.error("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
         //step3 valid info
-        for (int index = 0; index < size; index++) {
+        for (int index = 0; index < tx_number; index++) {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 valid tx isCoinBase
             if (isCoinBaseTx) {
-                //todo kongyu 2018-7-22 建议放到validCoinBaseTx一起校验
-                if (!transactions.get(index).isEmptyInputs()) {
-                    LOGGER.error("Invalidate Coinbase transaction");
-                    return false;
-                }
                 if (!validCoinBaseTx(transactions.get(index), block)) {
                     LOGGER.error("Invalidate Coinbase transaction");
                     return false;
                 }
+                continue;
             }
-            //todo kongyu 2018-7-22 tx size大小可以单独放出来校验--提出一个方法
             //step2 valid tx business info
             if (!verifyTransactionInputAndOutputInfo(transactions.get(index), block)) {
                 return false;
@@ -254,12 +251,11 @@ public class TransactionService implements ITransactionService {
 
     public boolean verifyTransactionInputAndOutputInfo(Transaction tx, Block block) {
         if (null == tx) {
-            LOGGER.error("transaction is null");
+            LOGGER.info("transaction is null");
             return false;
         }
-        //todo kongyu 2018-7-22 版本校验可以单独提出一个方法
-        int version = tx.getVersion();
-        if (version < 0) {
+        if (!tx.valid()) {
+            LOGGER.info("transaction is valid error");
             return false;
         }
         List<TransactionInput> inputs = tx.getInputs();
@@ -435,6 +431,10 @@ public class TransactionService implements ITransactionService {
      * @return validate success return true else false
      */
     public boolean validCoinBaseTx(Transaction tx, Block block) {
+        if (!tx.isEmptyInputs()) {
+            LOGGER.error("Invalidate Coinbase transaction");
+            return false;
+        }
         List<TransactionOutput> outputs = tx.getOutputs();
         if (CollectionUtils.isEmpty(outputs)) {
             LOGGER.info("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());

@@ -73,7 +73,6 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 Block nextBlock = nextBlockFullInfo.getBlock();
                 long nextHeight = nextBlock.getHeight();
                 String nextBlockHash = nextBlock.getHash();
-                int nextVersion = nextBlockFullInfo.getVersion();
                 LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
 
@@ -84,7 +83,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                     remove(nextBlockHash);
                 }
 
-                boolean success = blockService.persistBlockAndIndex(nextBlock, nextVersion);
+                boolean success = blockService.persistBlockAndIndex(nextBlock);
                 LOGGER.info("orphan manager persisted block all info, success={},height={},block={}",
                         success, nextHeight, nextBlockHash);
             }

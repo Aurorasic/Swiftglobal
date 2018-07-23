@@ -31,6 +31,7 @@ public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
     private static final int EXTRA_LIMITED_SIZE_UNIT = 1024 * 10;
+    private static final int INIT_VERSION = 0;
 
     private int version;
 
@@ -63,6 +64,10 @@ public class Transaction extends BaseSerializer {
     private String creatorPubKey;
 
     public boolean valid() {
+        
+        if (version < INIT_VERSION) {
+            return false;
+        }
 
         if (StringUtils.isEmpty(hash)) {
             return false;

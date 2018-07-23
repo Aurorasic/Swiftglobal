@@ -4,8 +4,8 @@ import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -28,9 +28,9 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     private IBlockChainService blockChainService;
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
     @Autowired
-    private BlockIndexService blockIndexService;
+    private IBlockIndexService blockIndexService;
     @Autowired
     private MessageCenter messageCenter;
     @Autowired
@@ -98,7 +98,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         Block data = request.getData();
         long height = data.getHeight();
         String hash = data.getHash();
-        boolean success = blockService.persistBlockAndIndex(data, data.getVersion());
+        boolean success = blockService.persistBlockAndIndex(data);
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
         if (success) {
             broadcastInventory(request);
