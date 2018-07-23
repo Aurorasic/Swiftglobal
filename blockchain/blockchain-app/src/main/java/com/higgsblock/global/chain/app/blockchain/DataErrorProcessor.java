@@ -27,9 +27,6 @@ public class DataErrorProcessor {
     @Autowired
     private BlockService blockService;
 
-//    @Autowired
-//    private BlockProcessor blockProcessor;
-
     @Autowired
     private IBlockRepository blockRepository;
 
