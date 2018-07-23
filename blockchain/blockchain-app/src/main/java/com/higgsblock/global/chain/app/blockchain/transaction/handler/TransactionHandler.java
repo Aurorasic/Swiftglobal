@@ -34,7 +34,7 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
             LOGGER.info("Size of the transaction is illegal.");
             return false;
         }
-        return false;
+        return true;
     }
 
     @Override
