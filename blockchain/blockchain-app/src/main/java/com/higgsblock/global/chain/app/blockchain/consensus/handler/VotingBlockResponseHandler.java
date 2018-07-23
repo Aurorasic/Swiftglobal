@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -11,6 +12,7 @@ import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +43,8 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
 
     @Autowired
     private EventBus eventBus;
+    @Autowired
+    private WitnessTimer witnessTimer;
 
     @Override
     protected boolean check(SocketRequest<VotingBlockResponse> request) {
@@ -54,7 +58,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();
-        String minerAddress = block.getPubKey();
+        String pubKey = block.getPubKey();
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
@@ -83,10 +87,12 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isLuckyMiner = blockChainService.isLuckyMiner(minerAddress, prevBlockHash);
+        boolean isLuckyMiner = blockChainService.isLuckyMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
         if (!isLuckyMiner) {
-            boolean isGuarder = blockChainService.isGuarder(minerAddress, prevBlockHash);
-            if (!isGuarder) {
+            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
+            boolean acceptBlock = witnessTimer.acceptBlock(block);
+            if (!acceptBlock) {
+                LOGGER.info("can not accept this block, height={}, hash={} ", height, blockHash);
                 return false;
             }
         }
