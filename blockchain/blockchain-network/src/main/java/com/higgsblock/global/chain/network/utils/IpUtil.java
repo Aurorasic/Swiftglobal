@@ -125,6 +125,7 @@ public final class IpUtil {
             ip = getLocalIp();
         }
 
+        LOGGER.info("localIp={}", ip);
         return ip;
     }
 

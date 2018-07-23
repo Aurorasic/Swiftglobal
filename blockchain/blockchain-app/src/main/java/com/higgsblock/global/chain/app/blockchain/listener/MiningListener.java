@@ -29,7 +29,7 @@ import java.util.concurrent.*;
 public class MiningListener implements IEventBusListener {
 
     @Autowired
-    private IOriginalBlockService originalBlockProcessor;
+    private IOriginalBlockService originalBlockService;
     @Autowired
     private BlockService blockService;
     @Autowired
@@ -141,7 +141,7 @@ public class MiningListener implements IEventBusListener {
                 LOGGER.warn("the expect height={}, but {}", expectHeight, block.getHeight());
                 return true;
             }
-            originalBlockProcessor.sendOriginBlockToWitness(block);
+            originalBlockService.sendOriginBlockToWitness(block);
             return true;
         } catch (Exception e) {
             LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);
