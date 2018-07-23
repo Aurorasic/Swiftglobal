@@ -171,7 +171,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             Set<Vote> leaderVotes = new HashSet<>(11);
             Set<Vote> followerVotes = new HashSet<>(11);
             set.forEach(vote -> {
-                if (isExistInVoteCache(vote)) {
+                if (isExist(vote)) {
                     return;
                 }
                 if (vote.isLeaderVote()) {
@@ -230,7 +230,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     if (null == vote) {
                         return;
                     }
-                    if (isExistInVoteCache(vote)) {
+                    if (isExist(vote)) {
                         return;
                     }
                     voteCache.get(height, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
@@ -278,7 +278,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     return;
                 }
                 v.values().forEach(vote -> {
-                    if (null == vote || isExistInVoteCache(vote)) {
+                    if (null == vote || isExist(vote)) {
                         return;
                     }
                     if (vote.isLeaderVote()) {
@@ -442,7 +442,7 @@ public class VoteService implements IEventBusListener, IVoteService {
         return proof && pre;
     }
 
-    private boolean isExistInVoteCache(Vote vote) {
+    private boolean isExist(Vote vote) {
         return Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
                 .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false);
     }
