@@ -76,7 +76,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         }
 
         //6.check: orphan block
-        boolean isOrphanBlock = blockChainService.isExistPreBlock(hash);
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
         if (isOrphanBlock) {
             BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
