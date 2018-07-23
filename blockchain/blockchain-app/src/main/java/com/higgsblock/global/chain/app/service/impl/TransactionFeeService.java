@@ -83,7 +83,7 @@ public class TransactionFeeService implements ITransactionFeeService {
         Rewards rewards = new Rewards();
         rewards.setTotalFee(totalFee);
         rewards.setTotalMoney(totalMoney);
-        LOGGER.info("totalFee:{}", totalFee);
+        LOGGER.info("totalFee:{}", totalFee.getValue());
 
         //count miner rewards
         minerTotal = new Money(MINER_REWARDS_RATION.getValue()).multiply(totalFee);
