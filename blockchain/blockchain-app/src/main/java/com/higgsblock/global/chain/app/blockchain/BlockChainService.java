@@ -3,9 +3,11 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -13,6 +15,8 @@ import java.util.List;
  * @author yuguojia
  * @date 2018-07-20
  */
+@Service
+@Slf4j
 public class BlockChainService implements IBlockChainService {
 
     @Autowired
