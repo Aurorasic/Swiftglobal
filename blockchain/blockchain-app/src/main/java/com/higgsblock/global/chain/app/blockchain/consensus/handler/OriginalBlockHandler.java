@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,8 +89,8 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isLuckyMiner = blockChainService.isLuckyMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
-        if (!isLuckyMiner) {
+        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
+        if (!isDposMiner) {
             LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {

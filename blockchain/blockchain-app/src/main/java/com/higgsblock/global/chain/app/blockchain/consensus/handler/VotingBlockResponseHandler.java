@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
@@ -86,8 +87,8 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isLuckyMiner = blockChainService.isLuckyMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
-        if (!isLuckyMiner) {
+        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
+        if (!isDposMiner) {
             LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {
