@@ -82,7 +82,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             LOGGER.error("the height is already on the chain, height={}, hash={}", height, blockHash);
             return false;
         }
-        if (!blockChainService.isExistPreBlock(blockHash)) {
+        if (!blockChainService.isExistBlock(prevBlockHash)) {
             LOGGER.error("the prev block is not on the chain, height={}, hash={},prevHash", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
