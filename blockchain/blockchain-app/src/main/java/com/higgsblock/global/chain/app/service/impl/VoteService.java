@@ -7,11 +7,14 @@ import com.google.common.collect.Table;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -51,6 +54,9 @@ public class VoteService implements IEventBusListener, IVoteService {
     @Autowired
     private IWitnessService witnessService;
 
+    @Autowired
+    private IBlockChainService blockChainService;
+
     private Cache<Long, Map<Integer, Set<Vote>>> voteCache = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
@@ -73,7 +79,17 @@ public class VoteService implements IEventBusListener, IVoteService {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
+        LOGGER.info("process event: {}", event);
         initWitnessTask(event.getHeight() + 1L);
+    }
+
+    @Subscribe
+    public void process(SystemStatusEvent event) {
+        LOGGER.info("process event: {}", event);
+        SystemStatus state = event.getSystemStatus();
+        if (SystemStatus.RUNNING == state) {
+            initWitnessTask(blockChainService.getMaxHeight() + 1);
+        }
     }
 
     @Override

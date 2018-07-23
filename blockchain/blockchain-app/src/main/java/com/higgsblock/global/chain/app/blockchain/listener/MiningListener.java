@@ -75,7 +75,6 @@ public class MiningListener implements IEventBusListener {
             } else {
                 process(lastBlockIndex.getFirstBlockHash(), lastBlockIndex.getHeight());
             }
-            voteService.initWitnessTask(lastBlockIndex.getHeight() + 1);
         } else {
             isMining = false;
             LOGGER.info("The system state is changed to {}, stop mining", state);
