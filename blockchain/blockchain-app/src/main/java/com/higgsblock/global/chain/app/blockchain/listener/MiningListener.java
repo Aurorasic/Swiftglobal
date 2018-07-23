@@ -3,12 +3,12 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.OriginalBlockProcessor;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.service.IDposService;
+import com.higgsblock.global.chain.app.service.IOriginalBlockService;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -29,7 +29,7 @@ import java.util.concurrent.*;
 public class MiningListener implements IEventBusListener {
 
     @Autowired
-    private OriginalBlockProcessor originalBlockProcessor;
+    private IOriginalBlockService originalBlockProcessor;
     @Autowired
     private BlockService blockService;
     @Autowired
@@ -37,7 +37,7 @@ public class MiningListener implements IEventBusListener {
     @Autowired
     private IDposService dposService;
     @Autowired
-    private VoteService voteService;
+    private IVoteService voteService;
 
     @Autowired
     private BlockIndexService blockIndexService;

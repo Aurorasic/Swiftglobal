@@ -3,16 +3,14 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
-import com.higgsblock.global.chain.app.blockchain.consensus.sign.service.VoteService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
 
 /**
  * @author yuanjiantao
@@ -26,7 +24,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteService voteService;
+    private IVoteService voteService;
 
     @Override
     protected boolean check(SocketRequest<VotingBlockRequest> request) {
@@ -43,7 +41,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
         VotingBlockRequest data = request.getData();
         LOGGER.info("received originalBlockRequest from {} with data {}", sourceId, data);
         data.getBlockHashes().forEach(hash -> {
-            Block block = voteService.getBlockCache().get(voteService.getHeight(), k -> new HashMap<>()).get(hash);
+            Block block = voteService.getVotingBlock(hash);
             if (null != block) {
                 messageCenter.unicast(sourceId, new VotingBlockResponse(block));
             }

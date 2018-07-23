@@ -1,8 +1,10 @@
-package com.higgsblock.global.chain.app.blockchain.consensus.sign.service;
+package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.service.IOriginalBlockService;
+import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +18,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
-public class OriginalBlockProcessor {
+public class OriginalBlockService implements IOriginalBlockService {
 
     @Autowired
     private MessageCenter messageCenter;
 
     @Autowired
-    private VoteService voteService;
+    private IVoteService voteService;
 
     @Autowired
     private KeyPair keyPair;
@@ -30,9 +32,7 @@ public class OriginalBlockProcessor {
     @Autowired
     private IWitnessService witnessService;
 
-    /**
-     * Creator sends the signed block to other witnesses for resigning.
-     */
+    @Override
     public void sendOriginBlockToWitness(Block block) {
         LOGGER.info("send origin block to witness,height={},hash={}", block.getHeight(), block.getHash());
         OriginalBlock originalBlock = new OriginalBlock();
