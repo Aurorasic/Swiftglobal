@@ -86,6 +86,7 @@ public class TransactionService implements ITransactionService {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 valid tx isCoinBase
             if (isCoinBaseTx) {
+                //todo kongyu 2018-7-22 建议放到validCoinBaseTx一起校验
                 if (!transactions.get(index).isEmptyInputs()) {
                     LOGGER.error("Invalidate Coinbase transaction");
                     return false;
@@ -95,6 +96,7 @@ public class TransactionService implements ITransactionService {
                     return false;
                 }
             }
+            //todo kongyu 2018-7-22 tx size大小可以单独放出来校验--提出一个方法
             //step2 valid tx business info
             if (!verifyTransactionInputAndOutputInfo(transactions.get(index), block)) {
                 return false;
@@ -255,6 +257,7 @@ public class TransactionService implements ITransactionService {
             LOGGER.error("transaction is null");
             return false;
         }
+        //todo kongyu 2018-7-22 版本校验可以单独提出一个方法
         int version = tx.getVersion();
         if (version < 0) {
             return false;
