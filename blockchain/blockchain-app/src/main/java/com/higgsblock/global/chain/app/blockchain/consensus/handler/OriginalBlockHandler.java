@@ -59,7 +59,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();
-        String minerAddress = block.getPubKey();
+        String pubKey = block.getPubKey();
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
@@ -88,8 +88,8 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
-        boolean isDposMiner = blockChainService.isDposMiner(minerAddress, prevBlockHash);
-        if (!isDposMiner) {
+        boolean isLuckyMiner = blockChainService.isLuckyMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
+        if (!isLuckyMiner) {
             LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {
