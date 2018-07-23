@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.api.vo.ResponseData;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockProcessor;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import org.apache.commons.collections.CollectionUtils;
@@ -32,7 +32,7 @@ public class BlockApi {
     private static final int MAX_LIMIT = 200;
 
     @Autowired
-    private BlockProcessor blockProcessor;
+    private IBlockChainService blockChainService;
 
     @Autowired
     private BlockService blockService;
@@ -53,13 +53,13 @@ public class BlockApi {
                     "pull blocks is " + MAX_LIMIT + "," + " starting from 1");
         }
         //curren max block height
-        long currenMaxHeight = blockProcessor.getMaxHeight();
+        long currenMaxHeight = blockChainService.getMaxHeight();
         if (fromHeight > currenMaxHeight) {
             return new ResponseData<>(RespCodeEnum.PARAM_INVALID, "It's already the longest chain height.");
         }
 
         //The maximum height index of the main chain has been confirmed
-        BlockIndex bestMaxBlockIndex = blockProcessor.getLastBestBlockIndex();
+        BlockIndex bestMaxBlockIndex = blockService.getLastBestBlockIndex();
         if (bestMaxBlockIndex == null) {
             return new ResponseData<>(RespCodeEnum.HASH_NOT_EXIST, "not found main chain block height and blockHash");
         }
@@ -84,7 +84,7 @@ public class BlockApi {
         //This variable is equal to fromHeight plus limit
         long resultHeight = fromHeight + limit;
         for (long height = fromHeight; height < resultHeight; height++) {
-            List<Block> blocks = blockProcessor.getBlocksByHeight(height);
+            List<Block> blocks = blockChainService.getBlocks(height);
             if (CollectionUtils.isNotEmpty(blocks)) {
                 resultBlocks.addAll(blocks);
             }
@@ -111,7 +111,7 @@ public class BlockApi {
 
     @RequestMapping("/maxHeight")
     public ResponseData<Long> getMaxHeight() {
-        long maxHeight = blockProcessor.getMaxHeight();
+        long maxHeight = blockChainService.getMaxHeight();
         ResponseData<Long> responseData = new ResponseData<Long>(RespCodeEnum.SUCCESS, "success");
         responseData.setData(maxHeight);
         return responseData;
