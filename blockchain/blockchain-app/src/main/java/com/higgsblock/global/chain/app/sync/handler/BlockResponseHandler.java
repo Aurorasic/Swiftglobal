@@ -95,7 +95,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         Block data = blockResponse.getBlock();
         long height = data.getHeight();
         String hash = data.getHash();
-        boolean success = blockService.persistBlockAndIndex(data, data.getVersion());
+        boolean success = blockService.persistBlockAndIndex(data);
 
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
     }

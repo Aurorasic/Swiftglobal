@@ -210,8 +210,6 @@ public class BlockService implements IBlockService {
         return getBlockByHash(bestBlockHash);
     }
 
-
-    @Override
     public void saveBlock(Block block) throws Exception {
 
         BlockEntity blockEntity = new BlockEntity();
@@ -433,8 +431,9 @@ public class BlockService implements IBlockService {
         return block;
     }
 
+    @Override
     @Transactional(rollbackFor = Exception.class)
-    public synchronized boolean persistBlockAndIndex(Block block, int version) {
+    public synchronized boolean persistBlockAndIndex(Block block) {
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
 

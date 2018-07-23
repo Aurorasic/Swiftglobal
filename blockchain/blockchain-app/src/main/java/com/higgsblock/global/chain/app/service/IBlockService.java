@@ -21,7 +21,7 @@ public interface IBlockService {
     boolean isExistInDB(long height, String blockHash);
 
     /**
-     * Check if the block exist in the database
+     * Check if the block exist in the database and orphan block cache
      *
      * @param block the block
      * @return boolean
@@ -71,13 +71,12 @@ public interface IBlockService {
     Block getBestBlockByHeight(long height);
 
     /**
-     * Save the block, block index , transaction index, utxo and scores
+     * Save the block, block index , transaction index, utxo and scores, all of relation of block.
      *
-     * @param block the block
-     * @return block
-     * @throws Exception
+     * @param block
+     * @return
      */
-    void saveBlock(Block block) throws Exception;
+    boolean persistBlockAndIndex(Block block);
 
     /**
      * Check the block numbers
