@@ -83,13 +83,6 @@ public class BlockChainService implements IBlockChainService {
     }
 
     @Override
-    public boolean isExistPreBlock(String blockHash) {
-        Block block = getBlock(blockHash);
-        boolean result = blockService.preIsExistInDB(block);
-        return result;
-    }
-
-    @Override
     public boolean isExistBlock(String blockHash) {
         Block block = blockService.getBlockByHash(blockHash);
         return null != block;
