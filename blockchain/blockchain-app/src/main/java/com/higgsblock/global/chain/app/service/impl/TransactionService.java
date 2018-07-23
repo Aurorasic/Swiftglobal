@@ -258,6 +258,11 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("transaction is valid error");
             return false;
         }
+        TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(tx.getHash());
+        if (null != entity) {
+            LOGGER.info("transaction is already existed,this transaction hash ={}", tx.getHash());
+            return false;
+        }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
