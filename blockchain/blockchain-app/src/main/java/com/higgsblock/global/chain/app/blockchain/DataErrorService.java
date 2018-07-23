@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class DataErrorProcessor {
+public class DataErrorService {
 
     @Autowired
     private SystemStatusManager systemStatusManager;

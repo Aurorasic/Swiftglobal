@@ -56,7 +56,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         //2. check: base info
         boolean isBasicValid = blockChainService.checkBlockBasicInfo(block);
         if (!isBasicValid) {
-            LOGGER.error("error basic info block: ", block.getSimpleInfo());
+            LOGGER.error("error basic info block: {} ", block.getSimpleInfo());
             return false;
         }
 
@@ -70,14 +70,14 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         //4. check: producer stake
         boolean producerValid = blockChainService.checkBlockProducer(block);
         if (!producerValid) {
-            LOGGER.error("the block produce stack is error: ", block.getSimpleInfo());
+            LOGGER.error("the block produce stack is error: {} ", block.getSimpleInfo());
             return false;
         }
 
         //5.check: witness signatures
         boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
-            LOGGER.error("the block witness sig is error: ", block.getSimpleInfo());
+            LOGGER.error("the block witness sig is error:{} ", block.getSimpleInfo());
             return false;
         }
 
@@ -93,7 +93,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         //7. check: transactions
         boolean validTransactions = blockChainService.checkTransactions(block);
         if (!validTransactions) {
-            LOGGER.error("the block transactions are error: ", block.getSimpleInfo());
+            LOGGER.error("the block transactions are error: {}", block.getSimpleInfo());
             return false;
         }
         return true;
