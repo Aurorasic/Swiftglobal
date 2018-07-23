@@ -100,6 +100,9 @@ public class UTXOServiceProxy {
         if (preBlockHash == null) {
             List<String> lastHeightBlockHashs = blockIndexService.getLastHeightBlockHashs();
             for (String tmpPreBlockHash : lastHeightBlockHashs) {
+                if (isUsedOnUnconfirmedChain(tmpPreBlockHash, utxoKey)) {
+                    return null;
+                }
                 UTXO utxo = getUnconfirmedUTXORecurse(tmpPreBlockHash, utxoKey);
                 if (utxo != null) {
                     return utxo;
@@ -110,6 +113,9 @@ public class UTXOServiceProxy {
                 }
             }
         } else {
+            if (isUsedOnUnconfirmedChain(preBlockHash, utxoKey)) {
+                return null;
+            }
             UTXO utxo = getUnconfirmedUTXORecurse(preBlockHash, utxoKey);
             if (utxo != null) {
                 return utxo;
@@ -121,6 +127,15 @@ public class UTXOServiceProxy {
         }
 
         return null;
+    }
+
+    private boolean isUsedOnUnconfirmedChain(String preBlockHash, String utxoKey) {
+        Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
+        if (unconfirmedSpentUtxos.containsKey(utxoKey)) {
+            return true;
+        }
+        return false;
     }
 
     /**
