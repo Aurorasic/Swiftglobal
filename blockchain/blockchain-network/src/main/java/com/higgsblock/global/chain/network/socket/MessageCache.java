@@ -2,6 +2,8 @@ package com.higgsblock.global.chain.network.socket;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -25,8 +27,10 @@ public class MessageCache {
                 .build();
     }
 
-    public boolean isCached(String peerId, String messageHash) {
-        String key = peerId + ":" + messageHash;
+    public boolean isCached(String channelId, String message) {
+        String hash = Hashing.goodFastHash(128).hashString(message, Charsets.UTF_8).toString();
+
+        String key = channelId + ":" + hash;
         String value = cache.getIfPresent(key);
         if (null == value) {
             cache.put(key, key);

@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.net;
+package com.higgsblock.global.chain.app.net.handler;
 
 import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;

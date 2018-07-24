@@ -1,16 +1,15 @@
 package com.higgsblock.global.chain.network.socket;
 
 import com.higgsblock.global.chain.common.utils.ThreadFactoryUtils;
-import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.socket.connection.ServerChannelInitializer;
+import com.higgsblock.global.chain.network.config.SocketConfig;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,23 +25,18 @@ import java.util.concurrent.ThreadFactory;
 @Component
 @Slf4j
 public class Server {
+
+    @Autowired
+    private SocketConfig config;
+    @Autowired
+    private ChannelInitializer channelInitializer;
+
     private NioEventLoopGroup bossGroup;
-
     private NioEventLoopGroup workerGroup;
-
     private Channel serverChannel;
 
-    @Autowired
-    private PeerConfig config;
-
-    @Autowired
-    private ServerChannelInitializer serverChannelInitializer;
-
-    @Setter
-    private ServerConnectionHandler handler = new ServerConnectionHandler();
-
     /**
-     * Start as p2p server.
+     * Start as tcp server.
      */
     public synchronized void start() {
         if (isActive()) {
@@ -63,11 +57,10 @@ public class Server {
             bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
             bootstrap.handler(new LoggingHandler());
-            serverChannelInitializer.setHandler(handler);
-            bootstrap.childHandler(serverChannelInitializer);
+            bootstrap.childHandler(channelInitializer);
 
             LOGGER.info("Starting socket server");
-            int socketServerPort = config.getSocketPort();
+            int socketServerPort = config.getServerPort();
             serverChannel = bootstrap.bind(socketServerPort).addListener(channelFuture -> {
                 if (channelFuture.isSuccess()) {
                     LOGGER.info("Successfully bind local port : {}", socketServerPort);

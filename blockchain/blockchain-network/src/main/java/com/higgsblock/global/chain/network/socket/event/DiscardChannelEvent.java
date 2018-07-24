@@ -1,16 +1,20 @@
 package com.higgsblock.global.chain.network.socket.event;
 
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 /**
  * @author baizhengwen
  * @date 2018/2/28
  */
 @Data
-public class MessageEvent extends BaseSerializer {
+@AllArgsConstructor
+@NoArgsConstructor
+public class DiscardChannelEvent extends BaseSerializer {
 
-    protected String sourceId;
-    protected String content;
+    protected String channelId;
 
 }

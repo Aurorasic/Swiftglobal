@@ -2,8 +2,12 @@ package com.higgsblock.global.chain.app.common.message;
 
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
+import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
+import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.net.message.Hello;
+import com.higgsblock.global.chain.app.net.message.HelloAck;
+import com.higgsblock.global.chain.network.socket.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -23,7 +27,8 @@ public class MessageHandler implements InitializingBean {
 
     @Autowired
     private MessageFormatter formatter;
-
+    @Autowired
+    private ConnectionManager connectionManager;
     @Autowired
     private List<IMessageHandler<?>> handlerList;
 
@@ -63,10 +68,22 @@ public class MessageHandler implements InitializingBean {
         return false;
     }
 
-    public boolean accept(String sourceId, String message) {
+    public boolean accept(String channelId, String message) {
         try {
+            Connection connection = connectionManager.getConnectionByChannelId(channelId);
+            if (null == connection) {
+                return false;
+            }
+
             Object obj = formatter.parse(message);
-            return accept(new SocketRequest(sourceId, obj));
+
+            if (obj instanceof Hello || obj instanceof HelloAck) {
+                return accept(new SocketRequest(channelId, obj));
+            }
+
+            if (connection.isActivated()) {
+                return accept(new SocketRequest(connection.getPeerId(), obj));
+            }
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }

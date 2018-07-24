@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.net;
+package com.higgsblock.global.chain.app.net.formatter;
 
 import com.higgsblock.global.chain.app.common.formatter.BaseMessageFormatter;
 import com.higgsblock.global.chain.app.net.message.SyncPeers;

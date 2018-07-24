@@ -15,12 +15,15 @@ import org.apache.commons.lang.StringUtils;
 public enum MessageType {
 
     // ================ 000-099: base related =====================
+    HELLO("001"),
+    HELLO_ACK("002"),
     SYNC_PEERS("003"),
 
 
     // ================ 200-299: block related ====================
     BLOCK("200"),
     INVENTORY("201"),
+    GET_BLOCK("202"),
 
     // ================ 300-399: transaction related ==============
     TRANSACTION("300"),
@@ -32,9 +35,6 @@ public enum MessageType {
     // ================ 500-599: request and response =============
     MAX_HEIGHT_REQUEST("501"),
     MAX_HEIGHT_RESPONSE("502"),
-
-    GET_BLOCK("503"),
-    BLOCK_RESPONSE("504"),
 
     VOTING_BLOCK_REQUEST("505"),
     VOTING_BLOCK_RESPONSE("506");

@@ -1,11 +1,10 @@
 package com.higgsblock.global.chain.network.socket.handler;
 
-import com.higgsblock.global.chain.network.socket.message.BaseMessage;
+import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.SerializationUtils;
 import org.xerial.snappy.Snappy;
 
 import java.util.List;
@@ -17,7 +16,7 @@ import java.util.List;
  * @since 2/24/2018
  **/
 @Slf4j
-public class MessageCodecHandler extends ByteToMessageCodec<BaseMessage> {
+public class MessageCodecHandler extends ByteToMessageCodec<String> {
 
     private static final int BASIC_SIZE = 4;
 
@@ -28,9 +27,9 @@ public class MessageCodecHandler extends ByteToMessageCodec<BaseMessage> {
     private final static int DATA_MAX_SIZE = MAX_SIZE - 4;
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, BaseMessage message, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, String message, ByteBuf byteBuf) throws Exception {
         ByteBuf tempBuf = byteBuf.alloc().buffer();
-        byte[] data = SerializationUtils.serialize(message);
+        byte[] data = message.getBytes(Charsets.UTF_8);
         byte[] bytes = Snappy.compress(data);
         tempBuf.writeInt(bytes.length);
         tempBuf.writeBytes(bytes);
@@ -64,6 +63,6 @@ public class MessageCodecHandler extends ByteToMessageCodec<BaseMessage> {
         byte[] bytes = new byte[size];
         in.readBytes(bytes);
         byte[] data = Snappy.uncompress(bytes);
-        list.add(SerializationUtils.deserialize(data));
+        list.add(new String(data, Charsets.UTF_8));
     }
 }

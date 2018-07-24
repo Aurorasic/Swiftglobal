@@ -55,7 +55,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                 while (isRunning) {
                     try {
                         SocketRequest request = takeRequest();
-                        LOGGER.info("task request for processing; {}", request);
+                        LOGGER.info("take request for processing; {}", request);
 
                         boolean isValid = check(request);
                         if (isValid) {

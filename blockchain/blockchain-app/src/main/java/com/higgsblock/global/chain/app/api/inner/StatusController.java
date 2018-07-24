@@ -50,7 +50,7 @@ public class StatusController {
     public Object connections() {
         return connectionManager.getActivatedConnections().stream().map(connection -> {
             ConnectionVO info = new ConnectionVO();
-            info.setId(connection.getId());
+            info.setChannelId(connection.getChannelId());
             info.setPeerId(connection.getPeerId());
             info.setIp(connection.getIp());
             info.setPort(connection.getPort());

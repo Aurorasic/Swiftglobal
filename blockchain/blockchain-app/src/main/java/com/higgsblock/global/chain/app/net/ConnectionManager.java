@@ -6,12 +6,12 @@ import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import com.higgsblock.global.chain.network.socket.Client;
 import com.higgsblock.global.chain.network.socket.Server;
+import com.higgsblock.global.chain.network.socket.channel.ChannelManager;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.connection.ConnectionLevelEnum;
 import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-public class ConnectionManager implements InitializingBean {
+public class ConnectionManager {
     /**
      * Maximum number of l3-level connections a node can create as a client. The word "l3-level" means that
      * connection is not miner to witness, nor is witness to another witness.
@@ -106,18 +106,12 @@ public class ConnectionManager implements InitializingBean {
 
     @Autowired
     private Client client;
-
     @Autowired
     private Server server;
-
     @Autowired
     private PeerManager peerManager;
-
-    @Override
-    public void afterPropertiesSet() {
-        client.setHandler(new ClientHandler(peerManager, this));
-        server.setHandler(new ServerHandler(this));
-    }
+    @Autowired
+    private ChannelManager channelManager;
 
 
     /**
@@ -129,7 +123,7 @@ public class ConnectionManager implements InitializingBean {
         if (!canConnect(peer)) {
             return;
         }
-        client.connect(peer);
+        client.connect(peer.getIp(), peer.getSocketServerPort());
     }
 
     /**
@@ -226,34 +220,6 @@ public class ConnectionManager implements InitializingBean {
                 connection.isClient() == isClient && connection.getConnectionLevel() == connectionLevel).count();
     }
 
-    /**
-     * Create a connection.
-     *
-     * @param channel  channel attached to connection
-     * @param peer     remote node to connect to
-     * @param isClient this node is client or not
-     * @return new created connection
-     */
-    public Connection createConnection(NioSocketChannel channel, Peer peer, boolean isClient) {
-        if (contains(peer)) {
-            // Null indicates that new connection has not been created because an old one exists.
-            return null;
-        }
-
-        return connectionMap.computeIfAbsent(
-                channel.id().toString(), connectionId -> {
-                    Connection connection = new Connection(channel, peer, isClient);
-
-                    ConnectionLevelEnum connectionLevel = calculateConnectionLevel(
-                            peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(peer));
-                    connection.setConnectionLevel(connectionLevel);
-
-                    LOGGER.info("Created a connection, channelId={}, peerId={}, address={}, isClient={}, level={}",
-                            connectionId, peer.getId(), peer.getSocketAddress(), isClient, connectionLevel);
-                    return connection;
-                });
-    }
-
 
     /**
      * Remove connection.
@@ -264,16 +230,31 @@ public class ConnectionManager implements InitializingBean {
         if (connection == null) {
             return;
         }
+        String channelId = connection.getChannelId();
+        removeByChannelId(channelId);
+    }
 
-        if (connection.close()) {
-            String connectionId = connection.getId();
-            if (inPeerUnknownConnectionMap(connection)) {
-                peerUnknownConnectionMap.remove(connectionId);
-            } else {
-                connectionMap.remove(connectionId);
-            }
-            LOGGER.info("Connection {} has been removed", connectionId);
+    public void removeByChannelId(String channelId) {
+        Connection connection = peerUnknownConnectionMap.remove(channelId);
+        if (null != connection) {
+            connection.close();
         }
+        connection = connectionMap.remove(channelId);
+        if (null != connection) {
+            connection.close();
+        }
+        channelManager.discard(channelId);
+        LOGGER.info("Connection has been removed, channelId={}", channelId);
+    }
+
+    /**
+     * Remove connection by peer id.
+     *
+     * @param peerId peer id of connection to remove
+     */
+    public void removeByPeerId(String peerId) {
+        Connection connection = getConnectionByPeerId(peerId);
+        remove(connection);
     }
 
 
@@ -310,7 +291,7 @@ public class ConnectionManager implements InitializingBean {
      * @param isClient this node is client or not
      * @return new created connection
      */
-    public Connection createConnection(NioSocketChannel channel, boolean isClient) {
+    public Connection createConnection(Channel channel, boolean isClient) {
         return peerUnknownConnectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
             Connection connection = new Connection(channel, isClient);
 
@@ -319,21 +300,9 @@ public class ConnectionManager implements InitializingBean {
         });
     }
 
-    /**
-     * Process connection that received peer information.
-     *
-     * @param connection connection to process
-     * @param peer       peer information from client
-     */
-    public void receivePeer(Connection connection, Peer peer) {
-        if (!inPeerUnknownConnectionMap(connection)) {
-            return;
-        }
-
-        // Remove connection from pool if peer information from client is invalid.
-        if (peer == null || !peer.valid()) {
-            LOGGER.warn("Hello peer is invalid");
-            remove(connection);
+    public void active(String channelId, Peer peer) {
+        Connection connection = peerUnknownConnectionMap.get(channelId);
+        if (null == connection) {
             return;
         }
 
@@ -361,23 +330,14 @@ public class ConnectionManager implements InitializingBean {
         ConnectionLevelEnum connectionLevel = ConnectionManager.calculateConnectionLevel(
                 peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(peer));
 
+        // todo baizhengwen compute connection level
         if (levelAllowedAsServer(connectionLevel)) {
-            connection.setPeer(peer);
+            connection.activate(peer);
             connection.setConnectionLevel(connectionLevel);
             moveToConnectionMap(connection);
         } else {
             remove(connection);
         }
-    }
-
-    /**
-     * Check if connection is in temporary pool.
-     *
-     * @param connection connection to check
-     * @return true if connection is in temporary pool, false otherwise
-     */
-    private boolean inPeerUnknownConnectionMap(Connection connection) {
-        return peerUnknownConnectionMap.containsKey(connection.getId());
     }
 
     /**
@@ -406,8 +366,8 @@ public class ConnectionManager implements InitializingBean {
      * @param connection conncetion to move
      */
     private void moveToConnectionMap(Connection connection) {
-        connectionMap.putIfAbsent(connection.getId(), connection);
-        peerUnknownConnectionMap.remove(connection.getId());
+        connectionMap.putIfAbsent(connection.getChannelId(), connection);
+        peerUnknownConnectionMap.remove(connection.getChannelId());
     }
 
 
@@ -439,14 +399,12 @@ public class ConnectionManager implements InitializingBean {
         return getConnectionByPeerId(peer.getId());
     }
 
-    /**
-     * Remove connection by peer id.
-     *
-     * @param peerId peer id of connection to remove
-     */
-    public void remove(String peerId) {
-        Connection connection = getConnectionByPeerId(peerId);
-        remove(connection);
+    public Connection getConnectionByChannelId(String channelId) {
+        Connection connection = connectionMap.get(channelId);
+        if (null == connection) {
+            connection = peerUnknownConnectionMap.get(channelId);
+        }
+        return connection;
     }
 
     /**
@@ -480,9 +438,9 @@ public class ConnectionManager implements InitializingBean {
      */
     public void removePeerUnknownConnections() {
         peerUnknownConnectionMap.values().forEach(connection -> {
-            if (connection.waitPeerTimeout()) {
+            if (connection.isHandshakeTimeOut()) {
                 remove(connection);
-                LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", connection.getId());
+                LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", connection.getChannelId());
             }
         });
     }
@@ -498,7 +456,7 @@ public class ConnectionManager implements InitializingBean {
             ConnectionLevelEnum oldConnectionLevel = connection.getConnectionLevel();
             if (oldConnectionLevel != newConnectionLevel) {
                 connection.setConnectionLevel(newConnectionLevel);
-                LOGGER.info("Level of connection {} changes from {} to {}", connection.getId(), oldConnectionLevel, newConnectionLevel);
+                LOGGER.info("Level of connection {} changes from {} to {}", connection.getChannelId(), oldConnectionLevel, newConnectionLevel);
             }
         });
     }
@@ -651,7 +609,7 @@ public class ConnectionManager implements InitializingBean {
         LOGGER.info("Number of activated connections: " + activeConnections.size());
         activeConnections.forEach(connection ->
                 LOGGER.info("Connection has been activated. Peer {}, channel id {}, remote address {}",
-                        connection.getPeerId(), connection.getId(), connection.getPeer().getSocketAddress()));
+                        connection.getPeerId(), connection.getChannelId(), connection.getPeer().getSocketAddress()));
 
         if (done) {
             return true;

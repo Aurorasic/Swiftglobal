@@ -3,12 +3,11 @@ package com.higgsblock.global.chain.network.socket.connection;
 import com.google.common.collect.Queues;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.socket.message.BaseMessage;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.util.concurrent.BlockingQueue;
@@ -23,16 +22,12 @@ import java.util.concurrent.ExecutorService;
 @Slf4j
 public class Connection {
     /**
-     * Keep connection not deletable within the timeout after setting context.
+     * Keep connection not deletable within the timeout after created.
      */
-    private static final long WAIT_PEER_TIMEOUT = 30 * 1000;
+    private static final long HANDSHAKE_TIMEOUT = 30 * 1000;
 
-
-    /**
-     * Described with channel id.
-     */
     @Getter
-    private String id;
+    private Channel channel;
 
     /**
      * The remote node.
@@ -53,23 +48,6 @@ public class Connection {
     private long createdTime;
 
     /**
-     * The time at which this connection start to wait peer information.
-     */
-    private long waitPeerStartTime;
-
-
-    /**
-     * Channel between this node and remote node.
-     */
-    private NioSocketChannel channel;
-
-    /**
-     * The context of channel handler, via which message can be sent and received.
-     */
-    @Getter
-    private ChannelHandlerContext context;
-
-    /**
      * Level of connection.
      */
     @Getter
@@ -79,7 +57,7 @@ public class Connection {
     /**
      * Queue of message to send to the remote node.
      */
-    private BlockingQueue<BaseMessage> sendQueue;
+    private BlockingQueue<String> sendQueue;
 
     /**
      * Service for message sending.
@@ -87,106 +65,84 @@ public class Connection {
     private ExecutorService messageSender;
 
     /**
-     * Used to control stopping of thread pool.
+     * Used to control connection status.
      */
-    private volatile boolean stop = false;
+    private volatile boolean isActivated;
 
-    public Connection(NioSocketChannel channel, Peer peer, boolean isClient) {
-        this(channel, isClient);
-        this.peer = peer;
-    }
-
-    public Connection(NioSocketChannel channel, boolean isClient) {
-        this.id = channel.id().toString();
+    public Connection(Channel channel, boolean isClient) {
         this.channel = channel;
         this.isClient = isClient;
         this.createdTime = System.currentTimeMillis();
+        this.connectionLevel = ConnectionLevelEnum.L3;
     }
 
     /**
-     * Check if connection does not receive peer information within timeout or not.
+     * Check if connection handshake timeout or not.
      */
-    public boolean waitPeerTimeout() {
-        return isWaitPeer() && (System.currentTimeMillis() - waitPeerStartTime > WAIT_PEER_TIMEOUT);
-    }
-
-    private boolean isWaitPeer() {
-        return context != null && peer == null;
+    public boolean isHandshakeTimeOut() {
+        return !isActivated && (System.currentTimeMillis() - createdTime > HANDSHAKE_TIMEOUT);
     }
 
     /**
      * Check if connection is activated. The word "activated" means that this node can send
      * or receive message via this connection.
      */
-    public boolean isActivated() {
-        return context != null && peer != null && sendQueue != null;
+    public synchronized boolean isActivated() {
+        return isActivated;
     }
 
     /**
      * Release resource allocated to connection.
      */
     public synchronized boolean close() {
-        if (messageSender != null && !messageSender.isShutdown()) {
-            stop = true;
-            messageSender.shutdownNow();
-            messageSender = null;
+        String channelId = getChannelId();
+        String peerId = getPeerId();
+        try {
+            isActivated = false;
+            if (messageSender != null && !messageSender.isShutdown()) {
+                messageSender.shutdownNow();
+                messageSender = null;
+            }
+            sendQueue = null;
+            if (channel != null) {
+                channel.close();
+                channel = null;
+            }
+            peer = null;
+            LOGGER.info("Connection is closed, channelId={}, peerId={}", channelId, peerId);
+            return true;
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
         }
-        sendQueue = null;
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-        context = null;
-
-        LOGGER.info("Connection is closed, id={}", id);
-        return true;
+        return false;
     }
 
-    /**
-     * Allocate handler context to connection.
-     *
-     * @param context handler context
-     */
-    public void setContext(ChannelHandlerContext context) {
-        if (this.context != null) {
-            return;
-        }
-        this.context = context;
-        this.waitPeerStartTime = System.currentTimeMillis();
-
-        activate();
-    }
-
-    private void activate() {
-        if (context == null || peer == null) {
+    public synchronized void activate(Peer peer) {
+        if (peer == null) {
             return;
         }
 
+        this.peer = peer;
+
+        if (isActivated) {
+            return;
+        }
+        isActivated = true;
         sendQueue = Queues.newLinkedBlockingQueue();
         messageSender = ExecutorServices.newFixedThreadPool("connection-queue", 2, 10000);
 
         messageSender.submit(() -> {
-            while (!stop) {
+            while (isActivated) {
                 try {
-                    BaseMessage message = sendQueue.take();
-                    if (message != null) {
-                        context.writeAndFlush(message);
-                        LOGGER.info("Message [{}] is sent by connection [peerId={}, connectionId={}]", message, getPeerId(), id);
-                    }
+                    String message = sendQueue.take();
+                    channel.writeAndFlush(message);
+                    LOGGER.info("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
                 } catch (InterruptedException e) {
                     LOGGER.error(e.getMessage(), e);
                 }
             }
         });
-    }
-
-    public void setPeer(Peer peer) {
-        if (this.peer != null) {
-            return;
-        }
-        this.peer = peer;
-
-        activate();
+        LOGGER.info("Connection is activated, channelId={}, peerId={}", getChannelId(), getPeerId());
     }
 
     /**
@@ -210,15 +166,19 @@ public class Connection {
         return peer == null ? null : peer.getId();
     }
 
+    public String getChannelId() {
+        return channel.id().toString();
+    }
+
     /**
      * Put the message to send into cache.
      *
      * @param message message to send
      * @return {@code true} if the element was added to this queue, else {@code false}
      */
-    public synchronized boolean sendMessage(BaseMessage message) {
-        if (isActivated()) {
-            LOGGER.info("Message [{}] will be sent by connection [peerId={}]", message, getPeerId());
+    public synchronized boolean sendMessage(String message) {
+        if (isActivated() && StringUtils.isNotBlank(message)) {
+            LOGGER.info("Message [{}] will be sent, channelId={}, peerId={}", message, getChannelId(), getPeerId());
             return sendQueue.offer(message);
         }
         return false;
@@ -227,7 +187,7 @@ public class Connection {
     @Override
     public String toString() {
         ToStringBuilder builder = new ToStringBuilder(this);
-        return builder.append("id", id)
+        return builder.append("channelId", getChannelId())
                 .append("peerId", getPeerId())
                 .append("ip", getIp())
                 .append("port", getPort())

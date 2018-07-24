@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.network.socket.message;
 
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,11 +18,11 @@ import org.apache.commons.lang.StringUtils;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class StringMessage extends BaseMessage {
+public class StringMessage extends BaseSerializer {
 
+    private String sourceId;
     private String content;
 
-    @Override
     public boolean valid() {
         if (StringUtils.isEmpty(content)) {
             return false;
@@ -31,7 +32,7 @@ public class StringMessage extends BaseMessage {
 
     public String getHash() {
         return Hashing.goodFastHash(128).newHasher()
-                .putString(content, Charsets.UTF_8)
+                .putString(null == content ? StringUtils.EMPTY : content, Charsets.UTF_8)
                 .hash()
                 .toString();
     }
