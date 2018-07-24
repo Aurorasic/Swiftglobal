@@ -6,7 +6,6 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
-import com.higgsblock.global.chain.app.utils.ValueSortedMap;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +14,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * orphan blocks manager storing blocks cannot been connected on chain
@@ -29,7 +30,7 @@ import java.util.*;
 public class OrphanBlockCacheManager implements IEventBusListener {
     private static final int MAX_CACHE_SIZE = 50;
 
-    private final Map<String, BlockFullInfo> orphanBlockMap;
+    private final OrphanBlockCache orphanBlockMap;
     @Autowired
     private IBlockChainService blockChainService;
     @Autowired
@@ -41,8 +42,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     private EventBus eventBus;
 
     public OrphanBlockCacheManager() {
-        Comparator<BlockFullInfo> comparator = new ResultsComparator();
-        orphanBlockMap = new ValueSortedMap(comparator);
+        orphanBlockMap = new OrphanBlockCache(50);
 
     }
 
@@ -53,14 +53,11 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     }
 
     public void putPreBlocks(BlockFullInfo blockInfo) {
-        long blockHeight = blockInfo.getBlock().getHeight();
+        Block block = blockInfo.getBlock();
+        long blockHeight = block.getHeight();
         LOGGER.info("Orphan block cache, map size: {}, height: {}", orphanBlockMap.size(), blockHeight);
 
-        Iterator<String> iterator = orphanBlockMap.keySet().iterator();
-        while (orphanBlockMap.size() > MAX_CACHE_SIZE) {
-            orphanBlockMap.remove(iterator.next());
-        }
-        orphanBlockMap.put(blockInfo.getBlock().getHash(), blockInfo);
+        orphanBlockMap.add(blockInfo);
     }
 
     @Subscribe
