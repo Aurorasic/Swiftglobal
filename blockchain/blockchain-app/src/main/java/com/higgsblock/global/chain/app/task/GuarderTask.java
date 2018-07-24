@@ -24,9 +24,9 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Slf4j
 public class GuarderTask extends BaseTask implements IEventBusListener {
-    private static long currHeight = 1;
+    private static volatile long currHeight = 1;
     private static final long WAIT_MINER_TIME = 30;
-    private static long curSec = 0;
+    private static volatile long curSec = 0;
     private static final long TASK_TIME = 5;
 
 
