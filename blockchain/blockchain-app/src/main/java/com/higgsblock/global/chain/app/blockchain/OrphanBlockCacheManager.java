@@ -65,8 +65,18 @@ public class OrphanBlockCacheManager implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
+        LOGGER.info("received process event: {}", event);
         long height = event.getHeight();
         String blockHash = event.getBlockHash();
+        try {
+            process(blockHash, height);
+        } catch (Exception e) {
+            LOGGER.error("exception when handle orphan blocks of " + event, e);
+        }
+
+    }
+
+    private void process(String blockHash, long height) {
         List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(blockHash);
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
@@ -75,6 +85,13 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 String nextBlockHash = nextBlock.getHash();
                 LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
                         height, blockHash, nextHeight, nextBlockHash);
+
+                //check: producer stake
+                boolean producerValid = blockChainService.checkBlockProducer(nextBlock);
+                if (!producerValid) {
+                    LOGGER.error("the orphan block produce stake is error: {}", nextBlock.getSimpleInfo());
+                    remove(nextBlockHash);
+                }
 
                 //check: transactions
                 boolean validTransactions = blockChainService.checkTransactions(nextBlock);
