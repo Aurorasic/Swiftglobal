@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.collect.Maps;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,16 +24,15 @@ public class OrphanBlockCache {
     public synchronized void add(BlockFullInfo blockFullInfo) {
         String hash = blockFullInfo.getBlock().getHash();
         map.put(hash, blockFullInfo);
+        if (size() <= limit) {
+            return;
+        }
 
         List<String> list = map.values().stream()
                 .sorted((o1, o2) -> (int) (o1.getBlock().getHeight() - o2.getBlock().getHeight()))
                 .map(obj -> obj.getBlock().getHash())
                 .skip(limit)
                 .collect(Collectors.toList());
-
-        if (CollectionUtils.isEmpty(list)) {
-            return;
-        }
 
         for (String item : list) {
             remove(item);
