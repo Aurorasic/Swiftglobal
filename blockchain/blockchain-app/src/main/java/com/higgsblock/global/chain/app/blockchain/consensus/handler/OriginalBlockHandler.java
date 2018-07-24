@@ -7,7 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
@@ -86,7 +86,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         if (!blockChainService.isExistBlock(prevBlockHash)) {
             LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
-            eventBus.post(new ReceiveOrphanBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
+            eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
             return false;
         }
         boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);

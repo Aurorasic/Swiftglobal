@@ -6,7 +6,7 @@ import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.sync.message.GetBlock;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
@@ -63,7 +63,7 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
                 return null;
             }));
         } else if (height > blockChainService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashes)) {
-            eventBus.post(new ReceiveOrphanBlockEvent(height, null, sourceId));
+            eventBus.post(new SyncBlockEvent(height, null, sourceId));
         }
     }
 }
