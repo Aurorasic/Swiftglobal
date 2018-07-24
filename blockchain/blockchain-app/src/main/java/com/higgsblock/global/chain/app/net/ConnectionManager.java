@@ -6,7 +6,6 @@ import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import com.higgsblock.global.chain.network.socket.Client;
 import com.higgsblock.global.chain.network.socket.Server;
-import com.higgsblock.global.chain.network.socket.channel.ChannelManager;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.connection.ConnectionLevelEnum;
 import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
@@ -110,8 +109,6 @@ public class ConnectionManager {
     private Server server;
     @Autowired
     private PeerManager peerManager;
-    @Autowired
-    private ChannelManager channelManager;
 
 
     /**
@@ -243,7 +240,6 @@ public class ConnectionManager {
         if (null != connection) {
             connection.close();
         }
-        channelManager.discard(channelId);
         LOGGER.info("Connection has been removed, channelId={}", channelId);
     }
 
@@ -439,8 +435,9 @@ public class ConnectionManager {
     public void removePeerUnknownConnections() {
         peerUnknownConnectionMap.values().forEach(connection -> {
             if (connection.isHandshakeTimeOut()) {
+                String channelId = connection.getChannelId();
                 remove(connection);
-                LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", connection.getChannelId());
+                LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", channelId);
             }
         });
     }

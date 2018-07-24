@@ -27,8 +27,6 @@ public class CommonChannelInitializer extends ChannelInitializer<NioSocketChanne
     protected static final int BUFF_SIZE = 256 * 1024;
 
     @Autowired
-    private ChannelManager channelManager;
-    @Autowired
     private ChannelInboundHandler channelInboundHandler;
     @Autowired
     private EventBus eventBus;
@@ -39,10 +37,6 @@ public class CommonChannelInitializer extends ChannelInitializer<NioSocketChanne
         ChannelType channelType = channel.attr(key).get();
         if (null == channelType) {
             channelType = ChannelType.IN;
-        }
-        if (!channelManager.add(channel, channelType)) {
-            channel.close();
-            return;
         }
         eventBus.post(new CreateChannelEvent(channel, channelType));
 

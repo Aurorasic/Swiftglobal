@@ -4,7 +4,6 @@ import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.message.MessageFormatter;
 import com.higgsblock.global.chain.app.common.message.MessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.network.socket.IMessageSender;
 import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +29,6 @@ public class MessageCenter {
     private MessageHandler handler;
     @Autowired
     private ConnectionManager connectionManager;
-    @Autowired
-    private IMessageSender messageSender;
     @Autowired
     private MessageCache messageCache;
 
@@ -62,7 +59,7 @@ public class MessageCenter {
     public boolean handshake(String channelId, Object data) {
         try {
             String content = formatter.format(data);
-            messageSender.unicast(channelId, content);
+            sendMessage(channelId, content);
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -115,8 +112,18 @@ public class MessageCenter {
     /**
      * Send message with the specific connection.
      */
+    private void sendMessage(String channelId, String message) {
+        Connection connection = connectionManager.getConnectionByChannelId(channelId);
+        if (null != connection) {
+            sendMessage(connection, message);
+        }
+    }
+
+    /**
+     * Send message with the specific connection.
+     */
     private void sendMessage(Connection connection, String message) {
-        if (!messageCache.isCached(connection.getPeerId(), message)) {
+        if (!messageCache.isCached(connection.getChannelId(), message)) {
             connection.sendMessage(message);
         }
     }
