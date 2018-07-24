@@ -75,7 +75,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     }
 
 
-    public void doMing() {
+    private void doMing() {
         long expectHeight = currHeight + 1;
         try {
             BlockIndex maxBlockIndex = blockIndexService.getBlockIndexByHeight(currHeight);
