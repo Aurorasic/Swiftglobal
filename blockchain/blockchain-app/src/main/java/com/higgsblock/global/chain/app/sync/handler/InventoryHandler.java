@@ -5,9 +5,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.sync.message.GetBlock;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import lombok.extern.slf4j.Slf4j;
@@ -42,15 +42,15 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
             .build();
 
     @Override
-    protected boolean check(SocketRequest<Inventory> request) {
-        Inventory data = request.getData();
+    protected boolean check(IMessage<Inventory> message) {
+        Inventory data = message.getData();
         return null != data && data.valid();
     }
 
     @Override
-    protected void process(SocketRequest<Inventory> request) {
-        Inventory data = request.getData();
-        String sourceId = request.getSourceId();
+    protected void process(IMessage<Inventory> message) {
+        Inventory data = message.getData();
+        String sourceId = message.getSourceId();
         long height = data.getHeight();
         Set<String> hashes = data.getHashs();
         if (height <= blockChainService.getMaxHeight() + 1L) {

@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
@@ -37,8 +37,8 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Override
-    protected boolean check(SocketRequest<Block> request) {
-        Block block = request.getData();
+    protected boolean check(IMessage<Block> message) {
+        Block block = message.getData();
         String hash = block.getHash();
 
         //1. check: isGenesisBlock
@@ -71,7 +71,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         //5.check: orphan block
         boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
         if (isOrphanBlock) {
-            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), request.getSourceId(), block);
+            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), message.getSourceId(), block);
             orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
             LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
             return false;
@@ -94,18 +94,18 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     }
 
     @Override
-    protected void process(SocketRequest<Block> request) {
-        Block data = request.getData();
+    protected void process(IMessage<Block> message) {
+        Block data = message.getData();
         long height = data.getHeight();
         String hash = data.getHash();
         boolean success = blockService.persistBlockAndIndex(data);
         LOGGER.info("persisted block all info, success={},height={},block={}", success, height, hash);
         if (success) {
-            broadcastInventory(request);
+            broadcastInventory(message);
         }
     }
 
-    private void broadcastInventory(SocketRequest<Block> request) {
+    private void broadcastInventory(IMessage<Block> request) {
         Block data = request.getData();
         long height = data.getHeight();
         String sourceId = request.getSourceId();

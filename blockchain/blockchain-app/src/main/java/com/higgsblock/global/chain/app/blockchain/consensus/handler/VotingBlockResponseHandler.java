@@ -6,9 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
@@ -47,11 +47,11 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean check(SocketRequest<VotingBlockResponse> request) {
-        VotingBlockResponse votingBlockResponse = request.getData();
-        String sourceId = request.getSourceId();
+    protected boolean check(IMessage<VotingBlockResponse> message) {
+        VotingBlockResponse votingBlockResponse = message.getData();
+        String sourceId = message.getSourceId();
         Block block;
-        LOGGER.info("Received VotingBlockResponse {}", request);
+        LOGGER.info("Received VotingBlockResponse {}", message);
         if (null == votingBlockResponse || null == (block = votingBlockResponse.getBlock())) {
             return false;
         }
@@ -105,8 +105,8 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     }
 
     @Override
-    protected void process(SocketRequest<VotingBlockResponse> request) {
-        VotingBlockResponse votingBlockResponse = request.getData();
+    protected void process(IMessage<VotingBlockResponse> message) {
+        VotingBlockResponse votingBlockResponse = message.getData();
         Block block = votingBlockResponse.getBlock();
         if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(votingBlockResponse);

@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.blockchain.transaction.handler;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +21,8 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     private ITransactionService transactionService;
 
     @Override
-    protected boolean check(SocketRequest<Transaction> request) {
-        Transaction tx = request.getData();
+    protected boolean check(IMessage<Transaction> message) {
+        Transaction tx = message.getData();
         String hash = tx.getHash();
 
         //step1 check transaction baseinfo
@@ -38,8 +38,8 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     }
 
     @Override
-    protected void process(SocketRequest<Transaction> request) {
-        transactionService.receivedTransaction(request.getData());
+    protected void process(IMessage<Transaction> message) {
+        transactionService.receivedTransaction(message.getData());
     }
 
 }

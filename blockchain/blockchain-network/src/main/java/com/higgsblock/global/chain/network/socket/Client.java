@@ -40,6 +40,10 @@ public class Client {
      * Connect to remote peer.
      */
     public void connect(String ip, int port) {
+        if (ip.startsWith("192.168.31")) {
+            return;
+        }
+
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(workerGroup);
 

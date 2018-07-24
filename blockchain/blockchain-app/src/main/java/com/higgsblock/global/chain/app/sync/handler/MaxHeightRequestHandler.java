@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.sync.handler;
 
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +25,13 @@ public class MaxHeightRequestHandler extends BaseMessageHandler<MaxHeightRequest
     private MessageCenter messageCenter;
 
     @Override
-    protected boolean check(SocketRequest<MaxHeightRequest> request) {
-        MaxHeightRequest data = request.getData();
+    protected boolean check(IMessage<MaxHeightRequest> message) {
+        MaxHeightRequest data = message.getData();
         return null != data;
     }
 
     @Override
-    protected void process(SocketRequest<MaxHeightRequest> request) {
-        messageCenter.unicast(request.getSourceId(), new MaxHeightResponse(blockChainService.getMaxHeight()));
+    protected void process(IMessage<MaxHeightRequest> message) {
+        messageCenter.unicast(message.getSourceId(), new MaxHeightResponse(blockChainService.getMaxHeight()));
     }
 }

@@ -1,12 +1,11 @@
 package com.higgsblock.global.chain.app.common.message;
 
 import com.google.common.collect.Maps;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.handler.IMessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.app.net.message.Hello;
-import com.higgsblock.global.chain.app.net.message.HelloAck;
+import com.higgsblock.global.chain.app.net.message.*;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -60,10 +59,10 @@ public class MessageHandler implements InitializingBean {
         return handlerMap.get(type);
     }
 
-    public boolean accept(SocketRequest request) {
-        IMessageHandler handler = getHandler(request.getData().getClass());
+    public boolean accept(IMessage IMessage) {
+        IMessageHandler handler = getHandler(IMessage.getData().getClass());
         if (null != handler) {
-            return handler.accept(request);
+            return handler.accept(IMessage);
         }
         return false;
     }
@@ -78,11 +77,11 @@ public class MessageHandler implements InitializingBean {
             Object obj = formatter.parse(message);
 
             if (obj instanceof Hello || obj instanceof HelloAck) {
-                return accept(new SocketRequest(channelId, obj));
+                return accept(new HandshakeMessage(channelId, obj));
             }
 
             if (connection.isActivated()) {
-                return accept(new SocketRequest(connection.getPeerId(), obj));
+                return accept(new BizMessage(connection.getPeerId(), obj));
             }
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);

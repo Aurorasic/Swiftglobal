@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.common.handler;
 
-import com.higgsblock.global.chain.app.common.SocketRequest;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 
 import java.util.concurrent.ExecutorService;
 
@@ -18,5 +18,5 @@ public interface IMessageHandler<T> {
 
     void stop();
 
-    boolean accept(SocketRequest<T> request);
+    boolean accept(IMessage<T> message);
 }

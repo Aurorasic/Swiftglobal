@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.net.handler;
 
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.net.message.SyncPeers;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
@@ -24,8 +24,8 @@ public class PeersMessageHandler extends BaseMessageHandler<SyncPeers> {
     private PeerManager peerManager;
 
     @Override
-    protected boolean check(SocketRequest<SyncPeers> request) {
-        SyncPeers data = request.getData();
+    protected boolean check(IMessage<SyncPeers> message) {
+        SyncPeers data = message.getData();
         if (null == data) {
             return false;
         }
@@ -44,8 +44,8 @@ public class PeersMessageHandler extends BaseMessageHandler<SyncPeers> {
     }
 
     @Override
-    protected void process(SocketRequest<SyncPeers> request) {
-        LinkedList<Peer> peers = request.getData().getPeers();
+    protected void process(IMessage<SyncPeers> message) {
+        LinkedList<Peer> peers = message.getData().getPeers();
         peerManager.add(peers);
     }
 }

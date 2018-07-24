@@ -1,9 +1,10 @@
 package com.higgsblock.global.chain.app.blockchain.listener;
 
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.message.MessageFormatter;
 import com.higgsblock.global.chain.app.common.message.MessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.net.message.BizMessage;
+import com.higgsblock.global.chain.network.socket.IMessageDispatcher;
 import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 @Component
 @Slf4j
-public class MessageCenter {
+public class MessageCenter implements IMessageDispatcher {
     private static final int MIN_WITNESS_NUM = 2;
 
     @Autowired
@@ -33,9 +34,10 @@ public class MessageCenter {
     private MessageCache messageCache;
 
     public boolean dispatch(Object obj) {
-        return handler.accept(new SocketRequest(null, obj));
+        return handler.accept(new BizMessage(null, obj));
     }
 
+    @Override
     public boolean dispatch(String sourceId, String obj) {
         return handler.accept(sourceId, obj);
     }
@@ -59,7 +61,10 @@ public class MessageCenter {
     public boolean handshake(String channelId, Object data) {
         try {
             String content = formatter.format(data);
-            sendMessage(channelId, content);
+            Connection connection = connectionManager.getConnectionByChannelId(channelId);
+            if (null != connection) {
+                connection.handshake(content);
+            }
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -107,16 +112,6 @@ public class MessageCenter {
             LOGGER.error(e.getMessage(), e);
         }
         return false;
-    }
-
-    /**
-     * Send message with the specific connection.
-     */
-    private void sendMessage(String channelId, String message) {
-        Connection connection = connectionManager.getConnectionByChannelId(channelId);
-        if (null != connection) {
-            sendMessage(connection, message);
-        }
     }
 
     /**

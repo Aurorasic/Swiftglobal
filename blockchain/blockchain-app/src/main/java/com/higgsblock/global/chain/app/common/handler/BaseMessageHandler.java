@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.common.handler;
 
 import com.google.common.collect.Queues;
-import com.higgsblock.global.chain.app.common.SocketRequest;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
 
     private volatile boolean isRunning;
     private ExecutorService executorService;
-    private BlockingQueue<SocketRequest<T>> queue;
+    private BlockingQueue<IMessage<T>> queue;
 
     public BaseMessageHandler() {
         this.queue = Queues.newLinkedBlockingQueue(10000);
@@ -54,12 +54,12 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
-                        SocketRequest request = takeRequest();
-                        LOGGER.info("take request for processing; {}", request);
+                        IMessage message = takeMessage();
+                        LOGGER.info("take request for processing; {}", message);
 
-                        boolean isValid = check(request);
+                        boolean isValid = check(message);
                         if (isValid) {
-                            process(request);
+                            process(message);
                         }
                     } catch (Exception e) {
                         LOGGER.error(e.getMessage(), e);
@@ -80,18 +80,18 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
     }
 
     @Override
-    public final boolean accept(SocketRequest<T> request) {
+    public final boolean accept(IMessage<T> message) {
         if (null != queue) {
-            return queue.offer(request);
+            return queue.offer(message);
         }
         return false;
     }
 
-    protected abstract boolean check(SocketRequest<T> request);
+    protected abstract boolean check(IMessage<T> message);
 
-    protected abstract void process(SocketRequest<T> request);
+    protected abstract void process(IMessage<T> message);
 
-    private SocketRequest takeRequest() {
+    private IMessage takeMessage() {
         try {
             return queue.take();
         } catch (InterruptedException e) {

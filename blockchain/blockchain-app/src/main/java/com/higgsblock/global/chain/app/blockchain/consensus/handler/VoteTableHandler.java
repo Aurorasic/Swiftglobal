@@ -5,9 +5,9 @@ import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -45,10 +45,10 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     private IWitnessService witnessService;
 
     @Override
-    protected boolean check(SocketRequest<VoteTable> request) {
+    protected boolean check(IMessage<VoteTable> message) {
 
-        String sourceId = request.getSourceId();
-        VoteTable data = request.getData();
+        String sourceId = message.getSourceId();
+        VoteTable data = message.getData();
 
         //step1:check basic info
         if (null == data
@@ -80,13 +80,13 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     }
 
     @Override
-    protected void process(SocketRequest<VoteTable> request) {
+    protected void process(IMessage<VoteTable> message) {
         //check if this is witness
         if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(request.getData());
+            messageCenter.dispatchToWitnesses(message.getData());
             return;
         }
-        voteService.dealVoteTable(request.getData());
+        voteService.dealVoteTable(message.getData());
     }
 
     private boolean checkOriginalBlock(String sourceId, VoteTable otherVoteTable) {

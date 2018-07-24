@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +20,14 @@ public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightRespon
     private SyncBlockService syncBlockService;
 
     @Override
-    protected boolean check(SocketRequest<MaxHeightResponse> request) {
-        MaxHeightResponse maxHeightResponse = request.getData();
+    protected boolean check(IMessage<MaxHeightResponse> message) {
+        MaxHeightResponse maxHeightResponse = message.getData();
         return null != maxHeightResponse && maxHeightResponse.valid();
     }
 
     @Override
-    protected void process(SocketRequest<MaxHeightResponse> request) {
-        MaxHeightResponse maxHeightResponse = request.getData();
-        syncBlockService.updatePeersMaxHeight(maxHeightResponse.getMaxHeight(), request.getSourceId());
+    protected void process(IMessage<MaxHeightResponse> message) {
+        MaxHeightResponse maxHeightResponse = message.getData();
+        syncBlockService.updatePeersMaxHeight(maxHeightResponse.getMaxHeight(), message.getSourceId());
     }
 }

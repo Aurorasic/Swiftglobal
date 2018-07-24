@@ -1,9 +1,9 @@
 package com.higgsblock.global.chain.app.net.handler;
 
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.net.message.HelloAck;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.network.Peer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +21,8 @@ public class HelloAckMessageHandler extends BaseMessageHandler<HelloAck> {
     private ConnectionManager connectionManager;
 
     @Override
-    protected boolean check(SocketRequest<HelloAck> request) {
-        HelloAck hello = request.getData();
+    protected boolean check(IMessage<HelloAck> message) {
+        HelloAck hello = message.getData();
         if (null == hello) {
             return false;
         }
@@ -36,9 +36,9 @@ public class HelloAckMessageHandler extends BaseMessageHandler<HelloAck> {
     }
 
     @Override
-    protected void process(SocketRequest<HelloAck> request) {
-        String sourceId = request.getSourceId();
-        connectionManager.active(sourceId, request.getData().getPeer());
+    protected void process(IMessage<HelloAck> message) {
+        String sourceId = message.getSourceId();
+        connectionManager.active(sourceId, message.getData().getPeer());
     }
 }
 

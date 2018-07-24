@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.network.socket.handler;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.network.socket.event.ReceivedMessageEvent;
+import com.higgsblock.global.chain.network.socket.message.StringMessage;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -11,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Message handler processes the received messages from peers. The message handler can mainly
+ * IMessage handler processes the received messages from peers. The message handler can mainly
  * process two types of messages. One is P2P layer message, the other is business layer message.
  * P2P layer messages include: HELLO, HELLO_ACK, GET_PEERS, PEERS; while the business layer messages
  * merely includes: BIZ_MSG.
@@ -42,11 +43,10 @@ public class CommonInboundHandler extends SimpleChannelInboundHandler<String> {
             return;
         }
 
-        ReceivedMessageEvent message = new ReceivedMessageEvent();
-        message.setContent(msg);
-        message.setChannelId(channelId);
+        ReceivedMessageEvent event = new ReceivedMessageEvent();
+        event.setMessage(new StringMessage(channelId, msg));
 
-        eventBus.post(message);
+        eventBus.post(event);
     }
 
     @Override

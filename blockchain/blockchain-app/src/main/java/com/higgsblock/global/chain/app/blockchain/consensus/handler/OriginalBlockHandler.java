@@ -6,9 +6,9 @@ import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SocketRequest;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
@@ -49,11 +49,11 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean check(SocketRequest<OriginalBlock> request) {
-        OriginalBlock originalBlock = request.getData();
-        String sourceId = request.getSourceId();
+    protected boolean check(IMessage<OriginalBlock> message) {
+        OriginalBlock originalBlock = message.getData();
+        String sourceId = message.getSourceId();
         Block block;
-        LOGGER.info("Received OriginalBlock {}", request);
+        LOGGER.info("Received OriginalBlock {}", message);
         if (null == originalBlock || null == (block = originalBlock.getBlock())) {
             return false;
         }
@@ -107,8 +107,8 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     }
 
     @Override
-    protected void process(SocketRequest<OriginalBlock> request) {
-        OriginalBlock originalBlock = request.getData();
+    protected void process(IMessage<OriginalBlock> message) {
+        OriginalBlock originalBlock = message.getData();
         Block block = originalBlock.getBlock();
         if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(originalBlock);
