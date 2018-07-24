@@ -119,6 +119,9 @@ public class MiningListener implements IEventBusListener {
         while ((miningHeight == expectHeight) && !doMining(expectHeight, blockHash)) {
             try {
                 TimeUnit.MILLISECONDS.sleep(1000 + RandomUtils.nextInt(10) * 500);
+            } catch (InterruptedException e) {
+                LOGGER.error(String.format("mining task[height=%s] is interrupted,exit current thread", expectHeight), e);
+                return;
             } catch (Exception e) {
                 LOGGER.error(String.format("mining exception,height=%s", expectHeight), e);
             }
