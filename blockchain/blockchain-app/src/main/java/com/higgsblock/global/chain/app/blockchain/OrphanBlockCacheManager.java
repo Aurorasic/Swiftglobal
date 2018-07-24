@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.utils.ValueSortedMap;
@@ -127,7 +127,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 continue;
             }
             // get pre block
-            eventBus.post(new ReceiveOrphanBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), blockFullInfo.getSourceId()));
+            eventBus.post(new SyncBlockEvent(block.getHeight() - 1L, block.getPrevBlockHash(), blockFullInfo.getSourceId()));
         }
     }
 
