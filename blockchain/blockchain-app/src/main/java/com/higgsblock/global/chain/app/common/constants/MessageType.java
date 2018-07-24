@@ -15,6 +15,8 @@ import org.apache.commons.lang.StringUtils;
 public enum MessageType {
 
     // ================ 000-099: base related =====================
+    SYNC_PEERS("003"),
+
 
     // ================ 200-299: block related ====================
     BLOCK("200"),

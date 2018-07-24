@@ -1,20 +1,16 @@
 package com.higgsblock.global.chain.network.socket.handler;
 
 import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import com.higgsblock.global.chain.network.socket.MessageCache;
 import com.higgsblock.global.chain.network.socket.connection.Connection;
 import com.higgsblock.global.chain.network.socket.event.ReceivedDataEvent;
 import com.higgsblock.global.chain.network.socket.message.BaseMessage;
-import com.higgsblock.global.chain.network.socket.message.PeersMessage;
 import com.higgsblock.global.chain.network.socket.message.StringMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
-
-import java.util.List;
 
 /**
  * Message handler processes the received messages from peers. The message handler can mainly
@@ -57,10 +53,6 @@ public class BaseInboundHandler extends SimpleChannelInboundHandler<BaseMessage>
             processStringMsg((StringMessage) msg);
             return;
         }
-        if (msg instanceof PeersMessage) {
-            processPeersMsg((PeersMessage) msg);
-            return;
-        }
 
         if (processOneSideMessage(msg)) {
             return;
@@ -100,11 +92,5 @@ public class BaseInboundHandler extends SimpleChannelInboundHandler<BaseMessage>
         event.setContent(message.getContent());
 
         eventBus.post(event);
-    }
-
-    private void processPeersMsg(PeersMessage message) {
-        LOGGER.info("Message: [{}], connection peer id: {}", message, connection.getPeerId());
-        List<Peer> peers = message.getPeers();
-        peerManager.add(peers);
     }
 }

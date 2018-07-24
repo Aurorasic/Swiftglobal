@@ -1,12 +1,11 @@
 package com.higgsblock.global.chain.app.task;
 
 import com.google.common.collect.Lists;
-import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.net.message.SyncPeers;
 import com.higgsblock.global.chain.network.Peer;
 import com.higgsblock.global.chain.network.PeerManager;
 import com.higgsblock.global.chain.network.config.PeerConstant;
-import com.higgsblock.global.chain.network.socket.connection.Connection;
-import com.higgsblock.global.chain.network.socket.message.PeersMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +23,13 @@ import java.util.concurrent.TimeUnit;
 public class PeerManageTask extends BaseTask {
 
     @Autowired
-    private ConnectionManager connectionManager;
+    private PeerManager peerManager;
 
     @Autowired
-    private PeerManager peerManager;
+    private MessageCenter messageCenter;
 
     @Override
     protected void task() {
-
         // get seed peers from registry center if there are less then 2 peers
         if (peerManager.count() < PeerConstant.MIN_LOCAL_PEER_COUNT) {
             peerManager.getSeedPeers();
@@ -41,11 +39,9 @@ public class PeerManageTask extends BaseTask {
         if (CollectionUtils.isEmpty(peers)) {
             return;
         }
-        PeersMessage peersMessage = new PeersMessage(Lists.newLinkedList(peers));
-        List<Connection> connections = connectionManager.getActivatedConnections();
-        for (Connection connection : connections) {
-            connection.sendMessage(peersMessage);
-        }
+        SyncPeers message = new SyncPeers();
+        message.setPeers(Lists.newLinkedList(peers));
+        messageCenter.broadcast(message);
     }
 
     @Override
