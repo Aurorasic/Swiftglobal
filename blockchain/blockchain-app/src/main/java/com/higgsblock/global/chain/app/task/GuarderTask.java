@@ -85,7 +85,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
             for (String blockHash : maxBlockIndex.getBlockHashs()) {
                 String address = peerManager.getSelf().getId();
                 if (!blockChainService.isGuarder(address, blockHash)) {
-                    LOGGER.warn("this miner no guarder currency");
+                    LOGGER.warn("this miner no guarder currency, address={}, block hash={}", address, blockHash);
                     return;
                 }
                 LOGGER.info("begin to packageNewBlock,height={},preBlcokHash={},this guarder address ={}", expectHeight, blockHash, address);
