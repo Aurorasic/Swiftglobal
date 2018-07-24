@@ -10,7 +10,7 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.ConnectionManager;
 import com.higgsblock.global.chain.app.sync.message.GetBlock;
@@ -181,8 +181,8 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     }
 
     @Subscribe
-    public void process(ReceiveOrphanBlockEvent event) {
-        LOGGER.info("process ReceiveOrphanBlockEvent: {}", event);
+    public void process(SyncBlockEvent event) {
+        LOGGER.info("process SyncBlockEvent: {}", event);
         long height = event.getHeight();
         String sourceId = event.getSourceId();
         String hash = event.getBlockHash();
@@ -212,7 +212,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
         //get all blocks by height
         sendInitRequest();
-
     }
 
     private void dealTimeOut(long height, String sourceId) {

@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockR
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SocketRequest;
-import com.higgsblock.global.chain.app.common.event.ReceiveOrphanBlockEvent;
+import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
@@ -68,7 +68,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         }
         //step4:if height > my vote height, sync block
         if (voteHeight > voteService.getHeight()) {
-            eventBus.post(new ReceiveOrphanBlockEvent(voteHeight, null, sourceId));
+            eventBus.post(new SyncBlockEvent(voteHeight, null, sourceId));
             LOGGER.info("the height is greater than local , sync block");
             return false;
         }

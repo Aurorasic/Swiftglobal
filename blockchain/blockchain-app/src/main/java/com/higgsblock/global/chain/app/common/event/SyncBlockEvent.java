@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReceiveOrphanBlockEvent extends BaseSerializer {
+public class SyncBlockEvent extends BaseSerializer {
     /**
      * the height of the orphan block
      */

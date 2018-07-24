@@ -276,7 +276,7 @@ public class TransactionFeeService implements ITransactionFeeService {
             }
         }
 
-        LOGGER.info("Transactions' output amount : {}", outPutMoney);
+        LOGGER.info("Transactions' output amount : {}", outPutMoney.getValue());
 
         return preOutMoney.subtract(outPutMoney);
     }
