@@ -21,7 +21,7 @@ public class HelloAckMessageHandler extends BaseMessageHandler<HelloAck> {
     private ConnectionManager connectionManager;
 
     @Override
-    protected boolean check(IMessage<HelloAck> message) {
+    protected boolean valid(IMessage<HelloAck> message) {
         HelloAck hello = message.getData();
         if (null == hello) {
             return false;

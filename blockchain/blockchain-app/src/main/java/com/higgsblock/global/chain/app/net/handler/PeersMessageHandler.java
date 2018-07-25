@@ -24,7 +24,7 @@ public class PeersMessageHandler extends BaseMessageHandler<SyncPeers> {
     private PeerManager peerManager;
 
     @Override
-    protected boolean check(IMessage<SyncPeers> message) {
+    protected boolean valid(IMessage<SyncPeers> message) {
         SyncPeers data = message.getData();
         if (null == data) {
             return false;

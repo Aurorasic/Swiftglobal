@@ -49,9 +49,9 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean valid(SocketRequest<OriginalBlock> request) {
-        OriginalBlock originalBlock = request.getData();
-        LOGGER.info("Received OriginalBlock {}", request);
+    protected boolean valid(IMessage<OriginalBlock> message) {
+        OriginalBlock originalBlock = message.getData();
+        LOGGER.info("Received OriginalBlock {}", message);
         if (null == originalBlock || null == originalBlock.getBlock()) {
             return false;
         }
@@ -66,10 +66,10 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     }
 
     @Override
-    protected void process(SocketRequest<OriginalBlock> request) {
-        OriginalBlock originalBlock = request.getData();
+    protected void process(IMessage<OriginalBlock> message) {
+        OriginalBlock originalBlock = message.getData();
         Block block = originalBlock.getBlock();
-        String sourceId = request.getSourceId();
+        String sourceId = message.getSourceId();
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();

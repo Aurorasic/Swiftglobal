@@ -28,7 +28,7 @@ public class HelloMessageHandler extends BaseMessageHandler<Hello> {
     private PeerManager peerManager;
 
     @Override
-    protected boolean check(IMessage<Hello> message) {
+    protected boolean valid(IMessage<Hello> message) {
         Hello hello = message.getData();
         if (null == hello) {
             return false;

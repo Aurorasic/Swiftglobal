@@ -45,9 +45,9 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     private IWitnessService witnessService;
 
     @Override
-    protected boolean valid(SocketRequest<VoteTable> request) {
+    protected boolean valid(IMessage<VoteTable> message) {
 
-        VoteTable data = request.getData();
+        VoteTable data = message.getData();
         //step1:check basic info
         if (null == data
                 || !data.valid()) {
@@ -58,9 +58,9 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     }
 
     @Override
-    protected void process(SocketRequest<VoteTable> request) {
-        String sourceId = request.getSourceId();
-        VoteTable data = request.getData();
+    protected void process(IMessage<VoteTable> message) {
+        String sourceId = message.getSourceId();
+        VoteTable data = message.getData();
         //step2:check witness
         if (!checkVersion1Witness(data)) {
             LOGGER.info("valid witness info , false");
@@ -83,10 +83,10 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         }
         //check if this is witness
         if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(request.getData());
+            messageCenter.dispatchToWitnesses(message.getData());
             return;
         }
-        voteService.dealVoteTable(request.getData());
+        voteService.dealVoteTable(message.getData());
     }
 
     private boolean checkOriginalBlock(String sourceId, VoteTable otherVoteTable) {

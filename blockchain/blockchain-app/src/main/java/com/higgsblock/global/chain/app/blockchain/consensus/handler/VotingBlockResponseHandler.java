@@ -8,12 +8,12 @@ import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockR
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -47,9 +47,9 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean valid(SocketRequest<VotingBlockResponse> request) {
-        VotingBlockResponse votingBlockResponse = request.getData();
-        LOGGER.info("Received VotingBlockResponse {}", request);
+    protected boolean valid(IMessage<VotingBlockResponse> message) {
+        VotingBlockResponse votingBlockResponse = message.getData();
+        LOGGER.info("Received VotingBlockResponse {}", message);
         if (null == votingBlockResponse || null == votingBlockResponse.getBlock()) {
             return false;
         }
@@ -64,10 +64,10 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     }
 
     @Override
-    protected void process(SocketRequest<VotingBlockResponse> request) {
-        VotingBlockResponse votingBlockResponse = request.getData();
+    protected void process(IMessage<VotingBlockResponse> message) {
+        VotingBlockResponse votingBlockResponse = message.getData();
         Block block = votingBlockResponse.getBlock();
-        String sourceId = request.getSourceId();
+        String sourceId = message.getSourceId();
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();

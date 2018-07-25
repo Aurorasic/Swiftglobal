@@ -1,12 +1,15 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
-import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +40,8 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Override
-    protected boolean valid(SocketRequest<Block> request) {
-        Block block = request.getData();
+    protected boolean valid(IMessage<Block> message) {
+        Block block = message.getData();
         //1. check: isGenesisBlock
         boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
         if (isGenesisBlock) {
@@ -56,20 +59,20 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     }
 
     @Override
-    protected void process(SocketRequest<Block> request) {
-        Block block = request.getData();
-        String sourceId = request.getSourceId();
+    protected void process(IMessage<Block> message) {
+        Block block = message.getData();
+        String sourceId = message.getSourceId();
         boolean success = blockService.persistBlockAndIndex(block, sourceId);
         LOGGER.info("persisted block all info, success={},{}", success, block.getSimpleInfo());
         if (success) {
-            broadcastInventory(request);
+            broadcastInventory(message);
         }
     }
 
-    private void broadcastInventory(SocketRequest<Block> request) {
-        Block data = request.getData();
+    private void broadcastInventory(IMessage<Block> message) {
+        Block data = message.getData();
         long height = data.getHeight();
-        String sourceId = request.getSourceId();
+        String sourceId = message.getSourceId();
         Inventory inventory = new Inventory();
         inventory.setHeight(height);
         List<String> list = Optional.ofNullable(blockIndexService.getBlockIndexByHeight(height)).map(BlockIndex::getBlockHashs).orElse(null);
