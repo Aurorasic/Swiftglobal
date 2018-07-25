@@ -116,7 +116,8 @@ public class BlockHandler extends BaseMessageHandler<Block> {
             Set<String> set = new HashSet<>(list);
             inventory.setHashs(set);
         }
-        messageCenter.broadcast(new String[]{sourceId}, inventory);
+        String[] excludeSourceIds = (sourceId == null) ? null : new String[]{sourceId};
+        messageCenter.broadcast(excludeSourceIds, inventory);
         LOGGER.info("after persisted block, broadcast block: {}", inventory);
     }
 }
