@@ -306,7 +306,7 @@ public class TransactionService implements ITransactionService {
             }
         }
 
-        if (preMoneyMap.keySet().size() != curMoneyMap.keySet().size()) {
+        if (preMoneyMap.keySet().size() >= curMoneyMap.keySet().size()) {
             LOGGER.info("Pre-output currency type different from current");
             return false;
         }
