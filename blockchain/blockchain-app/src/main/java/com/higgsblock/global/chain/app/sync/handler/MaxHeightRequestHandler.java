@@ -25,7 +25,7 @@ public class MaxHeightRequestHandler extends BaseMessageHandler<MaxHeightRequest
     private MessageCenter messageCenter;
 
     @Override
-    protected boolean check(SocketRequest<MaxHeightRequest> request) {
+    protected boolean valid(SocketRequest<MaxHeightRequest> request) {
         MaxHeightRequest data = request.getData();
         return null != data;
     }

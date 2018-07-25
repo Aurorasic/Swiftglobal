@@ -37,7 +37,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Override
-    protected boolean check(SocketRequest<Block> request) {
+    protected boolean valid(SocketRequest<Block> request) {
         Block block = request.getData();
         String hash = block.getHash();
 

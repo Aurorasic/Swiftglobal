@@ -47,7 +47,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean check(SocketRequest<VotingBlockResponse> request) {
+    protected boolean valid(SocketRequest<VotingBlockResponse> request) {
         VotingBlockResponse votingBlockResponse = request.getData();
         String sourceId = request.getSourceId();
         Block block;

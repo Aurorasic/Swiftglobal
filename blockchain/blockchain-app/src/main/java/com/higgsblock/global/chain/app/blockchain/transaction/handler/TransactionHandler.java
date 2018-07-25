@@ -21,7 +21,7 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     private ITransactionService transactionService;
 
     @Override
-    protected boolean check(SocketRequest<Transaction> request) {
+    protected boolean valid(SocketRequest<Transaction> request) {
         Transaction tx = request.getData();
         String hash = tx.getHash();
 

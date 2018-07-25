@@ -49,7 +49,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean check(SocketRequest<OriginalBlock> request) {
+    protected boolean valid(SocketRequest<OriginalBlock> request) {
         OriginalBlock originalBlock = request.getData();
         String sourceId = request.getSourceId();
         Block block;

@@ -20,7 +20,7 @@ public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightRespon
     private SyncBlockService syncBlockService;
 
     @Override
-    protected boolean check(SocketRequest<MaxHeightResponse> request) {
+    protected boolean valid(SocketRequest<MaxHeightResponse> request) {
         MaxHeightResponse maxHeightResponse = request.getData();
         return null != maxHeightResponse && maxHeightResponse.valid();
     }

@@ -29,7 +29,7 @@ public class GetBlockHandler extends BaseMessageHandler<GetBlock> {
     private BlockService blockService;
 
     @Override
-    protected boolean check(SocketRequest<GetBlock> request) {
+    protected boolean valid(SocketRequest<GetBlock> request) {
         GetBlock data = request.getData();
         return null != data && data.valid();
     }

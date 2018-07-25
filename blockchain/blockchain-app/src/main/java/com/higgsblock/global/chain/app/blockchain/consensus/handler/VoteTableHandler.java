@@ -45,7 +45,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     private IWitnessService witnessService;
 
     @Override
-    protected boolean check(SocketRequest<VoteTable> request) {
+    protected boolean valid(SocketRequest<VoteTable> request) {
 
         String sourceId = request.getSourceId();
         VoteTable data = request.getData();
