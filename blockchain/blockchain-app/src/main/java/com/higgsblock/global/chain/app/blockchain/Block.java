@@ -329,11 +329,11 @@ public class Block extends BaseSerializer {
 
     @JSONField(serialize = false)
     public String getSimpleInfo() {
-        return "height=" + height + ",hash=" + getHash();
+        return String.format("height=%s,hash=%s", height, getHash());
     }
 
     @JSONField(serialize = false)
     public String getSimpleInfoSuffix() {
-        return "for height=" + height + ",hash=" + getHash();
+        return String.format(" for height=%s,hash=%s", height, getHash());
     }
 }

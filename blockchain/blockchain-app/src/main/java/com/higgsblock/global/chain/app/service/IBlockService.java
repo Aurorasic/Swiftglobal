@@ -72,11 +72,11 @@ public interface IBlockService {
 
     /**
      * Save the block, block index , transaction index, utxo and scores, all of relation of block.
-     *
      * @param block
+     * @param sourceId
      * @return
      */
-    boolean persistBlockAndIndex(Block block);
+    boolean persistBlockAndIndex(Block block, String sourceId);
 
     /**
      * Check the block numbers
