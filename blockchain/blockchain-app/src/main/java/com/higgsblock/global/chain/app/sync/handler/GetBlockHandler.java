@@ -29,8 +29,8 @@ public class GetBlockHandler extends BaseMessageHandler<GetBlock> {
     private BlockService blockService;
 
     @Override
-    protected boolean check(IMessage<GetBlock> message) {
-        GetBlock data = message.getData();
+    protected boolean valid(IMessage<GetBlock> request) {
+        GetBlock data = request.getData();
         return null != data && data.valid();
     }
 

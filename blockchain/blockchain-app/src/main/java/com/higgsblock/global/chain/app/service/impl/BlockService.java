@@ -57,13 +57,13 @@ public class BlockService implements IBlockService {
     @Autowired
     private AppConfig config;
     @Autowired
+    private EventBus eventBus;
+    @Autowired
     private IBlockRepository blockRepository;
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
     @Autowired
     private IBlockIndexService blockIndexService;
-    @Autowired
-    private EventBus eventBus;
     @Autowired
     private TransactionCacheManager txCacheManager;
     @Autowired
@@ -86,6 +86,8 @@ public class BlockService implements IBlockService {
     private ITransactionFeeService transactionFeeService;
     @Autowired
     private SystemStatusManager systemStatusManager;
+    @Autowired
+    private IBlockChainService blockChainService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -431,9 +433,64 @@ public class BlockService implements IBlockService {
         return block;
     }
 
+    /**
+     * check block all biz infos
+     *
+     * @param block
+     * @return
+     */
+    private boolean checkAll(Block block, String sourceId) {
+        String hash = block.getHash();
+
+        //1.check: exist
+        boolean isExist = orphanBlockCacheManager.isContains(hash) || blockChainService.isExistBlock(hash);
+        if (isExist) {
+            LOGGER.info("the block is exist: {}", block.getSimpleInfo());
+            return false;
+        }
+
+        //2.check: witness signatures
+        boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
+        if (!validWitnessSignature) {
+            LOGGER.error("the block witness sig is error: {}", block.getSimpleInfo());
+            return false;
+        }
+
+        //3.check: orphan block
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
+        if (isOrphanBlock) {
+            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), sourceId, block);
+            orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+            LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
+            return false;
+        }
+
+        //4. check: producer stake
+        boolean producerValid = blockChainService.checkBlockProducer(block);
+        if (!producerValid) {
+            LOGGER.error("the block produce stake is error: {}", block.getSimpleInfo());
+            return false;
+        }
+
+        //5. check: transactions
+        boolean validTransactions = blockChainService.checkTransactions(block);
+        if (!validTransactions) {
+            LOGGER.error("the block transactions are error: {}", block.getSimpleInfo());
+            return false;
+        }
+        return true;
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public synchronized boolean persistBlockAndIndex(Block block) {
+    public synchronized boolean persistBlockAndIndex(Block block, String sourceId) {
+
+        //check block all biz infos
+        boolean isValid = checkAll(block, sourceId);
+        if (!isValid) {
+            return false;
+        }
+
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
 

@@ -306,10 +306,6 @@ public class TransactionService implements ITransactionService {
             }
         }
 
-        if (preMoneyMap.keySet().size() != curMoneyMap.keySet().size()) {
-            LOGGER.info("Pre-output currency type different from current");
-            return false;
-        }
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
@@ -317,11 +313,6 @@ public class TransactionService implements ITransactionService {
 
             if (preMoney == null) {
                 LOGGER.info("Pre-output currency is null {}", key);
-                return false;
-            }
-
-            if (curMoney == null) {
-                LOGGER.info("Current output currency is null {}", key);
                 return false;
             }
             LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());

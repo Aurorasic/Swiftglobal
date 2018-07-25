@@ -47,45 +47,54 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     private WitnessTimer witnessTimer;
 
     @Override
-    protected boolean check(IMessage<VotingBlockResponse> message) {
-        VotingBlockResponse votingBlockResponse = message.getData();
-        String sourceId = message.getSourceId();
-        Block block;
-        LOGGER.info("Received VotingBlockResponse {}", message);
-        if (null == votingBlockResponse || null == (block = votingBlockResponse.getBlock())) {
+    protected boolean valid(SocketRequest<VotingBlockResponse> request) {
+        VotingBlockResponse votingBlockResponse = request.getData();
+        LOGGER.info("Received VotingBlockResponse {}", request);
+        if (null == votingBlockResponse || null == votingBlockResponse.getBlock()) {
             return false;
         }
+        Block block = votingBlockResponse.getBlock();
         long height = block.getHeight();
-        String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();
-        String pubKey = block.getPubKey();
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
         }
+        return true;
+    }
+
+    @Override
+    protected void process(SocketRequest<VotingBlockResponse> request) {
+        VotingBlockResponse votingBlockResponse = request.getData();
+        Block block = votingBlockResponse.getBlock();
+        String sourceId = request.getSourceId();
+        long height = block.getHeight();
+        String prevBlockHash = block.getPrevBlockHash();
+        String blockHash = block.getHash();
+        String pubKey = block.getPubKey();
         int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
         if (block.getTransactions().size() < minTransactionNum) {
             LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
-            return false;
+            return;
         }
         if (voteService.isExistInBlockCache(height, blockHash)) {
             LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
-            return false;
+            return;
         }
         if (blockChainService.isExistBlock(blockHash)) {
             LOGGER.info("the block is already on the chain, height={}, hash={}", height, blockHash);
-            return false;
+            return;
         }
         long maxHeight = blockChainService.getMaxHeight();
         if (height <= maxHeight) {
             LOGGER.info("the height is already on the chain, height={}, hash={}", height, blockHash);
-            return false;
+            return;
         }
         if (!blockChainService.isExistBlock(prevBlockHash)) {
             LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash ", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            return false;
+            return;
         }
         boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
         if (!isDposMiner) {
@@ -93,21 +102,14 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             boolean acceptBlock = witnessTimer.acceptBlock(block);
             if (!acceptBlock) {
                 LOGGER.error("can not accept this block, height={}, hash={} ", height, blockHash);
-                return false;
+                return;
             }
         }
         if (!blockChainService.checkTransactions(block)) {
             LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
-            return false;
+            return;
         }
         LOGGER.info("check the VotingBlockResponse success, height={}, hash={}", height, blockHash);
-        return true;
-    }
-
-    @Override
-    protected void process(IMessage<VotingBlockResponse> message) {
-        VotingBlockResponse votingBlockResponse = message.getData();
-        Block block = votingBlockResponse.getBlock();
         if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(votingBlockResponse);
             return;

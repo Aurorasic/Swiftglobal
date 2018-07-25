@@ -42,7 +42,7 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
             .build();
 
     @Override
-    protected boolean check(IMessage<Inventory> message) {
+    protected boolean valid(IMessage<Inventory> message) {
         Inventory data = message.getData();
         return null != data && data.valid();
     }

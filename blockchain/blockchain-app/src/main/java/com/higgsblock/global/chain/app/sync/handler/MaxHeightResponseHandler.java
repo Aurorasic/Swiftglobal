@@ -20,7 +20,7 @@ public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightRespon
     private SyncBlockService syncBlockService;
 
     @Override
-    protected boolean check(IMessage<MaxHeightResponse> message) {
+    protected boolean valid(IMessage<MaxHeightResponse> message) {
         MaxHeightResponse maxHeightResponse = message.getData();
         return null != maxHeightResponse && maxHeightResponse.valid();
     }

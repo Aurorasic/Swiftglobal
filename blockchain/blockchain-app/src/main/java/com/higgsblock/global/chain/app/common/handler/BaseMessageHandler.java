@@ -57,7 +57,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                         IMessage message = takeMessage();
                         LOGGER.info("take request for processing; {}", message);
 
-                        boolean isValid = check(message);
+                        boolean isValid = valid(message);
                         if (isValid) {
                             process(message);
                         }
@@ -87,7 +87,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
         return false;
     }
 
-    protected abstract boolean check(IMessage<T> message);
+    protected abstract boolean valid(IMessage<T> message);
 
     protected abstract void process(IMessage<T> message);
 

@@ -45,48 +45,48 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     private IWitnessService witnessService;
 
     @Override
-    protected boolean check(IMessage<VoteTable> message) {
+    protected boolean valid(SocketRequest<VoteTable> request) {
 
-        String sourceId = message.getSourceId();
-        VoteTable data = message.getData();
-
+        VoteTable data = request.getData();
         //step1:check basic info
         if (null == data
                 || !data.valid()) {
             LOGGER.info("valid basic info , false");
             return false;
         }
+        return true;
+    }
+
+    @Override
+    protected void process(SocketRequest<VoteTable> request) {
+        String sourceId = request.getSourceId();
+        VoteTable data = request.getData();
         //step2:check witness
         if (!checkVersion1Witness(data)) {
             LOGGER.info("valid witness info , false");
-            return false;
+            return;
         }
         long voteHeight = data.getHeight();
         //step3: check height
         if (voteHeight < voteService.getHeight()) {
-            return false;
+            return;
         }
         //step4:if height > my vote height, sync block
         if (voteHeight > voteService.getHeight()) {
             eventBus.post(new SyncBlockEvent(voteHeight, null, sourceId));
             LOGGER.info("the height is greater than local , sync block");
-            return false;
+            return;
         }
         //step5: check original block
         if (!checkOriginalBlock(sourceId, data)) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    protected void process(IMessage<VoteTable> message) {
-        //check if this is witness
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(message.getData());
             return;
         }
-        voteService.dealVoteTable(message.getData());
+        //check if this is witness
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(request.getData());
+            return;
+        }
+        voteService.dealVoteTable(request.getData());
     }
 
     private boolean checkOriginalBlock(String sourceId, VoteTable otherVoteTable) {

@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
@@ -37,7 +38,8 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     private BlockService blockService;
     @Autowired
     private SyncBlockService sycBlockService;
-
+    @Autowired
+    private MessageCenter messageCenter;
     @Autowired
     private EventBus eventBus;
 
@@ -68,7 +70,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
         try {
             process(blockHash, height);
         } catch (Exception e) {
-            LOGGER.error("exception when handle orphan blocks of " + event, e);
+            LOGGER.error(String.format("exception when handle orphan blocks of %s", event), e);
         }
 
     }
@@ -78,28 +80,11 @@ public class OrphanBlockCacheManager implements IEventBusListener {
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
                 Block nextBlock = nextBlockFullInfo.getBlock();
-                long nextHeight = nextBlock.getHeight();
                 String nextBlockHash = nextBlock.getHash();
-                LOGGER.info("persisted height={},block={}, find orphan next block height={},block={} to persist",
-                        height, blockHash, nextHeight, nextBlockHash);
+                messageCenter.dispatch(nextBlock);
+                remove(nextBlockHash);
+                LOGGER.info("persisted height={},block={}, found next orphan block {}", height, blockHash, nextBlock.getSimpleInfo());
 
-                //check: producer stake
-                boolean producerValid = blockChainService.checkBlockProducer(nextBlock);
-                if (!producerValid) {
-                    LOGGER.error("the orphan block produce stake is error: {}", nextBlock.getSimpleInfo());
-                    remove(nextBlockHash);
-                }
-
-                //check: transactions
-                boolean validTransactions = blockChainService.checkTransactions(nextBlock);
-                if (!validTransactions) {
-                    LOGGER.error("the orphan block transactions are error: {}", nextBlock.getSimpleInfo());
-                    remove(nextBlockHash);
-                }
-
-                boolean success = blockService.persistBlockAndIndex(nextBlock);
-                LOGGER.info("orphan manager persisted block all info, success={},height={},block={}",
-                        success, nextHeight, nextBlockHash);
             }
         }
     }

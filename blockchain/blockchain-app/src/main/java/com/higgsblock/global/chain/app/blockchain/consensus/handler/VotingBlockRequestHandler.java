@@ -27,7 +27,7 @@ public class VotingBlockRequestHandler extends BaseMessageHandler<VotingBlockReq
     private IVoteService voteService;
 
     @Override
-    protected boolean check(IMessage<VotingBlockRequest> message) {
+    protected boolean valid(IMessage<VotingBlockRequest> message) {
         VotingBlockRequest data = message.getData();
         if (null == data || CollectionUtils.isEmpty(data.getBlockHashes())) {
             return false;
