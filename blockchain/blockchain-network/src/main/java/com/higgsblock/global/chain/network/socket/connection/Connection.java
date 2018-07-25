@@ -129,7 +129,7 @@ public class Connection {
         }
         isActivated = true;
         sendQueue = Queues.newLinkedBlockingQueue();
-        messageSender = ExecutorServices.newFixedThreadPool("connection-queue", 2, 10000);
+        messageSender = ExecutorServices.newSingleThreadExecutor("connection-queue", 10000);
 
         messageSender.submit(() -> {
             while (isActivated) {
