@@ -2,11 +2,11 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 
 import com.higgsblock.global.chain.app.common.message.MessageFormatter;
 import com.higgsblock.global.chain.app.common.message.MessageHandler;
+import com.higgsblock.global.chain.app.net.connection.Connection;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.message.BizMessage;
 import com.higgsblock.global.chain.network.socket.IMessageDispatcher;
 import com.higgsblock.global.chain.network.socket.MessageCache;
-import com.higgsblock.global.chain.app.net.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;

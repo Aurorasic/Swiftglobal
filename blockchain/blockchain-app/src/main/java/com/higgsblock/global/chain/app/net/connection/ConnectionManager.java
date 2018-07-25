@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.network.socket.Client;
 import com.higgsblock.global.chain.network.socket.Server;
+import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,59 +33,39 @@ public class ConnectionManager {
      * Maximum number of l3-level connections a node can create as a client. The word "l3-level" means that
      * connection is not miner to witness, nor is witness to another witness.
      */
-    private static final int CLIENT_L3_CONN_LIMIT = 2;
+    private static final int L3_CONN_OUT_LIMIT = 2;
 
     /**
      * Maximum number of l2-level connections a node can create as a client. The word "l2-level" means that
      * connection is miner to witness, or witness to miner. The value should be maximum of witness list size
      * and miner list size.
      */
-    private static final int CLIENT_L2_CONN_LIMIT = 11;
+    private static final int L2_CONN_OUT_LIMIT = 11;
 
     /**
      * Maximum number of l1-level connections a node can create as a client. The word "l1-level" means that
      * connection is witness to another witness. The value should be one less than witness list size.
      */
-    private static final int CLIENT_L1_CONN_LIMIT = 10;
+    private static final int L1_CONN_OUT_LIMIT = 10;
 
     /**
      * Maximum number of l3-level connections a node can accept as a server. The word "l3-level" means that
      * connection is not miner to witness, nor is witness to another witness.
      */
-    private static final int SERVER_L3_CONN_LIMIT = 30;
+    private static final int L3_CONN_IN_LIMIT = 30;
 
     /**
      * Maximum number of l2-level connections a node can accept as a server. The word "l2-level" means that
      * connection is miner to witness, or witness to miner. The value should be maximum of witness list size
      * and miner list size.
      */
-    private static final int SERVER_L2_CONN_LIMIT = 11;
+    private static final int L2_CONN_IN_LIMIT = 11;
 
     /**
      * Maximum number of l1-level connections a node can accept as a server. The word "l1-level" means that
      * connection is witness to another witness. The value should be one less than witness list size.
      */
-    private static final int SERVER_L1_CONN_LIMIT = 10;
-
-    /**
-     * Number of miners in a turn.
-     */
-    private static final int MINER_PER_TURN = 5;
-
-    /**
-     * Maximum number of turns in which a node can accept connections from miners.
-     */
-    private static final int MINER_TURN_LIMIT = 2;
-
-    /**
-     * Extra number of connections allowed by server.
-     */
-    private static final int SERVER_EXTRA_NUM = 4;
-
-    /**
-     * Maximum number of connections a node can accept as a server.
-     */
-    private static final int SERVER_CONN_LIMIT = SERVER_L1_CONN_LIMIT + MINER_PER_TURN * MINER_TURN_LIMIT + SERVER_L3_CONN_LIMIT + SERVER_EXTRA_NUM;
+    private static final int L1_CONN_IN_LIMIT = 10;
 
     /**
      * Minimum timeout in second this node start connections synchronously.
@@ -108,7 +89,6 @@ public class ConnectionManager {
     private Server server;
     @Autowired
     private PeerManager peerManager;
-
 
     /**
      * Connect to remote node.
@@ -141,10 +121,13 @@ public class ConnectionManager {
         if (peerManager.isSelf(peer)) {
             return false;
         }
-        if (contains(peer)) {
+
+        if (isConnected(peer)) {
             return false;
         }
-        if (!levelAllowedAsClient(peer)) {
+
+        ConnectionLevelEnum level = calculateConnectionLevel(peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(peer));
+        if (!isAllowedConnectOut(level)) {
             return false;
         }
         return true;
@@ -156,31 +139,8 @@ public class ConnectionManager {
      * @param peer peer to check
      * @return true if connection pool contains connection of peer, false otherwise
      */
-    private boolean contains(Peer peer) {
+    private boolean isConnected(Peer peer) {
         return connectionMap.values().stream().anyMatch(connection -> connection.getPeerId().equals(peer.getId()));
-    }
-
-    /**
-     * Check if this node is allowed to connect to remote node or not, from connection level perspectives.
-     *
-     * @param peer peer to check
-     * @return true if this node is allowed to connect to remote node from connection level perspectives, false otherwise
-     */
-    private boolean levelAllowedAsClient(Peer peer) {
-        ConnectionLevelEnum connectionLevel = calculateConnectionLevel(
-                peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(peer));
-
-        if (connectionLevel == ConnectionLevelEnum.L1) {
-            return countConnections(true, ConnectionLevelEnum.L1) < CLIENT_L1_CONN_LIMIT;
-        }
-        if (connectionLevel == ConnectionLevelEnum.L2) {
-            return countConnections(true, ConnectionLevelEnum.L2) < CLIENT_L2_CONN_LIMIT;
-        }
-        if (connectionLevel == ConnectionLevelEnum.L3) {
-            return countConnections(true, ConnectionLevelEnum.L3) < CLIENT_L3_CONN_LIMIT;
-        }
-
-        return false;
     }
 
     /**
@@ -207,13 +167,13 @@ public class ConnectionManager {
     /**
      * Count connection size with specified this node being client or not and connection level.
      *
-     * @param isClient        this node is client or not
+     * @param type            this node is client or not
      * @param connectionLevel connection level
      * @return size of connections meeting the condition
      */
-    private int countConnections(boolean isClient, ConnectionLevelEnum connectionLevel) {
+    private int countConnections(ChannelType type, ConnectionLevelEnum connectionLevel) {
         return (int) connectionMap.values().stream().filter(connection ->
-                connection.isClient() == isClient && connection.getConnectionLevel() == connectionLevel).count();
+                connection.getType() == type && connection.getConnectionLevel() == connectionLevel).count();
     }
 
 
@@ -261,36 +221,17 @@ public class ConnectionManager {
     }
 
     /**
-     * Check if number of connections received reached the limitation.
-     *
-     * @return true if number of connections received does not reached the limitation, false otherwise
-     */
-    public boolean connectionNumberAllowedAsServer() {
-        return countConnectionsAsServer() < SERVER_CONN_LIMIT;
-    }
-
-    /**
-     * Get number of connections received as server.
-     *
-     * @return Number of connections received as server
-     */
-    private int countConnectionsAsServer() {
-        return (int) (connectionMap.values().stream().filter(connection -> !connection.isClient()).count()
-                + peerUnknownConnectionMap.values().stream().filter(connection -> !connection.isClient()).count());
-    }
-
-    /**
      * Create a connection.
      *
-     * @param channel  channel attached to connection
-     * @param isClient this node is client or not
+     * @param channel channel attached to connection
+     * @param type    this node is client or not
      * @return new created connection
      */
-    public Connection createConnection(Channel channel, boolean isClient) {
+    public Connection createConnection(Channel channel, ChannelType type) {
         return peerUnknownConnectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
-            Connection connection = new Connection(channel, isClient);
+            Connection connection = new Connection(channel, type);
 
-            LOGGER.info("Created a connection to channelId={}, isClient={}", connectionId, isClient);
+            LOGGER.info("Created a connection to channelId={}, type={}", connectionId, type);
             return connection;
         });
     }
@@ -316,43 +257,55 @@ public class ConnectionManager {
         // The remote node is not allowed to send the same peer two times in one connection. If not so,
         // connection will be removed.
         // If in two connections, the first one will be kept, the other will be removed.
-        if (contains(peer)) {
+        if (isConnected(peer)) {
             LOGGER.info("Peer {}, address {} is in connection pools", peer.getId(), peer.getSocketAddress());
             remove(connection);
             return;
         }
 
-        ConnectionLevelEnum connectionLevel = ConnectionManager.calculateConnectionLevel(
+        ConnectionLevelEnum level = ConnectionManager.calculateConnectionLevel(
                 peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(peer));
 
-        // todo baizhengwen compute connection level
-        if (levelAllowedAsServer(connectionLevel)) {
+        if (isAllowedConnect(level, connection.getType())) {
             connection.activate(peer);
-            connection.setConnectionLevel(connectionLevel);
+            connection.setConnectionLevel(level);
             moveToConnectionMap(connection);
         } else {
             remove(connection);
         }
     }
 
-    /**
-     * Check if this node can accepts remote node or not, from connection level perspectives.
-     *
-     * @param connectionLevel level of connection from client to this node
-     * @return true if this node can accepts remote node from connection level perspectives, false otherwise
-     */
-    private boolean levelAllowedAsServer(ConnectionLevelEnum connectionLevel) {
-        if (connectionLevel == ConnectionLevelEnum.L1) {
-            return countConnections(false, ConnectionLevelEnum.L1) < SERVER_L1_CONN_LIMIT;
+    private boolean isAllowedConnect(ConnectionLevelEnum level, ChannelType type) {
+        if (ChannelType.IN == type) {
+            return isAllowedConnectIn(level);
         }
-        if (connectionLevel == ConnectionLevelEnum.L2) {
-            return countConnections(false, ConnectionLevelEnum.L2) < SERVER_L2_CONN_LIMIT;
+        return isAllowedConnectOut(level);
+    }
+
+    private boolean isAllowedConnectOut(ConnectionLevelEnum level) {
+        if (level == ConnectionLevelEnum.L1) {
+            return countConnections(ChannelType.OUT, ConnectionLevelEnum.L1) < L1_CONN_OUT_LIMIT;
         }
-        if (connectionLevel == ConnectionLevelEnum.L3) {
-            return countConnections(false, ConnectionLevelEnum.L3) < SERVER_L3_CONN_LIMIT;
+        if (level == ConnectionLevelEnum.L2) {
+            return countConnections(ChannelType.OUT, ConnectionLevelEnum.L2) < L2_CONN_OUT_LIMIT;
+        }
+        if (level == ConnectionLevelEnum.L3) {
+            return countConnections(ChannelType.OUT, ConnectionLevelEnum.L3) < L3_CONN_OUT_LIMIT;
         }
         return false;
+    }
 
+    private boolean isAllowedConnectIn(ConnectionLevelEnum level) {
+        if (level == ConnectionLevelEnum.L1) {
+            return countConnections(ChannelType.IN, ConnectionLevelEnum.L1) < L1_CONN_IN_LIMIT;
+        }
+        if (level == ConnectionLevelEnum.L2) {
+            return countConnections(ChannelType.IN, ConnectionLevelEnum.L2) < L2_CONN_IN_LIMIT;
+        }
+        if (level == ConnectionLevelEnum.L3) {
+            return countConnections(ChannelType.IN, ConnectionLevelEnum.L3) < L3_CONN_IN_LIMIT;
+        }
+        return false;
     }
 
     /**
@@ -461,25 +414,25 @@ public class ConnectionManager {
      * Remove extra connections.
      */
     public void removeExtraConnections() {
-        removeExtraConnections(true, ConnectionLevelEnum.L1, CLIENT_L1_CONN_LIMIT);
-        removeExtraConnections(true, ConnectionLevelEnum.L2, CLIENT_L2_CONN_LIMIT);
-        removeExtraConnections(true, ConnectionLevelEnum.L3, CLIENT_L3_CONN_LIMIT);
+        removeExtraConnections(ChannelType.OUT, ConnectionLevelEnum.L1, L1_CONN_OUT_LIMIT);
+        removeExtraConnections(ChannelType.OUT, ConnectionLevelEnum.L2, L2_CONN_OUT_LIMIT);
+        removeExtraConnections(ChannelType.OUT, ConnectionLevelEnum.L3, L3_CONN_OUT_LIMIT);
 
-        removeExtraConnections(false, ConnectionLevelEnum.L1, SERVER_L1_CONN_LIMIT);
-        removeExtraConnections(false, ConnectionLevelEnum.L2, SERVER_L2_CONN_LIMIT);
-        removeExtraConnections(false, ConnectionLevelEnum.L3, SERVER_L3_CONN_LIMIT);
+        removeExtraConnections(ChannelType.IN, ConnectionLevelEnum.L1, L1_CONN_IN_LIMIT);
+        removeExtraConnections(ChannelType.IN, ConnectionLevelEnum.L2, L2_CONN_IN_LIMIT);
+        removeExtraConnections(ChannelType.IN, ConnectionLevelEnum.L3, L3_CONN_IN_LIMIT);
     }
 
     /**
      * Remove extra connections.
      *
-     * @param isClient        this node is client or not
+     * @param type            this node is client or not
      * @param connectionLevel level of connection
      * @param numberAllowed   number of connections allowed for the level
      */
-    private void removeExtraConnections(boolean isClient, ConnectionLevelEnum connectionLevel, int numberAllowed) {
+    private void removeExtraConnections(ChannelType type, ConnectionLevelEnum connectionLevel, int numberAllowed) {
         List<Connection> connections = connectionMap.values().stream().filter(connection ->
-                connection.isClient() == isClient && connection.getConnectionLevel() == connectionLevel).collect(Collectors.toList());
+                connection.getType() == type && connection.getConnectionLevel() == connectionLevel).collect(Collectors.toList());
 
         for (int extraIndex = numberAllowed, length = connections.size(); extraIndex < length; extraIndex++) {
             remove(connections.get(extraIndex));

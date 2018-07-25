@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.api.vo;
 
 import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
+import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import lombok.Data;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -16,7 +17,7 @@ public class ConnectionVO {
     private String ip;
     private int port;
     private boolean isActivated;
-    private boolean isClient;
+    private ChannelType type;
     private ConnectionLevelEnum connectionLevel;
 
     @Override
@@ -26,7 +27,7 @@ public class ConnectionVO {
                 .append("peerId", peerId)
                 .append("ip", ip)
                 .append("port", port)
-                .append("isClient", isClient)
+                .append("type", type)
                 .append("isActivated", isActivated)
                 .append("connectionLevel", connectionLevel)
                 .toString();

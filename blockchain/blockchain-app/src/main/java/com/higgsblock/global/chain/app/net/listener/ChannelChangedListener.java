@@ -4,8 +4,8 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.message.Hello;
-import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
+import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import com.higgsblock.global.chain.network.socket.event.CreateChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.DiscardChannelEvent;
@@ -31,7 +31,7 @@ public class ChannelChangedListener implements IEventBusListener {
     public void process(CreateChannelEvent event) {
         Channel channel = event.getChannel();
         ChannelType channelType = event.getType();
-        connectionManager.createConnection(channel, ChannelType.OUT == channelType);
+        connectionManager.createConnection(channel, channelType);
 
         Hello hello = new Hello();
         hello.setPeer(peerManager.getSelf());

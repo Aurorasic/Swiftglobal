@@ -4,6 +4,7 @@ import com.google.common.collect.Queues;
 import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
+import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,10 +38,10 @@ public class Connection {
     private Peer peer;
 
     /**
-     * The role this node plays in the connection.
+     * Mark the connection is in or out.
      */
     @Getter
-    private boolean isClient;
+    private ChannelType type;
 
     /**
      * The time at which this connection object is created.
@@ -70,9 +71,9 @@ public class Connection {
      */
     private volatile boolean isActivated;
 
-    public Connection(Channel channel, boolean isClient) {
+    public Connection(Channel channel, ChannelType type) {
         this.channel = channel;
-        this.isClient = isClient;
+        this.type = type;
         this.createdTime = System.currentTimeMillis();
         this.connectionLevel = ConnectionLevelEnum.L3;
     }
@@ -201,7 +202,7 @@ public class Connection {
                 .append("peerId", getPeerId())
                 .append("ip", getIp())
                 .append("port", getPort())
-                .append("isClient", isClient)
+                .append("type", type)
                 .append("isActivated", isActivated())
                 .append("connectionLevel", connectionLevel)
                 .toString();
