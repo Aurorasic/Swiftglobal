@@ -12,7 +12,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
-import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.sync.message.GetBlock;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;

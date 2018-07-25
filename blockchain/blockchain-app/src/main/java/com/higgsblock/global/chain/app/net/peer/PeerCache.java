@@ -1,8 +1,8 @@
-package com.higgsblock.global.chain.network.socket;
+package com.higgsblock.global.chain.app.net.peer;
 
-import com.higgsblock.global.chain.network.Peer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;

@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.service;
 
-import com.higgsblock.global.chain.network.Peer;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import retrofit2.Call;
 import retrofit2.http.GET;
 

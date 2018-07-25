@@ -1,9 +1,9 @@
 package com.higgsblock.global.chain.app.disconver;
 
 import com.higgsblock.global.chain.app.BaseTest;
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
-import com.higgsblock.global.chain.network.api.IRegistryApi;
+import com.higgsblock.global.chain.app.net.peer.Peer;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
+import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.network.upnp.UpnpDiscover;
 import com.higgsblock.global.chain.network.upnp.UpnpManager;
 import com.higgsblock.global.chain.network.upnp.model.PortMappingInfo;

@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.network;
+package com.higgsblock.global.chain.app.net.peer;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;

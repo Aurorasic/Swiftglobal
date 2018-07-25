@@ -1,14 +1,13 @@
-package com.higgsblock.global.chain.app.net;
+package com.higgsblock.global.chain.app.net.connection;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
+import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
+import com.higgsblock.global.chain.app.net.peer.Peer;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.network.socket.Client;
 import com.higgsblock.global.chain.network.socket.Server;
-import com.higgsblock.global.chain.network.socket.connection.Connection;
-import com.higgsblock.global.chain.network.socket.connection.ConnectionLevelEnum;
-import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

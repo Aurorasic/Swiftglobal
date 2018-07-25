@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.network.config;
+package com.higgsblock.global.chain.app.net.config;
 
 import lombok.Data;
 

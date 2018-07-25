@@ -2,12 +2,12 @@ package com.higgsblock.global.chain.app.net.handler;
 
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.app.net.ConnectionManager;
+import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.message.Hello;
 import com.higgsblock.global.chain.app.net.message.HelloAck;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.peer.Peer;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

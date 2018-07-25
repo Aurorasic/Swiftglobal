@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.api.vo;
 
-import com.higgsblock.global.chain.network.socket.connection.ConnectionLevelEnum;
+import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
 import lombok.Data;
 import org.apache.commons.lang.builder.ToStringBuilder;
 

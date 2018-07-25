@@ -1,14 +1,11 @@
-package com.higgsblock.global.chain.network;
+package com.higgsblock.global.chain.app.net.peer;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
-import com.higgsblock.global.chain.network.api.IRegistryApi;
+import com.higgsblock.global.chain.app.net.api.IRegistryApi;
+import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.config.PeerConstant;
-import com.higgsblock.global.chain.network.config.RegistryConfig;
-import com.higgsblock.global.chain.network.socket.PeerCache;
-import com.higgsblock.global.chain.network.socket.connection.NodeRoleEnum;
 import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,6 +33,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PeerManager {
     /**
+     * The constant MIN_LOCAL_PEER_COUNT.
+     */
+    public static final int MIN_LOCAL_PEER_COUNT = 2;
+    /**
      * The Config.
      */
     @Autowired
@@ -62,12 +63,6 @@ public class PeerManager {
      * The Peer map.
      */
     private Map<String, Peer> peerMap = new ConcurrentHashMap<>();
-
-    /**
-     * The Registry config.
-     */
-    @Autowired
-    private RegistryConfig registryConfig;
 
     /**
      * List of witnesses.
@@ -247,7 +242,7 @@ public class PeerManager {
         // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
         // 1.load neighbor peers from local
         Collection<Peer> localPeers = getPeers();
-        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < PeerConstant.MIN_LOCAL_PEER_COUNT) {
+        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < MIN_LOCAL_PEER_COUNT) {
             this.getSeedPeers();
         } else {
             this.add(localPeers);
@@ -424,7 +419,7 @@ public class PeerManager {
     public void reportToRegistry() {
         try {
             boolean result = this.registryApi.report(getSelf()).execute().body();
-            LOGGER.info("report self info to register({}) {}", registryConfig.toString(), result);
+            LOGGER.info("report self info to register, result={}", result);
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }

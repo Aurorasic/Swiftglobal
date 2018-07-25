@@ -22,7 +22,7 @@ import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;

@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.api.inner;
 
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.peer.Peer;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.network.socket.connection;
+package com.higgsblock.global.chain.app.net.constants;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

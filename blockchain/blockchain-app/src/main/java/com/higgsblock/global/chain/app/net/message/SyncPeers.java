@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.net.message;
 
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
-import com.higgsblock.global.chain.network.Peer;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import lombok.Data;
 
 import java.util.LinkedList;

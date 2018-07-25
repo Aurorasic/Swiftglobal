@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.api.inner;
 
 import com.google.common.collect.Lists;
-import com.higgsblock.global.chain.network.Peer;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.peer.Peer;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

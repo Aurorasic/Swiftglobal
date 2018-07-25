@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.network.PeerManager;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

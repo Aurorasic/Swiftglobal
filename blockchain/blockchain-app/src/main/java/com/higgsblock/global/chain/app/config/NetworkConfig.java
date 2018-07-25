@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.config;
 
-import com.higgsblock.global.chain.network.api.IRegistryApi;
+import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.config.RegistryConfig;
+import com.higgsblock.global.chain.app.net.config.RegistryConfig;
 import com.higgsblock.global.chain.network.config.SocketConfig;
 import com.higgsblock.global.chain.network.enums.NetworkType;
 import com.higgsblock.global.chain.network.http.HttpClient;

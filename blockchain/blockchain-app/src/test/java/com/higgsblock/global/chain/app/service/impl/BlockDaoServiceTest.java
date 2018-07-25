@@ -13,7 +13,7 @@
 //import com.higgsblock.global.chain.app.dao.BlockIndexDao;
 //import com.higgsblock.global.chain.app.dao.entity.BaseDaoEntity;
 //import com.higgsblock.global.chain.app.dao.entity.BlockIndexDaoEntity;
-//import com.higgsblock.global.chain.network.PeerManager;
+//import com.higgsblock.global.chain.app.net.peer.PeerManager;
 //import org.apache.commons.collections.CollectionUtils;
 //import org.junit.Assert;
 //import org.junit.Test;

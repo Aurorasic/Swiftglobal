@@ -1,8 +1,9 @@
-package com.higgsblock.global.chain.network.socket.connection;
+package com.higgsblock.global.chain.app.net.connection;
 
 import com.google.common.collect.Queues;
+import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
-import com.higgsblock.global.chain.network.Peer;
 import io.netty.channel.Channel;
 import lombok.Getter;
 import lombok.Setter;

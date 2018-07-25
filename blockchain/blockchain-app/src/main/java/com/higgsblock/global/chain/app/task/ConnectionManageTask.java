@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.app.task;
 
-import com.higgsblock.global.chain.app.net.ConnectionManager;
-import com.higgsblock.global.chain.network.socket.connection.Connection;
+import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
+import com.higgsblock.global.chain.app.net.connection.Connection;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
