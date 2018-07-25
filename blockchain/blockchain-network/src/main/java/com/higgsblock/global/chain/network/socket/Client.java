@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.network.socket;
 
 import com.higgsblock.global.chain.common.utils.ThreadFactoryUtils;
-import com.higgsblock.global.chain.network.config.SocketConfig;
+import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -28,7 +28,7 @@ public class Client {
     private NioEventLoopGroup workerGroup;
 
     @Autowired
-    private SocketConfig config;
+    private PeerConfig config;
     @Autowired
     private ChannelInitializer channelInitializer;
 

@@ -1,9 +1,8 @@
 package com.higgsblock.global.chain.app.config;
 
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
-import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.app.net.config.RegistryConfig;
-import com.higgsblock.global.chain.network.config.SocketConfig;
+import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.network.enums.NetworkType;
 import com.higgsblock.global.chain.network.http.HttpClient;
 import lombok.extern.slf4j.Slf4j;
@@ -43,16 +42,5 @@ public class NetworkConfig {
     @Bean
     public IRegistryApi registryApi(RegistryConfig config) {
         return HttpClient.getApi(config.getIp(), config.getPort(), IRegistryApi.class);
-    }
-
-    @Bean
-    public SocketConfig socketConfig(AppConfig config) {
-        SocketConfig socketConfig = new SocketConfig();
-        socketConfig.setServerPort(config.getSocketServerPort());
-        socketConfig.setConnectionTimeOutMs(config.getConnectionTimeout());
-        // todo baizhengwen read from config
-        socketConfig.setChannelLimitIn(100);
-        socketConfig.setChannelLimitOut(100);
-        return socketConfig;
     }
 }

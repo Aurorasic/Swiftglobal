@@ -1,7 +1,7 @@
 package com.higgsblock.global.chain.network.socket;
 
 import com.higgsblock.global.chain.common.utils.ThreadFactoryUtils;
-import com.higgsblock.global.chain.network.config.SocketConfig;
+import com.higgsblock.global.chain.network.config.PeerConfig;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadFactory;
 public class Server {
 
     @Autowired
-    private SocketConfig config;
+    private PeerConfig config;
     @Autowired
     private ChannelInitializer channelInitializer;
 
@@ -60,7 +60,7 @@ public class Server {
             bootstrap.childHandler(channelInitializer);
 
             LOGGER.info("Starting socket server");
-            int socketServerPort = config.getServerPort();
+            int socketServerPort = config.getSocketPort();
             serverChannel = bootstrap.bind(socketServerPort).addListener(channelFuture -> {
                 if (channelFuture.isSuccess()) {
                     LOGGER.info("Successfully bind local port : {}", socketServerPort);
