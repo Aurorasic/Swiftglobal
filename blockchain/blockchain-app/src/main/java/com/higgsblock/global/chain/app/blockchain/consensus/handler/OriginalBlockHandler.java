@@ -51,58 +51,10 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     @Override
     protected boolean valid(SocketRequest<OriginalBlock> request) {
         OriginalBlock originalBlock = request.getData();
-        String sourceId = request.getSourceId();
-        Block block;
         LOGGER.info("Received OriginalBlock {}", request);
-        if (null == originalBlock || null == (block = originalBlock.getBlock())) {
+        if (null == originalBlock || null == originalBlock.getBlock()) {
             return false;
         }
-        long height = block.getHeight();
-        String prevBlockHash = block.getPrevBlockHash();
-        String blockHash = block.getHash();
-        String pubKey = block.getPubKey();
-        if (!block.valid()) {
-            LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
-            return false;
-        }
-        int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
-        if (block.getTransactions().size() < minTransactionNum) {
-            LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
-            return false;
-        }
-        if (voteService.isExistInBlockCache(height, blockHash)) {
-            LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
-            return false;
-        }
-        if (blockChainService.isExistBlock(blockHash)) {
-            LOGGER.info("the block is already on the chain, height={}, hash={}", height, blockHash);
-            return false;
-        }
-        long maxHeight = blockChainService.getMaxHeight();
-        if (height <= maxHeight) {
-            LOGGER.info("the height is already on the chain, height={}, hash={}", height, blockHash);
-            return false;
-        }
-        if (!blockChainService.isExistBlock(prevBlockHash)) {
-            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash", height, blockHash, prevBlockHash);
-            long orphanBlockHeight = height - 1L;
-            eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            return false;
-        }
-        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
-        if (!isDposMiner) {
-            LOGGER.error("this miner can not package the height, height={}, hash={}", height, blockHash);
-            boolean acceptBlock = witnessTimer.acceptBlock(block);
-            if (!acceptBlock) {
-                LOGGER.error("can not accept this block, height={}, hash={}", height, blockHash);
-                return false;
-            }
-        }
-        if (!blockChainService.checkTransactions(block)) {
-            LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
-            return false;
-        }
-        LOGGER.info("check the OriginalBlock success, height={}, hash={}", height, blockHash);
         return true;
     }
 
@@ -110,6 +62,49 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     protected void process(SocketRequest<OriginalBlock> request) {
         OriginalBlock originalBlock = request.getData();
         Block block = originalBlock.getBlock();
+        String sourceId = request.getSourceId();
+        long height = block.getHeight();
+        String prevBlockHash = block.getPrevBlockHash();
+        String blockHash = block.getHash();
+        String pubKey = block.getPubKey();
+        int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
+        if (block.getTransactions().size() < minTransactionNum) {
+            LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
+            return;
+        }
+        if (voteService.isExistInBlockCache(height, blockHash)) {
+            LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
+            return;
+        }
+        if (blockChainService.isExistBlock(blockHash)) {
+            LOGGER.info("the block is already on the chain, height={}, hash={}", height, blockHash);
+            return;
+        }
+        long maxHeight = blockChainService.getMaxHeight();
+        if (height <= maxHeight) {
+            LOGGER.info("the height is already on the chain, height={}, hash={}", height, blockHash);
+            return;
+        }
+        if (!blockChainService.isExistBlock(prevBlockHash)) {
+            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash", height, blockHash, prevBlockHash);
+            long orphanBlockHeight = height - 1L;
+            eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
+            return;
+        }
+        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
+        if (!isDposMiner) {
+            LOGGER.error("this miner can not package the height, height={}, hash={}", height, blockHash);
+            boolean acceptBlock = witnessTimer.acceptBlock(block);
+            if (!acceptBlock) {
+                LOGGER.error("can not accept this block, height={}, hash={}", height, blockHash);
+                return;
+            }
+        }
+        if (!blockChainService.checkTransactions(block)) {
+            LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
+            return;
+        }
+        LOGGER.info("check the OriginalBlock success, height={}, hash={}", height, blockHash);
         if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(originalBlock);
             return;
