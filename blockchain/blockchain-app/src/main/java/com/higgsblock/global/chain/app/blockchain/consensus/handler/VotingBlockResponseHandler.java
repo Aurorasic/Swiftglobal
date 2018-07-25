@@ -53,6 +53,13 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         if (null == votingBlockResponse || null == votingBlockResponse.getBlock()) {
             return false;
         }
+        Block block = votingBlockResponse.getBlock();
+        long height = block.getHeight();
+        String blockHash = block.getHash();
+        if (!block.valid()) {
+            LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
+            return false;
+        }
         return true;
     }
 

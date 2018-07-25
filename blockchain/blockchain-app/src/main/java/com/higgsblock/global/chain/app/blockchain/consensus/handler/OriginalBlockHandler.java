@@ -55,6 +55,13 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         if (null == originalBlock || null == originalBlock.getBlock()) {
             return false;
         }
+        Block block = originalBlock.getBlock();
+        long height = block.getHeight();
+        String blockHash = block.getHash();
+        if (!block.valid()) {
+            LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
+            return false;
+        }
         return true;
     }
 
