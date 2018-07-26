@@ -64,15 +64,19 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         try {
             success = blockService.persistBlockAndIndex(block);
         } catch (NotExistPreBlockException e) {
-            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), sourceId, block);
-            orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
-            LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
+            putAndRequestPreBlocks(block, sourceId);
         }
 
         LOGGER.info("persisted block all info, success={},{}", success, block.getSimpleInfo());
         if (success) {
             broadcastInventory(message);
         }
+    }
+
+    private void putAndRequestPreBlocks(Block block, String sourceId) {
+        BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), sourceId, block);
+        orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+        LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
     }
 
     private void broadcastInventory(IMessage<Block> message) {
