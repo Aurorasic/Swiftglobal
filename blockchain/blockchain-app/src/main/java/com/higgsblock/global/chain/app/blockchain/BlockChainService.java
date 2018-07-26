@@ -107,13 +107,13 @@ public class BlockChainService implements IBlockChainService {
     @Override
     public boolean checkBlockProducer(Block block) {
         // 1.check the producer of the block.
-        boolean result = blockService.checkBlockProducer(block);
+        boolean result = blockService.checkDposProducerPermission(block);
         if (result) {
             return true;
         }
 
         // 2.check the guarder permission
-        result = witnessTimer.acceptBlock(block);
+        result = witnessTimer.checkGuarderPermission(block);
         if (result) {
             return true;
         }

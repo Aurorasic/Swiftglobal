@@ -8,12 +8,12 @@ import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBloc
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -101,7 +101,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
         if (!isDposMiner) {
             LOGGER.error("this miner can not package the height, height={}, hash={}", height, blockHash);
-            boolean acceptBlock = witnessTimer.acceptBlock(block);
+            boolean acceptBlock = witnessTimer.checkGuarderPermissionWithTimer(block);
             if (!acceptBlock) {
                 LOGGER.error("can not accept this block, height={}, hash={}", height, blockHash);
                 return;

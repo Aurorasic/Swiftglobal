@@ -99,7 +99,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
         if (!isDposMiner) {
             LOGGER.error("this miner can not package the height, height={}, hash={}", height, blockHash);
-            boolean acceptBlock = witnessTimer.acceptBlock(block);
+            boolean acceptBlock = witnessTimer.checkGuarderPermissionWithTimer(block);
             if (!acceptBlock) {
                 LOGGER.error("can not accept this block, height={}, hash={} ", height, blockHash);
                 return;

@@ -2,9 +2,9 @@ package com.higgsblock.global.chain.app.blockchain;
 
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,7 +40,7 @@ public class WitnessTimer implements IEventBusListener {
         LOGGER.info("init time={},currHeight={} ", initTime, currHeight);
     }
 
-    public boolean acceptBlock(Block block) {
+    public boolean checkGuarderPermissionWithTimer(Block block) {
         if (currHeight >= block.getHeight()) {
             return false;
         }
@@ -54,6 +54,9 @@ public class WitnessTimer implements IEventBusListener {
         return false;
     }
 
+    public boolean checkGuarderPermission(Block block) {
+        return verifyBlockBelongGuarder(block);
+    }
 
     @Subscribe
     public void process(BlockPersistedEvent event) {

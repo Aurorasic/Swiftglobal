@@ -18,11 +18,11 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -345,7 +345,7 @@ public class BlockService implements IBlockService {
      * @return the boolean
      */
     @Override
-    public boolean checkBlockProducer(Block block) {
+    public boolean checkDposProducerPermission(Block block) {
         // 1.check the miner signature
         boolean result = checkProducerSignature(block);
         if (!result) {

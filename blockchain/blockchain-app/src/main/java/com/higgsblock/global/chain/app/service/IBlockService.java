@@ -122,7 +122,7 @@ public interface IBlockService {
      * @param block
      * @return the boolean
      */
-    boolean checkBlockProducer(Block block);
+    boolean checkDposProducerPermission(Block block);
 
     /**
      * packageNewBlock
