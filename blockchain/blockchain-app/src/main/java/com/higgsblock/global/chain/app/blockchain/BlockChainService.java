@@ -113,7 +113,7 @@ public class BlockChainService implements IBlockChainService {
         }
 
         // 2.check the guarder permission
-        result = witnessTimer.checkGuarderPermission(block);
+        result = witnessTimer.checkGuarderPermissionWithoutTimer(block);
         if (result) {
             return true;
         }

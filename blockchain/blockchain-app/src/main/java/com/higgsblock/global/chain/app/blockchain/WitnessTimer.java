@@ -54,7 +54,7 @@ public class WitnessTimer implements IEventBusListener {
         return false;
     }
 
-    public boolean checkGuarderPermission(Block block) {
+    public boolean checkGuarderPermissionWithoutTimer(Block block) {
         return verifyBlockBelongGuarder(block);
     }
 
