@@ -77,12 +77,25 @@ public class DposService implements IDposService, InitializingBean {
      */
     @Override
     public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
-        List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
+        List<String> dposAddresses = Lists.newLinkedList();
+        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
+
+        //select the next dpos nodes when toBeBestBlock height is first of round
+        if (!isFirstOfRound) {
+            return dposAddresses;
+        }
+        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
+        long sn = getSn(maxHeight);
+        boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
+        if (selectedNextGroup) {
+            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
+            return dposAddresses;
+        }
+        dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         //persist selected nodes address although  it is empty
         if (dposAddresses == null) {
             dposAddresses = Lists.newLinkedList();
         }
-        long sn = getSn(maxHeight);
         persistDposNodes(sn, dposAddresses);
         return dposAddresses;
     }
@@ -235,21 +248,7 @@ public class DposService implements IDposService, InitializingBean {
 
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
-
-        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
-
-        //select the next dpos nodes when toBeBestBlock height is first of round
-        if (!isFirstOfRound) {
-            return selected;
-        }
-        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
-        boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
-        if (selectedNextGroup) {
-            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
-            return selected;
-        }
-
         List<ScoreEntity> all = scoreService.all();
         LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), all);
         if (CollectionUtils.isEmpty(all)) {
