@@ -1,14 +1,12 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
-import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
+import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
+import com.higgsblock.global.chain.crypto.exception.NotExistPreBlockException;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -62,7 +60,15 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     protected void process(IMessage<Block> message) {
         Block block = message.getData();
         String sourceId = message.getSourceId();
-        boolean success = blockService.persistBlockAndIndex(block, sourceId);
+        boolean success = false;
+        try {
+            success = blockService.persistBlockAndIndex(block);
+        } catch (NotExistPreBlockException e) {
+            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), sourceId, block);
+            orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+            LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
+        }
+
         LOGGER.info("persisted block all info, success={},{}", success, block.getSimpleInfo());
         if (success) {
             broadcastInventory(message);

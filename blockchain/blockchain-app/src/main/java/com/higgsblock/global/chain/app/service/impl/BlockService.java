@@ -23,6 +23,7 @@ import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.crypto.exception.NotExistPreBlockException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -439,7 +440,7 @@ public class BlockService implements IBlockService {
      * @param block
      * @return
      */
-    private boolean checkAll(Block block, String sourceId) {
+    private boolean checkAll(Block block) {
         String hash = block.getHash();
 
         //1.check: exist
@@ -459,10 +460,7 @@ public class BlockService implements IBlockService {
         //3.check: orphan block
         boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
         if (isOrphanBlock) {
-            BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), sourceId, block);
-            orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
-            LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
-            return false;
+            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
         }
 
         //4. check: producer stake
@@ -483,10 +481,10 @@ public class BlockService implements IBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public synchronized boolean persistBlockAndIndex(Block block, String sourceId) {
+    public synchronized boolean persistBlockAndIndex(Block block) {
 
         //check block all biz infos
-        boolean isValid = checkAll(block, sourceId);
+        boolean isValid = checkAll(block);
         if (!isValid) {
             return false;
         }
