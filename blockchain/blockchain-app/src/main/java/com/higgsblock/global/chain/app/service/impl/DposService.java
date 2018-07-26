@@ -327,7 +327,7 @@ public class DposService implements IDposService, InitializingBean {
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
         LOGGER.info("the dpos node is {},sn+1:{}", selected, (sn + 1));
         if (selected.size() < NODE_SIZE) {
-            LOGGER.warn("can not find enough dpos node:{},sn+1:{}", selected, (sn + 1));
+            LOGGER.warn("can not find enough dpos node,sn+1:{}", (sn + 1));
         }
         return selected;
     }
