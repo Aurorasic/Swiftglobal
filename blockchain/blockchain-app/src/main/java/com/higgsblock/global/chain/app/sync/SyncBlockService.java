@@ -188,7 +188,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         String hash = event.getBlockHash();
 
         //if peer's connection is lost
-        if (null == connectionManager.getConnectionByPeerId(sourceId)) {
+        if (null == sourceId || null == connectionManager.getConnectionByPeerId(sourceId)) {
             return;
         }
 
