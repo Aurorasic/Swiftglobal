@@ -20,9 +20,9 @@ PRAGMA foreign_keys = OFF;
 DROP TABLE IF EXISTS "main"."t_block";
 CREATE TABLE t_block (
   id         INTEGER,
+  height     INTEGER NOT NULL,
   block_hash VARCHAR NOT NULL,
   data       TEXT    NOT NULL,
-  height     INTEGER NOT NULL,
   PRIMARY KEY (id)
 );
 
@@ -32,8 +32,8 @@ CREATE TABLE t_block (
 DROP TABLE IF EXISTS "main"."t_block_index";
 CREATE TABLE t_block_index (
   id            INTEGER,
-  block_hash    VARCHAR NOT NULL,
   height        INTEGER NOT NULL,
+  block_hash    VARCHAR NOT NULL,
   is_best       INTEGER NOT NULL,
   miner_address VARCHAR NOT NULL,
   PRIMARY KEY (id)
