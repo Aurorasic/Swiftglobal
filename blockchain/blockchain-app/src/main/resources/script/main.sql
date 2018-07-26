@@ -1,7 +1,7 @@
 /*
 Navicat SQLite Data Transfer
 
-Source Server         : test6
+Source Server         : data
 Source Server Version : 30808
 Source Host           : :0
 
@@ -9,7 +9,7 @@ Target Server Type    : SQLite
 Target Server Version : 30808
 File Encoding         : 65001
 
-Date: 2018-07-26 11:53:58
+Date: 2018-07-26 16:19:44
 */
 
 PRAGMA foreign_keys = OFF;
@@ -18,99 +18,99 @@ PRAGMA foreign_keys = OFF;
 -- Table structure for t_block
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_block";
-CREATE TABLE t_block (
-  id         INTEGER,
-  block_hash VARCHAR NOT NULL,
-  data       TEXT    NOT NULL,
-  height     INTEGER NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_block" (
+"id"  INTEGER,
+"block_hash"  VARCHAR(64) NOT NULL,
+"data"  TEXT NOT NULL,
+"height"  INTEGER NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_block_index
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_block_index";
-CREATE TABLE t_block_index (
-  id            INTEGER,
-  block_hash    VARCHAR NOT NULL,
-  height        INTEGER NOT NULL,
-  is_best       INTEGER NOT NULL,
-  miner_address VARCHAR NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_block_index" (
+"id"  INTEGER,
+"block_hash"  VARCHAR(64) NOT NULL,
+"height"  INTEGER NOT NULL,
+"is_best"  INTEGER NOT NULL,
+"miner_address"  VARCHAR(34) NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_dpos
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_dpos";
-CREATE TABLE t_dpos (
-  id        INTEGER,
-  addresses VARCHAR NOT NULL,
-  sn        INTEGER NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_dpos" (
+"id"  INTEGER,
+"addresses"  VARCHAR(100) NOT NULL,
+"sn"  INTEGER NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_score
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_score";
-CREATE TABLE t_score (
-  id      INTEGER,
-  address VARCHAR NOT NULL,
-  score   INTEGER NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_score" (
+"id"  INTEGER,
+"address"  VARCHAR(34) NOT NULL,
+"score"  INTEGER NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_spent_transaction_out_index
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_spent_transaction_out_index";
-CREATE TABLE t_spent_transaction_out_index (
-  id                   INTEGER,
-  now_transaction_hash VARCHAR NOT NULL,
-  out_index            INTEGER NOT NULL,
-  pre_transaction_hash VARCHAR NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_spent_transaction_out_index" (
+"id"  INTEGER,
+"now_transaction_hash"  VARCHAR(65) NOT NULL,
+"out_index"  INTEGER NOT NULL,
+"pre_transaction_hash"  VARCHAR(65) NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_transaction_index
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_transaction_index";
-CREATE TABLE t_transaction_index (
-  id                INTEGER,
-  block_hash        VARCHAR NOT NULL,
-  transaction_hash  VARCHAR NOT NULL,
-  transaction_index INTEGER NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_transaction_index" (
+"id"  INTEGER,
+"block_hash"  VARCHAR(64) NOT NULL,
+"transaction_hash"  VARCHAR(65) NOT NULL,
+"transaction_index"  INTEGER NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_utxo
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_utxo";
-CREATE TABLE t_utxo (
-  id               INTEGER,
-  amount           VARCHAR NOT NULL,
-  currency         VARCHAR NOT NULL,
-  lock_script      VARCHAR NOT NULL,
-  out_index        INTEGER NOT NULL,
-  script_type      INTEGER NOT NULL,
-  transaction_hash VARCHAR NOT NULL,
-  PRIMARY KEY (id)
+CREATE TABLE "t_utxo" (
+"id"  INTEGER,
+"amount"  VARCHAR(16) NOT NULL,
+"currency"  VARCHAR(8) NOT NULL,
+"lock_script"  VARCHAR NOT NULL,
+"out_index"  INTEGER NOT NULL,
+"script_type"  INTEGER NOT NULL,
+"transaction_hash"  VARCHAR(65) NOT NULL,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
 -- Table structure for t_witness
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_witness";
-CREATE TABLE t_witness (
-  id          INTEGER,
-  address     VARCHAR,
-  http_port   INTEGER,
-  pub_key     VARCHAR,
-  socket_port INTEGER,
-  PRIMARY KEY (id)
+CREATE TABLE "t_witness" (
+"id"  INTEGER,
+"address"  VARCHAR(50),
+"http_port"  INTEGER,
+"pub_key"  VARCHAR(32),
+"socket_port"  INTEGER,
+PRIMARY KEY ("id" ASC)
 );
 
 -- ----------------------------
@@ -134,7 +134,7 @@ ON "t_block_index" ("block_hash" ASC);
 -- ----------------------------
 -- Indexes structure for table t_dpos
 -- ----------------------------
-CREATE UNIQUE INDEX "main"."uniq_dpos_sn"
+CREATE UNIQUE INDEX "main"."idx_dpos_sn"
 ON "t_dpos" ("sn" ASC);
 
 -- ----------------------------
