@@ -1,7 +1,7 @@
 /*
 Navicat SQLite Data Transfer
 
-Source Server         : data
+Source Server         : test6
 Source Server Version : 30808
 Source Host           : :0
 
@@ -9,16 +9,10 @@ Target Server Type    : SQLite
 Target Server Version : 30808
 File Encoding         : 65001
 
-Date: 2018-07-23 21:00:15
+Date: 2018-07-26 11:53:58
 */
 
 PRAGMA foreign_keys = OFF;
-
--- ----------------------------
--- Table structure for sqlite_sequence
--- ----------------------------
-DROP TABLE IF EXISTS "main"."sqlite_sequence";
-CREATE TABLE sqlite_sequence(name,seq);
 
 -- ----------------------------
 -- Table structure for t_block
@@ -26,9 +20,9 @@ CREATE TABLE sqlite_sequence(name,seq);
 DROP TABLE IF EXISTS "main"."t_block";
 CREATE TABLE t_block (
   id         INTEGER,
-  height     INTEGER NOT NULL,
   block_hash VARCHAR NOT NULL,
   data       TEXT    NOT NULL,
+  height     INTEGER NOT NULL,
   PRIMARY KEY (id)
 );
 
@@ -38,8 +32,8 @@ CREATE TABLE t_block (
 DROP TABLE IF EXISTS "main"."t_block_index";
 CREATE TABLE t_block_index (
   id            INTEGER,
-  height        INTEGER NOT NULL,
   block_hash    VARCHAR NOT NULL,
+  height        INTEGER NOT NULL,
   is_best       INTEGER NOT NULL,
   miner_address VARCHAR NOT NULL,
   PRIMARY KEY (id)
@@ -140,7 +134,7 @@ ON "t_block_index" ("block_hash" ASC);
 -- ----------------------------
 -- Indexes structure for table t_dpos
 -- ----------------------------
-CREATE INDEX "main"."idx_dpos_sn"
+CREATE UNIQUE INDEX "main"."uniq_dpos_sn"
 ON "t_dpos" ("sn" ASC);
 
 -- ----------------------------
