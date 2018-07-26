@@ -78,8 +78,9 @@ public class DposService implements IDposService, InitializingBean {
     @Override
     public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
         List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
-        if (CollectionUtils.isEmpty(dposAddresses)) {
-            return null;
+        //persist selected nodes address although  it is empty
+        if (dposAddresses == null) {
+            dposAddresses = Lists.newLinkedList();
         }
         long sn = getSn(maxHeight);
         persistDposNodes(sn, dposAddresses);
@@ -104,6 +105,7 @@ public class DposService implements IDposService, InitializingBean {
 
     /**
      * find lucky miners by pre blockhash
+     *
      * @param preBlockHash
      * @return
      */
@@ -326,7 +328,7 @@ public class DposService implements IDposService, InitializingBean {
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
         LOGGER.info("the dpos node is {},sn+1:{}", selected, (sn + 1));
         if (selected.size() < NODE_SIZE) {
-            throw new RuntimeException("can not find enough dpos node,sn+1:" + (sn + 1));
+            LOGGER.warn("can not find enough dpos node:{},sn+1:{}", selected, (sn + 1));
         }
         return selected;
     }
@@ -338,7 +340,8 @@ public class DposService implements IDposService, InitializingBean {
     }
 
     private boolean isDposGroupSeleted(long sn) {
-        return CollectionUtils.isNotEmpty(getDposGroupBySn(sn));
+        DposEntity dposEntity = dposRepository.findBySn(sn);
+        return dposEntity != null;
     }
 
 }
