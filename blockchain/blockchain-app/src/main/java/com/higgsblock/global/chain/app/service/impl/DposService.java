@@ -1,8 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
@@ -18,14 +16,12 @@ import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +31,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class DposService implements IDposService, InitializingBean {
+public class DposService implements IDposService {
 
 
     private final int maxScore = 1000;
@@ -47,15 +43,7 @@ public class DposService implements IDposService, InitializingBean {
     private IScoreService scoreService;
     @Autowired
     private BlockService blockService;
-    private Cache<Long, List<String>> dposNodeMap = Caffeine.newBuilder()
-            .maximumSize(MAX_SIZE)
-            .build();
-    private Function<Long, List<String>> function = null;
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        function = (sn) -> get(sn);
-    }
 
     @Override
     public List<String> get(long sn) {
@@ -77,12 +65,25 @@ public class DposService implements IDposService, InitializingBean {
      */
     @Override
     public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
-        List<String> dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
+        List<String> dposAddresses = Lists.newLinkedList();
+        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
+
+        //select the next dpos nodes when toBeBestBlock height is first of round
+        if (!isFirstOfRound) {
+            return dposAddresses;
+        }
+        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
+        long sn = getSn(maxHeight);
+        boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
+        if (selectedNextGroup) {
+            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
+            return dposAddresses;
+        }
+        dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         //persist selected nodes address although  it is empty
         if (dposAddresses == null) {
             dposAddresses = Lists.newLinkedList();
         }
-        long sn = getSn(maxHeight);
         persistDposNodes(sn, dposAddresses);
         return dposAddresses;
     }
@@ -95,7 +96,7 @@ public class DposService implements IDposService, InitializingBean {
      */
     @Override
     public List<String> getDposGroupBySn(long sn) {
-        List<String> dposAddress = dposNodeMap.get(sn, function);
+        List<String> dposAddress = get(sn);
         List<String> result = new LinkedList<>();
         if (dposAddress != null) {
             result.addAll(dposAddress);
@@ -235,21 +236,7 @@ public class DposService implements IDposService, InitializingBean {
 
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
-
-        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
-
-        //select the next dpos nodes when toBeBestBlock height is first of round
-        if (!isFirstOfRound) {
-            return selected;
-        }
-        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = getSn(maxHeight);
-        boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
-        if (selectedNextGroup) {
-            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
-            return selected;
-        }
-
         List<ScoreEntity> all = scoreService.all();
         LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), all);
         if (CollectionUtils.isEmpty(all)) {
@@ -328,13 +315,12 @@ public class DposService implements IDposService, InitializingBean {
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
         LOGGER.info("the dpos node is {},sn+1:{}", selected, (sn + 1));
         if (selected.size() < NODE_SIZE) {
-            LOGGER.warn("can not find enough dpos node:{},sn+1:{}", selected, (sn + 1));
+            LOGGER.warn("can not find enough dpos node,sn+1:{}", (sn + 1));
         }
         return selected;
     }
 
     private void persistDposNodes(long sn, List<String> dposNodes) {
-        dposNodeMap.put(sn + 1, dposNodes);
         save(sn + 1, dposNodes);
         LOGGER.info("persist dposNode,sn+1:{},dposNode:{}", sn + 1, dposNodes);
     }
