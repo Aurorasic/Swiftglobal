@@ -3,15 +3,13 @@ package com.higgsblock.global.chain.app.blockchain.listener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IOriginalBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,23 +56,15 @@ public class MiningListener implements IEventBusListener {
         process(event.getBlockHash(), event.getHeight());
     }
 
-    @Subscribe
-    public void process(SystemStatusEvent event) {
-        LOGGER.info("process event: {}", event);
-        SystemStatus state = event.getSystemStatus();
-        if (SystemStatus.RUNNING == state) {
-            isMining = true;
-            //add by huangshengli  input pre blockhash when try to produce new block 2018-07-09
-            BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
-            LOGGER.info("The system is ready, start mining,max height={}", lastBlockIndex.getHeight());
-            if (lastBlockIndex.hasBestBlock()) {
-                process(lastBlockIndex.getBestBlockHash(), lastBlockIndex.getHeight());
-            } else {
-                process(lastBlockIndex.getFirstBlockHash(), lastBlockIndex.getHeight());
-            }
+    public void start() {
+        isMining = true;
+        //add by huangshengli  input pre blockhash when try to produce new block 2018-07-09
+        BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
+        LOGGER.info("The system is ready, start mining,max height={}", lastBlockIndex.getHeight());
+        if (lastBlockIndex.hasBestBlock()) {
+            process(lastBlockIndex.getBestBlockHash(), lastBlockIndex.getHeight());
         } else {
-            isMining = false;
-            LOGGER.info("The system state is changed to {}, stop mining", state);
+            process(lastBlockIndex.getFirstBlockHash(), lastBlockIndex.getHeight());
         }
     }
 

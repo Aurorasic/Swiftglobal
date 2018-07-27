@@ -23,12 +23,16 @@ public class SystemStatusManager {
         if (SystemStepEnum.LOADED_ALL_DATA.equals(sysStep)) {
             systemStatus = SystemStatus.SYNC_BLOCKS;
         }
-        if (SystemStepEnum.SYNCED_BLOCKS.equals(sysStep)) {
-            systemStatus = SystemStatus.RUNNING;
-        }
-        if (SystemStepEnum.START_CHECK_DATA.equals(sysStep)) {
+        if (SystemStepEnum.CHECK_DATA.equals(sysStep)) {
             systemStatus = SystemStatus.LOADING;
         }
+        if (SystemStepEnum.SYNCED_BLOCKS.equals(sysStep)) {
+            systemStatus = SystemStatus.SYNC_FINISHED;
+        }
+        if (SystemStepEnum.START_FINISHED.equals(sysStep)) {
+            systemStatus = SystemStatus.RUNNING;
+        }
+
         sendSystemStateEvent(systemStatus);
     }
 

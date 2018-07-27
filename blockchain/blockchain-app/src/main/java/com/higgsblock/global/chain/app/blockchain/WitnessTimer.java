@@ -31,7 +31,7 @@ public class WitnessTimer implements IEventBusListener {
     @Autowired
     private IWitnessService witnessService;
 
-    public void initWitnessTime() {
+    public void start() {
         String address = peerManager.getSelf().getId();
         if (witnessService.isWitness(address)) {
             initTime = System.currentTimeMillis();
