@@ -2,10 +2,8 @@ package com.higgsblock.global.chain.app.net.connection;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
-import com.higgsblock.global.chain.app.net.event.ConnectionActivatedEvent;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.network.socket.Client;
@@ -91,8 +89,6 @@ public class ConnectionManager {
     private Server server;
     @Autowired
     private PeerManager peerManager;
-    @Autowired
-    private EventBus eventBus;
 
     /**
      * Connect to remote node.
@@ -274,7 +270,6 @@ public class ConnectionManager {
             connection.activate(peer);
             connection.setConnectionLevel(level);
             moveToConnectionMap(connection);
-            eventBus.post(new ConnectionActivatedEvent(connection));
         } else {
             remove(connection);
         }
