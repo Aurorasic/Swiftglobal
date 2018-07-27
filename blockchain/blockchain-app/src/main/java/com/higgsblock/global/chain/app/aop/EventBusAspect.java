@@ -44,9 +44,9 @@ public class EventBusAspect {
             throw e;
         }
         if (event != null) {
-            LOGGER.info("process event successfully[{}],elapsed time:{} Sec,error!", event.getClass().getSimpleName(), watch.getTotalTimeSeconds());
+            LOGGER.info("process event [{}],elapsed time:{} Sec,successfully!", event.getClass().getSimpleName(), watch.getTotalTimeSeconds());
         } else {
-            LOGGER.info("process event successfully[{}->{}],elapsed time:{} Sec,error!", className, methodName, watch.getTotalTimeSeconds());
+            LOGGER.info("process event [{}->{}],elapsed time:{} Sec,successfully!", className, methodName, watch.getTotalTimeSeconds());
         }
         return returnObj;
     }
