@@ -13,7 +13,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
-import com.higgsblock.global.chain.app.sync.message.GetBlock;
+import com.higgsblock.global.chain.app.sync.message.BlockRequest;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
@@ -136,7 +136,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         }
         String sourceId = list.get(new Random().nextInt(list.size()));
         requestRecord.get(height, v -> {
-            messageCenter.unicast(sourceId, new GetBlock(height));
+            messageCenter.unicast(sourceId, new BlockRequest(height));
             LOGGER.info("send block request! height:{} ", height);
             return sourceId;
         });
@@ -203,7 +203,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
         if (height <= blockChain.getMaxHeight()) {
             requestRecord.get(height, v -> {
-                messageCenter.unicast(sourceId, new GetBlock(height, hash));
+                messageCenter.unicast(sourceId, new BlockRequest(height, hash));
                 LOGGER.info("send block request! height:{},hash:{} ", height, hash);
                 return sourceId;
             });

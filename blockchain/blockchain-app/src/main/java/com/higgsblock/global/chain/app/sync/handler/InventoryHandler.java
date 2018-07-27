@@ -7,9 +7,9 @@ import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
-import com.higgsblock.global.chain.app.sync.message.GetBlock;
+import com.higgsblock.global.chain.app.sync.message.BlockRequest;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,8 +56,8 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
         if (height <= blockChainService.getMaxHeight() + 1L) {
             hashes.forEach(hash -> requestRecord.get(hash, v -> {
                 if (!blockChainService.isExistBlock(hash)) {
-                    GetBlock getBlock = new GetBlock(height, hash);
-                    messageCenter.unicast(sourceId, getBlock);
+                    BlockRequest blockRequest = new BlockRequest(height, hash);
+                    messageCenter.unicast(sourceId, blockRequest);
                     return height;
                 }
                 return null;

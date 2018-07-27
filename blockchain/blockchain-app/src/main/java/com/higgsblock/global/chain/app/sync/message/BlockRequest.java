@@ -15,8 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Message(MessageType.GET_BLOCK)
-public class GetBlock extends BaseSerializer {
+@Message(MessageType.BLOCK_REQUEST)
+public class BlockRequest extends BaseSerializer {
 
     private int version = 0;
 
@@ -24,21 +24,21 @@ public class GetBlock extends BaseSerializer {
 
     private String hash;
 
-    public GetBlock(long height, String hash) {
+    public BlockRequest(long height, String hash) {
         this.height = height;
         this.hash = hash;
     }
 
-    public GetBlock(long height) {
+    public BlockRequest(long height) {
         this.height = height;
     }
 
     @Override
     public boolean equals(Object o) {
 
-        if (o instanceof GetBlock) {
-            GetBlock getBlock = (GetBlock) o;
-            return this.height == getBlock.height && StringUtils.equals(this.hash, getBlock.hash);
+        if (o instanceof BlockRequest) {
+            BlockRequest blockRequest = (BlockRequest) o;
+            return this.height == blockRequest.height && StringUtils.equals(this.hash, blockRequest.hash);
         }
         return false;
     }

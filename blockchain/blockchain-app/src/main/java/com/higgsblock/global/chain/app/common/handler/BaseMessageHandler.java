@@ -83,7 +83,6 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
     public final boolean accept(IMessage<T> message) {
         if (null != queue) {
             LOGGER.info("handler class:{}, queue size:{}", getClass().getSimpleName(), queue.size());
-            LOGGER.info("handler accept message : {}", message);
             return queue.offer(message);
         }
         return false;
