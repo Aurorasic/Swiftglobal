@@ -75,6 +75,8 @@ public class AppContext implements IEventBusListener {
     private InetAddressCheckTask inetAddressCheckTask;
     @Autowired
     private ConnectionManageTask connectionManageTask;
+    @Autowired
+    private GetMaxHeightTask getMaxHeightTask;
 
     /**
      * =================all handlers:
@@ -174,6 +176,7 @@ public class AppContext implements IEventBusListener {
         peerManageTask.start();
         inetAddressCheckTask.start();
         connectionManageTask.start();
+        getMaxHeightTask.start();
     }
 
     private void startTasksAfterSyncedBlocks() {
@@ -211,6 +214,7 @@ public class AppContext implements IEventBusListener {
             startListenersAfterSyncedBlocks();
             startTasksAfterSyncedBlocks();
             startSocketServer();
+            getMaxHeightTask.stop();
             systemStatusManager.setSysStep(SystemStepEnum.START_FINISHED);
         }
     }
