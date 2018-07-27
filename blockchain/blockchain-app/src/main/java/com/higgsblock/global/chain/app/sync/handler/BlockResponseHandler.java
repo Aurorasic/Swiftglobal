@@ -12,6 +12,8 @@ import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Set;
  * @date 2018/2/28
  */
 @Slf4j
+@Component
 public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private IBlockChainService blockChainService;
