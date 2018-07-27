@@ -60,13 +60,13 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                         long validStartTime = System.currentTimeMillis();
                         boolean isValid = valid(message);
                         long validEndTime = System.currentTimeMillis();
-                        LOGGER.info("valid spend time :{}s", validEndTime - validStartTime);
+                        LOGGER.info("valid spend time :{}ms", validEndTime - validStartTime);
 
                         if (isValid) {
                             long processStartTime = System.currentTimeMillis();
                             process(message);
                             long processEndTime = System.currentTimeMillis();
-                            LOGGER.info("process spend time :{}s", processEndTime - processStartTime);
+                            LOGGER.info("process spend time :{}ms", processEndTime - processStartTime);
                         }
                         long startTime = System.currentTimeMillis();
                     } catch (Exception e) {
