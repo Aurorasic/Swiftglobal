@@ -92,7 +92,7 @@ public class DataErrorService {
 
         LOGGER.info("start reimport data");
 
-        systemStatusManager.setSysStep(SystemStepEnum.START_CHECK_DATA);
+        systemStatusManager.setSysStep(SystemStepEnum.CHECK_DATA);
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {

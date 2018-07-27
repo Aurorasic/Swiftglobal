@@ -10,9 +10,11 @@ import lombok.Getter;
 public enum SystemStepEnum {
     LOADED_ALL_DATA(1, "loaded all block data"),
 
-    SYNCED_BLOCKS(2, "switched all blocks with neighbor peers"),
+    CHECK_DATA(2, "start check data"),
 
-    START_CHECK_DATA(3, "start check data");
+    SYNCED_BLOCKS(3, "switched all blocks with neighbor peers"),
+
+    START_FINISHED(4, "started all resources");
 
     private int type;
     private String desc;
