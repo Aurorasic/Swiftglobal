@@ -12,6 +12,8 @@ import com.higgsblock.global.chain.app.blockchain.handler.BlockHandler;
 import com.higgsblock.global.chain.app.blockchain.listener.MiningListener;
 import com.higgsblock.global.chain.app.blockchain.transaction.handler.TransactionHandler;
 import com.higgsblock.global.chain.app.common.SystemStatus;
+import com.higgsblock.global.chain.app.common.SystemStatusManager;
+import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.handler.HelloAckMessageHandler;
@@ -52,6 +54,9 @@ public class AppContext implements IEventBusListener {
 
     @Autowired
     private EventBus eventBus;
+
+    @Autowired
+    private SystemStatusManager systemStatusManager;
 
     /**
      * =================all tasks:
@@ -129,9 +134,9 @@ public class AppContext implements IEventBusListener {
 
         startFirstStepTasks();
 
-        loadSelfPeerInfo();
+//        loadSelfPeerInfo();
 
-        loadOrFetchPeers();
+//        loadOrFetchPeers();
 
         syncBlocks();
 
@@ -144,16 +149,16 @@ public class AppContext implements IEventBusListener {
     private void startFirstStepHandlers() {
         peersMessageHandler.start();
         helloAckMessageHandler.start();
-        blockRequestHandler.start();
-        blockResponseHandler.start();
-        inventoryHandler.start();
-        maxHeightRequestHandler.start();
-        maxHeightResponseHandler.start();
         helloMessageHandler.start();
+        blockResponseHandler.start();
+        maxHeightResponseHandler.start();
     }
 
     private void startHandlersAfterSyncedBlocks() {
         transactionHandler.start();
+        inventoryHandler.start();
+        maxHeightRequestHandler.start();
+        blockRequestHandler.start();
         blockHandler.start();
         originalBlockHandler.start();
         votingBlockResponseHandler.start();
@@ -163,16 +168,6 @@ public class AppContext implements IEventBusListener {
 
     private void startSocketServer() {
         connectionManager.startServer();
-    }
-
-    private void loadSelfPeerInfo() {
-        peerManager.loadSelfPeerInfo();
-        peerManager.reportToRegistry();
-    }
-
-    private void loadOrFetchPeers() {
-        peerManager.loadNeighborPeers();
-        connectionManager.connectToPeers(1, 5, 20);
     }
 
     private void startFirstStepTasks() {
@@ -216,6 +211,18 @@ public class AppContext implements IEventBusListener {
             startListenersAfterSyncedBlocks();
             startTasksAfterSyncedBlocks();
             startSocketServer();
+            systemStatusManager.setSysStep(SystemStepEnum.START_FINISHED);
         }
     }
+
+    private void loadSelfPeerInfo() {
+        peerManager.loadSelfPeerInfo();
+        peerManager.reportToRegistry();
+    }
+
+    private void loadOrFetchPeers() {
+        peerManager.loadNeighborPeers();
+        connectionManager.connectToPeers(1, 5, 20);
+    }
+
 }
