@@ -134,6 +134,8 @@ public class AppContext implements IEventBusListener {
 
         startFirstStepListeners();
 
+        startSocketServer();
+
         startFirstStepTasks();
 
 //        loadSelfPeerInfo();
@@ -213,7 +215,6 @@ public class AppContext implements IEventBusListener {
             startHandlersAfterSyncedBlocks();
             startListenersAfterSyncedBlocks();
             startTasksAfterSyncedBlocks();
-            startSocketServer();
             getMaxHeightTask.stop();
             systemStatusManager.setSysStep(SystemStepEnum.START_FINISHED);
         }
