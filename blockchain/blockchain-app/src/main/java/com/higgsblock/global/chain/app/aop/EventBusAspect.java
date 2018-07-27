@@ -37,16 +37,16 @@ public class EventBusAspect {
             returnObj = point.proceed();
         } catch (Throwable e) {
             if (event != null) {
-                LOGGER.error(String.format("process event[%s],elapsed time:%s Sec,error!"), event.getClass().getSimpleName(), watch.getTotalTimeSeconds(), e);
+                LOGGER.error(String.format("process event[%s],elapsed time:%s Sec,error!", event.getClass().getSimpleName(), watch.getTotalTimeSeconds()), e);
             } else {
-                LOGGER.error(String.format("process event[%s->%s],elapsed time:%s Sec,error!"), className, methodName, watch.getTotalTimeSeconds(), e);
+                LOGGER.error(String.format("process event[%s->%s],elapsed time:%s Sec,error!", className, methodName, watch.getTotalTimeSeconds()), e);
             }
             throw e;
         }
         if (event != null) {
-            LOGGER.info(String.format("process event successfully[%s],elapsed time:%s Sec,error!"), event.getClass().getSimpleName(), watch.getTotalTimeSeconds());
+            LOGGER.info("process event successfully[{}],elapsed time:{} Sec,error!", event.getClass().getSimpleName(), watch.getTotalTimeSeconds());
         } else {
-            LOGGER.info(String.format("process event successfully[{}->{}],elapsed time:{} Sec,error!"), className, methodName, watch.getTotalTimeSeconds());
+            LOGGER.info("process event successfully[{}->{}],elapsed time:{} Sec,error!", className, methodName, watch.getTotalTimeSeconds());
         }
         return returnObj;
     }
