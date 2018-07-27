@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.common.handler;
 
 import com.google.common.collect.Queues;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.common.utils.ExecutorServices;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,7 +55,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                 while (isRunning) {
                     try {
                         IMessage message = takeMessage();
-                        LOGGER.info("take message for processing; {}", message);
+                        LOGGER.info("take message for processing: {}", message);
 
                         boolean isValid = valid(message);
                         if (isValid) {
@@ -82,6 +82,8 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
     @Override
     public final boolean accept(IMessage<T> message) {
         if (null != queue) {
+            LOGGER.info("handler class:{}, queue size:{}", getClass().getSimpleName(), queue.size());
+            LOGGER.info("handler accept message : {}", message);
             return queue.offer(message);
         }
         return false;
