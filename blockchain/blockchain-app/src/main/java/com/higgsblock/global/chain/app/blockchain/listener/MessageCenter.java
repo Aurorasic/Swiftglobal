@@ -39,6 +39,9 @@ public class MessageCenter implements IMessageDispatcher {
 
     @Override
     public boolean dispatch(String sourceId, String obj) {
+        if (messageCache.isCached(sourceId, obj)) {
+            return false;
+        }
         return handler.accept(sourceId, obj);
     }
 
