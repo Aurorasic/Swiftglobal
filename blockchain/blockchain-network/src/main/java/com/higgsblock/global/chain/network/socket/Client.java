@@ -33,7 +33,7 @@ public class Client {
     private ChannelInitializer channelInitializer;
 
     public Client() {
-        workerGroup = new NioEventLoopGroup(0, ThreadFactoryUtils.createThreadFactory("client"));
+        workerGroup = new NioEventLoopGroup(2, ThreadFactoryUtils.createThreadFactory("client"));
     }
 
     /**
