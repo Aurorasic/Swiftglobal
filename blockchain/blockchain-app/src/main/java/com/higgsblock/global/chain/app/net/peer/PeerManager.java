@@ -101,6 +101,7 @@ public class PeerManager {
         if (CollectionUtils.isEmpty(collection)) {
             return;
         }
+        long processStartTime = System.currentTimeMillis();
 
         List<Peer> peers = Lists.newArrayList(collection);
 
@@ -126,6 +127,8 @@ public class PeerManager {
                 addOrUpdate(peer);
             }
         }
+        long processEndTime = System.currentTimeMillis();
+        LOGGER.info("add peer info spend time :{}ms", processEndTime - processStartTime);
     }
 
     /**
