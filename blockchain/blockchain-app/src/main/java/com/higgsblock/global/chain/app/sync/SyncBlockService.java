@@ -40,6 +40,8 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     private static final int SYNC_BLOCK_TEMP_SIZE = 3;
 
+    private static final int MIN_PEER_NUM = 1;
+
     private static final int SYNC_BLOCK_EXPIRATION = 15;
 
     private static final long SYNC_BLOCK_IGNORE_NUMBER = 100L;
@@ -242,7 +244,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
         long localMaxHeight = blockChain.getMaxHeight();
         long peerMaxHeight = getPeersMaxHeight();
-        if (localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
+        if (peersMaxHeight.size() >= MIN_PEER_NUM && localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
             LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
                     , peersMaxHeight.size(), localMaxHeight, peerMaxHeight);
