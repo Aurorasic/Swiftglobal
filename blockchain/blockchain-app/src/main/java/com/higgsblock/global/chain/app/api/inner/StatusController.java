@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
 import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
@@ -40,6 +41,18 @@ public class StatusController {
     private PeerManager peerManager;
     @Autowired
     private BlockService blockService;
+    @Autowired
+    private SystemStatusManager systemStatusManager;
+
+    /**
+     * query state
+     *
+     * @return
+     */
+    @RequestMapping("info")
+    public Object info() {
+        return systemStatusManager.getSystemStatus();
+    }
 
     /**
      * query connections of current peer
@@ -111,8 +124,8 @@ public class StatusController {
      *
      * @return
      */
-    @RequestMapping("/info")
-    public Object info() {
+    @RequestMapping("/peer")
+    public Object peer() {
         Peer self = peerManager.getSelf();
         PeerVO vo = new PeerVO();
         vo.setAddress(self.getId());
