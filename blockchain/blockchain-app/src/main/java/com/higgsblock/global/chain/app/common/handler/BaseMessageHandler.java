@@ -23,10 +23,6 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
     private ExecutorService executorService;
     private BlockingQueue<IMessage<T>> queue;
 
-    public BaseMessageHandler() {
-        this.queue = Queues.newLinkedBlockingQueue(10000);
-    }
-
     @Override
     public Class<T> getMessageClass() {
         Type type = getClass().getGenericSuperclass();
@@ -50,11 +46,15 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
     public final synchronized void start(ExecutorService executorService) {
         if (!isRunning) {
             isRunning = true;
+            this.queue = Queues.newLinkedBlockingQueue(10000);
             this.executorService = executorService;
             this.executorService.execute(() -> {
                 while (isRunning) {
                     try {
                         IMessage message = takeMessage();
+                        if (null == message) {
+                            return;
+                        }
                         LOGGER.info("take message for processing: {}", message);
 
                         long validStartTime = System.currentTimeMillis();
@@ -68,7 +68,6 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                             long processEndTime = System.currentTimeMillis();
                             LOGGER.info("process spend time :{}ms", processEndTime - processStartTime);
                         }
-                        long startTime = System.currentTimeMillis();
                     } catch (Exception e) {
                         LOGGER.error(e.getMessage(), e);
                     }
@@ -80,16 +79,17 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
 
     @Override
     public final synchronized void stop() {
-        if (null != executorService) {
+        if (isRunning) {
             executorService.shutdown();
             executorService = null;
+            queue = null;
             isRunning = false;
         }
     }
 
     @Override
-    public final boolean accept(IMessage<T> message) {
-        if (null != queue) {
+    public synchronized final boolean accept(IMessage<T> message) {
+        if (isRunning && null != queue) {
             LOGGER.info("handler class:{}, queue size:{}", getClass().getSimpleName(), queue.size());
             return queue.offer(message);
         }

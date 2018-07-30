@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -39,14 +38,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SyncBlockService implements IEventBusListener, InitializingBean {
 
-    /**
-     * the num of active connections to trigger sync data
-     */
-    private static final int ACTIVE_CONNECTION_NUM = 5;
-
     private static final int SYNC_BLOCK_TEMP_SIZE = 3;
 
-    private static final int SYNC_BLOCK_EXPIRATION = 10;
+    private static final int SYNC_BLOCK_EXPIRATION = 15;
+
+    private static final long SYNC_BLOCK_IGNORE_NUMBER = 100L;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -59,8 +55,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Autowired
     private SystemStatusManager systemStatusManager;
-
-    private CountDownLatch countDownLatch = new CountDownLatch(ACTIVE_CONNECTION_NUM);
 
     private ConcurrentHashMap<String, Long> peersMaxHeight = new ConcurrentHashMap<>();
 
@@ -94,24 +88,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         1.At the beginning of synchronization, ask the nodes you have already connected to about their max height
          */
         messageCenter.broadcast(new MaxHeightRequest());
-
-        try {
-            countDownLatch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            LOGGER.error(e.getMessage(), e);
-        }
-
-        long localMaxHeight = blockChain.getMaxHeight();
-        long peerMaxHeight = getPeersMaxHeight();
-        if (peersMaxHeight.size() == 0 || peerMaxHeight <= localMaxHeight) {
-            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-            LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
-                    , peersMaxHeight.size(), localMaxHeight, peerMaxHeight);
-            return;
-        }
-
-        sendInitRequest();
-        LOGGER.info("send init sync block request end!");
     }
 
     private void sendInitRequest() {
@@ -204,6 +180,14 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             }
         });
 
+        if (null != requestRecord.getIfPresent(height)) {
+            return;
+        }
+
+        if (null != hash && blockChain.isExistBlock(hash)) {
+            return;
+        }
+
         if (height <= blockChain.getMaxHeight()) {
             requestRecord.get(height, v -> {
                 messageCenter.unicast(sourceId, new BlockRequest(height, hash));
@@ -244,33 +228,32 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
      * @param sourceId
      */
     public void updatePeersMaxHeight(long height, String sourceId) {
-        if (null != sourceId && countDownLatch.getCount() > 0L) {
-            peersMaxHeight.compute(sourceId, (k, v) -> {
-                if (null == v) {
-                    countDownLatch.countDown();
-                    LOGGER.info("peer's max height is  {}, sourceId is {}", height, sourceId);
-                    return height;
-                } else {
-                    return height > v ? height : v;
-                }
-            });
+        if (null == sourceId || height <= 1L) {
+            return;
         }
+        peersMaxHeight.compute(sourceId, (k, v) -> {
+            LOGGER.info(" update peer's max height: {} to {}, sourceId is {}", v, height, sourceId);
+            if (null == v) {
+                return height;
+            } else {
+                return height > v ? height : v;
+            }
+        });
+
+        long localMaxHeight = blockChain.getMaxHeight();
+        long peerMaxHeight = getPeersMaxHeight();
+        if (localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
+            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
+                    , peersMaxHeight.size(), localMaxHeight, peerMaxHeight);
+            return;
+        }
+
+        sendInitRequest();
     }
 
     private long getPeersMaxHeight() {
-        long myHeight = blockChain.getMaxHeight();
-        long height = myHeight > 1L ? myHeight : 1L;
-        for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
-            long tempHeight = entry.getValue();
-            if (tempHeight < myHeight) {
-                peersMaxHeight.remove(entry.getKey());
-                continue;
-            }
-            if (tempHeight > height) {
-                height = tempHeight;
-            }
-        }
-        return height;
+        return peersMaxHeight.values().stream().reduce(1L, (a, b) -> a > b ? a : b);
     }
 
     @Override
