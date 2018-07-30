@@ -47,8 +47,14 @@ public class HelloMessageHandler extends BaseMessageHandler<Hello> {
         String channelId = message.getSourceId();
         connectionManager.active(channelId, message.getData().getPeer());
 
+        long processStartTime = System.currentTimeMillis();
+
         HelloAck ack = new HelloAck();
         ack.setPeer(peerManager.getSelf());
+
+        long processEndTime = System.currentTimeMillis();
+        LOGGER.info("process hello ack spend time :{}ms", processEndTime - processStartTime);
+
         messageCenter.handshake(channelId, ack);
     }
 }
