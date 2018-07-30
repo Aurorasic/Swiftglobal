@@ -443,24 +443,25 @@ public class BlockService implements IBlockService {
     private boolean checkAll(Block block) {
         String hash = block.getHash();
 
-        //1.check: exist
-        boolean isExist = orphanBlockCacheManager.isContains(hash) || blockChainService.isExistBlock(hash);
+        //1.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
+        boolean isOrphanBlock = orphanBlockCacheManager.isContains(hash) ||
+                !blockChainService.isExistBlock(block.getPrevBlockHash());
+        if (isOrphanBlock) {
+            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
+        }
+
+        //2.check: exist
+        boolean isExist = blockChainService.isExistBlock(hash);
         if (isExist) {
             LOGGER.info("the block is exist: {}", block.getSimpleInfo());
             return false;
         }
 
-        //2.check: witness signatures
+        //3.check: witness signatures
         boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
             LOGGER.error("the block witness sig is error: {}", block.getSimpleInfo());
             return false;
-        }
-
-        //3.check: orphan block
-        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
-        if (isOrphanBlock) {
-            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
         }
 
         //4. check: producer stake
