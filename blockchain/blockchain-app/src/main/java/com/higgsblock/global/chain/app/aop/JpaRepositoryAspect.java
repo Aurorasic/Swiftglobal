@@ -17,39 +17,28 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 @Slf4j
-public class EventBusAspect {
+public class JpaRepositoryAspect {
 
     //TODO for test huaangshengli 2018-07-27
-    @Around("@annotation(com.google.common.eventbus.Subscribe)")
+    @Around("execution(* com.higgsblock.global.chain.app.dao..*.*(..))")
     public Object logger(ProceedingJoinPoint point) throws Throwable {
         StopWatch watch = new StopWatch();
         watch.start();
-        LOGGER.info("event processor start");
+        LOGGER.info("dao operate start");
         Object[] params = point.getArgs();
         Method method = ((MethodSignature) point.getSignature()).getMethod();
         String className = point.getTarget().getClass().getName();
         String methodName = method.getName();
-        Object returnObj = null;
-        Object event = null;
-        if (params != null && params.length > 0) {
-            event = params[0];
-        }
+        Object returnObj;
+
         try {
             returnObj = point.proceed();
             watch.stop();
         } catch (Throwable e) {
-            if (event != null) {
-                LOGGER.error(String.format("process event[%s],elapsed time:%s ms,error!", event.getClass().getSimpleName(), watch.getTotalTimeMillis()), e);
-            } else {
-                LOGGER.error(String.format("process event[%s->%s],elapsed time:%s ms,error!", className, methodName, watch.getTotalTimeMillis()), e);
-            }
+            LOGGER.error(String.format("dao operate[%s->%s,params:%s],elapsed time:%s ms,error!", className, methodName, params, watch.getTotalTimeMillis()), e);
             throw e;
         }
-        if (event != null) {
-            LOGGER.info("process event [{}],elapsed time:{} ms,successfully!", event.getClass().getSimpleName(), watch.getTotalTimeMillis());
-        } else {
-            LOGGER.info("process event [{}->{}],elapsed time:{} ms,successfully!", className, methodName, watch.getTotalTimeMillis());
-        }
+        LOGGER.info("dao operate [{}->{},params:{}],elapsed time:{} ms,successfully!", className, methodName, params, watch.getTotalTimeMillis());
         return returnObj;
     }
 }
