@@ -211,7 +211,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         LOGGER.info("time out, remove it .sourceId:{} ", sourceId);
         removePeer(sourceId);
         if (!sendGetBlock(height)) {
-            if (myHeight >= getPeersMaxHeight() && isSyncBlockState()) {
+            if (peersMaxHeight.size() >= MIN_PEER_NUM && myHeight >= getPeersMaxHeight() && isSyncBlockState()) {
                 systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
                 LOGGER.info("sync block finished !");
             }
@@ -246,8 +246,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         long peerMaxHeight = getPeersMaxHeight();
         if (peersMaxHeight.size() >= MIN_PEER_NUM && localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-            LOGGER.info("there is no need to sync block, sync block finished! peers size :{} my max height : {} , peers' max height:{}"
-                    , peersMaxHeight.size(), localMaxHeight, peerMaxHeight);
+            LOGGER.info("sync block finished! ");
             return;
         }
 
