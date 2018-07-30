@@ -105,18 +105,32 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public void receivedTransaction(Transaction tx) {
+        long processStartTime1 = System.currentTimeMillis();
         String hash = tx.getHash();
         LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
+
         Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
-        if (transactionMap.containsKey(hash)) {
+        boolean isExist = transactionMap.containsKey(hash);
+
+        long processEndTime1 = System.currentTimeMillis();
+        LOGGER.info("check tx whether exist txCache spend time :{}ms", processEndTime1 - processStartTime1);
+
+        if (isExist) {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
+        long processStartTime2 = System.currentTimeMillis();
+
         boolean valid = verifyTransaction(tx, null);
+
+        long processEndTime2 = System.currentTimeMillis();
+        LOGGER.info("verify tx spend time :{}ms", processEndTime2 - processStartTime2);
+
         if (!valid) {
             LOGGER.info("the transaction is not valid {}", tx);
             return;
         }
+
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
     }
