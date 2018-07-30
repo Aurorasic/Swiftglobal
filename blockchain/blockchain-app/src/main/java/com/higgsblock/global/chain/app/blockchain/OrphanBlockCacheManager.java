@@ -76,6 +76,8 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     }
 
     private void process(String blockHash, long height) {
+        remove(blockHash);
+
         List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(blockHash);
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {

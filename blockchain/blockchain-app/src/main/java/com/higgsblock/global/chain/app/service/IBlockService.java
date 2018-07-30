@@ -75,7 +75,15 @@ public interface IBlockService {
      * @param block
      * @return
      */
-    boolean persistBlockAndIndex(Block block);
+    Block persistBlockAndIndex(Block block);
+
+    /**
+     * Do some work after persisted a block
+     *
+     * @param newBestBlock
+     * @param persistedBlock
+     */
+    void doSomeJobAfterPersistBlock(Block newBestBlock, Block persistedBlock);
 
     /**
      * Check the block numbers

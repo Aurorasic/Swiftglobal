@@ -9,6 +9,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockException;
 import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
@@ -444,8 +445,7 @@ public class BlockService implements IBlockService {
         String hash = block.getHash();
 
         //1.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
-        boolean isOrphanBlock = orphanBlockCacheManager.isContains(hash) ||
-                !blockChainService.isExistBlock(block.getPrevBlockHash());
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
         if (isOrphanBlock) {
             throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
         }
@@ -482,27 +482,42 @@ public class BlockService implements IBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public synchronized boolean persistBlockAndIndex(Block block) {
+    public synchronized Block persistBlockAndIndex(Block block) {
 
         //check block all biz infos
-        boolean isValid = checkAll(block);
-        if (!isValid) {
-            return false;
+        boolean isValid = false;
+        try {
+            checkAll(block);
+        } catch (NotExistPreBlockException e) {
+            putAndRequestPreBlocks(block);
+            throw new IllegalStateException("Save block failed");
         }
 
+        if (!isValid) {
+            throw new BlockInvalidException("block is not valid");
+        }
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
 
+        return newBestBlock;
+    }
+
+    private void putAndRequestPreBlocks(Block block) {
+        BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), null, block);
+        orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
+        LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
+    }
+
+    @Override
+    public void doSomeJobAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
         //add unconfirmed utxos and remove confirmed height blocks in cache
-        utxoServiceProxy.addNewBlock(newBestBlock, block);
+        utxoServiceProxy.addNewBlock(newBestBlock, persistedBlock);
 
         //refresh cache
-        refreshCache(block.getHash(), block);
+        refreshCache(persistedBlock.getHash(), persistedBlock);
 
         //Broadcast persisted event
-        broadBlockPersistedEvent(block, newBestBlock);
-
-        return true;
+        broadBlockPersistedEvent(persistedBlock, newBestBlock);
     }
 
     /**
@@ -583,7 +598,7 @@ public class BlockService implements IBlockService {
      * @param block
      */
     private void refreshCache(String blockHash, Block block) {
-        orphanBlockCacheManager.remove(blockHash);
+
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
