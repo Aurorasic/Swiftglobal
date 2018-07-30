@@ -105,22 +105,20 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public void receivedTransaction(Transaction tx) {
-        {
-            String hash = tx.getHash();
-            LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
-            Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
-            if (transactionMap.containsKey(hash)) {
-                LOGGER.info("the transaction is exist in cache with hash {}", hash);
-                return;
-            }
-            boolean valid = verifyTransaction(tx, null);
-            if (!valid) {
-                LOGGER.info("the transaction is not valid {}", tx);
-                return;
-            }
-            txCacheManager.addTransaction(tx);
-            broadcastTransaction(tx);
+        String hash = tx.getHash();
+        LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
+        Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
+        if (transactionMap.containsKey(hash)) {
+            LOGGER.info("the transaction is exist in cache with hash {}", hash);
+            return;
         }
+        boolean valid = verifyTransaction(tx, null);
+        if (!valid) {
+            LOGGER.info("the transaction is not valid {}", tx);
+            return;
+        }
+        txCacheManager.addTransaction(tx);
+        broadcastTransaction(tx);
     }
 
     @Override
