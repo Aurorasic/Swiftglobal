@@ -1,12 +1,12 @@
 package com.higgsblock.global.chain.app.blockchain.handler;
 
 import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockException;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
-import com.higgsblock.global.chain.crypto.exception.NotExistPreBlockException;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;

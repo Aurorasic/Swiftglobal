@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.crypto.exception;
+package com.higgsblock.global.chain.app.blockchain.exception;
 
 /**
  * @author yuguojoia

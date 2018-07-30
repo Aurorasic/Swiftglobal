@@ -22,9 +22,21 @@ public class MessageCache {
     private Cache<String, String> cache;
 
     public MessageCache() {
-        cache = Caffeine.newBuilder().maximumSize(Integer.MAX_VALUE)
+        cache = Caffeine.newBuilder().maximumSize(100000)
                 .expireAfterWrite(5, TimeUnit.SECONDS)
                 .build();
+    }
+
+    public boolean isCached(String message) {
+        String hash = Hashing.goodFastHash(128).hashString(message, Charsets.UTF_8).toString();
+
+        String key = "self" + ":" + hash;
+        String value = cache.getIfPresent(key);
+        if (null == value) {
+            cache.put(key, key);
+            return false;
+        }
+        return true;
     }
 
     public boolean isCached(String channelId, String message) {

@@ -38,8 +38,11 @@ public class MessageCenter implements IMessageDispatcher {
     }
 
     @Override
-    public boolean dispatch(String sourceId, String obj) {
-        return handler.accept(sourceId, obj);
+    public boolean dispatch(String channelId, String obj) {
+        if (messageCache.isCached(obj)) {
+            return false;
+        }
+        return handler.accept(channelId, obj);
     }
 
     public boolean dispatchToWitnesses(Object data) {

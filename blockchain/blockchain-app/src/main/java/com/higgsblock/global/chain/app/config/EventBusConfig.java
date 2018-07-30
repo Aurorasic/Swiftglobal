@@ -16,7 +16,7 @@ public class EventBusConfig {
     @Bean
     public EventBus asyncEventBus() {
         AsyncEventBus eventBus = new AsyncEventBus(ExecutorServices.newFixedThreadPool(
-                "AsyncEventBus", Runtime.getRuntime().availableProcessors() * 2, 10000
+                "AsyncEventBus", 2, 10000
         ));
         return eventBus;
     }
