@@ -35,6 +35,7 @@ public class EventBusAspect {
         }
         try {
             returnObj = point.proceed();
+            watch.stop();
         } catch (Throwable e) {
             if (event != null) {
                 LOGGER.error(String.format("process event[%s],elapsed time:%s ms,error!", event.getClass().getSimpleName(), watch.getTotalTimeMillis()), e);
