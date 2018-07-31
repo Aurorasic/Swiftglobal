@@ -71,7 +71,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
 
         LOGGER.info("persisted block all info, success={},{}", success, block.getSimpleInfo());
         if (success) {
-            blockService.doSomeJobAfterPersistBlock(newBestBlock, block);
+            blockService.doSyncWorksAfterPersistBlock(newBestBlock, block);
             broadcastInventory(message);
         }
     }
