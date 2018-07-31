@@ -546,6 +546,7 @@ public class BlockService implements IBlockService {
      * 7.Parse dpos;
      * </P>
      */
+    @Transactional(rollbackFor = Exception.class)
     public Block saveBlockCompletely(Block block) {
         try {
             //step 1
