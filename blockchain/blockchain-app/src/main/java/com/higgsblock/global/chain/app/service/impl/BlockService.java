@@ -444,31 +444,31 @@ public class BlockService implements IBlockService {
     private boolean checkAll(Block block) {
         String hash = block.getHash();
 
-        //1.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
-        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
-        if (isOrphanBlock) {
-            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
-        }
-
-        //2.check: exist
+        //1.check: exist
         boolean isExist = blockChainService.isExistBlock(hash);
         if (isExist) {
             LOGGER.info("the block is exist: {}", block.getSimpleInfo());
             return false;
         }
 
-        //3.check: witness signatures
+        //2.check: witness signatures
         boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
             LOGGER.error("the block witness sig is error: {}", block.getSimpleInfo());
             return false;
         }
 
-        //4. check: producer stake
+        //3. check: producer stake
         boolean producerValid = blockChainService.checkBlockProducer(block);
         if (!producerValid) {
             LOGGER.error("the block produce stake is error: {}", block.getSimpleInfo());
             return false;
+        }
+
+        //4.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
+        if (isOrphanBlock) {
+            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
         }
 
         //5. check: transactions
@@ -487,10 +487,10 @@ public class BlockService implements IBlockService {
         //check block all biz infos
         boolean isValid = false;
         try {
-            checkAll(block);
+            isValid = checkAll(block);
         } catch (NotExistPreBlockException e) {
             putAndRequestPreBlocks(block);
-            throw new IllegalStateException("Save block failed");
+            throw new BlockInvalidException("pre block not exist");
         }
 
         if (!isValid) {
