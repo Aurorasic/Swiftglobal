@@ -59,7 +59,12 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     private SystemStatusManager systemStatusManager;
 
     private ConcurrentHashMap<String, Long> peersMaxHeight = new ConcurrentHashMap<>();
-
+    private ScheduledExecutorService scheduledExecutorService = ExecutorServices.newScheduledThreadPool("cache clean up", 1);
+    /**
+     * 1 represents syncing block in init state
+     * 2 represents syncing block in running state
+     */
+    private int syncState = 1;
     private Cache<BlockRequest, String> requestRecord = Caffeine.newBuilder().maximumSize(100)
             .expireAfterWrite(SYNC_BLOCK_EXPIRATION, TimeUnit.SECONDS)
             .removalListener((RemovalListener<BlockRequest, String>) (request, sourceId, cause) -> {
@@ -68,14 +73,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
                 }
             })
             .build();
-
-    private ScheduledExecutorService scheduledExecutorService = ExecutorServices.newScheduledThreadPool("cache clean up", 1);
-
-    /**
-     * 1 represents syncing block in init state
-     * 2 represents syncing block in running state
-     */
-    private int syncState = 1;
 
     private boolean isSyncBlockState() {
         return syncState == 1;
@@ -240,9 +237,11 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     private boolean tryToChangeSysStatusToRunning() {
         long localMaxHeight = blockChain.getMaxHeight();
         long peerMaxHeight = getPeersMaxHeight();
-        if (isSyncBlockState() && peersMaxHeight.size() >= MIN_PEER_NUM
+        int peersMaxHeightSize = peersMaxHeight.size();
+        if (isSyncBlockState() && peersMaxHeightSize >= MIN_PEER_NUM
                 && localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+            LOGGER.warn("syncState={},peersMaxHeight.size={},localMaxHeight={},peerMaxHeight={}", syncState, peersMaxHeightSize, localMaxHeight, peerMaxHeight);
             LOGGER.info("sync block finished !");
             return true;
         }
