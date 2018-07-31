@@ -59,7 +59,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
         long blockHeight = block.getHeight();
         LOGGER.info("Orphan block cache, map size: {}, height: {}", orphanBlockMap.size(), blockHeight);
 
-        orphanBlockMap.add(blockInfo);
+        orphanBlockMap.add(blockChainService.getMaxHeight(), blockInfo);
     }
 
     @Subscribe
@@ -99,10 +99,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
     }
 
     public BlockFullInfo remove(final String blockHash) {
-        if (orphanBlockMap != null) {
-            return orphanBlockMap.remove(blockHash);
-        }
-        return null;
+        return orphanBlockMap.remove(blockHash);
     }
 
     public boolean isContains(final String blockHash) {
