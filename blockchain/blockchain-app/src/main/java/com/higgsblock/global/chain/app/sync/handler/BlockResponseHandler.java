@@ -53,7 +53,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         }
         List<Block> list = blockResponse.getBlocks();
         long height = blockResponse.getHeight();
-        eventBus.post(new ReceiveBlockResponseEvent(height));
         if (CollectionUtils.isEmpty(list)) {
             return false;
         }
@@ -79,6 +78,8 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
 
     @Override
     protected void process(IMessage<BlockResponse> message) {
+        long height = message.getData().getHeight();
+        eventBus.post(new ReceiveBlockResponseEvent(height));
         String sourceId = message.getSourceId();
         boolean isBroadcast = false;
         Block newBestBlock = null;
