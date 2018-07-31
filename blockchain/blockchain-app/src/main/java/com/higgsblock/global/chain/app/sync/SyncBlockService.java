@@ -93,6 +93,10 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         }
     }
 
+    public void invalidate(long height) {
+        requestRecord.invalidate(new BlockRequest(height));
+    }
+
     private boolean sendGetBlock(long height, String hash) {
         List<String> list = new ArrayList<>();
         for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {

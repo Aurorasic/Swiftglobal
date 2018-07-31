@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
@@ -40,6 +41,9 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
+    @Autowired
+    private SyncBlockService syncBlockService;
+
     @Override
     protected boolean valid(IMessage<BlockResponse> message) {
         BlockResponse blockResponse = message.getData();
@@ -48,6 +52,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         }
         List<Block> list = blockResponse.getBlocks();
         long height = blockResponse.getHeight();
+        syncBlockService.invalidate(height);
         if (CollectionUtils.isEmpty(list)) {
             return false;
         }
