@@ -241,8 +241,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         if (isSyncBlockState() && peersMaxHeightSize >= MIN_PEER_NUM
                 && localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
             systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-            LOGGER.warn("syncState={},peersMaxHeight.size={},localMaxHeight={},peerMaxHeight={}", syncState, peersMaxHeightSize, localMaxHeight, peerMaxHeight);
-            LOGGER.info("sync block finished !");
+            LOGGER.info("sync block finished !syncState={},peersMaxHeight.size={},localMaxHeight={},peerMaxHeight={}", syncState, peersMaxHeightSize, localMaxHeight, peerMaxHeight);
             return true;
         }
         return false;
