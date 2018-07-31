@@ -10,7 +10,6 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
-import com.higgsblock.global.chain.app.common.event.ReceiveBlockResponseEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
@@ -94,10 +93,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         }
     }
 
-    public void invalidate(long height) {
-        requestRecord.invalidate(new BlockRequest(height));
-    }
-
     private boolean sendGetBlock(long height, String hash) {
         List<String> list = new ArrayList<>();
         for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
@@ -124,23 +119,15 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         LOGGER.info("process event: {}", event);
-        continueSyncBlock(event.getHeight(), event.getBlockHash());
+        continueSyncBlock(event.getHeight());
     }
-
-    @Subscribe
-    public void process(ReceiveBlockResponseEvent event) {
-        LOGGER.info("process event: {}", event);
-        continueSyncBlock(event.getHeight(), null);
-    }
-
 
     /**
      * check whether to continue sync block
      */
-    private void continueSyncBlock(long height, String hash) {
+    private void continueSyncBlock(long height) {
         tryToChangeSysStatusToRunning();
-        requestRecord.invalidate(new BlockRequest(height, hash));
-
+        requestRecord.invalidate(new BlockRequest(height, null));
         //when there has a persisted block on the height, stop sync this height.If another one is real best block on
         // the height, its next block maybe orphan block, then fetch the real best block as orphan block.
         long peerMaxHeight = getPeersMaxHeight();

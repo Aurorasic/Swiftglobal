@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.sync.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.event.ReceiveBlockResponseEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
@@ -79,7 +78,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Override
     protected void process(IMessage<BlockResponse> message) {
         long height = message.getData().getHeight();
-        eventBus.post(new ReceiveBlockResponseEvent(height));
         String sourceId = message.getSourceId();
         boolean isBroadcast = false;
         Block newBestBlock = null;
