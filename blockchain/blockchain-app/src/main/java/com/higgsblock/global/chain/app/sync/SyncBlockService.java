@@ -149,9 +149,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     @Subscribe
     public void process(SyncBlockEvent event) {
-        if (isSyncBlockState()) {
-            return;
-        }
         LOGGER.info("process SyncBlockEvent: {}", event);
         long height = event.getHeight();
         String sourceId = event.getSourceId();
@@ -168,6 +165,9 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             });
         }
 
+        if (null != requestRecord.getIfPresent(new BlockRequest(height, null))) {
+            return;
+        }
 
         if (null != requestRecord.getIfPresent(new BlockRequest(height, hash))) {
             return;
