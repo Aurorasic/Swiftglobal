@@ -53,7 +53,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                     try {
                         IMessage message = takeMessage();
                         if (null == message) {
-                            return;
+                            continue;
                         }
                         LOGGER.info("take message for processing: {}", message);
 
