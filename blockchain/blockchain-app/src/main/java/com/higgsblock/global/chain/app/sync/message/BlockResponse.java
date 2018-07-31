@@ -7,6 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yuanjiantao
@@ -19,13 +23,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BlockResponse {
     private int version = 0;
-    private Block block;
+    private long height;
+    private List<Block> blocks;
 
-    public BlockResponse(Block block) {
-        this.block = block;
+    public BlockResponse(long height, Block block) {
+        this.height = height;
+        List<Block> blocks = new ArrayList<>();
+        blocks.add(block);
+        this.blocks = blocks;
+    }
+
+    public BlockResponse(long height, List<Block> blocks) {
+        this.height = height;
+        this.blocks = blocks;
     }
 
     public boolean valid() {
-        return null != block && block.valid() && version >= 0;
+        return CollectionUtils.isNotEmpty(blocks) && height >= 1 && version >= 0
+                && blocks.stream().allMatch(block -> block.getHeight() == height && block.valid());
     }
 }

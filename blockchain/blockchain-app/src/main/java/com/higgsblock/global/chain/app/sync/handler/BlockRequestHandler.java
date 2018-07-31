@@ -9,8 +9,11 @@ import com.higgsblock.global.chain.app.sync.message.BlockRequest;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * @author yuanjiantao
@@ -47,10 +50,14 @@ public class BlockRequestHandler extends BaseMessageHandler<BlockRequest> {
         if (null != hash) {
             Block block = blockService.getBlockByHash(hash);
             if (null != block) {
-                messageCenter.unicast(sourceId, new BlockResponse(block));
+                messageCenter.unicast(sourceId, new BlockResponse(height, block));
             }
         } else {
-            blockChainService.getBlocks(height).forEach(block -> messageCenter.unicast(sourceId, new BlockResponse(block)));
+            List<Block> list = blockChainService.getBlocks(height);
+            if (CollectionUtils.isEmpty(list)) {
+                return;
+            }
+            messageCenter.unicast(sourceId, new BlockResponse(height, list));
         }
     }
 }

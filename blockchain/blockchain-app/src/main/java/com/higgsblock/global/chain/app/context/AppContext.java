@@ -156,12 +156,12 @@ public class AppContext implements IEventBusListener {
         helloMessageHandler.start();
         blockResponseHandler.start();
         maxHeightResponseHandler.start();
+        maxHeightRequestHandler.start();
     }
 
     private void startHandlersAfterSyncedBlocks() {
         transactionHandler.start();
         inventoryHandler.start();
-        maxHeightRequestHandler.start();
         blockRequestHandler.start();
         blockHandler.start();
         originalBlockHandler.start();
