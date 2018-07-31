@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.app.common.SystemStatus;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.common.event.ReceiveBlockResponseEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
@@ -123,20 +124,27 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         LOGGER.info("process event: {}", event);
-        continueSyncBlock(event);
+        continueSyncBlock(event.getHeight(), event.getBlockHash());
     }
+
+    @Subscribe
+    public void process(ReceiveBlockResponseEvent event) {
+        LOGGER.info("process event: {}", event);
+        continueSyncBlock(event.getHeight(), null);
+    }
+
 
     /**
      * check whether to continue sync block
      */
-    private void continueSyncBlock(BlockPersistedEvent event) {
+    private void continueSyncBlock(long height, String hash) {
         tryToChangeSysStatusToRunning();
-        requestRecord.invalidate(new BlockRequest(event.getHeight(), event.getBlockHash()));
+        requestRecord.invalidate(new BlockRequest(height, hash));
 
         //when there has a persisted block on the height, stop sync this height.If another one is real best block on
         // the height, its next block maybe orphan block, then fetch the real best block as orphan block.
         long peerMaxHeight = getPeersMaxHeight();
-        long targetHeight = event.getHeight() + SYNC_BLOCK_TEMP_SIZE;
+        long targetHeight = height + SYNC_BLOCK_TEMP_SIZE;
         if (targetHeight <= peerMaxHeight) {
             sendGetBlock(targetHeight, null);
         }

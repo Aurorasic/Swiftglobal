@@ -1,11 +1,12 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
+import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.common.event.ReceiveBlockResponseEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
-import com.higgsblock.global.chain.app.sync.SyncBlockService;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
@@ -42,7 +43,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Autowired
-    private SyncBlockService syncBlockService;
+    private EventBus eventBus;
 
     @Override
     protected boolean valid(IMessage<BlockResponse> message) {
@@ -52,7 +53,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         }
         List<Block> list = blockResponse.getBlocks();
         long height = blockResponse.getHeight();
-        syncBlockService.invalidate(height);
+        eventBus.post(new ReceiveBlockResponseEvent(height));
         if (CollectionUtils.isEmpty(list)) {
             return false;
         }
