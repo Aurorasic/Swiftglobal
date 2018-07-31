@@ -86,10 +86,13 @@ public class Peer extends BaseSerializer {
         if (StringUtils.isEmpty(ip)) {
             return false;
         }
-        if (socketServerPort == 0) {
+        if (socketServerPort <= 0) {
             return false;
         }
-        if (httpServerPort == 0) {
+        if (httpServerPort <= 0) {
+            return false;
+        }
+        if (isEqualsPort()) {
             return false;
         }
         if (StringUtils.isEmpty(pubKey)) {
@@ -106,6 +109,14 @@ public class Peer extends BaseSerializer {
             return false;
         }
         return true;
+    }
+
+    public boolean isEqualsPort() {
+        if (this.httpServerPort == this.socketServerPort) {
+            LOGGER.error("peer httpServerPort is equal socketServerPort, socketServerPort={}", this.socketServerPort);
+            return true;
+        }
+        return false;
     }
 
     public boolean validSignature() {
