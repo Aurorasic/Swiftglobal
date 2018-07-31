@@ -82,15 +82,16 @@ public class OrphanBlockCacheManager implements IEventBusListener {
 
         List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(blockHash);
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
+            List<Block> list = new ArrayList<>();
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
                 Block nextBlock = nextBlockFullInfo.getBlock();
                 String nextBlockHash = nextBlock.getHash();
                 remove(nextBlockHash);
-                List<Block> list = new ArrayList<>();
                 list.add(nextBlock);
-                messageCenter.dispatch(new BlockResponse(nextBlock.getHeight(), list));
-                LOGGER.info("persisted height={},block={}, found next orphan block {}", height, blockHash, nextBlock.getSimpleInfo());
             }
+            messageCenter.dispatch(new BlockResponse(height + 1L, list));
+            LOGGER.info("persisted height={},block={}, found next orphan blocks ,size={} ", height, blockHash, list.size());
+
         }
     }
 
