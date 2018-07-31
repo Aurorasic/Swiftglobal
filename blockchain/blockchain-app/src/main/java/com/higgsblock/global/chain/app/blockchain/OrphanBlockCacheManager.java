@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockService;
+import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,7 +86,9 @@ public class OrphanBlockCacheManager implements IEventBusListener {
                 Block nextBlock = nextBlockFullInfo.getBlock();
                 String nextBlockHash = nextBlock.getHash();
                 remove(nextBlockHash);
-                messageCenter.dispatch(nextBlock);
+                List<Block> list = new ArrayList<>();
+                list.add(nextBlock);
+                messageCenter.dispatch(new BlockResponse(nextBlock.getHeight(), list));
                 LOGGER.info("persisted height={},block={}, found next orphan block {}", height, blockHash, nextBlock.getSimpleInfo());
             }
         }
