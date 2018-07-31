@@ -118,14 +118,12 @@ public class PeerManager {
                 continue;
             }
 
-            peer.setRetries(0);
-            if (peerCache.isCached(peer)) {
+            if (peerCache.isCached(peer) || null != getById(peer.getId())) {
                 continue;
             }
 
-            if (null == getById(peer.getId())) {
-                addOrUpdate(peer);
-            }
+            peer.setRetries(0);
+            addOrUpdate(peer);
         }
         long processEndTime = System.currentTimeMillis();
         LOGGER.info("add peer info spend time :{}ms", processEndTime - processStartTime);
