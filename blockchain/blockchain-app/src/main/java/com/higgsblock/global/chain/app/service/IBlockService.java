@@ -78,12 +78,12 @@ public interface IBlockService {
     Block persistBlockAndIndex(Block block);
 
     /**
-     * Do some work after persisted a block
+     * Do some sync work(should not be async work) after persisted a block
      *
      * @param newBestBlock
      * @param persistedBlock
      */
-    void doSomeJobAfterPersistBlock(Block newBestBlock, Block persistedBlock);
+    void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock);
 
     /**
      * Check the block numbers

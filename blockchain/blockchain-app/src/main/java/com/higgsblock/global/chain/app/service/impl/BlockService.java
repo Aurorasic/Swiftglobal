@@ -508,13 +508,19 @@ public class BlockService implements IBlockService {
         LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
     }
 
+    /**
+     * Do some sync work(should not be async work) after persisted a block
+     *
+     * @param newBestBlock
+     * @param persistedBlock
+     */
     @Override
-    public void doSomeJobAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
+    public void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
         //add unconfirmed utxos and remove confirmed height blocks in cache
         utxoServiceProxy.addNewBlock(newBestBlock, persistedBlock);
 
         //refresh cache
-        refreshCache(persistedBlock.getHash(), persistedBlock);
+        refreshCache(persistedBlock);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(persistedBlock, newBestBlock);
@@ -594,12 +600,9 @@ public class BlockService implements IBlockService {
     /**
      * refresh txCacheManager
      *
-     * @param blockHash
      * @param block
      */
-    private void refreshCache(String blockHash, Block block) {
-
-
+    private void refreshCache(Block block) {
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
         });
