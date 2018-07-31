@@ -110,9 +110,16 @@ public class Block extends BaseSerializer {
         if (StringUtils.isEmpty(pubKey)) {
             return false;
         }
-        if (transactions == null || transactions.size() <= 1) {
-            return false;
+        if (height == 1L) {
+            if (transactions.size() < 1) {
+                return false;
+            }
+        } else {
+            if (transactions == null || transactions.size() <= 1) {
+                return false;
+            }
         }
+
         for (Transaction transaction : transactions) {
             if (!transaction.valid()) {
                 LOGGER.error("transaction is error ", transaction);
