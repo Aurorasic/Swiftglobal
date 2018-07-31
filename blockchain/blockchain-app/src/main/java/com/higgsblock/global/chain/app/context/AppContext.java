@@ -190,11 +190,11 @@ public class AppContext implements IEventBusListener {
     private void startFirstStepListeners() {
         eventBus.register(channelChangedListener);
         eventBus.register(messageReceiver);
+        eventBus.register(orphanBlockCacheManager);
         eventBus.register(this);
     }
 
     private void startListenersAfterSyncedBlocks() {
-        eventBus.register(orphanBlockCacheManager);
         miningListener.start();
         eventBus.register(miningListener);
         voteService.start();

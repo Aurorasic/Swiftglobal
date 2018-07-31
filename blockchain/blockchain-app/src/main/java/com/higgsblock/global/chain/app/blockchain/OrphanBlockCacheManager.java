@@ -64,7 +64,7 @@ public class OrphanBlockCacheManager implements IEventBusListener {
 
     @Subscribe
     public void process(BlockPersistedEvent event) {
-        LOGGER.info("received process event: {}", event);
+        LOGGER.info("orphanBlockManager received process event: {}", event);
         long height = event.getHeight();
         String blockHash = event.getBlockHash();
         try {
@@ -81,19 +81,11 @@ public class OrphanBlockCacheManager implements IEventBusListener {
         List<BlockFullInfo> nextConnectionBlocks = getNextConnectionBlocks(blockHash);
         if (CollectionUtils.isNotEmpty(nextConnectionBlocks)) {
             for (BlockFullInfo nextBlockFullInfo : nextConnectionBlocks) {
-                Block block = nextBlockFullInfo.getBlock();
-                Block newBestBlock = null;
-                boolean success = true;
-                try {
-                    newBestBlock = blockService.persistBlockAndIndex(block);
-                } catch (Exception e) {
-                    success = false;
-                }
-
-                LOGGER.info("persisted block all info, success={},{}", success, block.getSimpleInfo());
-                if (success) {
-                    blockService.doSyncWorksAfterPersistBlock(newBestBlock, block);
-                }
+                Block nextBlock = nextBlockFullInfo.getBlock();
+                String nextBlockHash = nextBlock.getHash();
+                remove(nextBlockHash);
+                messageCenter.dispatch(nextBlock);
+                LOGGER.info("persisted height={},block={}, found next orphan block {}", height, blockHash, nextBlock.getSimpleInfo());
             }
         }
     }

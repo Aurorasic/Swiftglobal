@@ -451,24 +451,24 @@ public class BlockService implements IBlockService {
             return false;
         }
 
-        //2.check: witness signatures
+        //2.check: orphan block
+        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
+        if (isOrphanBlock) {
+            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
+        }
+
+        //3.check: witness signatures
         boolean validWitnessSignature = blockChainService.checkWitnessSignature(block);
         if (!validWitnessSignature) {
             LOGGER.error("the block witness sig is error: {}", block.getSimpleInfo());
             return false;
         }
 
-        //3. check: producer stake
+        //4. check: producer stake
         boolean producerValid = blockChainService.checkBlockProducer(block);
         if (!producerValid) {
             LOGGER.error("the block produce stake is error: {}", block.getSimpleInfo());
             return false;
-        }
-
-        //4.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
-        boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
-        if (isOrphanBlock) {
-            throw new NotExistPreBlockException(String.format("orphan block: %s", block.getSimpleInfo()));
         }
 
         //5. check: transactions
