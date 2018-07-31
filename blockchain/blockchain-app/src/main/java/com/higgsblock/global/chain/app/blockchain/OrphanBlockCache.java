@@ -31,13 +31,13 @@ public class OrphanBlockCache {
         }
 
         //remove height<
-        List<String> list1 = map.values().stream()
-                .filter(o -> o.getBlock().getHeight() < currentMaxHeight)
+        List<String> uselessBlocks = map.values().stream()
+                .filter(o -> o.getBlock().getHeight() < currentMaxHeight - 3)
                 .map(obj -> obj.getBlock().getHash())
                 .collect(Collectors.toList());
 
-        for (String item : list1) {
-            LOGGER.info("remove useless block");
+        for (String item : uselessBlocks) {
+            LOGGER.info("remove useless block,hash={}", item);
             remove(item);
         }
 
