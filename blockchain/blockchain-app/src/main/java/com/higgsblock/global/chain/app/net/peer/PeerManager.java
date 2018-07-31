@@ -240,6 +240,7 @@ public class PeerManager {
      * @return the boolean
      */
     public boolean loadNeighborPeers() {
+        //todo kongyu 2018-7-31 从peerMap中拿出来，然后再放进peerMap中去？？？？没必要这么做！
         // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
         // 1.load neighbor peers from local
         Collection<Peer> localPeers = getPeers();
