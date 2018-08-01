@@ -56,8 +56,17 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
     @Modifying
     int plusAll(@Param("plusScore") int score);
 
+    /**
+     * query top score by range
+     *
+     * @param minScore
+     * @param maxScore
+     * @param addressList
+     * @param pageable
+     * @return
+     */
     @Query("SELECT se FROM ScoreEntity se WHERE score >=:minScore AND score <:maxScore AND address NOT IN (:addressList)")
-    List<ScoreEntity> queryByScoreRange(@Param("minScore") Integer minScore, @Param("maxScore") Integer maxScore,
-                               @Param("addressList")List<String> addressList, Pageable pageable);
+    List<ScoreEntity> queryTopScoreByRange(@Param("minScore") Integer minScore, @Param("maxScore") Integer maxScore,
+                                           @Param("addressList") List<String> addressList, Pageable pageable);
 
 }
