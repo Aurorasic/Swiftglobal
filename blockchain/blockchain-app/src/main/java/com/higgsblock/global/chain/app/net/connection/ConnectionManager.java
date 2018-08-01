@@ -11,6 +11,7 @@ import com.higgsblock.global.chain.network.socket.Server;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -140,7 +141,7 @@ public class ConnectionManager {
      * @return true if connection pool contains connection of peer, false otherwise
      */
     private boolean isConnected(Peer peer) {
-        return connectionMap.values().stream().anyMatch(connection -> connection.getPeerId().equals(peer.getId()));
+        return connectionMap.values().stream().anyMatch(connection -> StringUtils.equals(connection.getPeerId(), peer.getId()));
     }
 
     /**

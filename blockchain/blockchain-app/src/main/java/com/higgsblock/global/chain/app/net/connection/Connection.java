@@ -169,6 +169,9 @@ public class Connection {
     }
 
     public String getChannelId() {
+        if (null == channel) {
+            return null;
+        }
         return channel.id().toString();
     }
 
