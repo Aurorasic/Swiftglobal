@@ -88,12 +88,12 @@ public class BestUTXOService implements IBestUTXOService {
             throw new RuntimeException("addr is null");
         }
 
+        List<UTXO> utxos = Lists.newArrayList();
         List<UTXOEntity> entityList = utxoRepository.findByLockScript(addr);
         if (CollectionUtils.isEmpty(entityList)) {
-            return null;
+            return utxos;
         }
 
-        List<UTXO> utxos = Lists.newArrayList();
         entityList.forEach(entity -> {
             Money money = new Money(entity.getAmount(), entity.getCurrency());
             LockScript lockScript = new LockScript();
