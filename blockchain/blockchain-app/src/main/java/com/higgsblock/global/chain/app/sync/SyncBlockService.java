@@ -16,9 +16,7 @@ import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.sync.message.BlockRequest;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.common.utils.ExecutorServices;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class SyncBlockService implements IEventBusListener, InitializingBean {
+public class SyncBlockService implements IEventBusListener {
 
     private static final int SYNC_BLOCK_TEMP_SIZE = 10;
 
@@ -59,7 +56,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
     private SystemStatusManager systemStatusManager;
 
     private ConcurrentHashMap<String, Long> peersMaxHeight = new ConcurrentHashMap<>();
-    private ScheduledExecutorService scheduledExecutorService = ExecutorServices.newScheduledThreadPool("cache clean up", 1);
     /**
      * 1 represents syncing block in init state
      * 2 represents syncing block in running state
@@ -110,7 +106,7 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
         String sourceId = list.get(new Random().nextInt(list.size()));
         requestRecord.get(new BlockRequest(height, hash), v -> {
             messageCenter.unicast(sourceId, new BlockRequest(height, hash));
-            LOGGER.info("send block request! height={},hash={} ", height, hash);
+            LOGGER.info("send block request! height={},hash={}, current cache size={} ", height, hash, requestRecord.estimatedSize());
             return sourceId;
         });
         return true;
@@ -136,7 +132,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
             sendGetBlock(targetHeight, null);
         }
     }
-
 
     @Subscribe
     public void process(SystemStatusEvent event) {
@@ -251,11 +246,6 @@ public class SyncBlockService implements IEventBusListener, InitializingBean {
 
     private long getPeersMaxHeight() {
         return peersMaxHeight.values().stream().reduce(1L, (a, b) -> a > b ? a : b);
-    }
-
-    @Override
-    public void afterPropertiesSet() {
-        scheduledExecutorService.scheduleWithFixedDelay(() -> requestRecord.cleanUp(), 20, SYNC_BLOCK_EXPIRATION / 5, TimeUnit.SECONDS);
     }
 }
 
