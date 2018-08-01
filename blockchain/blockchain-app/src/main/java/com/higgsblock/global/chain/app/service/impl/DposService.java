@@ -32,10 +32,6 @@ import java.util.stream.Collectors;
 @Service
 public class DposService implements IDposService {
 
-
-    private final int maxScore = 1000;
-    private final int midScore = 800;
-    private final int mixScore = 600;
     @Autowired
     private IDposRepository dposRepository;
     @Autowired
