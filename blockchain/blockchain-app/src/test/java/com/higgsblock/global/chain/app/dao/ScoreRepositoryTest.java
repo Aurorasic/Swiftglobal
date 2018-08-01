@@ -6,10 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -73,6 +77,14 @@ public class ScoreRepositoryTest extends BaseTest {
     @Rollback(false)
     public void testPlusAll() {
         scoreRepository.plusAll(120);
+    }
+
+    @Test
+    public void TestQueryTestLimit() {
+        Pageable pageable = new PageRequest(0, 1000, Sort.Direction.DESC, "score");
+        String[] addresses = {"16SFjgBuru8dhmPxXGUzzNwguPBta3rf5f", "1EVTGKFGP42CrPmRLY4jhnCw55gbDFkz7s"};
+        List<ScoreEntity> scoreEntities = scoreRepository.queryByScoreRange(800, 900, Arrays.asList(addresses), pageable);
+        LOGGER.info("ScoreEntity: {}", scoreEntities);
     }
 
 }

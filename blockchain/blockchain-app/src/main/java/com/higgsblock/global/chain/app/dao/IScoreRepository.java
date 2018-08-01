@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -54,4 +55,9 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
     @Query("update ScoreEntity set score=score + :plusScore")
     @Modifying
     int plusAll(@Param("plusScore") int score);
+
+    @Query("SELECT se FROM ScoreEntity se WHERE score >=:minScore AND score <:maxScore AND address NOT IN (:addressList)")
+    List<ScoreEntity> queryByScoreRange(@Param("minScore") Integer minScore, @Param("maxScore") Integer maxScore,
+                               @Param("addressList")List<String> addressList, Pageable pageable);
+
 }
