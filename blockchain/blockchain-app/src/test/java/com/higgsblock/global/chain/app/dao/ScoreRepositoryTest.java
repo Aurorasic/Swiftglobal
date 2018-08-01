@@ -1,7 +1,9 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.service.IDposService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -14,7 +16,6 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,6 +27,8 @@ public class ScoreRepositoryTest extends BaseTest {
 
     @Autowired
     private IScoreRepository scoreRepository;
+    @Autowired
+    private IDposService dposService;
 
     @Test
     @Transactional
@@ -84,7 +87,7 @@ public class ScoreRepositoryTest extends BaseTest {
         Pageable pageable = new PageRequest(0, 3, Sort.Direction.DESC, "score");
         String[] addresses = {"1BdgnGcgBhw4LRaictfF4nxGKo228BQNqW", "1234fMcU3YJUCGsfy61DQFdciUzLG4qyeR"};
         //Arrays.asList(addresses)
-        List<ScoreEntity> scoreEntities = scoreRepository.queryTopScoreByRange(800, 1000, Arrays.asList(addresses), pageable);
+        List<ScoreEntity> scoreEntities = scoreRepository.queryTopScoreByRange(800, 1000, new ArrayList<>(), pageable);
         if (CollectionUtils.isNotEmpty(scoreEntities)) {
             scoreEntities.forEach(score -> System.out.println(score));
         } else {
@@ -92,9 +95,17 @@ public class ScoreRepositoryTest extends BaseTest {
         }
     }
 
+    public void testSelectNextDpos() {
+        Block toBeBlock = new Block();
+        toBeBlock.setHeight(207);
+        toBeBlock.setHash("545e64a48860ea05659c55cd3313d0a9dfe17d4c310a9e0f28e19384e5d3c6b8");
+        dposService.calcNextDposNodes(toBeBlock, 210);
+    }
+
     @Test
     public void test() {
-        testQueryTestLimit();
+//        testQueryTestLimit();
+        testSelectNextDpos();
     }
 
 

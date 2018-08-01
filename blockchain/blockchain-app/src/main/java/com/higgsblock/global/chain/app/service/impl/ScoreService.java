@@ -1,8 +1,10 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.IScoreRepository;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.service.IDposService;
@@ -12,13 +14,13 @@ import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author HuangShengli
@@ -161,6 +163,29 @@ public class ScoreService implements IScoreService {
             }
         }
         LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+    }
+
+    /**
+     * list top 1000 by score range
+     *
+     * @param scoreRange
+     * @param exculdeAddresses
+     * @return
+     */
+    @Override
+    public List<String> queryTopScoreRangeAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
+        Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD);
+        List<ScoreEntity> scores = scoreRepository.queryTopScoreByRange(
+                scoreRange.getMinScore(),
+                scoreRange.getMaxScore(),
+                exculdeAddresses == null ? new ArrayList<>() : exculdeAddresses,
+                pageable);
+        if (scores == null) {
+            return Lists.newLinkedList();
+        }
+        List<String> addresses = Lists.newLinkedList();
+        scores.forEach(scoreEntity -> addresses.add(scoreEntity.getAddress()));
+        return addresses;
     }
 
     private void newScoreStrategy(Block toBeBestBlock) {
