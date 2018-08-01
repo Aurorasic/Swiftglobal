@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.dao;
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,12 +80,22 @@ public class ScoreRepositoryTest extends BaseTest {
         scoreRepository.plusAll(120);
     }
 
-    @Test
-    public void TestQueryTestLimit() {
-        Pageable pageable = new PageRequest(0, 1000, Sort.Direction.DESC, "score");
-        String[] addresses = {"16SFjgBuru8dhmPxXGUzzNwguPBta3rf5f", "1EVTGKFGP42CrPmRLY4jhnCw55gbDFkz7s"};
-        List<ScoreEntity> scoreEntities = scoreRepository.queryByScoreRange(800, 900, Arrays.asList(addresses), pageable);
-        LOGGER.info("ScoreEntity: {}", scoreEntities);
+    public void testQueryTestLimit() {
+        Pageable pageable = new PageRequest(0, 3, Sort.Direction.DESC, "score");
+        String[] addresses = {"1BdgnGcgBhw4LRaictfF4nxGKo228BQNqW", "1234fMcU3YJUCGsfy61DQFdciUzLG4qyeR"};
+        //Arrays.asList(addresses)
+        List<ScoreEntity> scoreEntities = scoreRepository.queryByScoreRange(800, 1000, Arrays.asList(addresses), pageable);
+        if (CollectionUtils.isNotEmpty(scoreEntities)) {
+            scoreEntities.forEach(score -> System.out.println(score));
+        } else {
+            System.out.println("query result is empty");
+        }
     }
+
+    @Test
+    public void test() {
+        testQueryTestLimit();
+    }
+
 
 }
