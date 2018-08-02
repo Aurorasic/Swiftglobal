@@ -192,6 +192,9 @@ public class ConnectionManager {
     }
 
     public void removeByChannelId(String channelId) {
+        if (null == channelId) {
+            return;
+        }
         Connection connection = peerUnknownConnectionMap.remove(channelId);
         if (null != connection) {
             connection.close();
@@ -229,6 +232,9 @@ public class ConnectionManager {
      * @return new created connection
      */
     public Connection createConnection(Channel channel, ChannelType type) {
+        if (null == channel) {
+            return null;
+        }
         return peerUnknownConnectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
             Connection connection = new Connection(channel, type);
 
@@ -238,6 +244,9 @@ public class ConnectionManager {
     }
 
     public void active(String channelId, Peer peer) {
+        if (null == channelId) {
+            return;
+        }
         Connection connection = peerUnknownConnectionMap.get(channelId);
         if (null == connection) {
             return;
@@ -315,8 +324,11 @@ public class ConnectionManager {
      * @param connection conncetion to move
      */
     private void moveToConnectionMap(Connection connection) {
-        connectionMap.putIfAbsent(connection.getChannelId(), connection);
-        peerUnknownConnectionMap.remove(connection.getChannelId());
+        String channelId = connection.getChannelId();
+        if (null != channelId) {
+            connectionMap.putIfAbsent(channelId, connection);
+            peerUnknownConnectionMap.remove(channelId);
+        }
     }
 
 
@@ -349,6 +361,9 @@ public class ConnectionManager {
     }
 
     public Connection getConnectionByChannelId(String channelId) {
+        if (null == channelId) {
+            return null;
+        }
         Connection connection = connectionMap.get(channelId);
         if (null == connection) {
             connection = peerUnknownConnectionMap.get(channelId);
