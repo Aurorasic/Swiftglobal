@@ -46,7 +46,7 @@ public class Server {
         try {
             ThreadFactory factory = ThreadFactoryUtils.createThreadFactory("socket-server");
             bossGroup = new NioEventLoopGroup(1, factory);
-            workerGroup = new NioEventLoopGroup(0, factory);
+            workerGroup = new NioEventLoopGroup(4, factory);
 
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup);
