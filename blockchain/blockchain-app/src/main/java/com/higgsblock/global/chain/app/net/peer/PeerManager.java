@@ -220,7 +220,7 @@ public class PeerManager {
      */
     public boolean loadSelfPeerInfo() {
         Peer peer = new Peer();
-        peer.setIp(IpUtil.getLocalIpByName(config.getIp()));
+        peer.setIp(config.getIp());
         peer.setSocketServerPort(config.getSocketPort());
         peer.setHttpServerPort(config.getHttpPort());
         peer.setPubKey(config.getPubKey());

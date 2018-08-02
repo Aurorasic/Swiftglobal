@@ -112,7 +112,7 @@ public final class IpUtil {
      * @param hostName the host name
      * @return the ip by name
      */
-    public static String getLocalIpByName(String hostName) {
+    public static String getIpByName(String hostName) {
         String ip = null;
         try {
             InetAddress inetAddress = InetAddress.getByName(hostName);

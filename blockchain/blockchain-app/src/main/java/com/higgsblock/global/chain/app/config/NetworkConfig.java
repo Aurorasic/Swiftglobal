@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.net.config.RegistryConfig;
 import com.higgsblock.global.chain.network.config.PeerConfig;
 import com.higgsblock.global.chain.network.enums.NetworkType;
 import com.higgsblock.global.chain.network.http.HttpClient;
+import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +24,7 @@ public class NetworkConfig {
     public PeerConfig peerConfig(AppConfig config) {
         PeerConfig peerConfig = new PeerConfig();
         peerConfig.setConnectionTimeOutMs(config.getConnectionTimeout());
-        peerConfig.setIp(config.getClientPublicIp());
+        peerConfig.setIp(IpUtil.getIpByName(config.getClientPublicIp()));
         peerConfig.setSocketPort(config.getSocketServerPort());
         peerConfig.setHttpPort(config.getHttpServerPort());
         peerConfig.setPriKey(config.getPriKey());
@@ -34,7 +35,7 @@ public class NetworkConfig {
     @Bean
     public RegistryConfig registryConfig(AppConfig config) {
         RegistryConfig registryConfig = new RegistryConfig();
-        registryConfig.setIp(config.getRegistryCenterIp());
+        registryConfig.setIp(IpUtil.getIpByName(config.getRegistryCenterIp()));
         registryConfig.setPort(config.getRegistryCenterPort());
         return registryConfig;
     }
