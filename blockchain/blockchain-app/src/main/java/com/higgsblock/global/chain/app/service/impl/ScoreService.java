@@ -32,7 +32,6 @@ public class ScoreService implements IScoreService {
 
     @Autowired
     private IScoreRepository scoreRepository;
-
     @Autowired
     private ITransactionService transactionService;
     @Autowired
@@ -143,8 +142,6 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void refreshMinersScore(Block toBeBestBlock) {
-
-
         newScoreStrategy(toBeBestBlock);
 
         //handle joined miner and removed miner
