@@ -32,7 +32,6 @@ public class ScoreService implements IScoreService {
 
     @Autowired
     private IScoreRepository scoreRepository;
-
     @Autowired
     private ITransactionService transactionService;
     @Autowired
@@ -143,8 +142,6 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void refreshMinersScore(Block toBeBestBlock) {
-
-
         newScoreStrategy(toBeBestBlock);
 
         //handle joined miner and removed miner
@@ -174,7 +171,7 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public List<String> queryTopScoreRangeAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
-        Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD);
+        Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD, ADDRESS_ORDERBY_FIELD);
         List<ScoreEntity> scores = scoreRepository.queryTopScoreByRange(
                 scoreRange.getMinScore(),
                 scoreRange.getMaxScore(),

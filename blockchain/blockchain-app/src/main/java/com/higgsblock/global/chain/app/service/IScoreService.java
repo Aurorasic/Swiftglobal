@@ -15,21 +15,20 @@ import java.util.Map;
 public interface IScoreService {
 
     /**
-     * init score
+     * init score for new miner
      */
-    int INIT_SCORE = 600;
+    int INIT_SCORE = 0;
 
-    //new score strategy
     /**
-     * init score for lucky miner
+     * set init score for dpos miner
      */
     int SELECTED_DPOS_SET_SCORE = 600;
     /**
-     * lucky miner score
+     * set score for miner who mined the block
      */
     int MINED_BLOCK_SET_SCORE = 800;
     /**
-     * offline miner score
+     * set score for offline miner(mined block by guarder)
      */
     int OFFLINE_MINER_SET_SCORE = 0;
     /**
@@ -45,6 +44,10 @@ public interface IScoreService {
      * order by field
      */
     String SCORE_ORDERBY_FIELD = "score";
+    /**
+     * order by field
+     */
+    String ADDRESS_ORDERBY_FIELD = "address";
 
     /**
      * get score by address
@@ -113,7 +116,7 @@ public interface IScoreService {
     List<ScoreEntity> all();
 
     /**
-     * set score for lucky miners
+     * set score for dpos miners
      *
      * @param addressList
      */

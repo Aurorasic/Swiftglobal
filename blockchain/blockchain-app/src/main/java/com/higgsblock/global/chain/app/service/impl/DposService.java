@@ -238,11 +238,12 @@ public class DposService implements IDposService {
         LOGGER.info("the currentGroup is {}", currentGroup);
 
         // group by score range
-        List<String> maxScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MAX_SCORE, currentGroup);
-        List<String> midScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MID_SCORE, currentGroup);
-        List<String> minScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MIN_SCORE, currentGroup);
-        List<String> bottomScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.BOTTOM_SCORE, currentGroup);
-        LOGGER.info("select {} round dpos node from maxScore:{},midScore:{},minScore:{},bottomScore:{}", (sn + 1), maxScoreList, midScoreList, minScoreList, bottomScoreList);
+        List<String> level5List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL5_SCORE, currentGroup);
+        List<String> level4List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL4_SCORE, currentGroup);
+        List<String> level3List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL3_SCORE, currentGroup);
+        List<String> level2List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL2_SCORE, currentGroup);
+        List<String> level1List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL1_SCORE, currentGroup);
+        LOGGER.debug("select {} round dpos node from level5List:{},level4List:{},level3List:{},level2List:{},level1List:{}", (sn + 1), level5List, level4List, level3List, level2List, level1List);
 
         // Shuffle by miner address and block hash
         HashFunction function = Hashing.sha256();
@@ -251,19 +252,24 @@ public class DposService implements IDposService {
             HashCode hashCode2 = function.hashString(o2 + hash, Charsets.UTF_8);
             return hashCode1.toString().compareTo(hashCode2.toString());
         };
-        maxScoreList.sort(comparator);
-        midScoreList.sort(comparator);
-        minScoreList.sort(comparator);
+        level5List.sort(comparator);
+        level4List.sort(comparator);
+        level3List.sort(comparator);
+        level2List.sort(comparator);
+        level1List.sort(comparator);
 
         // Select miners by score range
-        int maxSize = ScoreRangeEnum.MAX_SCORE.getSelectSize();
-        int midSize = ScoreRangeEnum.MID_SCORE.getSelectSize();
-        int minSize = ScoreRangeEnum.MIN_SCORE.getSelectSize();
+        int level5Size = ScoreRangeEnum.LEVEL5_SCORE.getSelectSize();
+        int level4Size = ScoreRangeEnum.LEVEL4_SCORE.getSelectSize();
+        int level3Size = ScoreRangeEnum.LEVEL3_SCORE.getSelectSize();
+        int level2Size = ScoreRangeEnum.LEVEL2_SCORE.getSelectSize();
 
-        selected.addAll(maxScoreList.stream().limit(maxSize).collect(Collectors.toList()));
-        selected.addAll(midScoreList.stream().limit(midSize).collect(Collectors.toList()));
-        selected.addAll(minScoreList.stream().limit(minSize).collect(Collectors.toList()));
-        int size = maxSize + midSize + minSize - selected.size();
+        selected.addAll(level5List.stream().limit(level5Size).collect(Collectors.toList()));
+        selected.addAll(level4List.stream().limit(level4Size).collect(Collectors.toList()));
+        selected.addAll(level3List.stream().limit(level3Size).collect(Collectors.toList()));
+        selected.addAll(level2List.stream().limit(level2Size).collect(Collectors.toList()));
+
+        int size = level5Size + level4Size + level3Size + level2Size - selected.size();
         if (size <= 0) {
             LOGGER.info("first select the dpos node is {},sn+1:{}", selected, (sn + 1));
             return selected;
@@ -271,10 +277,11 @@ public class DposService implements IDposService {
 
         // If the selected miners are not enough, then select others from the left miners.
         List<String> left = Lists.newLinkedList();
-        left.addAll(maxScoreList);
-        left.addAll(midScoreList);
-        left.addAll(minScoreList);
-        left.addAll(bottomScoreList);
+        left.addAll(level5List);
+        left.addAll(level4List);
+        left.addAll(level3List);
+        left.addAll(level2List);
+        left.addAll(level1List);
         left.removeAll(selected);
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
         LOGGER.info("the dpos node is sn+1:{}->{}", (sn + 1), selected);

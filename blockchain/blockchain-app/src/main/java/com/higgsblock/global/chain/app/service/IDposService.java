@@ -15,7 +15,7 @@ public interface IDposService {
     /**
      * the selected miners per round
      */
-    int NODE_SIZE = 6;
+    int NODE_SIZE = 7;
     /**
      * the max size of cache nodes
      */
