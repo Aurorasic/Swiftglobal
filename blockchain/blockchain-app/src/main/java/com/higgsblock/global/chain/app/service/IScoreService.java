@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.service;
 
 
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 
 import java.util.List;
@@ -35,6 +36,16 @@ public interface IScoreService {
      * plus score
      */
     int ONE_BLOCK_ADD_SCORE = 1;
+
+    /**
+     * max limit record
+     */
+    int SCORE_LIMIT_NUM = 1000;
+    /**
+     * order by field
+     */
+    String SCORE_ORDERBY_FIELD = "score";
+
     /**
      * get score by address
      *
@@ -114,5 +125,14 @@ public interface IScoreService {
      * @param toBeBestBlock
      */
     void refreshMinersScore(Block toBeBestBlock);
+
+    /**
+     * list top 1000 by score range
+     *
+     * @param scoreRange
+     * @param exculdeAddresses
+     * @return
+     */
+    List<String> queryTopScoreRangeAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses);
 
 }

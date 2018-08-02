@@ -33,7 +33,7 @@ public class BlockIndexRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryByBlockHash() {
-        BlockIndexEntity indexEntity = blockIndexRepository.findByBlockHash("123");
+        BlockIndexEntity indexEntity = blockIndexRepository.findByBlockHash("9640862a377237a6e6a9bf91cf9c500071e694ca9fa061a26bcc2a3d924d00f4");
         LOGGER.info("--->>find one result : {}", indexEntity);
     }
 

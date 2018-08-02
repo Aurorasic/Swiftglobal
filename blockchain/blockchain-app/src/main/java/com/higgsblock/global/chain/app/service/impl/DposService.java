@@ -8,14 +8,13 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.IDposRepository;
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
-import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,10 +32,6 @@ import java.util.stream.Collectors;
 @Service
 public class DposService implements IDposService {
 
-
-    private final int maxScore = 1000;
-    private final int midScore = 800;
-    private final int mixScore = 600;
     @Autowired
     private IDposRepository dposRepository;
     @Autowired
@@ -237,48 +232,17 @@ public class DposService implements IDposService {
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
         long sn = getSn(maxHeight);
-        List<ScoreEntity> all = scoreService.all();
-        LOGGER.info("select {} round dpos node from dposMinerScore:{}", (sn + 1), all);
-        if (CollectionUtils.isEmpty(all)) {
-            return selected;
-        }
         final String hash = toBeBestBlock.getHash();
         LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
 
         // group by score range
-        List<String> maxScoreList = Lists.newLinkedList();
-        List<String> midScoreList = Lists.newLinkedList();
-        List<String> minScoreList = Lists.newLinkedList();
-        List<String> inadequateScoreList = Lists.newLinkedList();
-
-        all.forEach(entity -> {
-            if (null == entity) {
-                return;
-            }
-            Integer score = entity.getScore();
-            String address = entity.getAddress();
-            if (null == score || StringUtils.isBlank(address)) {
-                return;
-            }
-            if (currentGroup.contains(address)) {
-                return;
-            }
-            if (score >= maxScore) {
-                maxScoreList.add(address);
-                return;
-            }
-            if (score >= midScore) {
-                midScoreList.add(address);
-                return;
-            }
-            if (score >= mixScore) {
-                minScoreList.add(address);
-                return;
-            }
-            inadequateScoreList.add(address);
-        });
+        List<String> maxScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MAX_SCORE, currentGroup);
+        List<String> midScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MID_SCORE, currentGroup);
+        List<String> minScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.MIN_SCORE, currentGroup);
+        List<String> bottomScoreList = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.BOTTOM_SCORE, currentGroup);
+        LOGGER.info("select {} round dpos node from maxScore:{},midScore:{},minScore:{},bottomScore:{}", (sn + 1), maxScoreList, midScoreList, minScoreList, bottomScoreList);
 
         // Shuffle by miner address and block hash
         HashFunction function = Hashing.sha256();
@@ -292,9 +256,9 @@ public class DposService implements IDposService {
         minScoreList.sort(comparator);
 
         // Select miners by score range
-        int maxSize = 3;
-        int midSize = 2;
-        int minSize = 1;
+        int maxSize = ScoreRangeEnum.MAX_SCORE.getSelectSize();
+        int midSize = ScoreRangeEnum.MID_SCORE.getSelectSize();
+        int minSize = ScoreRangeEnum.MIN_SCORE.getSelectSize();
 
         selected.addAll(maxScoreList.stream().limit(maxSize).collect(Collectors.toList()));
         selected.addAll(midScoreList.stream().limit(midSize).collect(Collectors.toList()));
@@ -310,12 +274,12 @@ public class DposService implements IDposService {
         left.addAll(maxScoreList);
         left.addAll(midScoreList);
         left.addAll(minScoreList);
-        left.addAll(inadequateScoreList);
+        left.addAll(bottomScoreList);
         left.removeAll(selected);
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
-        LOGGER.info("the dpos node is {},sn+1:{}", selected, (sn + 1));
+        LOGGER.info("the dpos node is sn+1:{}->{}", (sn + 1), selected);
         if (selected.size() < NODE_SIZE) {
-            LOGGER.warn("can not find enough dpos node,sn+1:{}", (sn + 1));
+            LOGGER.warn("can not find enough dpos node,sn+1:{}->{}", (sn + 1), selected);
         }
         return selected;
     }
