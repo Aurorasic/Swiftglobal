@@ -6,21 +6,25 @@ package com.higgsblock.global.chain.app.common;
  **/
 public enum ScoreRangeEnum {
     /**
-     * level 1 score range
+     * level 5 score range
      */
-    MAX_SCORE(1000, Integer.MAX_VALUE, 3),
+    LEVEL5_SCORE(1200, Integer.MAX_VALUE, 3),
     /**
-     * level 2 score range
+     * level 4 score range
      */
-    MID_SCORE(800, 1000, 2),
+    LEVEL4_SCORE(1000, 1200, 2),
     /**
      * level 3 score range
      */
-    MIN_SCORE(600, 800, 1),
+    LEVEL3_SCORE(800, 1000, 1),
     /**
-     * level bottom score range
+     * level 2 score range
      */
-    BOTTOM_SCORE(0, 600, 0);
+    LEVEL2_SCORE(600, 800, 1),
+    /**
+     * level 1 score range
+     */
+    LEVEL1_SCORE(0, 600, 0);
 
     private int minScore;
     private int maxScore;
