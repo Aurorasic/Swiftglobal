@@ -84,7 +84,7 @@ public class ScoreRepositoryTest extends BaseTest {
     }
 
     public void testQueryTestLimit() {
-        Pageable pageable = new PageRequest(0, 3, Sort.Direction.DESC, "score");
+        Pageable pageable = new PageRequest(0, 1000, Sort.Direction.DESC, "score", "address");
         String[] addresses = {"1BdgnGcgBhw4LRaictfF4nxGKo228BQNqW", "1234fMcU3YJUCGsfy61DQFdciUzLG4qyeR"};
         //Arrays.asList(addresses)
         List<ScoreEntity> scoreEntities = scoreRepository.queryTopScoreByRange(800, 1000, new ArrayList<>(), pageable);
@@ -104,8 +104,8 @@ public class ScoreRepositoryTest extends BaseTest {
 
     @Test
     public void test() {
-//        testQueryTestLimit();
-        testSelectNextDpos();
+        testQueryTestLimit();
+//        testSelectNextDpos();
     }
 
 

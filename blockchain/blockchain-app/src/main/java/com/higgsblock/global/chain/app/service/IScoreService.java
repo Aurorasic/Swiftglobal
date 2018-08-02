@@ -45,6 +45,10 @@ public interface IScoreService {
      * order by field
      */
     String SCORE_ORDERBY_FIELD = "score";
+    /**
+     * order by field
+     */
+    String ADDRESS_ORDERBY_FIELD = "address";
 
     /**
      * get score by address
