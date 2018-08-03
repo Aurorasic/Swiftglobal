@@ -39,7 +39,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Query("select max (height) from BlockIndexEntity")
+    @Query("select height from BlockIndexEntity order by height desc limit 1")
     long queryMaxHeight();
 
     /**
