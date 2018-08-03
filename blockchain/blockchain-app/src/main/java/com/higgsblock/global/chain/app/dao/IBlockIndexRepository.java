@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -20,6 +21,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
+    @Cacheable(value = "BlockIndex", key = "#blockHash")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**

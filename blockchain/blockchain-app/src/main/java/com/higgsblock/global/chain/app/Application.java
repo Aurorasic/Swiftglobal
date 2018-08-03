@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.context.AppContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
  * @create 2017-03-07 15:55
  */
 @Slf4j
+@EnableCaching
 @EnableAutoConfiguration
 @ComponentScan({"com.higgsblock.global.chain"})
 public class Application {
