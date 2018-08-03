@@ -48,7 +48,7 @@ public class BlockIndexRepositoryTest extends BaseTest {
 
     @Test
     public void testQueryAllByHeight() {
-        List<BlockIndexEntity> indexEntities = blockIndexRepository.findAllByHeight(12);
+        List<BlockIndexEntity> indexEntities = blockIndexRepository.findByHeight(12);
         LOGGER.info("query all by height size : {}", indexEntities.size());
     }
 

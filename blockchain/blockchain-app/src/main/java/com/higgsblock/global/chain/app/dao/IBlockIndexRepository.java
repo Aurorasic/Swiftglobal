@@ -23,14 +23,14 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
-     * find all BlockIndexEntities by height
+     * find BlockIndexEntities by height
      *
      * @param height
      * @return
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    List<BlockIndexEntity> findAllByHeight(long height);
+    List<BlockIndexEntity> findByHeight(long height);
 
     /**
      * query BlockIndexEntity records max height

@@ -71,7 +71,7 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public BlockIndex getBlockIndexByHeight(long height) {
-        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findAllByHeight(height);
+        List<BlockIndexEntity> blockIndexEntities = blockIndexRepository.findByHeight(height);
         if (CollectionUtils.isEmpty(blockIndexEntities)) {
             LOGGER.info("get blockIndex is null by height={}", height);
             return null;
