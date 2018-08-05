@@ -1,9 +1,9 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
-import com.higgsblock.global.chain.app.sync.SyncBlockService;
+import com.higgsblock.global.chain.app.sync.SyncBlockInSyncService;
 import com.higgsblock.global.chain.app.sync.message.MaxHeightResponse;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightResponse> {
 
     @Autowired
-    private SyncBlockService syncBlockService;
+    private SyncBlockInSyncService syncBlockInSyncService;
 
     @Override
     protected boolean valid(IMessage<MaxHeightResponse> message) {
@@ -28,6 +28,6 @@ public class MaxHeightResponseHandler extends BaseMessageHandler<MaxHeightRespon
     @Override
     protected void process(IMessage<MaxHeightResponse> message) {
         MaxHeightResponse maxHeightResponse = message.getData();
-        syncBlockService.updatePeersMaxHeight(maxHeightResponse.getMaxHeight(), message.getSourceId());
+        syncBlockInSyncService.updatePeersMaxHeight(maxHeightResponse.getMaxHeight(), message.getSourceId());
     }
 }

@@ -6,15 +6,11 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
-import com.higgsblock.global.chain.app.common.SystemStatus;
-import com.higgsblock.global.chain.app.common.SystemStatusManager;
-import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
-import com.higgsblock.global.chain.app.common.event.SystemStatusEvent;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.sync.message.BlockRequest;
-import com.higgsblock.global.chain.app.sync.message.MaxHeightRequest;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +22,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author yuanjiantao
@@ -33,15 +30,11 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @Slf4j
-public class SyncBlockService implements IEventBusListener {
+public class SyncBlockInRunningService implements IEventBusListener {
 
     private static final int SYNC_BLOCK_TEMP_SIZE = 10;
 
-    private static final int MIN_PEER_NUM = 1;
-
     private static final int SYNC_BLOCK_EXPIRATION = 15;
-
-    private static final long SYNC_BLOCK_IGNORE_NUMBER = 100L;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -52,15 +45,8 @@ public class SyncBlockService implements IEventBusListener {
     @Autowired
     private ConnectionManager connectionManager;
 
-    @Autowired
-    private SystemStatusManager systemStatusManager;
-
     private ConcurrentHashMap<String, Long> peersMaxHeight = new ConcurrentHashMap<>();
-    /**
-     * 1 represents syncing block in init state
-     * 2 represents syncing block in running state
-     */
-    private int syncState = 1;
+
     private Cache<BlockRequest, String> requestRecord = Caffeine.newBuilder().maximumSize(100)
             .expireAfterWrite(SYNC_BLOCK_EXPIRATION, TimeUnit.SECONDS)
             .removalListener((RemovalListener<BlockRequest, String>) (request, sourceId, cause) -> {
@@ -70,36 +56,31 @@ public class SyncBlockService implements IEventBusListener {
             })
             .build();
 
-    private boolean isSyncBlockState() {
-        return syncState == 1;
-    }
-
-    public void startSyncBlock() {
-        /*
-        1.At the beginning of synchronization, ask the nodes you have already connected to about their max height
-         */
-        messageCenter.broadcast(new MaxHeightRequest());
-    }
 
     private void sendInitRequest() {
         long initHeight = blockChain.getMaxHeight();
+        long maxRequestHeight = Long.min(initHeight + SYNC_BLOCK_TEMP_SIZE, getPeersMaxHeight());
+        List<String> list = getAvailableConnection(maxRequestHeight);
+        if (list.size() == 0) {
+            LOGGER.info("have no peer to sync! height={}, current cache size={} ", maxRequestHeight, requestRecord.estimatedSize());
+            return;
+        }
 
-        for (long i = 1; i <= SYNC_BLOCK_TEMP_SIZE && i + initHeight <= getPeersMaxHeight(); i++) {
-            sendGetBlock(initHeight + i, null);
+        for (long height = initHeight + 1; height < maxRequestHeight; height++) {
+            String sourceId = list.get(new Random().nextInt(list.size()));
+            final long finalHeight = height;
+            requestRecord.get(new BlockRequest(height, null), v -> {
+                messageCenter.unicast(sourceId, new BlockRequest(finalHeight, null));
+                LOGGER.info("send block request! height={},hash={}, current cache size={} ", finalHeight, null, requestRecord.estimatedSize());
+                return sourceId;
+            });
         }
     }
 
     private boolean sendGetBlock(long height, String hash) {
-        List<String> list = new ArrayList<>();
-        for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
-            if (null == connectionManager.getConnectionByPeerId(entry.getKey())) {
-                peersMaxHeight.remove(entry.getKey());
-                continue;
-            }
-            if (entry.getValue() >= height) {
-                list.add(entry.getKey());
-            }
-        }
+
+        List<String> list = getAvailableConnection(height);
+
         if (list.size() == 0) {
             return false;
         }
@@ -122,7 +103,6 @@ public class SyncBlockService implements IEventBusListener {
      * check whether to continue sync block
      */
     private void continueSyncBlock(long height) {
-        tryToChangeSysStatusToRunning();
         requestRecord.invalidate(new BlockRequest(height, null));
         //when there has a persisted block on the height, stop sync this height.If another one is real best block on
         // the height, its next block maybe orphan block, then fetch the real best block as orphan block.
@@ -130,15 +110,6 @@ public class SyncBlockService implements IEventBusListener {
         long targetHeight = height + SYNC_BLOCK_TEMP_SIZE;
         if (targetHeight <= peerMaxHeight) {
             sendGetBlock(targetHeight, null);
-        }
-    }
-
-    @Subscribe
-    public void process(SystemStatusEvent event) {
-        LOGGER.info("process SystemStatusEvent: {}", event);
-        SystemStatus state = event.getSystemStatus();
-        if (SystemStatus.RUNNING == state) {
-            syncState = 2;
         }
     }
 
@@ -199,7 +170,6 @@ public class SyncBlockService implements IEventBusListener {
         if (sendGetBlock(height, blockHash)) {
             return;
         }
-        tryToChangeSysStatusToRunning();
     }
 
     private void removePeer(String sourceId) {
@@ -207,46 +177,24 @@ public class SyncBlockService implements IEventBusListener {
         peersMaxHeight.remove(sourceId);
     }
 
-    /**
-     * The node takes the initiative to ask the adjacent node for the current block height of the other party
-     *
-     * @param height
-     * @param sourceId
-     */
-    public void updatePeersMaxHeight(long height, String sourceId) {
-
-        if (null == sourceId || height < 1L) {
-            return;
-        }
-        peersMaxHeight.compute(sourceId, (k, v) -> {
-            LOGGER.info(" update peer's max height: {} to {}, sourceId is {}", v, height, sourceId);
-            if (null == v) {
-                return height;
-            } else {
-                return height > v ? height : v;
-            }
-        });
-
-        if (!tryToChangeSysStatusToRunning()) {
-            sendInitRequest();
-        }
-    }
-
-    private boolean tryToChangeSysStatusToRunning() {
-        long localMaxHeight = blockChain.getMaxHeight();
-        long peerMaxHeight = getPeersMaxHeight();
-        int peersMaxHeightSize = peersMaxHeight.size();
-        if (isSyncBlockState() && peersMaxHeightSize >= MIN_PEER_NUM
-                && localMaxHeight > peerMaxHeight - SYNC_BLOCK_IGNORE_NUMBER) {
-            systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
-            LOGGER.info("sync block finished !syncState={},peersMaxHeight.size={},localMaxHeight={},peerMaxHeight={}", syncState, peersMaxHeightSize, localMaxHeight, peerMaxHeight);
-            return true;
-        }
-        return false;
-    }
 
     private long getPeersMaxHeight() {
         return peersMaxHeight.values().stream().reduce(1L, (a, b) -> a > b ? a : b);
+    }
+
+    private List<String> getAvailableConnection(long height) {
+        List<String> list = new ArrayList<>();
+        List<String> peerList = connectionManager.getActivatedPeers().stream().map(Peer::getId).collect(Collectors.toList());
+        for (Map.Entry<String, Long> entry : peersMaxHeight.entrySet()) {
+            if (!peerList.contains(entry.getKey())) {
+                peersMaxHeight.remove(entry.getKey());
+                continue;
+            }
+            if (entry.getValue() >= height) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
     }
 }
 
