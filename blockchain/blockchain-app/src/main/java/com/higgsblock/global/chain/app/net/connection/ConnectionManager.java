@@ -379,7 +379,7 @@ public class ConnectionManager {
      */
     public Connection getConnectionByPeerId(String peerId) {
         return getActivatedConnections().stream().filter(
-                connection -> connection.getPeerId().equals(peerId)).findFirst().orElse(null);
+                connection -> StringUtils.equals(peerId, connection.getPeerId())).findFirst().orElse(null);
     }
 
     /**
@@ -470,7 +470,7 @@ public class ConnectionManager {
 
         // Connect to other witnesses if this node is witness.
         if (selfNodeRole == NodeRoleEnum.WITNESS) {
-            witnesses.stream().filter(witness -> !witness.getId().equals(self.getId())).forEach(this::connect);
+            witnesses.stream().filter(witness -> !StringUtils.equals(witness.getId(), self.getId())).forEach(this::connect);
         }
     }
 
