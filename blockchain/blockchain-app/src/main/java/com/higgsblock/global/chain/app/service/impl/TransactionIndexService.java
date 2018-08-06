@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.dao.ISpentTransactionRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
@@ -38,12 +37,6 @@ public class TransactionIndexService implements ITransactionIndexService {
     @Autowired
     private ITransactionIndexRepository transactionIndexRepository;
 
-    /**
-     * The Spent transaction out index entity dao.
-     */
-    @Autowired
-    private ISpentTransactionRepository spentTransactionOutIndexRepository;
-
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {
         return transactionIndexRepository.findByTransactionHash(txHash);
@@ -77,7 +70,6 @@ public class TransactionIndexService implements ITransactionIndexService {
                     spentTxOutIndexEntity.setPreTransactionHash(spentTxHash);
                     spentTxOutIndexEntity.setOutIndex(spentTxOutIndex);
                     spentTxOutIndexEntity.setNowTransactionHash(tx.getHash());
-                    spentTransactionOutIndexRepository.save(spentTxOutIndexEntity);
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
