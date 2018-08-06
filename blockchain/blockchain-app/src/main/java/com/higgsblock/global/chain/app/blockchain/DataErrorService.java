@@ -5,7 +5,7 @@ import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.*;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.app.sync.SyncBlockInSyncService;
+import com.higgsblock.global.chain.app.sync.SyncBlockInStartupService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ public class DataErrorService {
     private ITransactionIndexRepository transactionIndexRepository;
 
     @Autowired
-    private SyncBlockInSyncService syncBlockInSyncService;
+    private SyncBlockInStartupService syncBlockInStartupService;
 
     @Autowired
     private MessageCenter messageCenter;
@@ -109,7 +109,7 @@ public class DataErrorService {
         systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
 
         //start sync block
-        syncBlockInSyncService.startSyncBlock();
+        syncBlockInStartupService.startSyncBlock();
     }
 
 }

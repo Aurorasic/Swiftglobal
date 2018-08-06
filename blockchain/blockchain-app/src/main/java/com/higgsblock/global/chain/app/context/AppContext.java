@@ -24,7 +24,7 @@ import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.VoteService;
 import com.higgsblock.global.chain.app.sync.SyncBlockInRunningService;
-import com.higgsblock.global.chain.app.sync.SyncBlockInSyncService;
+import com.higgsblock.global.chain.app.sync.SyncBlockInStartupService;
 import com.higgsblock.global.chain.app.sync.handler.*;
 import com.higgsblock.global.chain.app.task.*;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
@@ -51,7 +51,7 @@ public class AppContext implements IEventBusListener {
     private PeerManager peerManager;
 
     @Autowired
-    private SyncBlockInSyncService syncBlockInSyncService;
+    private SyncBlockInStartupService syncBlockInStartupService;
 
     @Autowired
     private SyncBlockInRunningService syncBlockInRunningService;
@@ -205,14 +205,14 @@ public class AppContext implements IEventBusListener {
         eventBus.register(voteService);
         witnessTimer.start();
         eventBus.register(witnessTimer);
-        eventBus.unregister(syncBlockInSyncService);
+        eventBus.unregister(syncBlockInStartupService);
         eventBus.register(syncBlockInRunningService);
 
     }
 
     private void syncBlocks() {
-        syncBlockInSyncService.startSyncBlock();
-        eventBus.register(syncBlockInSyncService);
+        syncBlockInStartupService.startSyncBlock();
+        eventBus.register(syncBlockInStartupService);
     }
 
     @Subscribe

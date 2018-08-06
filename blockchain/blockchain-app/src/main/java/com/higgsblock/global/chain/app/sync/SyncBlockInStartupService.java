@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @Slf4j
-public class SyncBlockInSyncService implements IEventBusListener {
+public class SyncBlockInStartupService implements IEventBusListener {
 
     private static final int SYNC_BLOCK_TEMP_SIZE = 10;
 
