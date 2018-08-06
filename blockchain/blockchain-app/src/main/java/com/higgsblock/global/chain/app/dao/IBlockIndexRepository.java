@@ -15,7 +15,7 @@ import java.util.List;
 public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
 
     @Override
-    @CachePut(value = "BlockIndex", key = "#entity.blockHash", condition = "null != entity && null != entity.blockHash")
+//    @CachePut(value = "BlockIndex", key = "#entity.blockHash", condition = "null != entity && null != entity.blockHash")
     BlockIndexEntity save(BlockIndexEntity entity);
 
     /**
@@ -26,7 +26,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#blockHash", condition = "null != result && null != #blockHash")
+//    @Cacheable(value = "BlockIndex", key = "#blockHash", condition = "null != result && null != #blockHash")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
