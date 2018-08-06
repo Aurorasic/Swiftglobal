@@ -190,7 +190,7 @@ public class Connection {
     }
 
     public synchronized boolean handshake(String message) {
-        if (StringUtils.isNotBlank(message)) {
+        if (StringUtils.isNotBlank(message) && null != channel) {
             channel.writeAndFlush(message);
             LOGGER.info("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
             return true;
