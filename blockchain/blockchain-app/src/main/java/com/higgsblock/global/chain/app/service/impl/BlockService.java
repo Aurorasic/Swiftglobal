@@ -90,8 +90,11 @@ public class BlockService implements IBlockService {
     private SystemStatusManager systemStatusManager;
     @Autowired
     private IBlockChainService blockChainService;
+    @Autowired
+    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
+
 
     /**
      * Gets witness sing message.
@@ -520,7 +523,7 @@ public class BlockService implements IBlockService {
         utxoServiceProxy.addNewBlock(newBestBlock, persistedBlock);
 
         //refresh cache
-        refreshCache(persistedBlock);
+        refreshCache(newBestBlock, persistedBlock);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(persistedBlock, newBestBlock);
@@ -603,7 +606,11 @@ public class BlockService implements IBlockService {
      *
      * @param block
      */
-    private void refreshCache(Block block) {
+    private void refreshCache(Block newBestBlock, Block block) {
+        if (newBestBlock != null) {
+            blockMaxHeightCacheManager.updateMaxHeight(block.getHeight());
+        }
+
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());
         });

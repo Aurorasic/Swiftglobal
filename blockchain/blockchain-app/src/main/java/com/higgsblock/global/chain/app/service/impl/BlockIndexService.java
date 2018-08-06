@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.BlockMaxHeightCacheManager;
 import com.higgsblock.global.chain.app.dao.IBlockIndexRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
@@ -27,6 +28,9 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Autowired
     private TransactionIndexService transactionIndexService;
+
+    @Autowired
+    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -89,10 +93,9 @@ public class BlockIndexService implements IBlockIndexService {
 
     }
 
-
     @Override
     public BlockIndex getLastBlockIndex() {
-        long maxHeight = blockIndexRepository.queryMaxHeight();
+        long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
 
