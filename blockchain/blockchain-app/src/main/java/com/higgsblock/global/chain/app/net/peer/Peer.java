@@ -105,7 +105,7 @@ public class Peer extends BaseSerializer {
             return false;
         }
         if (!validSignature()) {
-            LOGGER.error("Peer signature is incorrect.");
+            LOGGER.info("Peer signature is incorrect.");
             return false;
         }
         return true;
@@ -113,7 +113,7 @@ public class Peer extends BaseSerializer {
 
     public boolean isEqualsPort() {
         if (this.httpServerPort == this.socketServerPort) {
-            LOGGER.error("peer httpServerPort is equal socketServerPort, socketServerPort={}", this.socketServerPort);
+            LOGGER.info("peer httpServerPort is equal socketServerPort, socketServerPort={}", this.socketServerPort);
             return true;
         }
         return false;

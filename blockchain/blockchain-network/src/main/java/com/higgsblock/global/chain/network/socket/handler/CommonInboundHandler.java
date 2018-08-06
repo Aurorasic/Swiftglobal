@@ -52,7 +52,7 @@ public class CommonInboundHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         String channelId = ctx.channel().id().toString();
-        LOGGER.error("Exception: [{}], channel id: {}", cause, channelId);
+        LOGGER.error(String.format("Exception: %s, channel id: %s", cause.getMessage(), channelId), cause);
 
         if (!ctx.channel().isActive()) {
             LOGGER.warn("Disconnected from: " + ctx.channel().remoteAddress());
