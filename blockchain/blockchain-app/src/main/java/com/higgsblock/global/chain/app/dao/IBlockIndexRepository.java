@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,8 @@ import java.util.List;
 public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
 
     @Override
-//    @CachePut(value = "BlockIndex", key = "#entity.blockHash", condition = "null != entity && null != entity.blockHash")
+    @CachePut(value = "BlockIndex", key = "#entity.blockHash", condition = "null != #entity && null != #entity.blockHash")
+    @CacheEvict(value = "BlockIndex", key = "#entity.height", condition = "null != #entity")
     BlockIndexEntity save(BlockIndexEntity entity);
 
     /**
@@ -26,7 +28,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-//    @Cacheable(value = "BlockIndex", key = "#blockHash", condition = "null != result && null != #blockHash")
+    @Cacheable(value = "BlockIndex", key = "#blockHash", condition = "null != #blockHash")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
@@ -37,6 +39,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
+    @Cacheable(value = "BlockIndex", key = "#height", condition = "#height > 0")
     List<BlockIndexEntity> findByHeight(long height);
 
     /**
@@ -55,6 +58,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @param height
      * @return
      */
+    @CacheEvict(value = "BlockIndex", allEntries = true)
     int deleteAllByHeight(long height);
 
 }
