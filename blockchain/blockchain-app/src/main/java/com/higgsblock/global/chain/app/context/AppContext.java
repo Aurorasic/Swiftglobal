@@ -207,7 +207,7 @@ public class AppContext implements IEventBusListener {
         eventBus.register(witnessTimer);
         eventBus.unregister(syncBlockInStartupService);
         eventBus.register(syncBlockInRunningService);
-
+        eventBus.register(guarderTask);
     }
 
     private void syncBlocks() {
