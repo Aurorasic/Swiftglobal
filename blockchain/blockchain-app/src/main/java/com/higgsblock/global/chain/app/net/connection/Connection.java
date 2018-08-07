@@ -183,7 +183,7 @@ public class Connection {
      */
     public synchronized boolean sendMessage(String message) {
         if (isActivated() && StringUtils.isNotBlank(message)) {
-            LOGGER.info("Message [{}] will be sent, channelId={}, peerId={}", message, getChannelId(), getPeerId());
+            LOGGER.debug("Message [{}] will be sent, channelId={}, peerId={}", message, getChannelId(), getPeerId());
             return sendQueue.offer(message);
         }
         return false;
@@ -192,7 +192,7 @@ public class Connection {
     public synchronized boolean handshake(String message) {
         if (StringUtils.isNotBlank(message) && null != channel) {
             channel.writeAndFlush(message);
-            LOGGER.info("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
+            LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
             return true;
         }
         return false;

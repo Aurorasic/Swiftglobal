@@ -6,11 +6,7 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The peer node model in the p2p network.
@@ -18,7 +14,6 @@ import java.util.stream.Collectors;
  * @author zhao xiaogang
  */
 @Data
-@Slf4j
 public class Peer extends BaseSerializer {
     /**
      * maximum number of retries a client can connect to a peer.
@@ -105,7 +100,6 @@ public class Peer extends BaseSerializer {
             return false;
         }
         if (!validSignature()) {
-            LOGGER.info("Peer signature is incorrect.");
             return false;
         }
         return true;
@@ -113,7 +107,6 @@ public class Peer extends BaseSerializer {
 
     public boolean isEqualsPort() {
         if (this.httpServerPort == this.socketServerPort) {
-            LOGGER.info("peer httpServerPort is equal socketServerPort, socketServerPort={}", this.socketServerPort);
             return true;
         }
         return false;
@@ -139,10 +132,6 @@ public class Peer extends BaseSerializer {
 
     public String getId() {
         return ECKey.pubKey2Base58Address(pubKey);
-    }
-
-    public static String getPeersIds(List<Peer> peers) {
-        return StringUtils.join(peers.stream().map(peer -> peer.getId()).collect(Collectors.toList()), ",");
     }
 
     /**

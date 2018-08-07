@@ -111,11 +111,9 @@ public class ConnectionManager {
      */
     private boolean canConnect(Peer peer) {
         if (peer == null) {
-            LOGGER.info("Peer to connect to is null");
             return false;
         }
         if (!peerManager.existsInPools(peer)) {
-            LOGGER.info("Peer {}, address {} is not in peer pools", peer.getId(), peer.getSocketAddress());
             return false;
         }
 
@@ -259,7 +257,6 @@ public class ConnectionManager {
         peerManager.clearPeerRetries(peer);
 
         if (peerManager.isSelf(peer)) {
-            LOGGER.info("Peer {}, address {} is this node itself", peer.getId(), peer.getSocketAddress());
             remove(connection);
             return;
         }
@@ -268,7 +265,6 @@ public class ConnectionManager {
         // connection will be removed.
         // If in two connections, the first one will be kept, the other will be removed.
         if (isConnected(peer)) {
-            LOGGER.info("Peer {}, address {} is in connection pools", peer.getId(), peer.getSocketAddress());
             remove(connection);
             return;
         }
@@ -421,7 +417,7 @@ public class ConnectionManager {
             ConnectionLevelEnum oldConnectionLevel = connection.getConnectionLevel();
             if (oldConnectionLevel != newConnectionLevel) {
                 connection.setConnectionLevel(newConnectionLevel);
-                LOGGER.info("Level of connection {} changes from {} to {}", connection.getChannelId(), oldConnectionLevel, newConnectionLevel);
+                LOGGER.debug("Level of connection {} changes from {} to {}", connection.getChannelId(), oldConnectionLevel, newConnectionLevel);
             }
         });
     }
@@ -502,22 +498,16 @@ public class ConnectionManager {
             return;
         }
 
-        int validNumber = 0;
         for (Peer peer : peers) {
             if (peer == null) {
-                LOGGER.info("Peer is null");
                 continue;
             }
             if (!peer.valid()) {
-                LOGGER.info("Peer params is invalid, peerId = {}, address = {}", peer.getId(), peer.getSocketAddress());
                 peerManager.removePeer(peer);
                 continue;
             }
-
-            validNumber++;
             connect(peer);
         }
-        LOGGER.info("Try to create {} new connections", validNumber);
     }
 
 
@@ -571,9 +561,9 @@ public class ConnectionManager {
         }
 
         Collection<Connection> activeConnections = getActivatedConnections();
-        LOGGER.info("Number of activated connections: " + activeConnections.size());
+        LOGGER.debug("Number of activated connections: " + activeConnections.size());
         activeConnections.forEach(connection ->
-                LOGGER.info("Connection has been activated. Peer {}, channel id {}, remote address {}",
+                LOGGER.debug("Connection has been activated. Peer {}, channel id {}, remote address {}",
                         connection.getPeerId(), connection.getChannelId(), connection.getPeer().getSocketAddress()));
 
         if (done) {
