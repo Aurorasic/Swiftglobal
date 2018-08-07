@@ -88,7 +88,7 @@ public class SyncBlockInStartupService implements IEventBusListener {
         long maxRequestHeight = Long.min(initHeight + SYNC_BLOCK_TEMP_SIZE, getPeersMaxHeight());
         List<String> list = getAvailableConnection(maxRequestHeight);
 
-        for (long height = initHeight + 1; height < maxRequestHeight; height++) {
+        for (long height = initHeight + 1; height <= maxRequestHeight; height++) {
             final long finalHeight = height;
             if (list.size() == 0) {
                 requestRecord.get(new BlockRequest(height, null), v -> {
