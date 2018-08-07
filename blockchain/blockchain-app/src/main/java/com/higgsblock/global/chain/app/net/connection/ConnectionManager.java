@@ -69,11 +69,6 @@ public class ConnectionManager {
     private static final int L1_CONN_IN_LIMIT = 10;
 
     /**
-     * Minimum timeout in second this node start connections synchronously.
-     */
-    private static final int SYNC_CONN_TIMEOUT_SECOND = 10;
-
-    /**
      * Connection pool. In this pool, channel id is used as key.
      */
     private Map<String, Connection> connectionMap = Maps.newConcurrentMap();
@@ -510,70 +505,4 @@ public class ConnectionManager {
         }
     }
 
-
-    /**
-     * Connect to peers synchronously.
-     *
-     * @param peers           peers to connect to
-     * @param needActiveSize  number of wanted active connections
-     * @param timeoutInSecond timeout to get active connections
-     * @return true if success, false otherwise
-     */
-    private boolean syncConnect(Collection<Peer> peers, int needActiveSize, int timeoutInSecond) {
-        long timeout = TimeUnit.SECONDS.toMillis(timeoutInSecond);
-        long startTime = System.currentTimeMillis();
-
-        for (Peer peer : peers) {
-            connect(peer);
-        }
-
-        do {
-            if (getActivatedConnections().size() >= needActiveSize) {
-                return true;
-            }
-        } while (System.currentTimeMillis() - startTime < timeout);
-
-        return false;
-    }
-
-    /**
-     * Connect to peers from local and registry center synchronously.
-     *
-     * @param leastActiveSize if number of active connections is less than leastActiveSize, the method itself will be
-     *                        invoked to block application to go on
-     * @param needActiveSize  number of wanted active connections
-     * @param timeoutInSecond timeout to get active connections
-     * @return true if success, false otherwise
-     */
-    public boolean connectToPeers(int leastActiveSize, int needActiveSize, int timeoutInSecond) {
-        if (timeoutInSecond < SYNC_CONN_TIMEOUT_SECOND) {
-            throw new IllegalArgumentException("Time to wait connection must be greater than " + SYNC_CONN_TIMEOUT_SECOND + " seconds");
-        }
-
-        List<Peer> peers = Lists.newArrayList(peerManager.getPeers());
-        peers.addAll(peerManager.getWitnessPeers());
-        boolean done = syncConnect(peers, needActiveSize, timeoutInSecond - SYNC_CONN_TIMEOUT_SECOND);
-        if (!done) {
-            peerManager.getSeedPeers();
-            peers = Lists.newArrayList(peerManager.getPeers());
-            peers.addAll(peerManager.getWitnessPeers());
-            done = syncConnect(peers, needActiveSize, SYNC_CONN_TIMEOUT_SECOND);
-        }
-
-        Collection<Connection> activeConnections = getActivatedConnections();
-        LOGGER.debug("Number of activated connections: " + activeConnections.size());
-        activeConnections.forEach(connection ->
-                LOGGER.debug("Connection has been activated. Peer {}, channel id {}, remote address {}",
-                        connection.getPeerId(), connection.getChannelId(), connection.getPeer().getSocketAddress()));
-
-        if (done) {
-            return true;
-        }
-
-        if (activeConnections.size() < leastActiveSize) {
-            return connectToPeers(leastActiveSize, needActiveSize, timeoutInSecond);
-        } else {
-            return false;
-        }
-    }
 }
