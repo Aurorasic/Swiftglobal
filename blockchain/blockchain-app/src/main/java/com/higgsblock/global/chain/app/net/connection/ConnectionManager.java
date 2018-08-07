@@ -231,7 +231,7 @@ public class ConnectionManager {
         return peerUnknownConnectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
             Connection connection = new Connection(channel, type);
 
-            LOGGER.info("Created a connection to channelId={}, type={}", connectionId, type);
+            LOGGER.info("Created a connection, channelId={}, type={}", connectionId, type);
             return connection;
         });
     }
