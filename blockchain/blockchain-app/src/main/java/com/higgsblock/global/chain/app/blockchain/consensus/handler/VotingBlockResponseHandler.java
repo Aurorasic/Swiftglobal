@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockResponse;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
@@ -42,8 +41,6 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
 
     @Autowired
     private EventBus eventBus;
-    @Autowired
-    private WitnessTimer witnessTimer;
 
     @Override
     protected boolean valid(IMessage<VotingBlockResponse> message) {
@@ -70,7 +67,6 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();
-        String pubKey = block.getPubKey();
         int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
         if (block.getTransactions().size() < minTransactionNum) {
             LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
@@ -93,7 +89,6 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash={} ", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            //todo yangyi valid miner
             voteService.addOriginalBlockToCache(block);
             return;
         }
