@@ -67,19 +67,19 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public boolean validTransactions(Block block) {
-        LOGGER.info("begin to check the transactions of block {}", block.getHeight());
+        LOGGER.debug("begin to check the transactions of block {}", block.getHeight());
 
         //step1 verify block transaction is null
         List<Transaction> transactions = block.getTransactions();
         if (CollectionUtils.isEmpty(transactions)) {
-            LOGGER.error("transactions is empty, block_hash={}", block.getHash());
+            LOGGER.info("transactions is empty, block_hash={}", block.getHash());
             return false;
         }
 
         //step2 verify transaction size
         int tx_number = transactions.size();
         if (TRANSACTION_NUMBER > tx_number) {
-            LOGGER.error("transactions number is less than two, block_hash={}", block.getHash());
+            LOGGER.info("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
@@ -89,7 +89,7 @@ public class TransactionService implements ITransactionService {
             //step1 verify tx isCoinBase
             if (isCoinBaseTx) {
                 if (!verifyCoinBaseTx(transactions.get(index), block)) {
-                    LOGGER.error("Invalidate Coinbase transaction");
+                    LOGGER.info("Invalidate Coinbase transaction");
                     return false;
                 }
                 continue;
@@ -328,19 +328,16 @@ public class TransactionService implements ITransactionService {
                 return false;
             }
             LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
-            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
-                if (block == null) {
-                    curMoney.add(transactionFeeService.getCurrencyFee(tx));
-                }
 
+            if (preMoney.compareTo(curMoney) < 0) {
+                LOGGER.info("Not enough fees, currency type: ", key);
+                return false;
+            }
+            //if verify receivedTransaction, block is null so curMoney add tx fee and check
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
+                curMoney.add(transactionFeeService.getCurrencyFee(tx));
                 if (preMoney.compareTo(curMoney) < 0) {
                     LOGGER.info("Not enough cas fees");
-                    return false;
-                }
-            } else {
-                //TODO this ‘else’ is unnecessary, below code should be a precondition then  moved ahead ;commented by huangshengli 2018-05-28
-                if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.info("Not enough fees, currency type: ", key);
                     return false;
                 }
             }
