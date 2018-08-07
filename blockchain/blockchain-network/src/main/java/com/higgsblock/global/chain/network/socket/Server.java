@@ -63,7 +63,7 @@ public class Server {
             int socketServerPort = config.getSocketPort();
             serverChannel = bootstrap.bind(socketServerPort).addListener(channelFuture -> {
                 if (channelFuture.isSuccess()) {
-                    LOGGER.info("Successfully bind local port : {}", socketServerPort);
+                    LOGGER.debug("Successfully bind local port : {}", socketServerPort);
                     return;
                 }
                 if (channelFuture.cause() != null) {

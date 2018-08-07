@@ -1,12 +1,13 @@
 package com.higgsblock.global.chain.app.net.peer;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -43,12 +42,6 @@ public class PeerManager {
     private PeerConfig config;
 
     /**
-     * The Peer cache.
-     */
-    @Autowired
-    private PeerCache peerCache;
-
-    /**
      * The Registry api.
      */
     @Autowired
@@ -62,7 +55,7 @@ public class PeerManager {
     /**
      * The Peer map.
      */
-    private Map<String, Peer> peerMap = new ConcurrentHashMap<>();
+    private Cache<String, Peer> peerCache = Caffeine.newBuilder().maximumSize(100).build();
 
     /**
      * List of witnesses.
@@ -84,7 +77,6 @@ public class PeerManager {
     public void setWitnessPeers(List<Peer> witnessPeers) {
         this.witnessPeers.clear();
         for (Peer peer : witnessPeers) {
-            // if (peer == null || !peer.valid()) {  TODO  yanghuadong  for test 2018-05-28
             if (peer == null) {
                 continue;
             }
@@ -95,38 +87,14 @@ public class PeerManager {
     /**
      * Add peers to the peer queue.
      *
-     * @param collection the collection
+     * @param peers the collection
      */
-    public void add(Collection<Peer> collection) {
-        if (CollectionUtils.isEmpty(collection)) {
+    public void add(Collection<Peer> peers) {
+        if (CollectionUtils.isEmpty(peers)) {
             return;
         }
-        long processStartTime = System.currentTimeMillis();
 
-        List<Peer> peers = Lists.newArrayList(collection);
-
-        /*
-        1.Need to empty all the peer nodes and try to connect retries to 0
-        2.it is necessary to determine whether the obtained peer node has already existed in the local area,
-        and if it exists, it will not be added, otherwise it will be added
-         */
-        int newConnNum = 0;
-        for (; newConnNum < peers.size(); newConnNum++) {
-            Peer peer = peers.get(newConnNum);
-            if (null == peer || !peer.valid()) {
-                LOGGER.info("peer node is null");
-                continue;
-            }
-
-            if (peerCache.isCached(peer) || null != getById(peer.getId())) {
-                continue;
-            }
-
-            peer.setRetries(0);
-            addOrUpdate(peer);
-        }
-        long processEndTime = System.currentTimeMillis();
-        LOGGER.info("add peer info spend time :{}ms", processEndTime - processStartTime);
+        peers.forEach(this::add);
     }
 
     /**
@@ -134,19 +102,12 @@ public class PeerManager {
      *
      * @param peer the peer
      */
-    public void addOrUpdate(Peer peer) {
+    public void add(Peer peer) {
         if (null == peer) {
             return;
         }
 
-        peerMap.put(peer.getId(), peer);
-    }
-
-    /**
-     * Clear peer.
-     */
-    public void clearPeer() {
-        peerMap.clear();
+        peerCache.put(peer.getId(), peer);
     }
 
     /**
@@ -154,8 +115,9 @@ public class PeerManager {
      *
      * @return the int
      */
-    public int count() {
-        return peerMap.size();
+    public long count() {
+        peerCache.cleanUp();
+        return peerCache.estimatedSize();
     }
 
     /**
@@ -168,7 +130,6 @@ public class PeerManager {
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
-        LOGGER.info("get peers: {}", peers);
         add(peers);
     }
 
@@ -180,7 +141,7 @@ public class PeerManager {
      */
     public Peer getById(String id) {
         if (StringUtils.isNotEmpty(id)) {
-            return peerMap.get(id);
+            return peerCache.getIfPresent(id);
         }
         return null;
     }
@@ -191,7 +152,7 @@ public class PeerManager {
      * @return the peers
      */
     public Collection<Peer> getPeers() {
-        return peerMap.values();
+        return peerCache.asMap().values();
     }
 
     /**
@@ -230,26 +191,6 @@ public class PeerManager {
         }
 
         setSelf(peer);
-        peerCache.setCached(peer);
-        return true;
-    }
-
-    /**
-     * Load neighbor peers boolean.
-     *
-     * @return the boolean
-     */
-    public boolean loadNeighborPeers() {
-        //todo kongyu 2018-7-31 从peerMap中拿出来，然后再放进peerMap中去？？？？没必要这么做！
-        // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
-        // 1.load neighbor peers from local
-        Collection<Peer> localPeers = getPeers();
-        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < MIN_LOCAL_PEER_COUNT) {
-            this.getSeedPeers();
-        } else {
-            this.add(localPeers);
-        }
-
         return true;
     }
 
@@ -274,7 +215,7 @@ public class PeerManager {
     public void setSelf(Peer self) {
         if (null != self) {
             this.self = self;
-            addOrUpdate(self);
+            add(self);
         }
     }
 
@@ -293,30 +234,7 @@ public class PeerManager {
         if (StringUtils.equals(self.getId(), peer.getId())) {
             return;
         }
-        peerMap.remove(peer.getId());
-    }
-
-    /**
-     * Update peer node request
-     *
-     * @param peer the peer
-     */
-    public void updatePeer(Peer peer) {
-        if (null != peer) {
-            peerMap.put(peer.getId(), peer);
-        }
-    }
-
-    /**
-     * Need to reset the attempt to connect retries to 0
-     *
-     * @param peer the peer
-     */
-    public void clearPeerRetries(Peer peer) {
-        if (null != peer) {
-            peer.setRetries(0);
-            peerMap.put(peer.getId(), peer);
-        }
+        peerCache.invalidate(peer.getId());
     }
 
     /**
@@ -360,19 +278,6 @@ public class PeerManager {
     }
 
     /**
-     * Triggered by failing to connect to the peer.
-     */
-    public void onTryCompleted(Peer peer) {
-        peer.onTryCompleted();
-        if (peer.retryExceedLimitation()) {
-            removePeer(peer);
-            peerCache.setCached(peer);
-        } else {
-            updatePeer(peer);
-        }
-    }
-
-    /**
      * Calculate the node role.
      *
      * @param peer the target node to be calculated
@@ -398,30 +303,12 @@ public class PeerManager {
         return NodeRoleEnum.PEER;
     }
 
-
-    /**
-     * Exists in pools boolean.
-     *
-     * @param peer the peer
-     * @return the boolean
-     */
-    public boolean existsInPools(Peer peer) {
-        if (peer == null) {
-            return false;
-        }
-        String peerId = peer.getId();
-        return peerMap.containsKey(peerId)
-                || minerAddresses.contains(peerId)
-                || witnessPeers.stream().filter(witness -> witness != null).anyMatch(witness -> witness.getId().equals(peerId));
-    }
-
     /**
      * Report to registry.
      */
     public void reportToRegistry() {
         try {
-            boolean result = this.registryApi.report(getSelf()).execute().body();
-            LOGGER.info("report self info to register, result={}", result);
+            this.registryApi.report(getSelf()).execute().body();
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }

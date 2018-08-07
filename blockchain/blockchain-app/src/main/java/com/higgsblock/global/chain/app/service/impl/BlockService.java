@@ -399,7 +399,6 @@ public class BlockService implements IBlockService {
         }
 
         long nextBestBlockHeight = lastBlockIndex.getHeight() + 1;
-        LOGGER.info("try to packageNewBlock, height={}", nextBestBlockHeight);
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight

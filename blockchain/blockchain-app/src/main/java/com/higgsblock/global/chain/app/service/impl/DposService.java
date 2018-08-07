@@ -151,7 +151,7 @@ public class DposService implements IDposService {
         List<String> currentGroup = getDposGroupByPreBlockHash(block.getPrevBlockHash());
         boolean result = CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
         if (!result) {
-            LOGGER.error("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
+            LOGGER.info("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
             return false;
         }
 
@@ -228,12 +228,30 @@ public class DposService implements IDposService {
         return (height - DPOS_START_HEIGHT) / DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
+    /**
+     * check block unstrictly,if the miner is constained in the dpos miners,return true
+     *
+     * @param block
+     * @return
+     */
+    @Override
+    public boolean checkBlockUnstrictly(Block block) {
+        if (block == null || CollectionUtils.isEmpty(block.getMinerSelfSigPKs())) {
+            return false;
+        }
+        List<String> miners = getDposGroupBySn(getSn(block.getHeight()));
+        if (CollectionUtils.isEmpty(miners)) {
+            return false;
+        }
+        String miner = block.getMinerSelfSigPKs().get(0).getAddress();
+        return miners.contains(miner);
+    }
 
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
         long sn = getSn(maxHeight);
         final String hash = toBeBestBlock.getHash();
-        LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
+        LOGGER.debug("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
 

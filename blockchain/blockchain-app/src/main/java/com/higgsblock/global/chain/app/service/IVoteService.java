@@ -36,11 +36,26 @@ public interface IVoteService {
     void addOriginalBlock(Block block);
 
     /**
+     * add Original Block from miner in to block cache
+     *
+     * @param block the block without witness sing
+     */
+    void addOriginalBlockToCache(Block block);
+
+    /**
      * received new Voting Block from other witness
      *
      * @param block the block without witness sing
      */
     void addVotingBlock(Block block);
+
+    /**
+     * add Voting Block from other witness into cache
+     *
+     * @param block the block without witness sing
+     */
+    void addVotingBlockToCache(Block block);
+
 
     /**
      * received VoteTable from other witness
@@ -63,5 +78,5 @@ public interface IVoteService {
      * @param hash   block hash
      * @return true if exist or false;
      */
-    boolean isExistInBlockCache(long height, String hash);
+    boolean isExist(long height, String hash);
 }

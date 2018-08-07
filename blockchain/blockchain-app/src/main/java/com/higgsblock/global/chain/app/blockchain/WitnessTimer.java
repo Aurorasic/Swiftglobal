@@ -37,7 +37,7 @@ public class WitnessTimer implements IEventBusListener {
             initTime = System.currentTimeMillis();
             currHeight = blockChainService.getMaxHeight();
         }
-        LOGGER.info("init time={},currHeight={} ", initTime, currHeight);
+        LOGGER.debug("init time={},currHeight={} ", initTime, currHeight);
     }
 
     public boolean checkGuarderPermissionWithTimer(Block block) {
@@ -46,7 +46,6 @@ public class WitnessTimer implements IEventBusListener {
         }
         long currTime = System.currentTimeMillis();
         long timeDifference = (currTime - initTime) / 1000;
-        LOGGER.info("currTime={},timeDifference={} ", currTime, timeDifference);
         if (timeDifference >= WAIT_WITNESS_TIME && verifyBlockBelongGuarder(block)) {
             LOGGER.info("timeDifference > {} and block belong Guarder block return true", WAIT_WITNESS_TIME);
             return true;

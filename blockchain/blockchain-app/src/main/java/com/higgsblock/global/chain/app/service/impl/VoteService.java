@@ -8,6 +8,7 @@ import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
@@ -55,6 +56,9 @@ public class VoteService implements IEventBusListener, IVoteService {
     @Autowired
     private IBlockChainService blockChainService;
 
+    @Autowired
+    private WitnessTimer witnessTimer;
+
     private Cache<Long, Map<Integer, Set<Vote>>> voteCache = Caffeine.newBuilder()
             .maximumSize(MAX_SIZE)
             .build();
@@ -99,7 +103,9 @@ public class VoteService implements IEventBusListener, IVoteService {
             this.height = height;
             this.voteTable = new VoteTable(new HashMap<>(7), this.height);
             this.blockWithEnoughSign = null;
-            this.blockCache.get(height, k -> new HashMap<>(7)).values().forEach(this::voteFirstVote);
+            Map<String, Block> blockMapCache = this.blockCache.get(height, k -> new HashMap<>(7));
+            blockMapCache.values().stream().filter(this::validBlock).findAny().ifPresent(this::voteFirstVote);
+            dealVoteCache();
             voteCache.invalidate(height - 3);
             blockCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
@@ -112,16 +118,29 @@ public class VoteService implements IEventBusListener, IVoteService {
     }
 
     @Override
+    public synchronized void addVotingBlockToCache(Block block) {
+        addOriginalBlockToCache(block);
+    }
+
+    @Override
     public synchronized void addOriginalBlock(Block block) {
         if (block == null) {
             return;
         }
-        if (this.height > block.getHeight()) {
+        if (this.height != block.getHeight() || !validBlock(block)) {
             return;
         }
         this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
         voteFirstVote(block);
         dealVoteCache();
+        messageCenter.dispatchToWitnesses(this.voteTable);
+    }
+
+    @Override
+    public synchronized void addOriginalBlockToCache(Block block) {
+        if (block.getHeight() > height) {
+            this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
+        }
     }
 
     private void voteFirstVote(Block block) {
@@ -175,7 +194,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             });
             leaderVotes.forEach(vote -> {
                 if (vote.getVoteVersion() == 1) {
-                    if (!isExistInBlockCache(this.height, vote.getBlockHash())) {
+                    if (!isExist(this.height, vote.getBlockHash())) {
                         Set<String> set1 = new HashSet<>();
                         set1.add(vote.getBlockHash());
                         messageCenter.dispatchToWitnesses(new VotingBlockRequest(set1));
@@ -209,7 +228,13 @@ public class VoteService implements IEventBusListener, IVoteService {
 
     @Override
     public synchronized void updateVoteCache(VoteTable otherVoteTable) {
-        long height = otherVoteTable.getHeight();
+        long voteHeight = otherVoteTable.getHeight();
+        if (this.height == voteHeight) {
+            return;
+        }
+        if (this.height > voteHeight) {
+            return;
+        }
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
         voteMap.values().forEach(map -> {
             if (MapUtils.isEmpty(map)) {
@@ -226,7 +251,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     if (isExist(vote)) {
                         return;
                     }
-                    voteCache.get(height, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
+                    voteCache.get(voteHeight, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
                         if (null == v) {
                             v = new HashSet<>();
                         }
@@ -341,7 +366,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             voteSignTable.put(voteBlockHash, votePubKey, voteSign);
             Map<String, String> voteRow = voteSignTable.row(voteBlockHash);
             if (voteRow.size() >= MIN_SAME_SIGN) {
-                blockWithEnoughSign = blockCache.get(height, k -> new HashMap<>()).get(voteBlockHash);
+                blockWithEnoughSign = this.blockCache.get(this.height, k -> new HashMap<>(7)).get(voteBlockHash);
                 if (null == blockWithEnoughSign) {
                     LOGGER.info("the block lost , blockHash : {}", voteBlockHash);
                     return false;
@@ -419,7 +444,7 @@ public class VoteService implements IEventBusListener, IVoteService {
     }
 
     @Override
-    public boolean isExistInBlockCache(long height, String hash) {
+    public synchronized boolean isExist(long height, String hash) {
         Map<String, Block> map = blockCache.getIfPresent(height);
         return MapUtils.isNotEmpty(map) && map.containsKey(hash);
     }
@@ -442,6 +467,26 @@ public class VoteService implements IEventBusListener, IVoteService {
 
     @Override
     public Block getVotingBlock(String blockHash) {
-        return blockCache.get(getHeight(), k -> new HashMap<>()).get(blockHash);
+        return this.blockCache.get(this.height, k -> new HashMap<>(7)).get(blockHash);
+    }
+
+    private boolean validBlock(Block block) {
+        String pubKey = block.getPubKey();
+        String prevBlockHash = block.getPrevBlockHash();
+        String blockHash = block.getHash();
+        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
+        if (!isDposMiner) {
+            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
+            boolean acceptBlock = witnessTimer.checkGuarderPermissionWithTimer(block);
+            if (!acceptBlock) {
+                LOGGER.error("can not accept this block, height={}, hash={}", height, blockHash);
+                return false;
+            }
+        }
+        if (!blockChainService.checkTransactions(block)) {
+            LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
+            return false;
+        }
+        return true;
     }
 }

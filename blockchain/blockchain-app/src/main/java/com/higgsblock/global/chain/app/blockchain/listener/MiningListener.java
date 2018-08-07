@@ -42,7 +42,7 @@ public class MiningListener implements IEventBusListener {
      */
     private volatile long miningHeight;
     private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>(3), new ThreadPoolExecutor.DiscardOldestPolicy());
+            new LinkedBlockingQueue<>(3), new ThreadPoolExecutor.DiscardOldestPolicy());
     private Future<?> future;
     private boolean isMining;
 

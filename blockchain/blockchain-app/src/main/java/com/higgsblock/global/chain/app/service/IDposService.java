@@ -116,4 +116,12 @@ public interface IDposService {
      * @return
      */
     long getSn(long height);
+
+    /**
+     * check block unstrictly,if the miner is constained in the dpos miners,return true
+     *
+     * @param block
+     * @return
+     */
+    boolean checkBlockUnstrictly(Block block);
 }
