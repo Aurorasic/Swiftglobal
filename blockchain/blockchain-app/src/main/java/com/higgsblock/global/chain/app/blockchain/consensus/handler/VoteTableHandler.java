@@ -67,20 +67,21 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
             return;
         }
         long voteHeight = data.getHeight();
+        long localHeight = voteService.getHeight();
         //step3: check height
-        if (voteHeight < voteService.getHeight()) {
-            LOGGER.info("the height is lower than local ");
+        if (voteHeight < localHeight) {
+            LOGGER.info("the height is lower than local,voteHeight={},localHeight={}", voteHeight, localHeight);
             return;
         }
         //step4:if height > my vote height, sync block
-        if (voteHeight > voteService.getHeight()) {
+        if (voteHeight > localHeight) {
             eventBus.post(new SyncBlockEvent(voteHeight, null, sourceId));
-            LOGGER.info("the height is greater than local , sync block");
+            LOGGER.info("the height is greater than local,sync block,voteHeight={},localHeight={}", voteHeight, localHeight);
             return;
         }
         //step5: check original block
         if (!checkOriginalBlock(sourceId, data)) {
-            LOGGER.info("check original block failed ");
+            LOGGER.info("check original block failed,height={}", voteHeight);
             return;
         }
         //check if this is witness
