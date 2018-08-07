@@ -249,7 +249,7 @@ public class VoteService implements IEventBusListener, IVoteService {
 
         int startAllVoteSize = voteTable.getAllVoteSize();
 
-        LOGGER.info("add voteTable with voteHeight {}", otherVoteTable.toJson());
+        LOGGER.info("add voteTable with voteHeight={}:{}", voteHeight, otherVoteTable.toJson());
 
         int versionSize = otherVoteTable.getVersionSize();
         for (int version = 1; version <= versionSize; version++) {
