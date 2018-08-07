@@ -116,7 +116,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
             } else {
                 messageCenter.dispatchToWitnesses(new VotingBlockRequest(blockHashes));
             }
-            LOGGER.info("source blocks is not enough,add vote table to cache");
+            LOGGER.info("source blocks is not enough,add vote table to cache,height={} , blockHashs={}", voteHeight, blockHashes);
             return false;
         }
         return true;
