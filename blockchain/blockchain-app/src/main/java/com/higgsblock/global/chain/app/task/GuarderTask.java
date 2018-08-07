@@ -58,8 +58,8 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     protected void task() {
         curSec += TASK_TIME;
         currHeight = blockChainService.getMaxHeight();
-        LOGGER.debug("curSec={} currHeight={}", curSec, currHeight);
         if (curSec >= WAIT_MINER_TIME) {
+            LOGGER.info("guarder begin doming curSec={} currHeight={}", curSec, currHeight);
             doMing();
         }
     }
