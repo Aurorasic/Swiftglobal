@@ -239,7 +239,7 @@ public class TransactionService implements ITransactionService {
 
             UTXO utxo = new UTXO();
             utxo.setHash(entity.getTransactionHash());
-            utxo.setIndex((short) entity.getOutIndex());
+            utxo.setIndex(entity.getOutIndex());
             utxo.setAddress(entity.getLockScript());
             utxo.setOutput(output);
             utxos.add(utxo);

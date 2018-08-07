@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
@@ -29,15 +28,12 @@ import java.util.Set;
 public class BlockHandler extends BaseMessageHandler<Block> {
     @Autowired
     private IBlockChainService blockChainService;
-
     @Autowired
     private IBlockService blockService;
     @Autowired
     private IBlockIndexService blockIndexService;
     @Autowired
     private MessageCenter messageCenter;
-    @Autowired
-    private OrphanBlockCacheManager orphanBlockCacheManager;
 
     @Override
     protected boolean valid(IMessage<Block> message) {

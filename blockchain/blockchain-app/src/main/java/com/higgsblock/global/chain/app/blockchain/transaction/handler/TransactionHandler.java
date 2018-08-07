@@ -40,5 +40,4 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     protected void process(IMessage<Transaction> message) {
         transactionService.receivedTransaction(message.getData());
     }
-
 }

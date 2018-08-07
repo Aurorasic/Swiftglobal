@@ -227,25 +227,6 @@ public class PeerManager {
     }
 
     /**
-     * Load neighbor peers boolean.
-     *
-     * @return the boolean
-     */
-    public boolean loadNeighborPeers() {
-        //todo kongyu 2018-7-31 从peerMap中拿出来，然后再放进peerMap中去？？？？没必要这么做！
-        // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
-        // 1.load neighbor peers from local
-        Collection<Peer> localPeers = getPeers();
-        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < MIN_LOCAL_PEER_COUNT) {
-            this.getSeedPeers();
-        } else {
-            this.add(localPeers);
-        }
-
-        return true;
-    }
-
-    /**
      * Get local peer instance.
      *
      * @return the self
@@ -349,19 +330,6 @@ public class PeerManager {
         }
         return witnessPeers.stream().filter(
                 witness -> witness != null).anyMatch(witness -> witness.getId().equals(peer.getId()));
-    }
-
-    /**
-     * Triggered by failing to connect to the peer.
-     */
-    public void onTryCompleted(Peer peer) {
-        peer.onTryCompleted();
-        if (peer.retryExceedLimitation()) {
-            removePeer(peer);
-            peerCache.setCached(peer);
-        } else {
-            updatePeer(peer);
-        }
     }
 
     /**
