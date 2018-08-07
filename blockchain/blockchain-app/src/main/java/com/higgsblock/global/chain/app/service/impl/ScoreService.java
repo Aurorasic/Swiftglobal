@@ -145,7 +145,6 @@ public class ScoreService implements IScoreService {
         newScoreStrategy(toBeBestBlock);
 
         //handle joined miner and removed miner
-        LOGGER.info("begin to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
         List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
             LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());

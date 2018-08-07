@@ -151,7 +151,7 @@ public class DposService implements IDposService {
         List<String> currentGroup = getDposGroupByPreBlockHash(block.getPrevBlockHash());
         boolean result = CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
         if (!result) {
-            LOGGER.error("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
+            LOGGER.info("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
             return false;
         }
 
@@ -233,7 +233,7 @@ public class DposService implements IDposService {
         List<String> selected = Lists.newLinkedList();
         long sn = getSn(maxHeight);
         final String hash = toBeBestBlock.getHash();
-        LOGGER.info("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
+        LOGGER.debug("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
 
