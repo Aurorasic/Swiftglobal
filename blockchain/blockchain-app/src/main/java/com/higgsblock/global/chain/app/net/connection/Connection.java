@@ -138,7 +138,7 @@ public class Connection {
                 try {
                     String message = sendQueue.take();
                     channel.writeAndFlush(message);
-                    LOGGER.info("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
+                    LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
                 } catch (InterruptedException e) {
                     LOGGER.error(e.getMessage(), e);
                 }
