@@ -119,13 +119,7 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        long processStartTime2 = System.currentTimeMillis();
-
         boolean valid = verifyTransaction(tx, null);
-
-        long processEndTime2 = System.currentTimeMillis();
-        LOGGER.info("verify tx spend time :{}ms", processEndTime2 - processStartTime2);
-
         if (!valid) {
             LOGGER.info("the transaction is not valid {}", tx);
             return;
