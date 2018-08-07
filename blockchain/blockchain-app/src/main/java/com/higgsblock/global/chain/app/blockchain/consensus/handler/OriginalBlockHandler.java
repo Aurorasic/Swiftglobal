@@ -90,7 +90,6 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash={}", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            //todo yangyi valid miner
             voteService.addOriginalBlockToCache(block);
             return;
         }

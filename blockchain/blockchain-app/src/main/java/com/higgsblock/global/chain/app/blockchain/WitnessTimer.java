@@ -47,7 +47,7 @@ public class WitnessTimer implements IEventBusListener {
         long currTime = System.currentTimeMillis();
         long timeDifference = (currTime - initTime) / 1000;
         if (timeDifference >= WAIT_WITNESS_TIME && verifyBlockBelongGuarder(block)) {
-            LOGGER.debug("timeDifference > {} and block belong Guarder block return true", WAIT_WITNESS_TIME);
+            LOGGER.info("timeDifference > {} and block belong Guarder block return true", WAIT_WITNESS_TIME);
             return true;
         }
         return false;
@@ -63,7 +63,7 @@ public class WitnessTimer implements IEventBusListener {
         if (witnessService.isWitness(address) && event.getHeight() > currHeight) {
             currHeight = event.getHeight();
             initTime = System.currentTimeMillis();
-            LOGGER.debug("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);
+            LOGGER.info("BlockPersistedEvent modify init time={},currHeight={} ", initTime, currHeight);
         }
     }
 
