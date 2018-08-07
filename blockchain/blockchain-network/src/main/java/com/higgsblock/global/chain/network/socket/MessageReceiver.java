@@ -25,7 +25,7 @@ public class MessageReceiver implements IEventBusListener {
         String channelId = message.getSourceId();
         String content = message.getData();
         messageDispatcher.dispatch(channelId, content);
-        LOGGER.info("received a new message, channelId={}, content={}", channelId, content);
+        LOGGER.debug("received a new message, channelId={}, content={}", channelId, content);
         return true;
     }
 }

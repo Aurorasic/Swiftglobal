@@ -67,7 +67,7 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public boolean validTransactions(Block block) {
-        LOGGER.debug("begin to check the transactions of block {}", block.getHeight());
+        LOGGER.info("begin to check the transactions of block {}", block.getHeight());
 
         //step1 verify block transaction is null
         List<Transaction> transactions = block.getTransactions();
@@ -99,7 +99,7 @@ public class TransactionService implements ITransactionService {
                 return false;
             }
         }
-        LOGGER.debug("check the transactions success of block {}", block.getHeight());
+        LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }
 
@@ -107,16 +107,16 @@ public class TransactionService implements ITransactionService {
     public void receivedTransaction(Transaction tx) {
         long processStartTime1 = System.currentTimeMillis();
         String hash = tx.getHash();
-        LOGGER.debug("receive a new transaction from remote with hash {} and data {}", hash, tx);
+        LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
 
         Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
         boolean isExist = transactionMap.containsKey(hash);
 
         long processEndTime1 = System.currentTimeMillis();
-        LOGGER.debug("check tx whether exist txCache spend time :{}ms", processEndTime1 - processStartTime1);
+        LOGGER.info("check tx whether exist txCache spend time :{}ms", processEndTime1 - processStartTime1);
 
         if (isExist) {
-            LOGGER.debug("the transaction is exist in cache with hash {}", hash);
+            LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
         long processStartTime2 = System.currentTimeMillis();
@@ -124,10 +124,10 @@ public class TransactionService implements ITransactionService {
         boolean valid = verifyTransaction(tx, null);
 
         long processEndTime2 = System.currentTimeMillis();
-        LOGGER.debug("verify tx spend time :{}ms", processEndTime2 - processStartTime2);
+        LOGGER.info("verify tx spend time :{}ms", processEndTime2 - processStartTime2);
 
         if (!valid) {
-            LOGGER.debug("the transaction is not valid {}", tx);
+            LOGGER.info("the transaction is not valid {}", tx);
             return;
         }
 
@@ -257,17 +257,18 @@ public class TransactionService implements ITransactionService {
 
     public boolean verifyTransaction(Transaction tx, Block block) {
         if (null == tx) {
+            LOGGER.info("transaction is null");
             return false;
         }
         if (!tx.valid()) {
-            LOGGER.debug("transaction is valid error");
+            LOGGER.info("transaction is valid error");
             return false;
         }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
         if (!tx.sizeAllowed()) {
-            LOGGER.debug("Size of the transaction is illegal.");
+            LOGGER.info("Size of the transaction is illegal.");
             return false;
         }
 
@@ -277,20 +278,20 @@ public class TransactionService implements ITransactionService {
         HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
             if (!input.valid()) {
-                LOGGER.debug("input is invalid");
+                LOGGER.info("input is invalid");
                 return false;
             }
             String key = input.getPrevOut().getKey();
             boolean notContains = prevOutKey.add(key);
             if (!notContains) {
-                LOGGER.debug("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
+                LOGGER.info("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
                         , tx.getHash()
                         , blockHash);
                 return false;
             }
             TransactionOutput preOutput = getPreOutput(preBlockHash, input);
             if (preOutput == null) {
-                LOGGER.debug("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
+                LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
                 return false;
             }
 
@@ -305,7 +306,7 @@ public class TransactionService implements ITransactionService {
         Map<String, Money> curMoneyMap = new HashMap<>(8);
         for (TransactionOutput output : outputs) {
             if (!output.valid()) {
-                LOGGER.debug("Current output is invalid");
+                LOGGER.info("Current output is invalid");
                 return false;
             }
 
@@ -323,7 +324,7 @@ public class TransactionService implements ITransactionService {
             Money curMoney = curMoneyMap.get(key);
 
             if (preMoney == null) {
-                LOGGER.debug("Pre-output currency is null {}", key);
+                LOGGER.info("Pre-output currency is null {}", key);
                 return false;
             }
             LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
@@ -333,13 +334,13 @@ public class TransactionService implements ITransactionService {
                 }
 
                 if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.debug("Not enough cas fees");
+                    LOGGER.info("Not enough cas fees");
                     return false;
                 }
             } else {
                 //TODO this ‘else’ is unnecessary, below code should be a precondition then  moved ahead ;commented by huangshengli 2018-05-28
                 if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.debug("Not enough fees, currency type: ", key);
+                    LOGGER.info("Not enough fees, currency type: ", key);
                     return false;
                 }
             }
@@ -363,19 +364,19 @@ public class TransactionService implements ITransactionService {
         for (int i = 0; i < size; i++) {
             input = inputs.get(i);
             if (null == input) {
-                LOGGER.debug("the input is empty {}", i);
+                LOGGER.info("the input is empty {}", i);
                 return false;
             }
             unLockScript = input.getUnLockScript();
             if (null == unLockScript) {
-                LOGGER.debug("the unLockScript is empty {}", i);
+                LOGGER.info("the unLockScript is empty {}", i);
                 return false;
             }
 
             String preUTXOKey = input.getPreUTXOKey();
             UTXO utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
             if (utxo == null) {
-                LOGGER.debug("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
+                LOGGER.info("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
             }
 
@@ -404,7 +405,7 @@ public class TransactionService implements ITransactionService {
     private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
-            LOGGER.debug("preOutKey is empty,input={}", input.toJson());
+            LOGGER.info("preOutKey is empty,input={}", input.toJson());
             return null;
         }
 
@@ -433,24 +434,24 @@ public class TransactionService implements ITransactionService {
         }
         List<TransactionOutput> outputs = tx.getOutputs();
         if (CollectionUtils.isEmpty(outputs)) {
-            LOGGER.debug("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("Producer coinbase transaction: Outputs is empty,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
         final int outputSize = outputs.size();
         if (MIN_OUTPUT_SIZE != outputSize) {
-            LOGGER.debug("Coinbase outputs number is less than twelve,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("Coinbase outputs number is less than twelve,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
         Block preBlock = blockService.getBlockByHash(block.getPrevBlockHash());
         String preBlockHash = block.getPrevBlockHash();
         if (preBlock == null) {
-            LOGGER.debug("preBlock == null,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("preBlock == null,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
         if (!validPreBlock(preBlock, block.getHeight())) {
-            LOGGER.debug("pre block is not last best block,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("pre block is not last best block,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
 
@@ -458,23 +459,23 @@ public class TransactionService implements ITransactionService {
         Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
-            LOGGER.debug("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
+            LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
             return false;
         }
 
         //verify producer coinbase output
         if (!validateProducerOutput(outputs.get(0), rewards.getMinerTotal())) {
-            LOGGER.debug("verify miner coinbase output failed,tx hash={},block hash={}", tx.getHash(), block.getHash());
+            LOGGER.info("verify miner coinbase output failed,tx hash={},block hash={}", tx.getHash(), block.getHash());
             return false;
         }
         //verify witness reward money
         if (!rewards.getTopTenSingleWitnessMoney().checkRange() && !rewards.getLastWitnessMoney().checkRange()) {
-            LOGGER.debug("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", rewards.getTopTenSingleWitnessMoney().getValue(), rewards.getLastWitnessMoney().getValue());
+            LOGGER.info("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", rewards.getTopTenSingleWitnessMoney().getValue(), rewards.getLastWitnessMoney().getValue());
             return false;
         }
         //verify reward count
         if (!validateRewards(outputs, rewards)) {
-            LOGGER.debug("Validate witness reward failed");
+            LOGGER.info("Validate witness reward failed");
             return false;
         }
 
@@ -491,27 +492,27 @@ public class TransactionService implements ITransactionService {
     public boolean validPreBlock(Block preBlock, long height) {
         boolean isEffective = false;
         if (null == preBlock) {
-            LOGGER.debug("null == preBlock, height={}", height);
+            LOGGER.info("null == preBlock, height={}", height);
             return false;
         }
         if (0 >= height || height > Long.MAX_VALUE) {
-            LOGGER.debug("height is not correct, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("height is not correct, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
         if ((preBlock.getHeight() + 1) != height) {
-            LOGGER.debug("(preBlock.getHeight() + 1) != height, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("(preBlock.getHeight() + 1) != height, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
 
         BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(preBlock.getHeight());
         if (null == blockIndex) {
-            LOGGER.debug("null == blockIndex, preBlock hash={},height={}", preBlock.getHash(), height);
+            LOGGER.info("null == blockIndex, preBlock hash={},height={}", preBlock.getHash(), height);
             return false;
         }
 
         List<String> blockHashs = blockIndex.getBlockHashs();
         if (CollectionUtils.isEmpty(blockHashs)) {
-            LOGGER.debug("the height is {} do not have List<String>", preBlock.getHeight());
+            LOGGER.info("the height is {} do not have List<String>", preBlock.getHeight());
             return false;
         }
         for (String hash : blockHashs) {
@@ -535,27 +536,27 @@ public class TransactionService implements ITransactionService {
      */
     public boolean validateProducerOutput(TransactionOutput output, Money totalReward) {
         if (!totalReward.checkRange()) {
-            LOGGER.debug("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward.getValue());
             return false;
         }
         if (null == output) {
-            LOGGER.debug("Producer coinbase transaction: UnLock script is null, output={},totalReward={}", output, totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: UnLock script is null, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         LockScript script = output.getLockScript();
         if (script == null) {
-            LOGGER.debug("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output, totalReward.getValue());
+            LOGGER.info("Producer coinbase transaction: Lock script is null, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         if (!SystemCurrencyEnum.CAS.getCurrency().equals(output.getMoney().getCurrency())) {
-            LOGGER.debug("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output, totalReward.getValue());
+            LOGGER.info("Invalid producer coinbase transaction: Currency is not cas, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 
         if (!validateProducerReward(output, totalReward)) {
-            LOGGER.debug("Validate producer reward failed, output={},totalReward={}", output, totalReward.getValue());
+            LOGGER.info("Validate producer reward failed, output={},totalReward={}", output, totalReward.getValue());
             return false;
         }
 

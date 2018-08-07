@@ -6,7 +6,6 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +83,6 @@ public class PeerManager {
     public void setWitnessPeers(List<Peer> witnessPeers) {
         this.witnessPeers.clear();
         for (Peer peer : witnessPeers) {
-            // if (peer == null || !peer.valid()) {  TODO  yanghuadong  for test 2018-05-28
             if (peer == null) {
                 continue;
             }
@@ -101,8 +99,6 @@ public class PeerManager {
         if (CollectionUtils.isEmpty(collection)) {
             return;
         }
-        long processStartTime = System.currentTimeMillis();
-
         List<Peer> peers = Lists.newArrayList(collection);
 
         /*
@@ -114,7 +110,6 @@ public class PeerManager {
         for (; newConnNum < peers.size(); newConnNum++) {
             Peer peer = peers.get(newConnNum);
             if (null == peer || !peer.valid()) {
-                LOGGER.info("peer node is null");
                 continue;
             }
 
@@ -125,8 +120,6 @@ public class PeerManager {
             peer.setRetries(0);
             addOrUpdate(peer);
         }
-        long processEndTime = System.currentTimeMillis();
-        LOGGER.info("add peer info spend time :{}ms", processEndTime - processStartTime);
     }
 
     /**
@@ -168,7 +161,6 @@ public class PeerManager {
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
-        LOGGER.info("get peers: {}", peers);
         add(peers);
     }
 
@@ -420,8 +412,7 @@ public class PeerManager {
      */
     public void reportToRegistry() {
         try {
-            boolean result = this.registryApi.report(getSelf()).execute().body();
-            LOGGER.info("report self info to register, result={}", result);
+            this.registryApi.report(getSelf()).execute().body();
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }
