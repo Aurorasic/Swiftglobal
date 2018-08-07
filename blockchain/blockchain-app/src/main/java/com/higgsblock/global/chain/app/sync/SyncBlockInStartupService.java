@@ -86,21 +86,24 @@ public class SyncBlockInStartupService implements IEventBusListener {
     private void sendInitRequest() {
         long initHeight = blockChain.getMaxHeight();
         long maxRequestHeight = Long.min(initHeight + SYNC_BLOCK_TEMP_SIZE, getPeersMaxHeight());
-
         List<String> list = getAvailableConnection(maxRequestHeight);
-        if (list.size() == 0) {
-            LOGGER.info("have no peer to sync! height={}, current cache size={} ", maxRequestHeight, requestRecord.estimatedSize());
-            return;
-        }
 
         for (long height = initHeight + 1; height < maxRequestHeight; height++) {
             final long finalHeight = height;
-            String sourceId = list.get(new Random().nextInt(list.size()));
-            requestRecord.get(new BlockRequest(height, null), v -> {
-                messageCenter.unicast(sourceId, new BlockRequest(finalHeight, null));
-                LOGGER.info("send block request! height={},hash={}, current cache size={} ", finalHeight, null, requestRecord.estimatedSize());
-                return sourceId;
-            });
+            if (list.size() == 0) {
+                requestRecord.get(new BlockRequest(height, null), v -> {
+                    messageCenter.broadcast(new BlockRequest(finalHeight, null));
+                    LOGGER.info("send block request! height={},hash={}, current cache size={} ", finalHeight, null, requestRecord.estimatedSize());
+                    return "null";
+                });
+            } else {
+                String sourceId = list.get(new Random().nextInt(list.size()));
+                requestRecord.get(new BlockRequest(height, null), v -> {
+                    messageCenter.unicast(sourceId, new BlockRequest(finalHeight, null));
+                    LOGGER.info("send block request! height={},hash={}, current cache size={} ", finalHeight, null, requestRecord.estimatedSize());
+                    return sourceId;
+                });
+            }
         }
     }
 
@@ -171,19 +174,37 @@ public class SyncBlockInStartupService implements IEventBusListener {
         }
 
         if (null != requestRecord.getIfPresent(new BlockRequest(height, null))) {
+            LOGGER.info("block request have send ! height={},hash={}", height, hash);
             return;
         }
 
         if (null != requestRecord.getIfPresent(new BlockRequest(height, hash))) {
+            LOGGER.info("block request have send ! height={},hash={}", height, hash);
             return;
         }
 
         if (null != hash && blockChain.isExistBlock(hash)) {
+            LOGGER.info("block exist ! height={},hash={}", height, hash);
             return;
         }
 
         if (height <= blockChain.getMaxHeight()) {
-            sendGetBlock(height, hash);
+            List<String> list = getAvailableConnection(height);
+
+            if (list.size() == 0) {
+                requestRecord.get(new BlockRequest(height, hash), v -> {
+                    messageCenter.broadcast(new BlockRequest(height, hash));
+                    LOGGER.info("send block request! height={},hash={}, current cache size={} ", height, hash, requestRecord.estimatedSize());
+                    return "null";
+                });
+            } else {
+                final String sourceIdToSync = list.get(new Random().nextInt(list.size()));
+                requestRecord.get(new BlockRequest(height, hash), v -> {
+                    messageCenter.unicast(sourceIdToSync, new BlockRequest(height, hash));
+                    LOGGER.info("send block request! height={},hash={}, current cache size={} ", height, hash, requestRecord.estimatedSize());
+                    return sourceIdToSync;
+                });
+            }
             return;
         }
 
