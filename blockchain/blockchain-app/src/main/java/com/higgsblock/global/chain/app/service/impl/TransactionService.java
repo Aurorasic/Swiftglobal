@@ -257,7 +257,6 @@ public class TransactionService implements ITransactionService {
 
     public boolean verifyTransaction(Transaction tx, Block block) {
         if (null == tx) {
-            LOGGER.debug("transaction is null");
             return false;
         }
         if (!tx.valid()) {

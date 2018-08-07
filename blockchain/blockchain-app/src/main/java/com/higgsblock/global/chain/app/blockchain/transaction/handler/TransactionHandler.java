@@ -23,7 +23,6 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     @Override
     protected boolean valid(IMessage<Transaction> message) {
         Transaction tx = message.getData();
-        String hash = tx.getHash();
 
         //step1 check transaction baseinfo
         if (!tx.valid()) {
