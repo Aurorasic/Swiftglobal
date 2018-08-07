@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.consensus.handler;
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.OriginalBlock;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
@@ -11,7 +10,6 @@ import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +43,10 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     @Autowired
     private EventBus eventBus;
 
-    @Autowired
-    private WitnessTimer witnessTimer;
-
     @Override
     protected boolean valid(IMessage<OriginalBlock> message) {
         OriginalBlock originalBlock = message.getData();
-        LOGGER.info("Received OriginalBlock {}", message);
+        LOGGER.info("Received OriginalBlock {}", originalBlock);
         if (null == originalBlock || null == originalBlock.getBlock()) {
             return false;
         }
@@ -73,13 +68,12 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         long height = block.getHeight();
         String prevBlockHash = block.getPrevBlockHash();
         String blockHash = block.getHash();
-        String pubKey = block.getPubKey();
         int minTransactionNum = BlockService.MINIMUM_TRANSACTION_IN_BLOCK;
         if (block.getTransactions().size() < minTransactionNum) {
             LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
             return;
         }
-        if (voteService.isExistInBlockCache(height, blockHash)) {
+        if (voteService.isExist(height, blockHash)) {
             LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
             return;
         }
@@ -93,22 +87,11 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             return;
         }
         if (!blockChainService.isExistBlock(prevBlockHash)) {
-            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash", height, blockHash, prevBlockHash);
+            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash={}", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            return;
-        }
-        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
-        if (!isDposMiner) {
-            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
-            boolean acceptBlock = witnessTimer.checkGuarderPermissionWithTimer(block);
-            if (!acceptBlock) {
-                LOGGER.error("can not accept this block, height={}, hash={}", height, blockHash);
-                return;
-            }
-        }
-        if (!blockChainService.checkTransactions(block)) {
-            LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
+            //todo yangyi valid miner
+            voteService.addOriginalBlockToCache(block);
             return;
         }
         LOGGER.info("check the OriginalBlock success, height={}, hash={}", height, blockHash);

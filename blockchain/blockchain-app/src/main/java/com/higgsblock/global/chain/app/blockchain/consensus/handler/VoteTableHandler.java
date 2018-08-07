@@ -101,7 +101,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
                 return;
             }
             map1.forEach((k, v) -> {
-                if (!voteService.isExistInBlockCache(voteHeight, k)) {
+                if (!voteService.isExist(voteHeight, k)) {
                     blockHashes.add(k);
                 }
             });

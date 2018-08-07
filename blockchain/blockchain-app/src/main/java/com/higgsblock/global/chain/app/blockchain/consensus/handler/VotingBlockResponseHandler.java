@@ -11,7 +11,6 @@ import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
-import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     @Override
     protected boolean valid(IMessage<VotingBlockResponse> message) {
         VotingBlockResponse votingBlockResponse = message.getData();
-        LOGGER.info("Received VotingBlockResponse {}", message);
+        LOGGER.info("Received VotingBlockResponse {}", votingBlockResponse);
         if (null == votingBlockResponse || null == votingBlockResponse.getBlock()) {
             return false;
         }
@@ -77,7 +76,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             LOGGER.info("transactions is less than {}, height={}, hash={}", minTransactionNum, height, blockHash);
             return;
         }
-        if (voteService.isExistInBlockCache(height, blockHash)) {
+        if (voteService.isExist(height, blockHash)) {
             LOGGER.info("this block is exist in block cache, height={}, hash={}", height, blockHash);
             return;
         }
@@ -91,22 +90,11 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             return;
         }
         if (!blockChainService.isExistBlock(prevBlockHash)) {
-            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash ", height, blockHash, prevBlockHash);
+            LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash={} ", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            return;
-        }
-        boolean isDposMiner = blockChainService.isDposMiner(ECKey.pubKey2Base58Address(pubKey), prevBlockHash);
-        if (!isDposMiner) {
-            LOGGER.info("this miner can not package the height, height={}, hash={}", height, blockHash);
-            boolean acceptBlock = witnessTimer.checkGuarderPermissionWithTimer(block);
-            if (!acceptBlock) {
-                LOGGER.error("can not accept this block, height={}, hash={} ", height, blockHash);
-                return;
-            }
-        }
-        if (!blockChainService.checkTransactions(block)) {
-            LOGGER.error("the transactions are not valid, height={}, hash={}", height, blockHash);
+            //todo yangyi valid miner
+            voteService.addOriginalBlockToCache(block);
             return;
         }
         LOGGER.info("check the VotingBlockResponse success, height={}, hash={}", height, blockHash);
