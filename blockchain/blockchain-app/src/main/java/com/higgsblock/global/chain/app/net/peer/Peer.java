@@ -15,15 +15,6 @@ import org.apache.commons.lang.StringUtils;
  */
 @Data
 public class Peer extends BaseSerializer {
-    /**
-     * maximum number of retries a client can connect to a peer.
-     */
-    private static final int MAXIMUM_RETRIES = 5;
-
-    /**
-     * kept for system upgrading in the future.
-     */
-    private int version;
 
     /**
      * public key a peer publishes, a corresponding private key will be held by the peer itself.
@@ -50,14 +41,9 @@ public class Peer extends BaseSerializer {
      */
     private String signature;
 
-    /**
-     * times a client has attempted to connect to a peer. (add by Kong Yu)
-     */
-    private int retries;
-
     @Override
     public int hashCode() {
-        return Objects.hashCode(ip, socketServerPort, httpServerPort);
+        return Objects.hashCode(pubKey, ip, socketServerPort, httpServerPort);
     }
 
     @Override
@@ -69,15 +55,13 @@ public class Peer extends BaseSerializer {
             return false;
         }
         Peer other = (Peer) o;
-        return ip.equals(other.getIp())
+        return StringUtils.equals(pubKey, other.getPubKey())
+                && StringUtils.equals(ip, other.getIp())
                 && socketServerPort == other.getSocketServerPort()
                 && httpServerPort == other.getHttpServerPort();
     }
 
     public boolean valid() {
-        if (version < 0) {
-            return false;
-        }
         if (StringUtils.isEmpty(ip)) {
             return false;
         }
@@ -94,9 +78,6 @@ public class Peer extends BaseSerializer {
             return false;
         }
         if (StringUtils.isEmpty(signature)) {
-            return false;
-        }
-        if (retries < 0 || retryExceedLimitation()) {
             return false;
         }
         if (!validSignature()) {
@@ -122,7 +103,6 @@ public class Peer extends BaseSerializer {
                 .putInt(socketServerPort)
                 .putInt(httpServerPort)
                 .putString(pubKey, Charsets.UTF_8)
-                .putInt(version)
                 .hash().toString();
     }
 
@@ -132,26 +112,5 @@ public class Peer extends BaseSerializer {
 
     public String getId() {
         return ECKey.pubKey2Base58Address(pubKey);
-    }
-
-    /**
-     * Get socket address.
-     */
-    public String getSocketAddress() {
-        return String.format("%s:%d", ip, socketServerPort);
-    }
-
-    /**
-     * Triggered by failing to connect to this peer.
-     */
-    public void onTryCompleted() {
-        retries++;
-    }
-
-    /**
-     * Check if number of retry reaches the limitation.
-     */
-    public boolean retryExceedLimitation() {
-        return retries >= MAXIMUM_RETRIES;
     }
 }
