@@ -77,6 +77,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         if (voteHeight > localHeight) {
             eventBus.post(new SyncBlockEvent(voteHeight, null, sourceId));
             LOGGER.info("the height is greater than local,sync block,voteHeight={},localHeight={}", voteHeight, localHeight);
+            voteService.updateVoteCache(data);
             return;
         }
         //step5: check original block

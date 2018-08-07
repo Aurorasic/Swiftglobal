@@ -77,9 +77,6 @@ public class VoteService implements IEventBusListener, IVoteService {
             .maximumSize(MAX_SIZE)
             .build();
 
-    @Getter
-    private Map<String, Block> blockMapToVote = new HashMap<>();
-
     private Block blockWithEnoughSign;
 
     @Subscribe
@@ -106,10 +103,9 @@ public class VoteService implements IEventBusListener, IVoteService {
             this.height = height;
             this.voteTable = new VoteTable(new HashMap<>(7), this.height);
             this.blockWithEnoughSign = null;
-            blockMapToVote.clear();
             Map<String, Block> blockMapCache = this.blockCache.get(height, k -> new HashMap<>(7));
-            blockMapCache.values().stream().filter(this::validBlock).forEach((block -> blockMapToVote.put(block.getHash(), block)));
-            blockMapToVote.values().stream().findAny().ifPresent(this::voteFirstVote);
+            blockMapCache.values().stream().filter(this::validBlock).findAny().ifPresent(this::voteFirstVote);
+            dealVoteCache();
             voteCache.invalidate(height - 3);
             blockCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
@@ -134,9 +130,10 @@ public class VoteService implements IEventBusListener, IVoteService {
         if (this.height != block.getHeight() || !validBlock(block)) {
             return;
         }
-        this.blockMapToVote.put(block.getHash(), block);
+        this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
         voteFirstVote(block);
         dealVoteCache();
+        messageCenter.dispatchToWitnesses(this.voteTable);
     }
 
     @Override
@@ -231,7 +228,13 @@ public class VoteService implements IEventBusListener, IVoteService {
 
     @Override
     public synchronized void updateVoteCache(VoteTable otherVoteTable) {
-        long height = otherVoteTable.getHeight();
+        long voteHeight = otherVoteTable.getHeight();
+        if (this.height == voteHeight) {
+            return;
+        }
+        if (this.height > voteHeight) {
+            return;
+        }
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
         voteMap.values().forEach(map -> {
             if (MapUtils.isEmpty(map)) {
@@ -248,7 +251,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     if (isExist(vote)) {
                         return;
                     }
-                    voteCache.get(height, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
+                    voteCache.get(voteHeight, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
                         if (null == v) {
                             v = new HashSet<>();
                         }
@@ -363,7 +366,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             voteSignTable.put(voteBlockHash, votePubKey, voteSign);
             Map<String, String> voteRow = voteSignTable.row(voteBlockHash);
             if (voteRow.size() >= MIN_SAME_SIGN) {
-                blockWithEnoughSign = blockMapToVote.get(voteBlockHash);
+                blockWithEnoughSign = this.blockCache.get(this.height, k -> new HashMap<>(7)).get(voteBlockHash);
                 if (null == blockWithEnoughSign) {
                     LOGGER.info("the block lost , blockHash : {}", voteBlockHash);
                     return false;
@@ -441,9 +444,9 @@ public class VoteService implements IEventBusListener, IVoteService {
     }
 
     @Override
-    public boolean isExist(long height, String hash) {
+    public synchronized boolean isExist(long height, String hash) {
         Map<String, Block> map = blockCache.getIfPresent(height);
-        return (MapUtils.isNotEmpty(map) && map.containsKey(hash)) || blockMapToVote.containsKey(hash);
+        return MapUtils.isNotEmpty(map) && map.containsKey(hash);
     }
 
     private boolean checkProofAndPreVote(Vote vote) {
@@ -464,7 +467,7 @@ public class VoteService implements IEventBusListener, IVoteService {
 
     @Override
     public Block getVotingBlock(String blockHash) {
-        return blockMapToVote.get(blockHash);
+        return this.blockCache.get(this.height, k -> new HashMap<>(7)).get(blockHash);
     }
 
     private boolean validBlock(Block block) {
