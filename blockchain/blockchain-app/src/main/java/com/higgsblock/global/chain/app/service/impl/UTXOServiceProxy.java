@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
@@ -62,8 +63,8 @@ public class UTXOServiceProxy {
             preBlockHash = firstBlockHash;
         }
 
-        Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
-        Map<String, UTXO> unconfirmedAddedUtxos = new HashMap<>();
+        Map<String, UTXO> unconfirmedSpentUtxos = Maps.newHashMap();
+        Map<String, UTXO> unconfirmedAddedUtxos = Maps.newHashMap();
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
 
@@ -130,7 +131,7 @@ public class UTXOServiceProxy {
     }
 
     private boolean isUsedOnUnconfirmedChain(String preBlockHash, String utxoKey) {
-        Map<String, UTXO> unconfirmedSpentUtxos = new HashMap<>();
+        Map<String, UTXO> unconfirmedSpentUtxos = Maps.newHashMap();
         getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
         if (unconfirmedSpentUtxos.containsKey(utxoKey)) {
             return true;
@@ -208,11 +209,11 @@ public class UTXOServiceProxy {
             //there is no utxo cache, load this block and build new utxo map to cache
             Block block = blockService.getBlockByHash(blockHash);
             if (block == null) {
-                return new HashMap<>();
+                return Maps.newHashMap();
             }
             BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(block.getHeight());
             if (blockIndex == null || blockIndex.isBest(blockHash)) {
-                return new HashMap<>();
+                return Maps.newHashMap();
             }
             utxoMap = buildUTXOMap(block);
             unconfirmedUtxoMaps.put(blockHash, utxoMap);

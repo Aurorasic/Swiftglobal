@@ -106,7 +106,7 @@ public class TransactionFeeService implements ITransactionFeeService {
         rewards.setLastWitnessMoney(lastWitnessMoney);
 
         if (!rewards.check()) {
-            LOGGER.error("count is error block height:{}", height);
+            LOGGER.info("count is error block height:{}", height);
             throw new RuntimeException("count money is error");
         }
         return rewards;

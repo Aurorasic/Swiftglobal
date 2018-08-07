@@ -82,7 +82,7 @@ public final class IpUtil {
             publicIP = getLocalIp();
         }
 
-        LOGGER.info("publicIp={}", publicIP);
+        LOGGER.debug("publicIp={}", publicIP);
         if (isIP(publicIP)) {
             return publicIP;
         }
@@ -125,7 +125,7 @@ public final class IpUtil {
             ip = getLocalIp();
         }
 
-        LOGGER.info("localIp={}", ip);
+        LOGGER.debug("localIp={}", ip);
         return ip;
     }
 

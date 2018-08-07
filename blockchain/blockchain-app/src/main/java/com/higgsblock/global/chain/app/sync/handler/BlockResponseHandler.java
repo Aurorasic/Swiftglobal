@@ -41,9 +41,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private OrphanBlockCacheManager orphanBlockCacheManager;
 
-    @Autowired
-    private EventBus eventBus;
-
     @Override
     protected boolean valid(IMessage<BlockResponse> message) {
         BlockResponse blockResponse = message.getData();

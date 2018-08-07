@@ -15,8 +15,8 @@ public class ConnectionVO {
     private String channelId;
     private String peerId;
     private String ip;
-    private int port;
-    private boolean isActivated;
+    private Integer port;
+    private Boolean activated;
     private ChannelType type;
     private ConnectionLevelEnum connectionLevel;
 
@@ -28,7 +28,7 @@ public class ConnectionVO {
                 .append("ip", ip)
                 .append("port", port)
                 .append("type", type)
-                .append("isActivated", isActivated)
+                .append("activated", activated)
                 .append("connectionLevel", connectionLevel)
                 .toString();
     }

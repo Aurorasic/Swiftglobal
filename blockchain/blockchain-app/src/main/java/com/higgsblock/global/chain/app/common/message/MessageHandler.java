@@ -59,10 +59,10 @@ public class MessageHandler implements InitializingBean {
         return handlerMap.get(type);
     }
 
-    public boolean accept(IMessage IMessage) {
-        IMessageHandler handler = getHandler(IMessage.getData().getClass());
+    public boolean accept(IMessage message) {
+        IMessageHandler handler = getHandler(message.getData().getClass());
         if (null != handler) {
-            return handler.accept(IMessage);
+            return handler.accept(message);
         }
         return false;
     }
