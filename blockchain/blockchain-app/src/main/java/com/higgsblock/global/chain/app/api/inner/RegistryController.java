@@ -44,7 +44,7 @@ public class RegistryController {
             return false;
         }
 
-        peerManager.addOrUpdate(peer);
+        peerManager.add(peer);
         return true;
     }
 

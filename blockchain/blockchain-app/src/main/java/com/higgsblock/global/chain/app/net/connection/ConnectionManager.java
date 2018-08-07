@@ -108,9 +108,6 @@ public class ConnectionManager {
         if (peer == null) {
             return false;
         }
-        if (!peerManager.existsInPools(peer)) {
-            return false;
-        }
 
         if (peerManager.isSelf(peer)) {
             return false;
@@ -247,9 +244,8 @@ public class ConnectionManager {
 
         // Peer shall be appended to the peer pool if not in it.
         if (!peerManager.contains(peer)) {
-            peerManager.addOrUpdate(peer);
+            peerManager.add(peer);
         }
-        peerManager.clearPeerRetries(peer);
 
         if (peerManager.isSelf(peer)) {
             remove(connection);
