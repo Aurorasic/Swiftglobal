@@ -104,7 +104,6 @@ public class DataErrorService {
         reimportData();
 
         //load all data
-//
         // TODO: yuanjiantao 7/22/2018  blockProcessor.loadAllBlockData();
         systemStatusManager.setSysStep(SystemStepEnum.LOADED_ALL_DATA);
 

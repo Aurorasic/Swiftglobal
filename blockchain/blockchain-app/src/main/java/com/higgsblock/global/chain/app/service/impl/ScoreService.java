@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
@@ -112,7 +113,7 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public Map<String, Integer> loadAll() {
-        Map<String, Integer> map = new HashMap<>();
+        Map<String, Integer> map = Maps.newHashMap();
         scoreRepository.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
         return map;
     }

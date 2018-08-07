@@ -77,14 +77,14 @@ public class TransactionService implements ITransactionService {
         }
 
         //step2 verify transaction size
-        int tx_number = transactions.size();
-        if (TRANSACTION_NUMBER > tx_number) {
+        int txNumber = transactions.size();
+        if (TRANSACTION_NUMBER > txNumber) {
             LOGGER.info("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
         //step3 verify info
-        for (int index = 0; index < tx_number; index++) {
+        for (int index = 0; index < txNumber; index++) {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 verify tx isCoinBase
             if (isCoinBaseTx) {
