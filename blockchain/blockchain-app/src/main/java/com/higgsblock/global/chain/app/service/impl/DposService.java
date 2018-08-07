@@ -228,6 +228,24 @@ public class DposService implements IDposService {
         return (height - DPOS_START_HEIGHT) / DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
+    /**
+     * check block unstrictly,if the miner is constained in the dpos miners,return true
+     *
+     * @param block
+     * @return
+     */
+    @Override
+    public boolean checkBlockUnstrictly(Block block) {
+        if (block == null || CollectionUtils.isEmpty(block.getMinerSelfSigPKs())) {
+            return false;
+        }
+        List<String> miners = getDposGroupBySn(getSn(block.getHeight()));
+        if (CollectionUtils.isEmpty(miners)) {
+            return false;
+        }
+        String miner = block.getMinerSelfSigPKs().get(0).getAddress();
+        return miners.contains(miner);
+    }
 
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
