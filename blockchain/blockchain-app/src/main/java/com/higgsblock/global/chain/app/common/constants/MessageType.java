@@ -23,7 +23,7 @@ public enum MessageType {
     // ================ 200-299: block related ====================
     BLOCK("200"),
     INVENTORY("201"),
-    BLOCK_REQUEST(" 202"),
+    BLOCK_REQUEST("202"),
     BLOCK_RESPONSE("203"),
 
     // ================ 300-399: transaction related ==============
