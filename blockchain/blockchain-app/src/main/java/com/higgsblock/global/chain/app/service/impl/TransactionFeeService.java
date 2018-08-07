@@ -71,7 +71,7 @@ public class TransactionFeeService implements ITransactionFeeService {
 
         Money minerTotal;
 
-        LOGGER.info("miner rewards ration：{} ", MINER_REWARDS_RATION.getValue());
+        LOGGER.debug("miner rewards ration：{} ", MINER_REWARDS_RATION.getValue());
         Money totalFee = new Money("0");
         for (Map.Entry<String, Money> entry : feeMap.entrySet()) {
             Money fee = entry.getValue();
@@ -83,14 +83,14 @@ public class TransactionFeeService implements ITransactionFeeService {
         Rewards rewards = new Rewards();
         rewards.setTotalFee(totalFee);
         rewards.setTotalMoney(totalMoney);
-        LOGGER.info("totalFee:{}", totalFee.getValue());
+        LOGGER.debug("totalFee:{}", totalFee.getValue());
 
         //count miner rewards
         minerTotal = new Money(MINER_REWARDS_RATION.getValue()).multiply(totalFee);
 
         minerTotal.add(new Money(BLOCK_REWARDS_MINER.getValue()).multiply(BLOCK_REWARDS));
         rewards.setMinerTotal(minerTotal);
-        LOGGER.info("Transactions miner rewards total : {}", minerTotal.getValue());
+        LOGGER.debug("Transactions miner rewards total : {}", minerTotal.getValue());
 
         //count witness rewards
         Money witnessTotal = new Money(BLOCK_REWARDS.getValue()).multiply(BLOCK_REWARDS_WITNESS.getValue());
@@ -99,7 +99,7 @@ public class TransactionFeeService implements ITransactionFeeService {
         Money singleWitnessMoney = new Money(witnessTotal.getValue()).divide(WITNESS_NUM);
         Money lastWitnessMoney = new Money(witnessTotal.getValue()).subtract(new Money(singleWitnessMoney.getValue()).multiply(WITNESS_NUM - 1));
 
-        LOGGER.info("Transactions witness rewards total : {}, topTenSingleWitnessMoney:{}, lastWitnessMoney:{}", witnessTotal.getValue(),
+        LOGGER.debug("Transactions witness rewards total : {}, topTenSingleWitnessMoney:{}, lastWitnessMoney:{}", witnessTotal.getValue(),
                 singleWitnessMoney.getValue(), lastWitnessMoney.getValue());
 
         rewards.setTopTenSingleWitnessMoney(singleWitnessMoney);
@@ -121,7 +121,7 @@ public class TransactionFeeService implements ITransactionFeeService {
     public Money computerFeeBySize(long size) {
         BigDecimal sizeBD = new BigDecimal(size);
         Money fee = new Money(FEE_OF_PEER_KB_CAS.getValue()).multiply(sizeBD.divide(ONE_KB_OF_BYTES, 0, RoundingMode.CEILING).toEngineeringString());
-        LOGGER.info("count fee:{}", fee.getValue());
+        LOGGER.debug("count fee:{}", fee.getValue());
         return fee;
     }
 
@@ -168,7 +168,7 @@ public class TransactionFeeService implements ITransactionFeeService {
      */
     @Override
     public Transaction buildCoinBaseTx(long lockTime, short version, Map<String, Money> feeMap, long height) {
-        LOGGER.info("begin to build coinBase transaction");
+        LOGGER.debug("begin to build coinBase transaction");
 
         Rewards rewards = countMinerAndWitnessRewards(feeMap, height);
         Transaction transaction = new Transaction();
@@ -267,7 +267,7 @@ public class TransactionFeeService implements ITransactionFeeService {
             }
         }
 
-        LOGGER.info("Transactions' pre-output amount : {}", preOutMoney.getValue());
+        LOGGER.debug("Transactions' pre-output amount : {}", preOutMoney.getValue());
 
         Money outPutMoney = new Money("0");
         for (TransactionOutput output : outputs) {
@@ -276,7 +276,7 @@ public class TransactionFeeService implements ITransactionFeeService {
             }
         }
 
-        LOGGER.info("Transactions' output amount : {}", outPutMoney.getValue());
+        LOGGER.debug("Transactions' output amount : {}", outPutMoney.getValue());
 
         return preOutMoney.subtract(outPutMoney);
     }
