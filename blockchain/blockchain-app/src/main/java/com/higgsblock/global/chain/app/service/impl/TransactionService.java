@@ -318,17 +318,13 @@ public class TransactionService implements ITransactionService {
             }
             LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
 
+            //if verify receivedTransaction, block is null so curMoney add tx fee
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
+                curMoney.add(transactionFeeService.getCurrencyFee(tx));
+            }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type: ", key);
                 return false;
-            }
-            //if verify receivedTransaction, block is null so curMoney add tx fee and check
-            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
-                curMoney.add(transactionFeeService.getCurrencyFee(tx));
-                if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.info("Not enough cas fees");
-                    return false;
-                }
             }
         }
 
