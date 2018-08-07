@@ -49,7 +49,6 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
 
     @Override
     protected void process(IMessage<Inventory> message) {
-        long processStartTime = System.currentTimeMillis();
         Inventory data = message.getData();
         String sourceId = message.getSourceId();
         long height = data.getHeight();
@@ -59,21 +58,12 @@ public class InventoryHandler extends BaseMessageHandler<Inventory> {
                 if (!blockChainService.isExistBlock(hash)) {
                     BlockRequest blockRequest = new BlockRequest(height, hash);
                     messageCenter.unicast(sourceId, blockRequest);
-                    
-                    long processEndTime = System.currentTimeMillis();
-                    LOGGER.info("send inventory info spend time :{}ms", processEndTime - processStartTime);
                     return height;
                 }
-
-                long processEndTime1 = System.currentTimeMillis();
-                LOGGER.info("check hash exist db spend time :{}ms", processEndTime1 - processStartTime);
                 return null;
             }));
         } else if (height > blockChainService.getMaxHeight() + 1L && CollectionUtils.isNotEmpty(hashes)) {
             eventBus.post(new SyncBlockEvent(height, null, sourceId));
         }
-
-        long processEndTime2 = System.currentTimeMillis();
-        LOGGER.info("send sync block event spend time :{}ms", processEndTime2 - processStartTime);
     }
 }

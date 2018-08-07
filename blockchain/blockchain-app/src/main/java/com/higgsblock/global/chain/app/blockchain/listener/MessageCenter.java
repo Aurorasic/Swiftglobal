@@ -63,16 +63,11 @@ public class MessageCenter implements IMessageDispatcher {
 
     public boolean handshake(String channelId, Object data) {
         try {
-            long processStartTime = System.currentTimeMillis();
-
             String content = formatter.format(data);
             Connection connection = connectionManager.getConnectionByChannelId(channelId);
             if (null != connection) {
                 connection.handshake(content);
             }
-
-            long processEndTime = System.currentTimeMillis();
-            LOGGER.info("data format spend time :{}ms", processEndTime - processStartTime);
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
