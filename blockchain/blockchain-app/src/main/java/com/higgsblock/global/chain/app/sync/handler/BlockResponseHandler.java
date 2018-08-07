@@ -1,7 +1,9 @@
 package com.higgsblock.global.chain.app.sync.handler;
 
-import com.google.common.eventbus.EventBus;
-import com.higgsblock.global.chain.app.blockchain.*;
+import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
+import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
@@ -81,16 +83,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
 
         for (Block block : message.getData().getBlocks()) {
             boolean success = true;
-
-            //4.check: orphan block, maybe fetch pre block repeatedly several times, just do as this
-            boolean isOrphanBlock = !blockChainService.isExistBlock(block.getPrevBlockHash());
-            if (isOrphanBlock) {
-                BlockFullInfo blockFullInfo = new BlockFullInfo(block.getVersion(), null, block);
-                orphanBlockCacheManager.putAndRequestPreBlocks(blockFullInfo);
-                LOGGER.warn("it is orphan block : {}", block.getSimpleInfo());
-                continue;
-            }
-
             try {
                 newBestBlock = blockService.persistBlockAndIndex(block);
             } catch (Exception e) {
