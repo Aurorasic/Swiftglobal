@@ -7,11 +7,11 @@ import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.event.SyncBlockEvent;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.IVoteService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +69,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         long voteHeight = data.getHeight();
         //step3: check height
         if (voteHeight < voteService.getHeight()) {
+            LOGGER.info("the height is lower than local ");
             return;
         }
         //step4:if height > my vote height, sync block
@@ -79,11 +80,13 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         }
         //step5: check original block
         if (!checkOriginalBlock(sourceId, data)) {
+            LOGGER.info("check original block failed ");
             return;
         }
         //check if this is witness
         if (!witnessService.isWitness(keyPair.getAddress())) {
             messageCenter.dispatchToWitnesses(message.getData());
+            LOGGER.info(" dispatch to witnesses");
             return;
         }
         voteService.dealVoteTable(message.getData());
