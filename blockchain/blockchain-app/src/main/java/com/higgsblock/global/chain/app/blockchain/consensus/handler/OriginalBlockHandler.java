@@ -46,13 +46,13 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
     @Override
     protected boolean valid(IMessage<OriginalBlock> message) {
         OriginalBlock originalBlock = message.getData();
-        LOGGER.info("Received OriginalBlock {}", originalBlock);
         if (null == originalBlock || null == originalBlock.getBlock()) {
             return false;
         }
         Block block = originalBlock.getBlock();
-        long height = block.getHeight();
         String blockHash = block.getHash();
+        LOGGER.info("Received OriginalBlock, hash={}", blockHash);
+        long height = block.getHeight();
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
@@ -90,7 +90,6 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             LOGGER.info("the prev block is not on the chain, height={}, hash={},prevHash={}", height, blockHash, prevBlockHash);
             long orphanBlockHeight = height - 1L;
             eventBus.post(new SyncBlockEvent(orphanBlockHeight, prevBlockHash, sourceId));
-            //todo yangyi valid miner
             voteService.addOriginalBlockToCache(block);
             return;
         }
