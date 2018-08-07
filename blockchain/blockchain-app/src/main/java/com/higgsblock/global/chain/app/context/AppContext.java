@@ -20,7 +20,6 @@ import com.higgsblock.global.chain.app.net.handler.HelloAckMessageHandler;
 import com.higgsblock.global.chain.app.net.handler.HelloMessageHandler;
 import com.higgsblock.global.chain.app.net.handler.PeersMessageHandler;
 import com.higgsblock.global.chain.app.net.listener.ChannelChangedListener;
-import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.service.impl.VoteService;
 import com.higgsblock.global.chain.app.sync.SyncBlockInRunningService;
@@ -48,9 +47,6 @@ public class AppContext implements IEventBusListener {
     private ConnectionManager connectionManager;
 
     @Autowired
-    private PeerManager peerManager;
-
-    @Autowired
     private SyncBlockInStartupService syncBlockInStartupService;
 
     @Autowired
@@ -67,10 +63,8 @@ public class AppContext implements IEventBusListener {
      */
     @Autowired
     private InventoryTask inventoryTask;
-    //task and listener :
     @Autowired
     private GuarderTask guarderTask;
-    //task and listener :
     @Autowired
     private WitnessTimer witnessTimer;
     @Autowired
@@ -123,7 +117,6 @@ public class AppContext implements IEventBusListener {
     private MiningListener miningListener;
     @Autowired
     private ChannelChangedListener channelChangedListener;
-//     @Autowired private SyncBlockService syncBlockService;
 
     @Autowired
     private VoteService voteService;
@@ -141,10 +134,6 @@ public class AppContext implements IEventBusListener {
         startSocketServer();
 
         startFirstStepTasks();
-
-//        loadSelfPeerInfo();
-
-//        loadOrFetchPeers();
 
         syncBlocks();
 
@@ -227,15 +216,4 @@ public class AppContext implements IEventBusListener {
             systemStatusManager.setSysStep(SystemStepEnum.START_FINISHED);
         }
     }
-
-    private void loadSelfPeerInfo() {
-        peerManager.loadSelfPeerInfo();
-        peerManager.reportToRegistry();
-    }
-
-    private void loadOrFetchPeers() {
-        peerManager.loadNeighborPeers();
-        connectionManager.connectToPeers(1, 5, 20);
-    }
-
 }

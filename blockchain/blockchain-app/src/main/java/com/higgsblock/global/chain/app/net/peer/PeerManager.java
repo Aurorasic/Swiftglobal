@@ -6,7 +6,6 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
 import com.higgsblock.global.chain.network.config.PeerConfig;
-import com.higgsblock.global.chain.network.utils.IpUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +83,6 @@ public class PeerManager {
     public void setWitnessPeers(List<Peer> witnessPeers) {
         this.witnessPeers.clear();
         for (Peer peer : witnessPeers) {
-            // if (peer == null || !peer.valid()) {  TODO  yanghuadong  for test 2018-05-28
             if (peer == null) {
                 continue;
             }
@@ -101,8 +99,6 @@ public class PeerManager {
         if (CollectionUtils.isEmpty(collection)) {
             return;
         }
-        long processStartTime = System.currentTimeMillis();
-
         List<Peer> peers = Lists.newArrayList(collection);
 
         /*
@@ -114,7 +110,6 @@ public class PeerManager {
         for (; newConnNum < peers.size(); newConnNum++) {
             Peer peer = peers.get(newConnNum);
             if (null == peer || !peer.valid()) {
-                LOGGER.info("peer node is null");
                 continue;
             }
 
@@ -125,8 +120,6 @@ public class PeerManager {
             peer.setRetries(0);
             addOrUpdate(peer);
         }
-        long processEndTime = System.currentTimeMillis();
-        LOGGER.info("add peer info spend time :{}ms", processEndTime - processStartTime);
     }
 
     /**
@@ -168,7 +161,6 @@ public class PeerManager {
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
-        LOGGER.info("get peers: {}", peers);
         add(peers);
     }
 
@@ -231,25 +223,6 @@ public class PeerManager {
 
         setSelf(peer);
         peerCache.setCached(peer);
-        return true;
-    }
-
-    /**
-     * Load neighbor peers boolean.
-     *
-     * @return the boolean
-     */
-    public boolean loadNeighborPeers() {
-        //todo kongyu 2018-7-31 从peerMap中拿出来，然后再放进peerMap中去？？？？没必要这么做！
-        // load neighbor peers from local, if some peers cannot be connected, fetch new peers from register
-        // 1.load neighbor peers from local
-        Collection<Peer> localPeers = getPeers();
-        if (CollectionUtils.isEmpty(localPeers) || localPeers.size() < MIN_LOCAL_PEER_COUNT) {
-            this.getSeedPeers();
-        } else {
-            this.add(localPeers);
-        }
-
         return true;
     }
 
@@ -360,19 +333,6 @@ public class PeerManager {
     }
 
     /**
-     * Triggered by failing to connect to the peer.
-     */
-    public void onTryCompleted(Peer peer) {
-        peer.onTryCompleted();
-        if (peer.retryExceedLimitation()) {
-            removePeer(peer);
-            peerCache.setCached(peer);
-        } else {
-            updatePeer(peer);
-        }
-    }
-
-    /**
      * Calculate the node role.
      *
      * @param peer the target node to be calculated
@@ -420,8 +380,7 @@ public class PeerManager {
      */
     public void reportToRegistry() {
         try {
-            boolean result = this.registryApi.report(getSelf()).execute().body();
-            LOGGER.info("report self info to register, result={}", result);
+            this.registryApi.report(getSelf()).execute().body();
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }

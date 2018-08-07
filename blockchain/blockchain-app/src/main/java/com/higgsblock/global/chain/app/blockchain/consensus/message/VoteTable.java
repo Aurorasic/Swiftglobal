@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
@@ -85,7 +86,7 @@ public class VoteTable extends BaseSerializer {
 
     @JSONField(serialize = false)
     public Map<String, Map<String, Vote>> getVoteMapOfPubKeyByVersion(int version) {
-        Map<String, Map<String, Vote>> result = new HashMap<>();
+        Map<String, Map<String, Vote>> result = Maps.newHashMap();
         if (MapUtils.isEmpty(voteTable)) {
             return result;
         }
@@ -99,7 +100,7 @@ public class VoteTable extends BaseSerializer {
 
     @JSONField(serialize = false)
     public Map<String, Vote> getVoteMap(int version, String pubKey) {
-        Map<String, Vote> result = new HashMap<>();
+        Map<String, Vote> result = Maps.newHashMap();
         Map<String, Map<String, Vote>> voteMapOfPubKey = getVoteMapOfPubKeyByVersion(version);
         if (MapUtils.isEmpty(voteMapOfPubKey)) {
             return result;

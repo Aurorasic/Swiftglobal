@@ -67,29 +67,29 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public boolean validTransactions(Block block) {
-        LOGGER.info("begin to check the transactions of block {}", block.getHeight());
+        LOGGER.debug("begin to check the transactions of block {}", block.getHeight());
 
         //step1 verify block transaction is null
         List<Transaction> transactions = block.getTransactions();
         if (CollectionUtils.isEmpty(transactions)) {
-            LOGGER.error("transactions is empty, block_hash={}", block.getHash());
+            LOGGER.info("transactions is empty, block_hash={}", block.getHash());
             return false;
         }
 
         //step2 verify transaction size
-        int tx_number = transactions.size();
-        if (TRANSACTION_NUMBER > tx_number) {
-            LOGGER.error("transactions number is less than two, block_hash={}", block.getHash());
+        int txNumber = transactions.size();
+        if (TRANSACTION_NUMBER > txNumber) {
+            LOGGER.info("transactions number is less than two, block_hash={}", block.getHash());
             return false;
         }
 
         //step3 verify info
-        for (int index = 0; index < tx_number; index++) {
+        for (int index = 0; index < txNumber; index++) {
             boolean isCoinBaseTx = index == 0 ? true : false;
             //step1 verify tx isCoinBase
             if (isCoinBaseTx) {
                 if (!verifyCoinBaseTx(transactions.get(index), block)) {
-                    LOGGER.error("Invalidate Coinbase transaction");
+                    LOGGER.info("Invalidate Coinbase transaction");
                     return false;
                 }
                 continue;
@@ -105,27 +105,16 @@ public class TransactionService implements ITransactionService {
 
     @Override
     public void receivedTransaction(Transaction tx) {
-        long processStartTime1 = System.currentTimeMillis();
         String hash = tx.getHash();
         LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
 
         Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
         boolean isExist = transactionMap.containsKey(hash);
-
-        long processEndTime1 = System.currentTimeMillis();
-        LOGGER.info("check tx whether exist txCache spend time :{}ms", processEndTime1 - processStartTime1);
-
         if (isExist) {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
         }
-        long processStartTime2 = System.currentTimeMillis();
-
         boolean valid = verifyTransaction(tx, null);
-
-        long processEndTime2 = System.currentTimeMillis();
-        LOGGER.info("verify tx spend time :{}ms", processEndTime2 - processStartTime2);
-
         if (!valid) {
             LOGGER.info("the transaction is not valid {}", tx);
             return;
@@ -239,7 +228,7 @@ public class TransactionService implements ITransactionService {
 
             UTXO utxo = new UTXO();
             utxo.setHash(entity.getTransactionHash());
-            utxo.setIndex((short) entity.getOutIndex());
+            utxo.setIndex(entity.getOutIndex());
             utxo.setAddress(entity.getLockScript());
             utxo.setOutput(output);
             utxos.add(utxo);
@@ -327,22 +316,15 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("Pre-output currency is null {}", key);
                 return false;
             }
-            LOGGER.info("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
-            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
-                if (block == null) {
-                    curMoney.add(transactionFeeService.getCurrencyFee(tx));
-                }
+            LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
 
-                if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.info("Not enough cas fees");
-                    return false;
-                }
-            } else {
-                //TODO this ‘else’ is unnecessary, below code should be a precondition then  moved ahead ;commented by huangshengli 2018-05-28
-                if (preMoney.compareTo(curMoney) < 0) {
-                    LOGGER.info("Not enough fees, currency type: ", key);
-                    return false;
-                }
+            //if verify receivedTransaction, block is null so curMoney add tx fee
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
+                curMoney.add(transactionFeeService.getCurrencyFee(tx));
+            }
+            if (preMoney.compareTo(curMoney) < 0) {
+                LOGGER.info("Not enough fees, currency type: ", key);
+                return false;
             }
         }
 
@@ -518,7 +500,7 @@ public class TransactionService implements ITransactionService {
         for (String hash : blockHashs) {
             if (StringUtils.equals(hash, preBlock.getHash())) {
                 isEffective = true;
-                LOGGER.info("isEffective = true");
+                LOGGER.debug("isEffective = true");
                 break;
             }
         }
@@ -572,7 +554,7 @@ public class TransactionService implements ITransactionService {
      */
     private boolean validateProducerReward(TransactionOutput output, Money totalReward) {
         if (!totalReward.checkRange()) {
-            LOGGER.info("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
+            LOGGER.debug("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
             return false;
         }
 

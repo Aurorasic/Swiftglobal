@@ -5,11 +5,11 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
+import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.service.IOriginalBlockService;
 import com.higgsblock.global.chain.app.service.impl.BlockIndexService;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
-import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -44,7 +44,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     @Subscribe
     public void process(BlockPersistedEvent event) {
         long maxHeight = event.getHeight();
-        LOGGER.info("BlockPersistedEvent to Guarder height={}", maxHeight);
+        LOGGER.debug("BlockPersistedEvent to Guarder height={}", maxHeight);
         if (maxHeight > currHeight) {
             currHeight = maxHeight;
             curSec = 0;
@@ -58,7 +58,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     protected void task() {
         curSec += TASK_TIME;
         currHeight = blockChainService.getMaxHeight();
-        LOGGER.info("curSec={} currHeight={}", curSec, currHeight);
+        LOGGER.debug("curSec={} currHeight={}", curSec, currHeight);
         if (curSec >= WAIT_MINER_TIME) {
             doMing();
         }

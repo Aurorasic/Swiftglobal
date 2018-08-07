@@ -399,7 +399,6 @@ public class BlockService implements IBlockService {
         }
 
         long nextBestBlockHeight = lastBlockIndex.getHeight() + 1;
-        LOGGER.info("try to packageNewBlock, height={}", nextBestBlockHeight);
         List<Transaction> transactions = Lists.newLinkedList();
 
         //added by tangKun: order transaction by fee weight
@@ -518,12 +517,12 @@ public class BlockService implements IBlockService {
      * @param persistedBlock
      */
     @Override
-    public void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
+    public synchronized void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
         //add unconfirmed utxos and remove confirmed height blocks in cache
         utxoServiceProxy.addNewBlock(newBestBlock, persistedBlock);
 
         //refresh cache
-        refreshCache(newBestBlock, persistedBlock);
+        refreshCache(persistedBlock);
 
         //Broadcast persisted event
         broadBlockPersistedEvent(persistedBlock, newBestBlock);
@@ -606,8 +605,9 @@ public class BlockService implements IBlockService {
      *
      * @param block
      */
-    private void refreshCache(Block newBestBlock, Block block) {
-        if (newBestBlock != null) {
+    private void refreshCache(Block block) {
+        Long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
+        if (block.getHeight() > maxHeight) {
             blockMaxHeightCacheManager.updateMaxHeight(block.getHeight());
         }
 
