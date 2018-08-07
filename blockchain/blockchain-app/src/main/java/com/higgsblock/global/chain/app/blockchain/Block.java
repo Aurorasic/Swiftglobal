@@ -122,7 +122,7 @@ public class Block extends BaseSerializer {
 
         for (Transaction transaction : transactions) {
             if (!transaction.valid()) {
-                LOGGER.error("transaction is error ", transaction);
+                LOGGER.error("transaction is error, hash={}", transaction.getHash());
                 return false;
             }
         }
