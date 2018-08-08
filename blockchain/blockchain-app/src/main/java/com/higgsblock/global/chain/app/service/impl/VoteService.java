@@ -221,7 +221,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             }
         }
         if (this.voteTable.getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteHashTable with height={} ,is : {}", height, voteTable);
+            LOGGER.info("local voteHashTable with height={}", height);
             messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
         }
     }
@@ -321,7 +321,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             }
         }
         if (voteTable.getAllVoteSize() > startAllVoteSize) {
-            LOGGER.info("local voteHashTable with height={} ,is : {}", voteHeight, voteTable);
+            LOGGER.info("local voteHashTable with height={}", voteHeight);
             messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
         }
     }
