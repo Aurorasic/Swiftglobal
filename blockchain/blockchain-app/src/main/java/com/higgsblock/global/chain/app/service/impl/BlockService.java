@@ -303,7 +303,7 @@ public class BlockService implements IBlockService {
     public boolean checkWitnessSignatures(Block block) {
         String blockLogInfo = block.getSimpleInfo();
 
-        List<SignaturePair> witnessSigPKS = block.getOtherWitnessSigPairs();
+        List<SignaturePair> witnessSigPKS = block.getWitnessSigPairs();
         if (CollectionUtils.isEmpty(witnessSigPKS) || witnessSigPKS.size() < MIN_WITNESS) {
             int signatureSize = CollectionUtils.isEmpty(witnessSigPKS) ? 0 : witnessSigPKS.size();
             LOGGER.warn("The witness signatures is empty or the signature number is not enough,current size={},{}", signatureSize, blockLogInfo);

@@ -382,7 +382,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     signaturePairs.add(signaturePair);
                 }
                 blockWithEnoughSign.setVoteVersion(version);
-                blockWithEnoughSign.setOtherWitnessSigPairs(signaturePairs);
+                blockWithEnoughSign.setWitnessSigPairs(signaturePairs);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, voteBlockHash);
                 messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
                 this.messageCenter.broadcast(blockWithEnoughSign);

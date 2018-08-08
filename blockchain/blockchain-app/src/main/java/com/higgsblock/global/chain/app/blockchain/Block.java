@@ -70,7 +70,7 @@ public class Block extends BaseSerializer {
     /**
      * witness signature and pubkey list who sig this block for calculating score
      */
-    private List<SignaturePair> otherWitnessSigPairs = new ArrayList<>();
+    private List<SignaturePair> witnessSigPairs = new ArrayList<>();
 
     private int voteVersion;
 
