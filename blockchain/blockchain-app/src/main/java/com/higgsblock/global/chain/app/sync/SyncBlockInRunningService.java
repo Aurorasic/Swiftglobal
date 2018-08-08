@@ -192,9 +192,7 @@ public class SyncBlockInRunningService implements IEventBusListener {
         }
         LOGGER.info("time out, remove it .sourceId:{} ", sourceId);
         removePeer(sourceId);
-        if (sendGetBlock(height, blockHash)) {
-            return;
-        }
+        sendGetBlock(height, blockHash);
     }
 
     private void removePeer(String sourceId) {
