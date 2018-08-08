@@ -38,7 +38,7 @@ public class TransactionApi {
         }
 
         boolean result = messageCenter.dispatch(tx);
-        LOGGER.info("send transaction, hash={}", tx.getHash());
+        LOGGER.info("receive transaction from browser api, hash={}", tx.getHash());
         return result ? ResponseData.success(null) : ResponseData.failure(RespCodeEnum.FAILED);
     }
 
