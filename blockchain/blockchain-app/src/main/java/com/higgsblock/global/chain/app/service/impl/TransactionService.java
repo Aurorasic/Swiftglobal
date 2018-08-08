@@ -106,7 +106,7 @@ public class TransactionService implements ITransactionService {
     @Override
     public void receivedTransaction(Transaction tx) {
         String hash = tx.getHash();
-        LOGGER.info("receive a new transaction from remote with hash {} and data {}", hash, tx);
+        LOGGER.info("receive a new transaction from remote with hash={}", hash);
 
         Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
         boolean isExist = transactionMap.containsKey(hash);
@@ -116,7 +116,7 @@ public class TransactionService implements ITransactionService {
         }
         boolean valid = verifyTransaction(tx, null);
         if (!valid) {
-            LOGGER.info("the transaction is not valid {}", tx);
+            LOGGER.info("the transaction is not valid hash={}", hash);
             return;
         }
 
