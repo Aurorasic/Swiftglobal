@@ -98,8 +98,7 @@ public class Transaction extends BaseSerializer {
         }
         return true;
     }
-
-
+    
     public String getHash() {
         if (StringUtils.isBlank(hash)) {
             HashFunction function = Hashing.sha256();
@@ -195,20 +194,5 @@ public class Transaction extends BaseSerializer {
             }
         }
         return false;
-    }
-
-    @JSONField(serialize = false)
-    public UTXO getAddedUTXOByKey(String utxoKey) {
-        if (CollectionUtils.isNotEmpty(outputs)) {
-            final int outputSize = outputs.size();
-            for (int i = 0; i < outputSize; i++) {
-                TransactionOutput output = outputs.get(i);
-                UTXO utxo = new UTXO(this, (short) i, output);
-                if (StringUtils.equals(utxo.getKey(), utxoKey)) {
-                    return utxo;
-                }
-            }
-        }
-        return null;
     }
 }
