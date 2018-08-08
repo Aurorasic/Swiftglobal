@@ -90,13 +90,4 @@ public class TransactionOutput extends BaseSerializer {
         }
         return false;
     }
-
-    @JSONField(serialize = false)
-    public boolean hasIssueTokenStake() {
-        if (isMinerCurrency() &&
-                money.compareTo(new Money("1", SystemCurrencyEnum.ISSUE_TOKEN.getCurrency())) >= 0) {
-            return true;
-        }
-        return false;
-    }
 }
