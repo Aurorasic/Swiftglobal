@@ -45,13 +45,13 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
     @Override
     protected boolean valid(IMessage<VotingBlockResponse> message) {
         VotingBlockResponse votingBlockResponse = message.getData();
-        LOGGER.info("Received VotingBlockResponse {}", votingBlockResponse);
         if (null == votingBlockResponse || null == votingBlockResponse.getBlock()) {
             return false;
         }
         Block block = votingBlockResponse.getBlock();
         long height = block.getHeight();
         String blockHash = block.getHash();
+        LOGGER.info("Received OriginalBlock height={},hash={}", height,blockHash);
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
