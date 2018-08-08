@@ -108,8 +108,7 @@ public class TransactionService implements ITransactionService {
         String hash = tx.getHash();
         LOGGER.info("receive a new transaction from remote with hash={}", hash);
 
-        Map<String, Transaction> transactionMap = txCacheManager.getTransactionMap().asMap();
-        boolean isExist = transactionMap.containsKey(hash);
+        boolean isExist = txCacheManager.isContains(hash);
         if (isExist) {
             LOGGER.info("the transaction is exist in cache with hash {}", hash);
             return;
