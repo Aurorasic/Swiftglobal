@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
@@ -85,6 +86,6 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         }
         String[] excludeSourceIds = (sourceId == null) ? null : new String[]{sourceId};
         messageCenter.broadcast(excludeSourceIds, inventory);
-        LOGGER.info("after persisted block, broadcast block: {}", inventory);
+        LOGGER.info("after persisted block, broadcast: messageCode={},content={}", MessageType.INVENTORY.getCode(), inventory);
     }
 }
