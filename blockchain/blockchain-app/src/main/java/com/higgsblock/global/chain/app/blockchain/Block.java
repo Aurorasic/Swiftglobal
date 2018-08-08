@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.hash.HashFunction;
@@ -33,7 +32,6 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Slf4j
-@JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair", "witnessSigPairs", "voteVersion"})
 public class Block extends BaseSerializer {
     private static final int LIMITED_SIZE = 1024 * 1024 * 1;
 

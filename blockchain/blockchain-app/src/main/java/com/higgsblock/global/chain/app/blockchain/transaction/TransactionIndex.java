@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,7 +15,6 @@ import java.util.Map;
 @Setter
 @Getter
 @NoArgsConstructor
-@JSONType(includes = {"blockHash", "txHash", "txIndex", "txIndex"})
 public class TransactionIndex extends BaseSerializer {
     /**
      * the hash of the block witch the transaction belongs to

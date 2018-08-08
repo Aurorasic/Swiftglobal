@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.AllArgsConstructor;
@@ -17,7 +16,6 @@ import org.apache.commons.lang.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JSONType(includes = {"pubKey", "signature"})
 public class SignaturePair extends BaseSerializer {
     /**
      * The Pub key.

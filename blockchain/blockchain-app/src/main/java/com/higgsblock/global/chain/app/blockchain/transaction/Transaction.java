@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.annotation.JSONField;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -27,7 +27,6 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
-@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "creatorPubKey"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -157,6 +156,7 @@ public class Transaction extends BaseSerializer {
         return false;
     }
 
+    @JSONField(serialize = false)
     public List<String> getSpendUTXOKeys() {
         List result = new LinkedList();
         if (!isEmptyInputs()) {
@@ -168,6 +168,7 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
+    @JSONField(serialize = false)
     public List<UTXO> getAddedUTXOs() {
         List result = new LinkedList();
         if (CollectionUtils.isNotEmpty(outputs)) {
@@ -182,6 +183,7 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
+    @JSONField(serialize = false)
     public boolean containsSpendUTXO(String utxoKey) {
         if (isEmptyInputs()) {
             return false;
