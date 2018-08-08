@@ -14,9 +14,7 @@ import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -42,7 +40,6 @@ public class Block extends BaseSerializer {
     /**
      * block height begin with 1
      */
-    @Getter
     private long height;
 
     /**
@@ -53,19 +50,16 @@ public class Block extends BaseSerializer {
     /**
      * the timestamp of this block created
      */
-    @Getter
     private long blockTime;
 
     /**
      * the hash of prev block
      */
-    @Getter
     private String prevBlockHash;
 
     /**
      * transactions in this block
      */
-    @Getter
     private List<Transaction> transactions;
 
     private String pubKey;
@@ -74,19 +68,13 @@ public class Block extends BaseSerializer {
     /**
      * signature and pubkey list whose mined this block
      */
-    @Setter
-    @Getter
     private List<BlockWitness> minerSelfSigPKs = new ArrayList<>();
 
     /**
      * witness signature and pubkey list who sig this block for calculating score
      */
-    @Setter
-    @Getter
     private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
 
-    @Setter
-    @Getter
     private int voteVersion;
 
     public boolean valid() {
@@ -151,7 +139,7 @@ public class Block extends BaseSerializer {
     }
 
     public void initMinerPkSig(String pubKey, String signature) {
-        BlockWitness pair = new BlockWitness(pubKey, signature, null);
+        BlockWitness pair = new BlockWitness(pubKey, signature);
         minerSelfSigPKs.add(pair);
     }
 
