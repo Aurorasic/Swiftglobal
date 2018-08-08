@@ -52,7 +52,7 @@ public class MessageCenter implements IMessageDispatcher {
         if (witnessConnections.size() >= MIN_WITNESS_NUM) {
             for (Connection connection : witnessConnections) {
                 unicast(connection.getPeerId(), data);
-                LOGGER.info("send to witness with address {} and data {}", connection.getPeerId(), data);
+                LOGGER.debug("send to witness with address {} and data {}", connection.getPeerId(), data);
             }
             return true;
         } else {
@@ -85,7 +85,7 @@ public class MessageCenter implements IMessageDispatcher {
             String content = formatter.format(data);
             sendMessage(connection, content);
 
-            LOGGER.info("unicast message: {}", content);
+            LOGGER.debug("unicast message: {}", content);
             return true;
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -109,7 +109,7 @@ public class MessageCenter implements IMessageDispatcher {
                 }
             }
 
-            LOGGER.info("broadcast message: {}", content);
+            LOGGER.debug("broadcast message: {}", content);
             return true;
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
