@@ -559,7 +559,6 @@ public class TransactionService implements ITransactionService {
         }
 
         return output.getMoney().compareTo(totalReward) == 0;
-
     }
 
 
@@ -589,6 +588,6 @@ public class TransactionService implements ITransactionService {
      */
     public void broadcastTransaction(Transaction tx) {
         messageCenter.broadcast(tx);
-        LOGGER.info("broadcast transaction success: {}", tx.getHash());
+        LOGGER.info("broadcast transaction hash={}", tx.getHash());
     }
 }
