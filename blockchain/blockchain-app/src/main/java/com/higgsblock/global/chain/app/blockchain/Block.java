@@ -164,11 +164,6 @@ public class Block extends BaseSerializer {
         return null;
     }
 
-    public void addWitnessSignature(String pubKey, String signature, String blockHash) {
-        BlockWitness pair = new BlockWitness(pubKey, signature, blockHash);
-        otherWitnessSigPKS.add(pair);
-    }
-
     public BlockWitness getMinerFirstPKSig() {
         if (!CollectionUtils.isEmpty(minerSelfSigPKs)) {
             return minerSelfSigPKs.get(0);
@@ -202,29 +197,6 @@ public class Block extends BaseSerializer {
         return hash;
     }
 
-    public String getSignedHash() {
-        HashFunction function = Hashing.sha256();
-        StringBuilder builder = new StringBuilder();
-        builder.append(function.hashInt(getVersion()))
-                .append(function.hashLong(blockTime))
-                .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
-                .append(getTransactionsHash())
-                .append(function.hashString(null == pubKey ? Strings.EMPTY : pubKey, Charsets.UTF_8));
-        BlockWitness firstPKSig = getMinerFirstPKSig();
-        if (firstPKSig != null) {
-            builder.append(firstPKSig.getBlockWitnessHash());
-        }
-        List<BlockWitness> blockWitnesses = getOtherWitnessSigPKS();
-        if (CollectionUtils.isNotEmpty(blockWitnesses)) {
-            blockWitnesses.forEach(blockWitness -> {
-                builder.append(blockWitness.getBlockWitnessHash());
-            });
-        }
-        String signHash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
-        LOGGER.info("the block signedHash is {}", signHash);
-        return signHash;
-    }
-
     @JSONField(serialize = false)
     public List<String> getSpendUTXOKeys() {
         List result = new LinkedList();
@@ -245,44 +217,6 @@ public class Block extends BaseSerializer {
         return result;
     }
 
-    @JSONField(serialize = false)
-    public boolean containsSpendUTXO(String utxoKey) {
-        for (Transaction tx : transactions) {
-            if (tx.containsSpendUTXO(utxoKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @JSONField(serialize = false)
-    public UTXO getAddedUTXOByKey(String utxoKey) {
-        for (Transaction tx : transactions) {
-            UTXO utxo = tx.getAddedUTXOByKey(utxoKey);
-            if (utxo != null) {
-                return utxo;
-            }
-        }
-        return null;
-    }
-
-    public boolean isPowerHeight(long h) {
-        if (height >= h) {
-            if (height % h == 0) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public boolean isEmptyTransactions() {
-        if (CollectionUtils.isEmpty(transactions)) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * get hash of transaction list in this block
      *
@@ -299,23 +233,9 @@ public class Block extends BaseSerializer {
         return Hashing.sha256().hashString(builder.toString(), Charsets.UTF_8).toString();
     }
 
-
-    @JSONField(serialize = false)
-    public List<String> getWitnessBlockHashList() {
-        LinkedList<String> result = new LinkedList<>();
-        for (BlockWitness blockWitness : otherWitnessSigPKS) {
-            result.add(blockWitness.getBlockHash());
-        }
-        return result;
-    }
-
     public boolean sizeAllowed() {
         ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
         return sizeCounter.calculateSize(this) <= LIMITED_SIZE;
-    }
-
-    public int getWitnessSigCount() {
-        return otherWitnessSigPKS.size();
     }
 
     @Override
