@@ -52,7 +52,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
         Block block = originalBlock.getBlock();
         long height = block.getHeight();
         String blockHash = block.getHash();
-        LOGGER.info("Received OriginalBlock height={},hash={}", height,blockHash);
+        LOGGER.info("Received OriginalBlock height={},hash={}", height, blockHash);
         if (!block.valid()) {
             LOGGER.info("this block is not valid, height={}, hash={}", height, blockHash);
             return false;
