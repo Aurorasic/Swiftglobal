@@ -323,7 +323,7 @@ public class TransactionService implements ITransactionService {
                 curMoney.add(transactionFeeService.getCurrencyFee(tx));
             }
             if (preMoney.compareTo(curMoney) < 0) {
-                LOGGER.info("Not enough fees, currency type: ", key);
+                LOGGER.info("Not enough fees, currency type:{}", key);
                 return false;
             }
         }
@@ -395,7 +395,7 @@ public class TransactionService implements ITransactionService {
         utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
 
         if (utxo == null) {
-            LOGGER.warn("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
+            LOGGER.info("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
             return null;
         }
         TransactionOutput output = utxo.getOutput();
@@ -411,7 +411,7 @@ public class TransactionService implements ITransactionService {
      */
     public boolean verifyCoinBaseTx(Transaction tx, Block block) {
         if (!tx.isEmptyInputs()) {
-            LOGGER.error("Invalidate Coinbase transaction");
+            LOGGER.info("Invalidate Coinbase transaction");
             return false;
         }
         List<TransactionOutput> outputs = tx.getOutputs();

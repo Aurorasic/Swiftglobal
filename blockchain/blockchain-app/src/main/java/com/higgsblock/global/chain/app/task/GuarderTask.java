@@ -110,6 +110,6 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
         } catch (Exception e) {
             LOGGER.error("doming exception,height={}", expectHeight, e);
         }
-        LOGGER.info("can not produce a new block,height={}", expectHeight);
+        LOGGER.info("guarder produce a new block,height={}", expectHeight);
     }
 }
