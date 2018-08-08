@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.Data;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 /**
@@ -22,28 +21,21 @@ public class TransactionCacheManager {
             .maximumSize(MAX_SIZE)
             .build();
 
-    public boolean hasTx() {
-        if (CollectionUtils.isNotEmpty(transactionMap.asMap().values())) {
-            return true;
-        }
-        return false;
-    }
-
-    public void addTransaction(Transaction transaction) {
+    public synchronized void addTransaction(Transaction transaction) {
         if (transaction == null) {
             throw new RuntimeException("transaction is null, cannot add to cache");
         }
         transactionMap.put(transaction.getHash(), transaction);
     }
 
-    public void remove(String transactionHash) {
+    public synchronized void remove(String transactionHash) {
         if (transactionMap != null) {
             transactionMap.invalidate(transactionHash);
             transactionMap.cleanUp();
         }
     }
 
-    public boolean isContains(String transactionHash) {
+    public synchronized boolean isContains(String transactionHash) {
         if (transactionMap != null) {
             return transactionMap.asMap().containsKey(transactionHash);
         }
