@@ -68,6 +68,6 @@ public class WitnessTimer implements IEventBusListener {
     }
 
     public boolean verifyBlockBelongGuarder(Block block) {
-        return blockChainService.isGuarder(block.getMinerFirstPKSig().getAddress(), block.getPrevBlockHash());
+        return blockChainService.isGuarder(block.getMinerSigPK().getAddress(), block.getPrevBlockHash());
     }
 }

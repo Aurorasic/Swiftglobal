@@ -62,13 +62,10 @@ public class Block extends BaseSerializer {
      */
     private List<Transaction> transactions;
 
-    private String pubKey;
-
-
     /**
-     * signature and pubkey list whose mined this block
+     * signature and pubkey whose mined this block
      */
-    private List<BlockWitness> minerSelfSigPKs = new ArrayList<>();
+    private BlockWitness minerSigPK;
 
     /**
      * witness signature and pubkey list who sig this block for calculating score
@@ -95,9 +92,6 @@ public class Block extends BaseSerializer {
         if (blockTime < 0) {
             return false;
         }
-        if (StringUtils.isEmpty(pubKey)) {
-            return false;
-        }
         if (height == 1L) {
             if (transactions.size() < 1) {
                 return false;
@@ -114,14 +108,10 @@ public class Block extends BaseSerializer {
                 return false;
             }
         }
-        if (minerSelfSigPKs.size() < 1) {
+        if (minerSigPK == null || !minerSigPK.valid()) {
             return false;
         }
-        BlockWitness bws = minerSelfSigPKs.get(0);
-        if (!pubKey.equals(bws.getPubKey())) {
-            return false;
-        }
-        if (!ECKey.verifySign(getHash(), bws.getSignature(), bws.getPubKey())) {
+        if (!ECKey.verifySign(getHash(), minerSigPK.getSignature(), minerSigPK.getPubKey())) {
             return false;
         }
         if (!sizeAllowed()) {
@@ -138,9 +128,9 @@ public class Block extends BaseSerializer {
         this.height = height;
     }
 
-    public void initMinerPkSig(String pubKey, String signature) {
+    public void setMinerSigPK(String pubKey, String signature) {
         BlockWitness pair = new BlockWitness(pubKey, signature);
-        minerSelfSigPKs.add(pair);
+        minerSigPK = pair;
     }
 
     public Transaction getTransactionByHash(String txHash) {
@@ -152,18 +142,15 @@ public class Block extends BaseSerializer {
         return null;
     }
 
-    public BlockWitness getMinerFirstPKSig() {
-        if (!CollectionUtils.isEmpty(minerSelfSigPKs)) {
-            return minerSelfSigPKs.get(0);
-        }
-        return null;
-    }
-
     public boolean isGenesisBlock() {
         if (height == 1 && prevBlockHash == null) {
             return true;
         }
         return false;
+    }
+
+    public String getPubKey() {
+        return minerSigPK == null ? null : minerSigPK.getPubKey();
     }
 
     /**
@@ -179,7 +166,7 @@ public class Block extends BaseSerializer {
                     .append(function.hashLong(blockTime))
                     .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
                     .append(getTransactionsHash())
-                    .append(function.hashString(null == pubKey ? Strings.EMPTY : pubKey, Charsets.UTF_8));
+                    .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
         return hash;

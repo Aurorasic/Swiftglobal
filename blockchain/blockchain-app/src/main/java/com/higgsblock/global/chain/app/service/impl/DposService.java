@@ -125,7 +125,7 @@ public class DposService implements IDposService {
         }
         long startHeight = getStartHeight(height);
         while (height-- > startHeight) {
-            BlockWitness minerFirstPKSig = preBlock.getMinerFirstPKSig();
+            BlockWitness minerFirstPKSig = preBlock.getMinerSigPK();
             String address = minerFirstPKSig.getAddress();
             dposGroupBySn.remove(address);
             preBlock = blockService.getBlockByHash(preBlock.getPrevBlockHash());
@@ -141,7 +141,7 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean checkProducer(Block block) {
-        BlockWitness minerPKSig = block.getMinerFirstPKSig();
+        BlockWitness minerPKSig = block.getMinerSigPK();
         if (minerPKSig == null || !minerPKSig.valid()) {
             LOGGER.warn("the miner signature is invalid:{}", block.getSimpleInfo());
             return false;
@@ -236,14 +236,14 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean checkBlockUnstrictly(Block block) {
-        if (block == null || CollectionUtils.isEmpty(block.getMinerSelfSigPKs())) {
+        if (block == null || block.getMinerSigPK() == null) {
             return false;
         }
         List<String> miners = getDposGroupBySn(getSn(block.getHeight()));
         if (CollectionUtils.isEmpty(miners)) {
             return false;
         }
-        String miner = block.getMinerSelfSigPKs().get(0).getAddress();
+        String miner = block.getMinerSigPK().getAddress();
         return miners.contains(miner);
     }
 

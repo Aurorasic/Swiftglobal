@@ -21,7 +21,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author HuangShengli
@@ -186,7 +189,7 @@ public class ScoreService implements IScoreService {
     }
 
     private void newScoreStrategy(Block toBeBestBlock) {
-        BlockWitness minerPKSig = toBeBestBlock.getMinerFirstPKSig();
+        BlockWitness minerPKSig = toBeBestBlock.getMinerSigPK();
         //if the block is only mined by  miner, set score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);

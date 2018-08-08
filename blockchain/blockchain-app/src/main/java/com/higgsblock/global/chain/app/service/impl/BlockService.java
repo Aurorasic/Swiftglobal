@@ -427,11 +427,10 @@ public class BlockService implements IBlockService {
         block.setPrevBlockHash(preBlockHash);
         block.setTransactions(transactions);
         block.setHeight(nextBestBlockHeight);
-        block.setPubKey(keyPair.getPubKey());
 
         //Before collecting signs from witnesses just cache the block firstly.
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
-        block.initMinerPkSig(keyPair.getPubKey(), sig);
+        block.setMinerSigPK(keyPair.getPubKey(), sig);
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
@@ -587,7 +586,7 @@ public class BlockService implements IBlockService {
     }
 
     private boolean checkProducerSignature(Block block) {
-        final BlockWitness minerPKSig = block.getMinerFirstPKSig();
+        final BlockWitness minerPKSig = block.getMinerSigPK();
         if (minerPKSig == null || !minerPKSig.valid()) {
             LOGGER.error("The miner signature is invalid:{}", block.getSimpleInfo());
             return false;
