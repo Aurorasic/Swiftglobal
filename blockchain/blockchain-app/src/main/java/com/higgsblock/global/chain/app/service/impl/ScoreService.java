@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.IScoreRepository;
@@ -189,7 +189,7 @@ public class ScoreService implements IScoreService {
     }
 
     private void newScoreStrategy(Block toBeBestBlock) {
-        BlockWitness minerPKSig = toBeBestBlock.getMinerSigPK();
+        SignaturePair minerPKSig = toBeBestBlock.getMinerSigPair();
         //if the block is only mined by  miner, set score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);

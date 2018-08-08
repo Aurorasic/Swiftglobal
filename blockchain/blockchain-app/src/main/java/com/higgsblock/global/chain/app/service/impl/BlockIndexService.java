@@ -54,7 +54,7 @@ public class BlockIndexService implements IBlockIndexService {
         blockIndexDO.setBlockHash(block.getHash());
         blockIndexDO.setHeight(block.getHeight());
         blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
-        blockIndexDO.setMinerAddress(block.getMinerSigPK().getAddress());
+        blockIndexDO.setMinerAddress(block.getMinerSigPair().getAddress());
         blockIndexRepository.save(blockIndexDO);
         LOGGER.info("persisted block index: {}", blockIndexDO);
     }

@@ -16,7 +16,7 @@ import org.apache.commons.lang.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BlockWitness extends BaseSerializer {
+public class SignaturePair extends BaseSerializer {
     /**
      * The Pub key.
      */

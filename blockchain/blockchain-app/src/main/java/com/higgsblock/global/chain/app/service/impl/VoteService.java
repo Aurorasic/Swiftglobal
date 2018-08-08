@@ -6,8 +6,8 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockWitness;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.WitnessTimer;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VoteTable;
 import com.higgsblock.global.chain.app.blockchain.consensus.message.VotingBlockRequest;
@@ -372,17 +372,17 @@ public class VoteService implements IEventBusListener, IVoteService {
                     return false;
                 }
                 LOGGER.info("height {},version {},there have enough sign for block {}", voteHeight, version, voteBlockHash);
-                List<BlockWitness> blockWitnesses = new LinkedList<>();
+                List<SignaturePair> signaturePairs = new LinkedList<>();
                 Iterator<Map.Entry<String, String>> iterator = voteRow.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<String, String> next = iterator.next();
-                    BlockWitness blockWitness = new BlockWitness();
-                    blockWitness.setPubKey(next.getKey());
-                    blockWitness.setSignature(next.getValue());
-                    blockWitnesses.add(blockWitness);
+                    SignaturePair signaturePair = new SignaturePair();
+                    signaturePair.setPubKey(next.getKey());
+                    signaturePair.setSignature(next.getValue());
+                    signaturePairs.add(signaturePair);
                 }
                 blockWithEnoughSign.setVoteVersion(version);
-                blockWithEnoughSign.setOtherWitnessSigPKS(blockWitnesses);
+                blockWithEnoughSign.setOtherWitnessSigPairs(signaturePairs);
                 LOGGER.info("height {},version {},vote result is {}", voteHeight, version, voteBlockHash);
                 messageCenter.dispatchToWitnesses(SerializationUtils.clone(voteTable));
                 this.messageCenter.broadcast(blockWithEnoughSign);

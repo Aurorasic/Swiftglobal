@@ -65,12 +65,12 @@ public class Block extends BaseSerializer {
     /**
      * signature and pubkey whose mined this block
      */
-    private BlockWitness minerSigPK;
+    private SignaturePair minerSigPair;
 
     /**
      * witness signature and pubkey list who sig this block for calculating score
      */
-    private List<BlockWitness> otherWitnessSigPKS = new ArrayList<>();
+    private List<SignaturePair> otherWitnessSigPairs = new ArrayList<>();
 
     private int voteVersion;
 
@@ -108,10 +108,10 @@ public class Block extends BaseSerializer {
                 return false;
             }
         }
-        if (minerSigPK == null || !minerSigPK.valid()) {
+        if (minerSigPair == null || !minerSigPair.valid()) {
             return false;
         }
-        if (!ECKey.verifySign(getHash(), minerSigPK.getSignature(), minerSigPK.getPubKey())) {
+        if (!ECKey.verifySign(getHash(), minerSigPair.getSignature(), minerSigPair.getPubKey())) {
             return false;
         }
         if (!sizeAllowed()) {
@@ -129,8 +129,8 @@ public class Block extends BaseSerializer {
     }
 
     public void setMinerSigPK(String pubKey, String signature) {
-        BlockWitness pair = new BlockWitness(pubKey, signature);
-        minerSigPK = pair;
+        SignaturePair pair = new SignaturePair(pubKey, signature);
+        minerSigPair = pair;
     }
 
     public Transaction getTransactionByHash(String txHash) {
@@ -150,7 +150,7 @@ public class Block extends BaseSerializer {
     }
 
     public String getPubKey() {
-        return minerSigPK == null ? null : minerSigPK.getPubKey();
+        return minerSigPair == null ? null : minerSigPair.getPubKey();
     }
 
     /**

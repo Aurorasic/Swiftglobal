@@ -7,7 +7,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
-import com.higgsblock.global.chain.app.blockchain.BlockWitness;
+import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.IDposRepository;
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
@@ -125,7 +125,7 @@ public class DposService implements IDposService {
         }
         long startHeight = getStartHeight(height);
         while (height-- > startHeight) {
-            BlockWitness minerFirstPKSig = preBlock.getMinerSigPK();
+            SignaturePair minerFirstPKSig = preBlock.getMinerSigPair();
             String address = minerFirstPKSig.getAddress();
             dposGroupBySn.remove(address);
             preBlock = blockService.getBlockByHash(preBlock.getPrevBlockHash());
@@ -141,7 +141,7 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean checkProducer(Block block) {
-        BlockWitness minerPKSig = block.getMinerSigPK();
+        SignaturePair minerPKSig = block.getMinerSigPair();
         if (minerPKSig == null || !minerPKSig.valid()) {
             LOGGER.warn("the miner signature is invalid:{}", block.getSimpleInfo());
             return false;
@@ -236,14 +236,14 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean checkBlockUnstrictly(Block block) {
-        if (block == null || block.getMinerSigPK() == null) {
+        if (block == null || block.getMinerSigPair() == null) {
             return false;
         }
         List<String> miners = getDposGroupBySn(getSn(block.getHeight()));
         if (CollectionUtils.isEmpty(miners)) {
             return false;
         }
-        String miner = block.getMinerSigPK().getAddress();
+        String miner = block.getMinerSigPair().getAddress();
         return miners.contains(miner);
     }
 

@@ -303,7 +303,7 @@ public class BlockService implements IBlockService {
     public boolean checkWitnessSignatures(Block block) {
         String blockLogInfo = block.getSimpleInfo();
 
-        List<BlockWitness> witnessSigPKS = block.getOtherWitnessSigPKS();
+        List<SignaturePair> witnessSigPKS = block.getOtherWitnessSigPairs();
         if (CollectionUtils.isEmpty(witnessSigPKS) || witnessSigPKS.size() < MIN_WITNESS) {
             int signatureSize = CollectionUtils.isEmpty(witnessSigPKS) ? 0 : witnessSigPKS.size();
             LOGGER.warn("The witness signatures is empty or the signature number is not enough,current size={},{}", signatureSize, blockLogInfo);
@@ -311,7 +311,7 @@ public class BlockService implements IBlockService {
 
         Set<String> pkSet = Sets.newHashSet();
         String tempAddress;
-        for (BlockWitness pair : witnessSigPKS) {
+        for (SignaturePair pair : witnessSigPKS) {
             if (!pair.valid()) {
                 LOGGER.warn("Invalid signature from witness,{}", blockLogInfo);
                 return false;
@@ -586,7 +586,7 @@ public class BlockService implements IBlockService {
     }
 
     private boolean checkProducerSignature(Block block) {
-        final BlockWitness minerPKSig = block.getMinerSigPK();
+        final SignaturePair minerPKSig = block.getMinerSigPair();
         if (minerPKSig == null || !minerPKSig.valid()) {
             LOGGER.error("The miner signature is invalid:{}", block.getSimpleInfo());
             return false;

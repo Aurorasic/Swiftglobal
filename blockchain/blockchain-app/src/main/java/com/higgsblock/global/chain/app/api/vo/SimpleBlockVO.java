@@ -32,6 +32,6 @@ public class SimpleBlockVO extends BaseSerializer {
     public SimpleBlockVO(Block block) {
         this.height = block.getHeight();
         this.blockHash = block.getHash();
-        this.minerAddress = block.getMinerSigPK().getAddress();
+        this.minerAddress = block.getMinerSigPair().getAddress();
     }
 }
