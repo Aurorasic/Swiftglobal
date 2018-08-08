@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
@@ -20,6 +21,7 @@ import java.nio.charset.Charset;
  **/
 @Data
 @NoArgsConstructor
+@JSONType(includes = {"money", "lockScript"})
 public class TransactionOutput extends BaseSerializer {
 
     /**

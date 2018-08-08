@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 @Setter
 @Getter
 @NoArgsConstructor
+@JSONType(includes = {"hash", "index"})
 public class TransactionOutPoint extends BaseSerializer {
     /**
      * the hash of source transaction for spending

@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.script;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 @Setter
 @NoArgsConstructor
 @Slf4j
+@JSONType(includes = {"type", "address"})
 public class LockScript extends BaseSerializer {
     /**
      * lock script type such as P2PKH or P2SH
