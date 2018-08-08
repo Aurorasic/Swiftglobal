@@ -323,7 +323,7 @@ public class TransactionService implements ITransactionService {
                 curMoney.add(transactionFeeService.getCurrencyFee(tx));
             }
             if (preMoney.compareTo(curMoney) < 0) {
-                LOGGER.info("Not enough fees, currency type: ", key);
+                LOGGER.info("Not enough fees, currency type:{}", key);
                 return false;
             }
         }
