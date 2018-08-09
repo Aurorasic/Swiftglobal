@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.sync.message;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -16,6 +17,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @Message(MessageType.INVENTORY)
+@JSONType(includes = {"version", "height", "hashs"})
 public class Inventory extends BaseSerializer {
 
     private int version = 0;

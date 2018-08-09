@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
@@ -20,6 +20,7 @@ import java.nio.charset.Charset;
  **/
 @Data
 @NoArgsConstructor
+@JSONType(includes = {"money", "lockScript"})
 public class TransactionOutput extends BaseSerializer {
 
     /**
@@ -68,7 +69,6 @@ public class TransactionOutput extends BaseSerializer {
         return false;
     }
 
-    @JSONField(serialize = false)
     public boolean hasMinerStake() {
         if (isMinerCurrency() &&
                 money.compareTo(new Money("1", SystemCurrencyEnum.MINER.getCurrency())) >= 0) {
@@ -90,4 +90,31 @@ public class TransactionOutput extends BaseSerializer {
         }
         return false;
     }
+
+    /*public static void main(String[] args) throws Exception {
+        test1();
+        test2();
+    }
+
+    public static void test1() {
+        TransactionOutput transactionOutput = new TransactionOutput();
+        Money money = new Money();
+        money.setValue("1");
+        money.setCurrency("cas");
+        transactionOutput.setMoney(money);
+        LockScript lockScript = new LockScript();
+        lockScript.setAddress("aaaaaaaaaaaaaaaaaa");
+        lockScript.setType((short) 1);
+        transactionOutput.setLockScript(lockScript);
+        System.out.println(transactionOutput.toJson());
+        System.out.println("tx output hash = " + transactionOutput.getHash());
+    }
+
+    public static void test2() {
+        String jsonStr = "{\"lockScript\":{\"address\":\"aaaaaaaaaaaaaaaaaa\",\"type\":1},\"money\":{\"currency\":\"cas\",\"value\":\"1.00000000\"}}";
+        TransactionOutput transactionOutput = JSON.parseObject(jsonStr, new TypeReference<TransactionOutput>() {
+        });
+        System.out.println(transactionOutput.toJson());
+        System.out.println("tx output hash = " + transactionOutput.getHash());
+    }*/
 }

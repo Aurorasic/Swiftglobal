@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
@@ -27,6 +27,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Data
 @Slf4j
+@JSONType(includes = {"version", "height", "voteTable"})
 public class VoteTable extends BaseSerializer {
 
     private int version = 0;
@@ -40,12 +41,10 @@ public class VoteTable extends BaseSerializer {
         this.height = height;
     }
 
-    @JSONField(serialize = false)
     public int getVersionSize() {
         return MapUtils.isEmpty(voteTable) ? 0 : voteTable.size();
     }
 
-    @JSONField(serialize = false)
     public int getAllVoteSize() {
         if (MapUtils.isEmpty(voteTable)) {
             return 0;
@@ -65,7 +64,6 @@ public class VoteTable extends BaseSerializer {
         return size;
     }
 
-    @JSONField(serialize = false)
     public int getARowVoteSize(int version) {
         if (MapUtils.isEmpty(voteTable)) {
             return 0;
@@ -84,7 +82,6 @@ public class VoteTable extends BaseSerializer {
         return size;
     }
 
-    @JSONField(serialize = false)
     public Map<String, Map<String, Vote>> getVoteMapOfPubKeyByVersion(int version) {
         Map<String, Map<String, Vote>> result = Maps.newHashMap();
         if (MapUtils.isEmpty(voteTable)) {
@@ -98,7 +95,6 @@ public class VoteTable extends BaseSerializer {
         return result;
     }
 
-    @JSONField(serialize = false)
     public Map<String, Vote> getVoteMap(int version, String pubKey) {
         Map<String, Vote> result = Maps.newHashMap();
         Map<String, Map<String, Vote>> voteMapOfPubKey = getVoteMapOfPubKeyByVersion(version);

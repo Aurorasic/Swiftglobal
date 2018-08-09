@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.net.message;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.network.socket.message.BaseMessage;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ import lombok.Data;
  * @date 2018/3/27
  */
 @Data
+@JSONType(includes = {"sourceId", "data"})
 public class HandshakeMessage<T> extends BaseMessage<T> {
 
     public HandshakeMessage() {

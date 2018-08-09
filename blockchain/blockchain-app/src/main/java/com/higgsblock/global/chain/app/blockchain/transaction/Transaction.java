@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -27,6 +27,7 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
+@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "creatorPubKey"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -156,7 +157,6 @@ public class Transaction extends BaseSerializer {
         return false;
     }
 
-    @JSONField(serialize = false)
     public List<String> getSpendUTXOKeys() {
         List result = new LinkedList();
         if (!isEmptyInputs()) {
@@ -168,7 +168,6 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
-    @JSONField(serialize = false)
     public List<UTXO> getAddedUTXOs() {
         List result = new LinkedList();
         if (CollectionUtils.isNotEmpty(outputs)) {
@@ -183,7 +182,6 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
-    @JSONField(serialize = false)
     public boolean containsSpendUTXO(String utxoKey) {
         if (isEmptyInputs()) {
             return false;
@@ -195,4 +193,64 @@ public class Transaction extends BaseSerializer {
         }
         return false;
     }
+
+    /*public static void main(String[] args) throws Exception {
+        test2(test1());
+    }
+
+    public static String test1() {
+        Transaction transaction = new Transaction();
+
+        transaction.setVersion(1);
+        transaction.setExtra("123");
+        transaction.setCreatorPubKey("11111");
+        transaction.setLockTime(0);
+
+        List<TransactionInput> transactionInputs = Lists.newArrayList();
+        List<TransactionOutput> transactionOutputs = Lists.newArrayList();
+
+        TransactionInput transactionInput = new TransactionInput();
+
+        UnLockScript unLockScript = new UnLockScript();
+        List<String> pkList = Lists.newArrayList();
+        List<String> sigList = Lists.newArrayList();
+        pkList.add("aaaaaaaaa");
+        sigList.add("bbbbbbbb");
+        unLockScript.setPkList(pkList);
+        unLockScript.setSigList(sigList);
+        transactionInput.setUnLockScript(unLockScript);
+
+        TransactionOutPoint transactionOutPoint = new TransactionOutPoint();
+        transactionOutPoint.setIndex((short) 1);
+        transactionOutPoint.setHash("ccccccccccccc");
+        transactionInput.setPrevOut(transactionOutPoint);
+
+        transactionInputs.add(transactionInput);
+
+        TransactionOutput transactionOutput = new TransactionOutput();
+        Money money = new Money();
+        money.setValue("1");
+        money.setCurrency("cas");
+        transactionOutput.setMoney(money);
+        LockScript lockScript = new LockScript();
+        lockScript.setAddress("aaaaaaaaaaaaaaaaaa");
+        lockScript.setType((short) 1);
+        transactionOutput.setLockScript(lockScript);
+
+        transactionOutputs.add(transactionOutput);
+
+        transaction.setOutputs(transactionOutputs);
+        transaction.setInputs(transactionInputs);
+
+        System.out.println(transaction.toJson());
+        System.out.println("tx hash = "+transaction.getHash());
+        return transaction.toJson();
+    }
+
+    public static void test2(String jsonStr) {
+        Transaction transaction = JSON.parseObject(jsonStr, new TypeReference<Transaction>() {
+        });
+        System.out.println(transaction.toJson());
+        System.out.println("tx hash = "+transaction.getHash());
+    }*/
 }

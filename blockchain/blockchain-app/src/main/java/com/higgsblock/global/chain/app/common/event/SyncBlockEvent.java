@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.common.event;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JSONType(includes = {"height", "blockHash", "sourceId"})
 public class SyncBlockEvent extends BaseSerializer {
     /**
      * the height of the orphan block
