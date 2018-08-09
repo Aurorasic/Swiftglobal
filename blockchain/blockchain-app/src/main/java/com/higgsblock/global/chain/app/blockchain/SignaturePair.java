@@ -56,22 +56,4 @@ public class SignaturePair extends BaseSerializer {
         String address = ECKey.pubKey2Base58Address(pubKey);
         return address;
     }
-
-    /*public static void main(String[] args) throws Exception {
-        test1();
-        test2();
-    }
-
-    public static void test1() {
-        SignaturePair signaturePair = new SignaturePair();
-        signaturePair.setPubKey("aaaaaa");
-        signaturePair.setSignature("11111");
-        System.out.println(signaturePair.toJson());
-    }
-
-    public static void test2() {
-        String jsonStr = "{\"pubKey\":\"aaaaaa\",\"signature\":\"11111\"}";
-        SignaturePair signaturePair = JSON.parseObject(jsonStr,new TypeReference<SignaturePair>(){});
-        System.out.println(signaturePair.toJson());
-    }*/
 }
