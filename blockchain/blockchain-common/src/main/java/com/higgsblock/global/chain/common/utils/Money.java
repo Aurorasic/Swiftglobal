@@ -1,12 +1,13 @@
 package com.higgsblock.global.chain.common.utils;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Objects;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -14,7 +15,8 @@ import java.math.RoundingMode;
  * @author baizhengwen
  * @date 2018-02-27
  */
-public class Money implements Serializable, Comparable {
+@JSONType(includes = {"value", "currency"})
+public class Money extends BaseSerializer implements Comparable {
 
     private static final long serialVersionUID = 6009335074727417445L;
     private static final String MAX_AMOUNT = "999999999999999999";
@@ -229,4 +231,5 @@ public class Money implements Serializable, Comparable {
     private BigDecimal newBigDecimal(long val) {
         return new BigDecimal(val).setScale(decimalDigits, RoundingMode.HALF_UP);
     }
+
 }
