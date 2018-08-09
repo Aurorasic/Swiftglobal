@@ -136,11 +136,9 @@ public class Connection {
         messageSender.submit(() -> {
             while (isActivated) {
                 try {
-                    if (null != channel) {
-                        String message = sendQueue.take();
-                        channel.writeAndFlush(message);
-                        LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
-                    }
+                    String message = sendQueue.take();
+                    channel.writeAndFlush(message);
+                    LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
                 } catch (InterruptedException e) {
                     LOGGER.error(e.getMessage(), e);
                 }
