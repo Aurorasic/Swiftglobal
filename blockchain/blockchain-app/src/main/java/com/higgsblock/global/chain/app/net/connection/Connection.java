@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.net.connection;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Queues;
 import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
 import com.higgsblock.global.chain.app.net.peer.Peer;
@@ -30,6 +31,18 @@ public class Connection {
 
     @Getter
     private Channel channel;
+
+    @Getter
+    private String channelId;
+
+    @Getter
+    private String peerId;
+
+    @Getter
+    private String ip;
+
+    @Getter
+    private int port;
 
     /**
      * The remote node.
@@ -73,9 +86,13 @@ public class Connection {
 
     public Connection(Channel channel, ChannelType type) {
         this.channel = channel;
+        if (null != channel) {
+            channelId = channel.id().toString();
+        }
         this.type = type;
         this.createdTime = System.currentTimeMillis();
         this.connectionLevel = ConnectionLevelEnum.L3;
+        this.sendQueue = Queues.newLinkedBlockingQueue();
     }
 
     /**
@@ -97,20 +114,16 @@ public class Connection {
      * Release resource allocated to connection.
      */
     public synchronized boolean close() {
-        String channelId = getChannelId();
-        String peerId = getPeerId();
         try {
             isActivated = false;
             if (messageSender != null && !messageSender.isShutdown()) {
                 messageSender.shutdownNow();
                 messageSender = null;
             }
-            sendQueue = null;
             if (channel != null) {
                 channel.close();
                 channel = null;
             }
-            peer = null;
             LOGGER.info("Connection is closed, channelId={}, peerId={}", channelId, peerId);
             return true;
         } catch (Exception e) {
@@ -120,59 +133,34 @@ public class Connection {
     }
 
     public synchronized void activate(Peer peer) {
+        if (isActivated || null == channel) {
+            return;
+        }
         if (peer == null) {
             return;
         }
 
         this.peer = peer;
-
-        if (isActivated) {
-            return;
-        }
+        this.peerId = peer.getId();
+        this.ip = peer.getIp();
+        this.port = peer.getSocketServerPort();
         isActivated = true;
-        sendQueue = Queues.newLinkedBlockingQueue();
-        messageSender = ExecutorServices.newSingleThreadExecutor("connection-queue", 10000);
+        messageSender = ExecutorServices.newSingleThreadExecutor(String.format("connection-queue-%s-", peerId), 10000);
 
         messageSender.submit(() -> {
+            String message = null;
             while (isActivated) {
                 try {
-                    String message = sendQueue.take();
-                    channel.writeAndFlush(message);
-                    LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
-                } catch (InterruptedException e) {
+                    message = sendQueue.take();
+                    doSend(message);
+                    LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, channelId, peerId);
+                } catch (Exception e) {
                     LOGGER.error(e.getMessage(), e);
+                    isActivated = false;
                 }
             }
         });
-        LOGGER.info("Connection is activated, channelId={}, peerId={}", getChannelId(), getPeerId());
-    }
-
-    /**
-     * Get ip of remote node.
-     */
-    public String getIp() {
-        return peer == null ? null : peer.getIp();
-    }
-
-    /**
-     * Get port of remote node.
-     */
-    public int getPort() {
-        return peer == null ? 0 : peer.getSocketServerPort();
-    }
-
-    /**
-     * Get id of peer if exists.
-     */
-    public String getPeerId() {
-        return peer == null ? null : peer.getId();
-    }
-
-    public String getChannelId() {
-        if (null == channel) {
-            return null;
-        }
-        return channel.id().toString();
+        LOGGER.info("Connection is activated, channelId={}, peerId={}", channelId, peerId);
     }
 
     /**
@@ -183,16 +171,22 @@ public class Connection {
      */
     public synchronized boolean sendMessage(String message) {
         if (isActivated() && StringUtils.isNotBlank(message)) {
-            LOGGER.debug("Message [{}] will be sent, channelId={}, peerId={}", message, getChannelId(), getPeerId());
+            LOGGER.debug("Message [{}] will be sent, channelId={}, peerId={}", message, channelId, peerId);
             return sendQueue.offer(message);
         }
         return false;
     }
 
     public synchronized boolean handshake(String message) {
-        if (StringUtils.isNotBlank(message) && null != channel) {
+        return doSend(message);
+    }
+
+    protected synchronized boolean doSend(String message) {
+        Preconditions.checkNotNull(channel, "channel is null, channelId=%s, peerId=%s", channelId, peerId);
+
+        if (StringUtils.isNotBlank(message)) {
             channel.writeAndFlush(message);
-            LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, getChannelId(), getPeerId());
+            LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, channelId, peerId);
             return true;
         }
         return false;

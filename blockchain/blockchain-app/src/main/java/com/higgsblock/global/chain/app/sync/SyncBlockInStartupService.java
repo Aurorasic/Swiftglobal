@@ -233,7 +233,7 @@ public class SyncBlockInStartupService implements IEventBusListener {
     }
 
     private void removePeer(String sourceId) {
-        connectionManager.removeByPeerId(sourceId);
+        connectionManager.closeByPeerId(sourceId);
         peersMaxHeight.remove(sourceId);
     }
 

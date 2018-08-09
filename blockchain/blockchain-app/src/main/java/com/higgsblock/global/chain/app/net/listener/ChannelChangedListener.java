@@ -47,6 +47,6 @@ public class ChannelChangedListener implements IEventBusListener {
     public void process(DiscardChannelEvent event) {
         String channelId = event.getChannelId();
         LOGGER.info("DiscardChannelEvent: channelId={}", channelId);
-        connectionManager.removeByChannelId(channelId);
+        connectionManager.closeByChannelId(channelId);
     }
 }

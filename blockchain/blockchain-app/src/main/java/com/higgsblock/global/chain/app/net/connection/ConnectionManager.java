@@ -173,15 +173,15 @@ public class ConnectionManager {
      *
      * @param connection connection to remove
      */
-    public void remove(Connection connection) {
+    public void close(Connection connection) {
         if (connection == null) {
             return;
         }
         String channelId = connection.getChannelId();
-        removeByChannelId(channelId);
+        closeByChannelId(channelId);
     }
 
-    public void removeByChannelId(String channelId) {
+    public void closeByChannelId(String channelId) {
         if (null == channelId) {
             return;
         }
@@ -201,9 +201,9 @@ public class ConnectionManager {
      *
      * @param peerId peer id of connection to remove
      */
-    public void removeByPeerId(String peerId) {
+    public void closeByPeerId(String peerId) {
         Connection connection = getConnectionByPeerId(peerId);
-        remove(connection);
+        close(connection);
     }
 
 
@@ -248,7 +248,7 @@ public class ConnectionManager {
         }
 
         if (peerManager.isSelf(peer)) {
-            remove(connection);
+            close(connection);
             return;
         }
 
@@ -256,7 +256,7 @@ public class ConnectionManager {
         // connection will be removed.
         // If in two connections, the first one will be kept, the other will be removed.
         if (isConnected(peer)) {
-            remove(connection);
+            close(connection);
             return;
         }
 
@@ -268,7 +268,7 @@ public class ConnectionManager {
             connection.setConnectionLevel(level);
             moveToConnectionMap(connection);
         } else {
-            remove(connection);
+            close(connection);
         }
     }
 
@@ -391,7 +391,7 @@ public class ConnectionManager {
         peerUnknownConnectionMap.values().forEach(connection -> {
             if (connection.isHandshakeTimeOut()) {
                 String channelId = connection.getChannelId();
-                remove(connection);
+                close(connection);
                 LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", channelId);
             }
         });
@@ -438,7 +438,7 @@ public class ConnectionManager {
                 connection.getType() == type && connection.getConnectionLevel() == connectionLevel).collect(Collectors.toList());
 
         for (int extraIndex = numberAllowed, length = connections.size(); extraIndex < length; extraIndex++) {
-            remove(connections.get(extraIndex));
+            close(connections.get(extraIndex));
         }
     }
 
@@ -474,7 +474,7 @@ public class ConnectionManager {
                             > (8 + Math.random() * 4) * TimeUnit.HOURS.toMillis(1)).findFirst().orElse(null);
 
             if (selectedConnection != null) {
-                remove(selectedConnection);
+                close(selectedConnection);
             }
         }
     }
