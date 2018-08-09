@@ -1,10 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain.script;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
-import com.higgsblock.global.chain.common.utils.Money;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,21 +33,4 @@ public class LockScript extends BaseSerializer {
         return true;
     }
 
-    /*public static void main(String[] args) throws Exception {
-        test1();
-        test2();
-    }
-
-    public static void test1() {
-        LockScript money = new LockScript();
-        money.setAddress("aaaaaa");
-        money.setType((short)1);
-        System.out.println(money.toJson());
-    }
-
-    public static void test2() {
-        String jsonStr = "{\"address\":\"aaaaaa\",\"type\":1}";
-        LockScript lockScript = JSON.parseObject(jsonStr,new TypeReference<LockScript>(){});
-        System.out.println(lockScript.toJson());
-    }*/
 }

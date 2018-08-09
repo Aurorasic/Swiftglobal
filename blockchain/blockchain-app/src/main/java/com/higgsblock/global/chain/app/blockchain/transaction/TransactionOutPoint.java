@@ -40,21 +40,4 @@ public class TransactionOutPoint extends BaseSerializer {
         return hash + "_" + index;
     }
 
-    /*public static void main(String[] args) throws Exception {
-        test1();
-        test2();
-    }
-
-    public static void test1() {
-        TransactionOutPoint transactionOutPoint = new TransactionOutPoint();
-        transactionOutPoint.setHash("aaaaaaaaaaaaaaaa");
-        transactionOutPoint.setIndex((short) 1);
-        System.out.println(transactionOutPoint.toJson());
-    }
-
-    public static void test2() {
-        String jsonStr = "{\"hash\":\"aaaaaaaaaaaaaaaa\",\"index\":1}";
-        TransactionOutPoint transactionOutPoint = JSON.parseObject(jsonStr,new TypeReference<TransactionOutPoint>(){});
-        System.out.println(transactionOutPoint.toJson());
-    }*/
 }

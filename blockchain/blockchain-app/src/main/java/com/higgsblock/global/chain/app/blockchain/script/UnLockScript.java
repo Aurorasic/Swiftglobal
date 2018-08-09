@@ -1,10 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.script;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONType;
-import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -55,25 +51,4 @@ public class UnLockScript extends BaseSerializer {
         return true;
     }
 
-    /*public static void main(String[] args) throws Exception {
-        test1();
-        test2();
-    }
-
-    public static void test1() {
-        UnLockScript unLockScript = new UnLockScript();
-        List<String> pkList = Lists.newArrayList();
-        List<String> sigList = Lists.newArrayList();
-        pkList.add("aaaaaaaaa");
-        sigList.add("bbbbbbbb");
-        unLockScript.setPkList(pkList);
-        unLockScript.setSigList(sigList);
-        System.out.println(unLockScript.toJson());
-    }
-
-    public static void test2() {
-        String jsonStr = "{\"pkList\":[\"aaaaaaaaa\"],\"sigList\":[\"bbbbbbbb\"]}";
-        UnLockScript unLockScript = JSON.parseObject(jsonStr,new TypeReference<UnLockScript>(){});
-        System.out.println(unLockScript.toJson());
-    }*/
 }
