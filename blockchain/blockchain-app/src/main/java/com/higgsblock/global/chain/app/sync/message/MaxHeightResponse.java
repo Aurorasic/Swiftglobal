@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.sync.message;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @Message(MessageType.MAX_HEIGHT_RESPONSE)
+@JSONType(includes = {"version", "maxHeight"})
 public class MaxHeightResponse extends BaseSerializer {
 
     public MaxHeightResponse(long maxHeight) {

@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.net.peer;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.hash.Hashing;
@@ -14,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
  * @author zhao xiaogang
  */
 @Data
+@JSONType(includes = {"pubKey", "ip", "socketServerPort", "httpServerPort", "signature"})
 public class Peer extends BaseSerializer {
 
     /**

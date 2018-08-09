@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.api.vo;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.List;
  */
 @Data
 @NoArgsConstructor
+@JSONType(includes = {"sn", "startHeight", "endHeight", "dposNodes", "leftDposNodes", "blockVOS"})
 public class DposGroupVO extends BaseSerializer {
 
     /**

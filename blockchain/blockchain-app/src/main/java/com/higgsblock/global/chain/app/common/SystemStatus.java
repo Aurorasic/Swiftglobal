@@ -1,11 +1,14 @@
 package com.higgsblock.global.chain.app.common;
 
+import com.alibaba.fastjson.annotation.JSONType;
+
 import java.io.Serializable;
 
 /**
  * @author yuguojia
  * @date 2018/03/29
  **/
+@JSONType(includes = {"state", "desc"})
 public enum SystemStatus implements Serializable {
 
     INI(1, "init status"),

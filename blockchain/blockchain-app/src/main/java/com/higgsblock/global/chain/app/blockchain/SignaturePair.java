@@ -1,6 +1,10 @@
 package com.higgsblock.global.chain.app.blockchain;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JSONType(includes = {"pubKey", "signature"})
 public class SignaturePair extends BaseSerializer {
     /**
      * The Pub key.
@@ -51,4 +56,22 @@ public class SignaturePair extends BaseSerializer {
         String address = ECKey.pubKey2Base58Address(pubKey);
         return address;
     }
+
+    /*public static void main(String[] args) throws Exception {
+        test1();
+        test2();
+    }
+
+    public static void test1() {
+        SignaturePair signaturePair = new SignaturePair();
+        signaturePair.setPubKey("aaaaaa");
+        signaturePair.setSignature("11111");
+        System.out.println(signaturePair.toJson());
+    }
+
+    public static void test2() {
+        String jsonStr = "{\"pubKey\":\"aaaaaa\",\"signature\":\"11111\"}";
+        SignaturePair signaturePair = JSON.parseObject(jsonStr,new TypeReference<SignaturePair>(){});
+        System.out.println(signaturePair.toJson());
+    }*/
 }

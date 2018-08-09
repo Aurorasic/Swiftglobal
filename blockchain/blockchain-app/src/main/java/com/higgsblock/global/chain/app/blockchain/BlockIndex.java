@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 @Setter
 @Getter
 @NoArgsConstructor
+@JSONType(includes = {"height", "blockHashs", "bestBlockHash"})
 public class BlockIndex extends BaseSerializer {
 
     /**

@@ -1,6 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.vote;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 @AllArgsConstructor
 @Data
 @Slf4j
+@JSONType(includes = {"height", "voteVersion", "witnessPubKey", "blockHash", "signature", "proofPubKey", "proofBlockHash", "preBlockHash", "proofVersion"})
 public class Vote extends BaseSerializer {
 
 
@@ -140,7 +141,6 @@ public class Vote extends BaseSerializer {
         return true;
     }
 
-    @JSONField(serialize = false)
     public boolean isLeaderVote() {
         return proofVersion < voteVersion;
     }

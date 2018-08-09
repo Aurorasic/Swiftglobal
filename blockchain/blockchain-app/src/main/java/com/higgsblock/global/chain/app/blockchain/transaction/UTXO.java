@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.transaction;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Objects;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Data;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
  **/
 @Data
 @NoArgsConstructor
+@JSONType(includes = {"hash", "index", "output", "address"})
 public class UTXO extends BaseSerializer {
 
     /**

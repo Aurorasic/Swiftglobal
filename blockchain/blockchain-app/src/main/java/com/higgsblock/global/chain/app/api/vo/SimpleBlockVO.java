@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.api.vo;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
+@JSONType(includes = {"blockHash", "minerAddress", "height"})
 public class SimpleBlockVO extends BaseSerializer {
     /**
      * block hash

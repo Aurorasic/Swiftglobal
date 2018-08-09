@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -20,6 +21,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Data
 @Slf4j
+@JSONType(includes = {"version", "blockHashes"})
 public class VotingBlockRequest extends BaseSerializer {
 
     private int version = 0;

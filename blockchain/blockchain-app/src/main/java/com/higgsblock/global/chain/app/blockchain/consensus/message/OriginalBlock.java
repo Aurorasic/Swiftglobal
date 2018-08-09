@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Data
 @Slf4j
+@JSONType(includes = {"version", "block"})
 public class OriginalBlock extends BaseSerializer {
 
     private int version = 0;
