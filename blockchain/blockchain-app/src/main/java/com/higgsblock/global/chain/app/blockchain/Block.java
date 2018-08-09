@@ -66,7 +66,7 @@ public class Block extends BaseSerializer {
     /**
      * signature and pubkey whose mined this block
      */
-    private SignaturePair minerSigPair;
+    private SignaturePair minerSigPair = new SignaturePair();
 
     /**
      * witness signature and pubkey list who sig this block for calculating score
@@ -129,9 +129,12 @@ public class Block extends BaseSerializer {
         this.height = height;
     }
 
-    public void setMinerSigPK(String pubKey, String signature) {
-        SignaturePair pair = new SignaturePair(pubKey, signature);
-        minerSigPair = pair;
+    public void setMinerPubKey(String pubKey) {
+        this.minerSigPair.setPubKey(pubKey);
+    }
+
+    public void setMinerSignature(String signature) {
+        this.minerSigPair.setSignature(signature);
     }
 
     public Transaction getTransactionByHash(String txHash) {

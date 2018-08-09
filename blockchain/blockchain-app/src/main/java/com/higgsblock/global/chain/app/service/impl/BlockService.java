@@ -375,10 +375,11 @@ public class BlockService implements IBlockService {
         block.setPrevBlockHash(preBlockHash);
         block.setTransactions(transactions);
         block.setHeight(nextBestBlockHeight);
+        block.setMinerPubKey(keyPair.getPubKey());
 
         //Before collecting signs from witnesses just cache the block firstly.
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
-        block.setMinerSigPK(keyPair.getPubKey(), sig);
+        block.setMinerSignature(sig);
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
