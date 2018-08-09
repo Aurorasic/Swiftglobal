@@ -19,7 +19,6 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
-import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -128,77 +127,31 @@ public class BlockService implements IBlockService {
         return ECKey.verifySign(message, sign, pubKey);
     }
 
-
-    @Override
-    public boolean isExistInDB(long height, String blockHash) {
-        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
-        return blockIndex != null && blockIndex.containsBlockHash(blockHash);
-
-    }
-
-    @Override
-    public boolean isExist(Block block) {
-        if (orphanBlockCacheManager.isContains(block.getHash())) {
-            return true;
-        }
-        if (isExistInDB(block.getHeight(), block.getHash())) {
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean preIsExistInDB(Block block) {
-        if (block == null) {
-            return false;
-        }
-        return blockRepository.findByBlockHash(block.getPrevBlockHash()) != null;
-    }
-
     @Override
     public Block getBlockByHash(String blockHash) {
-        BlockEntity blockEntity = blockRepository.findByBlockHash(blockHash);
-        if (blockEntity != null) {
-            return blockFormatter.parse(blockEntity.getData());
+        Long height = blockIndexService.getHeightByBlockHash(blockHash);
+        if (null == height) {
+            return null;
+        }
+
+        List<Block> blocks = blockRepository.findByHeight(height);
+        if (CollectionUtils.isEmpty(blocks)) {
+            return null;
+        }
+
+        for (Block block : blocks) {
+            if (StringUtils.equals(blockHash, block.getHash())) {
+                return block;
+            }
         }
         return null;
-
     }
 
     @Override
     public List<Block> getBlocksByHeight(long height) {
-        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
-        List<Block> blocks = new LinkedList<>();
-        if (blockIndex != null) {
-            ArrayList<String> blockHashes = blockIndex.getBlockHashs();
-            blockHashes.forEach(blockHash -> {
-                Block otherBlock = getBlockByHash(blockHash);
-                if (otherBlock != null) {
-                    blocks.add(otherBlock);
-                }
-            });
-        }
-
-        return blocks;
-    }
-
-    @Override
-    public List<Block> getBlocksExcept(long height, String exceptBlockHash) {
-        BlockIndex blockIndex = blockIndexService.getBlockIndexByHeight(height);
-        if (blockIndex == null) {
-            return null;
-        }
-        ArrayList<String> blockHashes = blockIndex.getBlockHashs();
-        List<Block> blocks = new LinkedList<>();
-
-        for (String blockHash : blockHashes) {
-            if (StringUtils.equals(blockHash, exceptBlockHash)) {
-                continue;
-            }
-            Block otherBlock = getBlockByHash(blockHash);
-            if (otherBlock != null) {
-                blocks.add(otherBlock);
-            }
+        List<Block> blocks = blockRepository.findByHeight(height);
+        if (CollectionUtils.isEmpty(blocks)) {
+            return Lists.newLinkedList();
         }
         return blocks;
     }
@@ -217,13 +170,8 @@ public class BlockService implements IBlockService {
         return getBlockByHash(bestBlockHash);
     }
 
-    public void saveBlock(Block block) throws Exception {
-
-        BlockEntity blockEntity = new BlockEntity();
-        blockEntity.setBlockHash(block.getHash());
-        blockEntity.setHeight(block.getHeight());
-        blockEntity.setData(blockFormatter.format(block));
-        blockRepository.save(blockEntity);
+    public void saveBlock(Block block) {
+        blockRepository.save(block);
         LOGGER.info("saved block:{}", block.getSimpleInfo());
     }
 
@@ -692,9 +640,15 @@ public class BlockService implements IBlockService {
     }
 
     private boolean validateGenesisBlock() {
-        Block block = getBlockByHash(config.getGenesisBlockHash());
-        return null != block &&
-                block.getHeight() == 1 &&
-                block.getPrevBlockHash() == null;
+        List<Block> blocks = getBlocksByHeight(1);
+        if (null == blocks || blocks.size() != 1) {
+            return false;
+        }
+
+        Block block = blocks.get(0);
+        return null != block
+                && StringUtils.equals(config.getGenesisBlockHash(), block.getHash())
+                && block.getHeight() == 1
+                && block.getPrevBlockHash() == null;
     }
 }

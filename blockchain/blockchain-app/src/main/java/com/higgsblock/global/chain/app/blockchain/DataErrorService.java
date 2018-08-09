@@ -73,7 +73,7 @@ public class DataErrorService {
                 break;
             }
             blockIndexRepository.deleteAllByHeight(height);
-            blockRepository.deleteAllByHeight(height);
+            blockRepository.deleteByHeight(height);
             list.forEach(block -> messageCenter.dispatch(block));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
@@ -84,7 +84,7 @@ public class DataErrorService {
 
         for (long height = startDeleteHeight; height < maxHeight; height += 1L) {
             blockIndexRepository.deleteAllByHeight(height);
-            blockRepository.deleteAllByHeight(height);
+            blockRepository.deleteByHeight(height);
         }
     }
 

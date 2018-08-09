@@ -8,6 +8,9 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
  * @date 2018-05-21
  */
 public interface IBlockIndexService {
+
+    Long getHeightByBlockHash(String blockHash);
+
     /**
      * get block index by height
      *

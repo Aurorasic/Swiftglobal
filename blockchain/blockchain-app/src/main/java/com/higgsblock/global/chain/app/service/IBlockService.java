@@ -12,31 +12,6 @@ import java.util.List;
 public interface IBlockService {
 
     /**
-     * Check if the block with this block hash exist in the database
-     *
-     * @param height    block height
-     * @param blockHash the block hash
-     * @return boolean
-     */
-    boolean isExistInDB(long height, String blockHash);
-
-    /**
-     * Check if the block exist in the database and orphan block cache
-     *
-     * @param block the block
-     * @return boolean
-     */
-    boolean isExist(Block block);
-
-    /**
-     * Check if the pre-block exist in the database
-     *
-     * @param block the block
-     * @return boolean
-     */
-    boolean preIsExistInDB(Block block);
-
-    /**
      * Get block by block hash
      *
      * @param blockHash the block hash
@@ -54,15 +29,6 @@ public interface IBlockService {
     List<Block> getBlocksByHeight(long height);
 
     /**
-     * Get blocks except the block with the height and the block hash
-     *
-     * @param height          the height
-     * @param exceptBlockHash the excluding block hash
-     * @return List<Block>
-     */
-    List<Block> getBlocksExcept(long height, String exceptBlockHash);
-
-    /**
      * Get the best block by height
      *
      * @param height height
@@ -72,6 +38,7 @@ public interface IBlockService {
 
     /**
      * Save the block, block index , transaction index, utxo and scores, all of relation of block.
+     *
      * @param block
      * @return
      */
