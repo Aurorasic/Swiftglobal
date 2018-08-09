@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import com.higgsblock.global.chain.network.socket.event.CreateChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.DiscardChannelEvent;
 import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  * @author baizhengwen
  * @date 2018-07-24
  */
+@Slf4j
 @Component
 public class ChannelChangedListener implements IEventBusListener {
 
@@ -31,6 +33,7 @@ public class ChannelChangedListener implements IEventBusListener {
     public void process(CreateChannelEvent event) {
         Channel channel = event.getChannel();
         ChannelType channelType = event.getType();
+        LOGGER.info("CreateChannelEvent: channelId={}, type={}", channel.id(), channelType);
         connectionManager.createConnection(channel, channelType);
 
         Hello hello = new Hello();
@@ -43,6 +46,7 @@ public class ChannelChangedListener implements IEventBusListener {
     @Subscribe
     public void process(DiscardChannelEvent event) {
         String channelId = event.getChannelId();
+        LOGGER.info("DiscardChannelEvent: channelId={}", channelId);
         connectionManager.removeByChannelId(channelId);
     }
 }
