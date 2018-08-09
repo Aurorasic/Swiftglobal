@@ -125,18 +125,27 @@ public class AppContext implements IEventBusListener {
     private MessageReceiver messageReceiver;
 
     public void start() throws Exception {
+        LOGGER.info("Application starting ...");
+
         checkAndRecoveryBlockData();
+        LOGGER.info("First Step: Application startup detection is complete ==>>");
 
         startFirstStepHandlers();
+        LOGGER.info("Second Step: StartFirstStepHandlers is complete ==>>");
 
         startFirstStepListeners();
+        LOGGER.info("Third Step: StartFirstStepListeners is complete ==>>");
 
         startSocketServer();
+        LOGGER.info("Fourth Step: StartSocketServer is complete ==>>");
 
         startFirstStepTasks();
+        LOGGER.info("Fifth Step: StartFirstStepTasks is complete ==>>");
 
         syncBlocks();
+        LOGGER.info("Sixth Step: SyncBlocks is complete ==>>");
 
+        LOGGER.info("Application service started successfully.");
     }
 
     private void checkAndRecoveryBlockData() {
