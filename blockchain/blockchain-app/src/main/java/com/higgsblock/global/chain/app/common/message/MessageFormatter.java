@@ -69,7 +69,7 @@ public class MessageFormatter implements InitializingBean {
         String typeCode = StringUtils.substringBefore(data, SEPARATOR);
 
         MessageType type = MessageType.getByCode(typeCode);
-        Preconditions.checkNotNull(type, "type invalid, typeCode={}", typeCode);
+        Preconditions.checkNotNull(type, "type invalid, typeCode=%s", typeCode);
 
         IMessageFormatter<?> formatter = getFormatter(type);
         Preconditions.checkNotNull(formatter, "unsupported formatter");
