@@ -109,26 +109,37 @@ public class Transaction extends BaseSerializer {
             builder.append(function.hashLong(lockTime));
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
             builder.append(function.hashString(null == creatorPubKey ? Strings.EMPTY : creatorPubKey, Charsets.UTF_8));
-            if (CollectionUtils.isNotEmpty(inputs)) {
-                inputs.forEach((input) -> {
-                    TransactionOutPoint prevOut = input.getPrevOut();
-                    if (prevOut != null) {
-                        builder.append(function.hashLong(prevOut.getIndex()));
-                        String prevOutHash = prevOut.getHash();
-                        builder.append(function.hashString(null == prevOutHash ? Strings.EMPTY : prevOutHash, Charsets.UTF_8));
-                    }
-                });
-            } else {
-                builder.append(function.hashInt(0));
-            }
-            if (CollectionUtils.isNotEmpty(outputs)) {
-                outputs.forEach((output) -> builder.append(output.getHash()));
-            } else {
-                builder.append(function.hashInt(0));
-            }
+            builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
+            builder.append(function.hashString(getOutputsHash(), Charsets.UTF_8));
             hash = function.hashString(builder, Charsets.UTF_8).toString();
         }
         return hash;
+    }
+
+    private String getInputsHash() {
+        HashFunction function = Hashing.sha256();
+        if (CollectionUtils.isEmpty(inputs)) {
+            return function.hashInt(0).toString();
+        }
+
+        StringBuilder builder = new StringBuilder();
+        inputs.forEach(input -> builder
+                .append(input.getHash())
+        );
+        return function.hashString(builder, Charsets.UTF_8).toString();
+    }
+
+    private String getOutputsHash() {
+        HashFunction function = Hashing.sha256();
+        if (CollectionUtils.isEmpty(outputs)) {
+            return function.hashInt(0).toString();
+        }
+
+        StringBuilder builder = new StringBuilder();
+        outputs.forEach(output -> builder
+                .append(output.getHash())
+        );
+        return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
     public TransactionOutput getTransactionOutputByIndex(short index) {

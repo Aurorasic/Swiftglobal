@@ -1,7 +1,10 @@
 package com.higgsblock.global.chain.common.utils;
 
 import com.alibaba.fastjson.annotation.JSONType;
+import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.Getter;
@@ -56,6 +59,14 @@ public class Money extends BaseSerializer implements Comparable {
     public Money(long val, String currency) {
         this.value = newBigDecimal(val);
         this.currency = currency;
+    }
+
+    public String getHash() {
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder()
+                .append(function.hashString(null == currency ? StringUtils.EMPTY : currency, Charsets.UTF_8))
+                .append(function.hashString(null == value ? StringUtils.EMPTY : value.toString(), Charsets.UTF_8));
+        return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
     public String getValue() {

@@ -1,6 +1,9 @@
 package com.higgsblock.global.chain.app.blockchain.script;
 
 import com.alibaba.fastjson.annotation.JSONType;
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +28,14 @@ public class LockScript extends BaseSerializer {
      */
     private short type;
     private String address;
+
+    public String getHash() {
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder()
+                .append(function.hashInt(type))
+                .append(function.hashString(null == address ? StringUtils.EMPTY : address, Charsets.UTF_8));
+        return function.hashString(builder.toString(), Charsets.UTF_8).toString();
+    }
 
     public boolean valid() {
         if (StringUtils.isEmpty(address)) {

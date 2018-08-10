@@ -200,14 +200,15 @@ public class Block extends BaseSerializer {
      * @return
      */
     public String getTransactionsHash() {
-        StringBuilder builder = new StringBuilder();
+        HashFunction function = Hashing.sha256();
         if (CollectionUtils.isEmpty(transactions)) {
-            builder.append(Hashing.sha256().hashString(Strings.EMPTY, Charsets.UTF_8));
-        } else {
-            transactions.forEach(transaction -> builder.append(transaction.getHash()));
+            return function.hashString(Strings.EMPTY, Charsets.UTF_8).toString();
         }
 
-        return Hashing.sha256().hashString(builder.toString(), Charsets.UTF_8).toString();
+        StringBuilder builder = new StringBuilder();
+        transactions.forEach(transaction -> builder.append(transaction.getHash()));
+
+        return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
     public boolean sizeAllowed() {

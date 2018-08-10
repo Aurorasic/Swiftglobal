@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.transaction;
 
 import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -10,9 +11,6 @@ import com.higgsblock.global.chain.common.utils.Money;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-
-import java.nio.charset.Charset;
 
 /**
  * @author baizhengwen
@@ -46,13 +44,11 @@ public class TransactionOutput extends BaseSerializer {
     }
 
     public String getHash() {
-        StringBuilder builder = new StringBuilder();
-        if (money.getValue() != null) {
-            builder.append(Hashing.sha256().hashString(money.getValue(), Charsets.UTF_8));
-        }
-        builder.append(Hashing.sha256().hashString(null == money.getCurrency() ? Strings.EMPTY : money.getCurrency(), Charsets.UTF_8));
-        String hash = Hashing.sha256().hashString(builder.toString(), Charset.forName("UTF-8")).toString();
-        return hash;
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder()
+                .append(function.hashString(null == money ? StringUtils.EMPTY : money.getHash(), Charsets.UTF_8))
+                .append(function.hashString(null == lockScript ? StringUtils.EMPTY : lockScript.getHash(), Charsets.UTF_8));
+        return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
     public boolean isCASCurrency() {
