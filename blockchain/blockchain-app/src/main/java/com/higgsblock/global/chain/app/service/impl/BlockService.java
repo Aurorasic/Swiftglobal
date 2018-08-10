@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Charsets;
@@ -19,6 +20,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
+import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -33,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Zhao xiaogang
@@ -73,8 +76,6 @@ public class BlockService implements IBlockService {
     private IScoreService scoreService;
     @Autowired
     private PeerManager peerManager;
-    @Autowired
-    private BlockFormatter blockFormatter;
     @Autowired
     private IDposService dposService;
     @Autowired
@@ -129,31 +130,19 @@ public class BlockService implements IBlockService {
 
     @Override
     public Block getBlockByHash(String blockHash) {
-        Long height = blockIndexService.getHeightByBlockHash(blockHash);
-        if (null == height) {
-            return null;
-        }
-
-        List<Block> blocks = blockRepository.findByHeight(height);
-        if (CollectionUtils.isEmpty(blocks)) {
-            return null;
-        }
-
-        for (Block block : blocks) {
-            if (StringUtils.equals(blockHash, block.getHash())) {
-                return block;
-            }
-        }
-        return null;
+        BlockEntity entity = blockRepository.findByBlockHash(blockHash);
+        return covertToBlock(entity);
     }
 
     @Override
     public List<Block> getBlocksByHeight(long height) {
-        List<Block> blocks = blockRepository.findByHeight(height);
-        if (CollectionUtils.isEmpty(blocks)) {
+        List<BlockEntity> blockEntityList = blockRepository.findByHeight(height);
+        if (CollectionUtils.isEmpty(blockEntityList)) {
             return Lists.newLinkedList();
         }
-        return blocks;
+        return blockEntityList.stream()
+                .map(entity -> covertToBlock(entity))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -171,7 +160,7 @@ public class BlockService implements IBlockService {
     }
 
     public void saveBlock(Block block) {
-        blockRepository.save(block);
+        blockRepository.save(convertToBlockEntity(block));
         LOGGER.info("saved block:{}", block.getSimpleInfo());
     }
 
@@ -651,5 +640,17 @@ public class BlockService implements IBlockService {
                 && StringUtils.equals(config.getGenesisBlockHash(), block.getHash())
                 && block.getHeight() == 1
                 && block.getPrevBlockHash() == null;
+    }
+
+    private Block covertToBlock(BlockEntity entity) {
+        return JSON.parseObject(entity.getData(), Block.class);
+    }
+
+    private BlockEntity convertToBlockEntity(Block block) {
+        BlockEntity entity = new BlockEntity();
+        entity.setHeight(block.getHeight());
+        entity.setBlockHash(block.getHash());
+        entity.setData(block.toJson());
+        return entity;
     }
 }

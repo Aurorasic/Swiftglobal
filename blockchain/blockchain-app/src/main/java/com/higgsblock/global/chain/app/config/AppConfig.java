@@ -22,9 +22,6 @@ public class AppConfig {
     @Autowired
     private Environment environment;
 
-    @Value("${app.data.block.dir}")
-    private String blockDir;
-
     @Value("${registry.center.ip}")
     private String registryCenterIp;
 

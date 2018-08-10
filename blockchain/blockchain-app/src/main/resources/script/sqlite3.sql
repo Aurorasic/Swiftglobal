@@ -62,25 +62,13 @@ CREATE TABLE "t_score" (
 );
 
 -- ----------------------------
--- Table structure for t_spent_transaction_out_index
--- ----------------------------
-DROP TABLE IF EXISTS "main"."t_spent_transaction_out_index";
-CREATE TABLE "t_spent_transaction_out_index" (
-  "id"                   INTEGER,
-  "now_transaction_hash" VARCHAR(65) NOT NULL,
-  "out_index"            INTEGER     NOT NULL,
-  "pre_transaction_hash" VARCHAR(65) NOT NULL,
-  PRIMARY KEY ("id" ASC)
-);
-
--- ----------------------------
 -- Table structure for t_transaction_index
 -- ----------------------------
 DROP TABLE IF EXISTS "main"."t_transaction_index";
 CREATE TABLE "t_transaction_index" (
   "id"                INTEGER,
   "block_hash"        VARCHAR(64) NOT NULL,
-  "transaction_hash"  VARCHAR(65) NOT NULL,
+  "transaction_hash"  VARCHAR(64) NOT NULL,
   "transaction_index" INTEGER     NOT NULL,
   PRIMARY KEY ("id" ASC)
 );
@@ -96,7 +84,7 @@ CREATE TABLE "t_utxo" (
   "lock_script"      VARCHAR     NOT NULL,
   "out_index"        INTEGER     NOT NULL,
   "script_type"      INTEGER     NOT NULL,
-  "transaction_hash" VARCHAR(65) NOT NULL,
+  "transaction_hash" VARCHAR(64) NOT NULL,
   PRIMARY KEY ("id" ASC)
 );
 
@@ -142,14 +130,6 @@ CREATE UNIQUE INDEX "main"."idx_dpos_sn"
 -- ----------------------------
 CREATE INDEX "main"."idx_score_address"
   ON "t_score" ("address" ASC);
-
--- ----------------------------
--- Indexes structure for table t_spent_transaction_out_index
--- ----------------------------
-CREATE INDEX "main"."idx_spt_tran_out_idx_now_tran_hash"
-  ON "t_spent_transaction_out_index" ("now_transaction_hash" ASC);
-CREATE INDEX "main"."idx_spt_tran_out_idx_pre_tran_hash"
-  ON "t_spent_transaction_out_index" ("pre_transaction_hash" ASC);
 
 -- ----------------------------
 -- Indexes structure for table t_transaction_index
