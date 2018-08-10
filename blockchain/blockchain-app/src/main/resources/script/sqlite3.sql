@@ -13,9 +13,6 @@ Date: 2018-07-26 16:28:56
 */
 
 PRAGMA foreign_keys = OFF;
-PRAGMA auto_vacuum=1;
-PRAGMA cache_size=-20000;
-PRAGMA threads=3;
 
 -- ----------------------------
 -- Table structure for t_block
