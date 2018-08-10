@@ -17,12 +17,12 @@ import org.apache.commons.lang.StringUtils;
 @Setter
 @Getter
 @NoArgsConstructor
-@JSONType(includes = {"hash", "index"})
+@JSONType(includes = {"transactionHash", "index"})
 public class TransactionOutPoint extends BaseSerializer {
     /**
      * the hash of source transaction for spending
      */
-    private String hash;
+    private String transactionHash;
 
     /**
      * the index out of source transaction
@@ -32,13 +32,13 @@ public class TransactionOutPoint extends BaseSerializer {
     public String getHash() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder()
-                .append(function.hashString(null == hash ? StringUtils.EMPTY : hash, Charsets.UTF_8))
+                .append(function.hashString(null == transactionHash ? StringUtils.EMPTY : transactionHash, Charsets.UTF_8))
                 .append(function.hashInt(index));
         return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
     public boolean valid() {
-        if (StringUtils.isEmpty(hash)) {
+        if (StringUtils.isEmpty(transactionHash)) {
             return false;
         }
         if (index < 0) {
@@ -48,7 +48,7 @@ public class TransactionOutPoint extends BaseSerializer {
     }
 
     public String getKey() {
-        return hash + "_" + index;
+        return transactionHash + "_" + index;
     }
 
 }
