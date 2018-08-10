@@ -52,7 +52,7 @@ public class MessageFormatter implements InitializingBean {
         Preconditions.checkNotNull(annotation, "Missing annotation: Message");
 
         MessageType type = annotation.value();
-        Preconditions.checkNotNull(type, "type invalid, class=", clazz);
+        Preconditions.checkNotNull(type, "type invalid, class=%s", clazz.getSimpleName());
 
         return type;
     }
