@@ -55,7 +55,7 @@ public abstract class BaseMessageHandler<T> implements IMessageHandler<T> {
                         if (null == message) {
                             continue;
                         }
-                        LOGGER.info("take message for processing: {}", message.getData());
+                        LOGGER.debug("take message for processing: {}", message.getData());
 
                         long validStartTime = System.currentTimeMillis();
                         boolean isValid = valid(message);

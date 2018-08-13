@@ -31,7 +31,7 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
         }
         //step2 check transaction size
         if (!tx.sizeAllowed()) {
-            LOGGER.info("Size of the transaction is illegal.");
+            LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
             return false;
         }
         return true;
