@@ -643,6 +643,9 @@ public class BlockService implements IBlockService {
     }
 
     private Block covertToBlock(BlockEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         return JSON.parseObject(entity.getData(), Block.class);
     }
 
