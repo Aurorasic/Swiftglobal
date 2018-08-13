@@ -42,7 +42,6 @@ public class UnLockScript extends BaseSerializer {
     public String getHash() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder()
-//                .append(function.hashString(getListHash(sigList), Charsets.UTF_8))
                 .append(function.hashString(getListHash(pkList), Charsets.UTF_8));
         return function.hashString(builder, Charsets.UTF_8).toString();
     }

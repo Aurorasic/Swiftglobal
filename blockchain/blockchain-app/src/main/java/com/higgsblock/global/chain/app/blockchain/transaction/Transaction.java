@@ -27,7 +27,7 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
-@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "creatorPubKey"})
+@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -62,8 +62,6 @@ public class Transaction extends BaseSerializer {
      */
     private long transactionTime = System.currentTimeMillis();
 
-    private String creatorPubKey;
-
     public boolean valid() {
 
         if (version < INIT_VERSION) {
@@ -71,10 +69,6 @@ public class Transaction extends BaseSerializer {
         }
 
         if (StringUtils.isEmpty(hash)) {
-            return false;
-        }
-
-        if (StringUtils.isEmpty(creatorPubKey)) {
             return false;
         }
 
@@ -108,7 +102,6 @@ public class Transaction extends BaseSerializer {
             builder.append(function.hashLong(transactionTime));
             builder.append(function.hashLong(lockTime));
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
-            builder.append(function.hashString(null == creatorPubKey ? Strings.EMPTY : creatorPubKey, Charsets.UTF_8));
             builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
             builder.append(function.hashString(getOutputsHash(), Charsets.UTF_8));
             hash = function.hashString(builder, Charsets.UTF_8).toString();
