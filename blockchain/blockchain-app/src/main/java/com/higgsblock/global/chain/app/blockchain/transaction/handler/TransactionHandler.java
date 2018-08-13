@@ -2,8 +2,8 @@ package com.higgsblock.global.chain.app.blockchain.transaction.handler;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
-import com.higgsblock.global.chain.network.socket.message.IMessage;
 import com.higgsblock.global.chain.app.service.ITransactionService;
+import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,6 +26,7 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
 
         //step1 check transaction baseinfo
         if (!tx.valid()) {
+            LOGGER.info("transaction is invalid:{}", tx.getHash());
             return false;
         }
         //step2 check transaction size
