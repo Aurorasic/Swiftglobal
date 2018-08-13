@@ -58,7 +58,7 @@ public class TransactionIndexService implements ITransactionIndexService {
             if (CollectionUtils.isNotEmpty(inputList)) {
                 for (TransactionInput input : inputList) {
                     TransactionOutPoint outPoint = input.getPrevOut();
-                    String spentTxHash = outPoint.getHash();
+                    String spentTxHash = outPoint.getTransactionHash();
                     short spentTxOutIndex = outPoint.getIndex();
 
                     TransactionIndex txIndex = getTransactionIndex(spentTxHash);

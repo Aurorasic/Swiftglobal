@@ -145,7 +145,7 @@ public class TransactionService implements ITransactionService {
         for (TransactionInput input : inputs) {
             TransactionOutPoint prevOutPoint = input.getPrevOut();
 
-            String txHash = prevOutPoint.getHash();
+            String txHash = prevOutPoint.getTransactionHash();
             TransactionIndexEntity entity = transactionIndexService.findByTransactionHash(txHash);
             TransactionIndex transactionIndex = entity != null ? new TransactionIndex(entity.getBlockHash(), entity.getTransactionHash(), entity.getTransactionIndex()) : null;
             if (transactionIndex == null) {
