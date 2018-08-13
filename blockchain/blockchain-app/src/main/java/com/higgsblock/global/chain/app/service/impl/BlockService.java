@@ -611,6 +611,7 @@ public class BlockService implements IBlockService {
         return preBlock;
     }
 
+
     public void loadAllBlockData() {
         //todo kongyu 2018-7-17 loadAllBlockData backup
         /*
