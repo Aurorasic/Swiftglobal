@@ -68,10 +68,6 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (StringUtils.isEmpty(hash)) {
-            return false;
-        }
-
         if (lockTime < 0) {
             return false;
         }
