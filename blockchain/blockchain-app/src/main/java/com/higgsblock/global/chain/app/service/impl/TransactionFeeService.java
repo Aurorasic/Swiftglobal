@@ -172,7 +172,6 @@ public class TransactionFeeService implements ITransactionFeeService {
 
         Rewards rewards = countMinerAndWitnessRewards(feeMap, height);
         Transaction transaction = new Transaction();
-        transaction.setCreatorPubKey(peerKeyPair.getPubKey());
         transaction.setVersion(version);
         transaction.setLockTime(lockTime);
 
