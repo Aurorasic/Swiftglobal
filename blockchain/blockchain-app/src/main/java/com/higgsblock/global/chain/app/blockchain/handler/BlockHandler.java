@@ -63,6 +63,7 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         try {
             newBestBlock = blockService.persistBlockAndIndex(block);
         } catch (Exception e) {
+            LOGGER.info(String.format("save block failed %s", block.getSimpleInfo()), e);
             success = false;
         }
 

@@ -86,6 +86,7 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
             try {
                 newBestBlock = blockService.persistBlockAndIndex(block);
             } catch (Exception e) {
+                LOGGER.info(String.format("BlockResponseHandler save block failed %s", block.getSimpleInfo()), e);
                 success = false;
             }
             isBroadcast = isBroadcast || success;
