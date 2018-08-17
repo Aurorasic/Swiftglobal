@@ -435,8 +435,12 @@ public class BlockService implements IBlockService {
         if (!isValid) {
             throw new BlockInvalidException("block is not valid");
         }
+
         //Save block and index
         Block newBestBlock = saveBlockCompletely(block);
+
+        //for get jdbc connect this mast be in this commit/connection
+        utxoServiceProxy.addNewBlock(newBestBlock, block);
 
         return newBestBlock;
     }
@@ -455,12 +459,8 @@ public class BlockService implements IBlockService {
      */
     @Override
     public synchronized void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock) {
-        //add unconfirmed utxos and remove confirmed height blocks in cache
-        utxoServiceProxy.addNewBlock(newBestBlock, persistedBlock);
-
         //refresh cache
         refreshCache(persistedBlock);
-
         //Broadcast persisted event
         broadBlockPersistedEvent(persistedBlock, newBestBlock);
     }
@@ -543,6 +543,8 @@ public class BlockService implements IBlockService {
      * @param block
      */
     private void refreshCache(Block block) {
+        LOGGER.info("refresh block caches,{}", block.getSimpleInfo());
+
         Long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
         if (block.getHeight() > maxHeight) {
             blockMaxHeightCacheManager.updateMaxHeight(block.getHeight());
