@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -47,6 +48,17 @@ public class BlockIndexService implements IBlockIndexService {
                 transactionIndexService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteByHeight(long height) {
+        return blockIndexRepository.deleteByHeight(height);
+    }
+
+    @Override
+    public long getMaxHeight() {
+        return blockIndexRepository.queryMaxHeight();
     }
 
     private void insertBlockIndex(Block block) {
