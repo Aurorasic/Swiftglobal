@@ -159,9 +159,16 @@ public class BlockService implements IBlockService {
         return getBlockByHash(bestBlockHash);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void saveBlock(Block block) {
         blockRepository.save(convertToBlockEntity(block));
         LOGGER.info("saved block:{}", block.getSimpleInfo());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteByHeight(long height) {
+        return blockRepository.deleteByHeight(height);
     }
 
     @Override

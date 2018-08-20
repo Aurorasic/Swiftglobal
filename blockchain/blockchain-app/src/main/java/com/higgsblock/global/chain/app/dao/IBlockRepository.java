@@ -15,8 +15,8 @@ import java.util.List;
 public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
 
     @Override
-    @CachePut(value = "Block", key = "#entity.blockHash", condition = "null != #entity && null != #entity.blockHash")
-    @CacheEvict(value = "Block", key = "#entity.height", condition = "null != #entity && #entity.height > 0")
+    @CachePut(value = "Block", key = "#p0.blockHash", condition = "null != #p0 && null != #p0.blockHash")
+    @CacheEvict(value = "Block", key = "#p0.height", condition = "null != #p0 && #p0.height > 0")
     BlockEntity save(BlockEntity entity);
 
     /**
@@ -27,10 +27,10 @@ public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "Block", key = "#blockHash", condition = "null != #blockHash")
+    @Cacheable(value = "Block", key = "#p0", condition = "null != #p0")
     BlockEntity findByBlockHash(String blockHash);
 
-    @Cacheable(value = "Block", key = "#height", condition = "#height > 0")
+    @Cacheable(value = "Block", key = "#p0", condition = "#p0 > 0")
     List<BlockEntity> findByHeight(long height);
 
 

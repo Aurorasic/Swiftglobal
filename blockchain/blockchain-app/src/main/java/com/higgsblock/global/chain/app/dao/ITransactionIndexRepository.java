@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ITransactionIndexRepository extends JpaRepository<TransactionIndexEntity, Long> {
 
     @Override
-    @CachePut(value = "TransactionIndex", key = "#entity.transactionHash", condition = "null != #entity && null != #entity.transactionHash")
+    @CachePut(value = "TransactionIndex", key = "#p0.transactionHash", condition = "null != #p0 && null != #p0.transactionHash")
     TransactionIndexEntity save(TransactionIndexEntity entity);
 
     /**
@@ -21,6 +21,6 @@ public interface ITransactionIndexRepository extends JpaRepository<TransactionIn
      * @param txHash
      * @return
      */
-    @Cacheable(value = "TransactionIndex", key = "#txHash", condition = "null != #txHash")
+    @Cacheable(value = "TransactionIndex", key = "#p0", condition = "null != #p0")
     TransactionIndexEntity findByTransactionHash(String txHash);
 }

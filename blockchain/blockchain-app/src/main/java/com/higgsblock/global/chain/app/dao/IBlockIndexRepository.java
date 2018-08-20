@@ -16,8 +16,8 @@ import java.util.List;
 public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
 
     @Override
-    @CachePut(value = "BlockIndex", key = "#entity.blockHash", condition = "null != #entity && null != #entity.blockHash")
-    @CacheEvict(value = "BlockIndex", key = "#entity.height", condition = "null != #entity")
+    @CachePut(value = "BlockIndex", key = "#p0.blockHash", condition = "null != #p0 && null != #p0.blockHash")
+    @CacheEvict(value = "BlockIndex", key = "#p0.height", condition = "null != #p0")
     BlockIndexEntity save(BlockIndexEntity entity);
 
     /**
@@ -28,7 +28,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#blockHash", condition = "null != #blockHash")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
@@ -39,7 +39,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#height", condition = "#height > 0")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0")
     List<BlockIndexEntity> findByHeight(long height);
 
     /**
@@ -59,6 +59,6 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @return
      */
     @CacheEvict(value = "BlockIndex", allEntries = true)
-    int deleteAllByHeight(long height);
+    int deleteByHeight(long height);
 
 }
