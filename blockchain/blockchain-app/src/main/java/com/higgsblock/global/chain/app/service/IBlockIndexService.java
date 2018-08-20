@@ -9,6 +9,10 @@ import com.higgsblock.global.chain.app.blockchain.BlockIndex;
  */
 public interface IBlockIndexService {
 
+    int deleteByHeight(long height);
+
+    long getMaxHeight();
+
     Long getHeightByBlockHash(String blockHash);
 
     /**
@@ -22,7 +26,7 @@ public interface IBlockIndexService {
     /**
      * fetch data by rule id
      *
-     * @param block         the block
+     * @param block     the block
      * @param bestBlock best block hash
      * @return BlockIndexDaoEntity
      */

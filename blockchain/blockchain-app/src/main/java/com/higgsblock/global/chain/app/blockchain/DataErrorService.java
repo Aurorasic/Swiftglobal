@@ -3,7 +3,11 @@ package com.higgsblock.global.chain.app.blockchain;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
-import com.higgsblock.global.chain.app.dao.*;
+import com.higgsblock.global.chain.app.dao.IDposRepository;
+import com.higgsblock.global.chain.app.dao.IScoreRepository;
+import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
+import com.higgsblock.global.chain.app.dao.IUTXORepository;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockInStartupService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +32,7 @@ public class DataErrorService {
     private BlockService blockService;
 
     @Autowired
-    private IBlockRepository blockRepository;
-
-    @Autowired
-    private IBlockIndexRepository blockIndexRepository;
+    private IBlockIndexService blockIndexService;
 
     @Autowired
     private IDposRepository dposRepository;
@@ -62,8 +63,7 @@ public class DataErrorService {
     }
 
     private void reimportData() {
-
-        long maxHeight = blockIndexRepository.queryMaxHeight();
+        long maxHeight = blockIndexService.getMaxHeight();
         long startDeleteHeight = 2L;
         for (long height = 2L; height < maxHeight; height += 1L) {
             List<Block> list = blockService.getBlocksByHeight(height);
@@ -72,8 +72,8 @@ public class DataErrorService {
                 LOGGER.info("stop reimport data ,current hheight={},max height={}", height, maxHeight);
                 break;
             }
-            blockIndexRepository.deleteAllByHeight(height);
-            blockRepository.deleteByHeight(height);
+            blockIndexService.deleteByHeight(height);
+            blockService.deleteByHeight(height);
             list.forEach(block -> messageCenter.dispatch(block));
             if (CollectionUtils.isEmpty(blockService.getBlocksByHeight(height))) {
                 startDeleteHeight = height;
@@ -83,8 +83,8 @@ public class DataErrorService {
         }
 
         for (long height = startDeleteHeight; height < maxHeight; height += 1L) {
-            blockIndexRepository.deleteAllByHeight(height);
-            blockRepository.deleteByHeight(height);
+            blockIndexService.deleteByHeight(height);
+            blockService.deleteByHeight(height);
         }
     }
 

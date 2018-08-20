@@ -22,6 +22,9 @@ public class AppConfig {
     @Autowired
     private Environment environment;
 
+    @Value("${spring.cache.caffeine.spec}")
+    private String cacheSpecification;
+
     @Value("${registry.center.ip}")
     private String registryCenterIp;
 

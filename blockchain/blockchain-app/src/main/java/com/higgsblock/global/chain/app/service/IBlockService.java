@@ -52,6 +52,8 @@ public interface IBlockService {
      */
     void doSyncWorksAfterPersistBlock(Block newBestBlock, Block persistedBlock);
 
+    int deleteByHeight(long height);
+
     /**
      * Check the block numbers
      *

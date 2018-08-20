@@ -284,6 +284,9 @@ public class PeerManager {
      * @return node role the peer plays
      */
     public NodeRoleEnum getNodeRole(Peer peer) {
+        if (null == peer) {
+            return NodeRoleEnum.PEER;
+        }
         return getNodeRole(peer.getId());
     }
 

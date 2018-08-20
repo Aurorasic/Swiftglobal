@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface IDposRepository extends JpaRepository<DposEntity, Long> {
 
     @Override
-    @CachePut(value = "Dpos", key = "#entity.sn", condition = "null != #entity && null != #entity.sn")
+    @CachePut(value = "Dpos", key = "#p0.sn", condition = "null != #p0 && null != #p0.sn")
     DposEntity save(DposEntity entity);
 
     /**
@@ -23,7 +23,7 @@ public interface IDposRepository extends JpaRepository<DposEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "Dpos", key = "#sn", condition = "#sn > 0")
+    @Cacheable(value = "Dpos", key = "#p0", condition = "#p0 > 0")
     DposEntity findBySn(long sn);
 
 }
