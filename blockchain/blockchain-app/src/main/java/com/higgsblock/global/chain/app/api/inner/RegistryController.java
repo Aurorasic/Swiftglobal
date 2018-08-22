@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -46,10 +45,5 @@ public class RegistryController {
 
         peerManager.add(peer);
         return true;
-    }
-
-    @RequestMapping("/query")
-    public Peer query(@RequestParam String address) {
-        return peerManager.getById(address);
     }
 }
