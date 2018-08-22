@@ -27,10 +27,10 @@ public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "Block", key = "#p0", condition = "null != #p0")
+    @Cacheable(value = "Block", key = "#p0", condition = "null != #p0", unless = "#result == null")
     BlockEntity findByBlockHash(String blockHash);
 
-    @Cacheable(value = "Block", key = "#p0", condition = "#p0 > 0")
+    @Cacheable(value = "Block", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
     List<BlockEntity> findByHeight(long height);
 
 

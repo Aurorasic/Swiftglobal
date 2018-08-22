@@ -23,7 +23,7 @@ public interface IDposRepository extends JpaRepository<DposEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "Dpos", key = "#p0", condition = "#p0 > 0")
+    @Cacheable(value = "Dpos", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
     DposEntity findBySn(long sn);
 
 }

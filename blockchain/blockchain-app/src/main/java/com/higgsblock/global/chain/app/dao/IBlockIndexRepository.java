@@ -28,7 +28,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
@@ -39,7 +39,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
     List<BlockIndexEntity> findByHeight(long height);
 
     /**

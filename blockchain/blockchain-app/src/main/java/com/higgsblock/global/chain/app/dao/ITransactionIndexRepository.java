@@ -21,6 +21,6 @@ public interface ITransactionIndexRepository extends JpaRepository<TransactionIn
      * @param txHash
      * @return
      */
-    @Cacheable(value = "TransactionIndex", key = "#p0", condition = "null != #p0")
+    @Cacheable(value = "TransactionIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
     TransactionIndexEntity findByTransactionHash(String txHash);
 }
