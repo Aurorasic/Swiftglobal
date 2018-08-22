@@ -1,35 +1,22 @@
 package com.higgsblock.global.chain.app.api.vo;
 
 import com.higgsblock.global.chain.app.net.constants.ConnectionLevelEnum;
+import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import lombok.Data;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * @author baizhengwen
  * @date 2018/4/9
  */
 @Data
-public class ConnectionVO {
-
+public class ConnectionVO extends BaseSerializer {
     private String channelId;
     private String peerId;
     private String ip;
     private Integer port;
+    private String age;
     private Boolean activated;
     private ChannelType type;
     private ConnectionLevelEnum connectionLevel;
-
-    @Override
-    public String toString() {
-        ToStringBuilder builder = new ToStringBuilder(this);
-        return builder.append("channelId", channelId)
-                .append("peerId", peerId)
-                .append("ip", ip)
-                .append("port", port)
-                .append("type", type)
-                .append("activated", activated)
-                .append("connectionLevel", connectionLevel)
-                .toString();
-    }
 }

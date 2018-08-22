@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -68,6 +69,7 @@ public class StatusController {
                     info.setPeerId(connection.getPeerId());
                     info.setIp(connection.getIp());
                     info.setPort(connection.getPort());
+                    info.setAge(TimeUnit.MILLISECONDS.toSeconds(connection.getAge()) + "s");
                     info.setActivated(connection.isActivated());
                     info.setType(connection.getType());
                     info.setConnectionLevel(connection.getConnectionLevel());
