@@ -219,7 +219,7 @@ public class ConnectionManager {
             return null;
         }
         return connectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
-            Connection connection = new Connection(channel, type);
+            Connection connection = Connection.newInstance(channel, type);
 
             LOGGER.info("Created a connection, channelId={}, type={}", connectionId, type);
             return connection;
