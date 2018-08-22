@@ -5,7 +5,6 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
-import retrofit2.http.Query;
 
 import java.util.List;
 
@@ -33,12 +32,4 @@ public interface IRegistryApi {
      */
     @POST("/registry/report")
     Call<Boolean> report(@Body Peer peer);
-
-    /**
-     * witness call.
-     *
-     * @return the call
-     */
-    @GET("/registry/query")
-    Call<Peer> query(@Query("address") String address);
 }

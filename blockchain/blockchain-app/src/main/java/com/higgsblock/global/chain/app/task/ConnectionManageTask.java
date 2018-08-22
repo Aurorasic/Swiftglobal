@@ -26,7 +26,7 @@ public class ConnectionManageTask extends BaseTask {
         displayWitnessConnections();
 
         // Remove every connection which has not received peer information within timeout.
-        connectionManager.removePeerUnknownConnections();
+        connectionManager.removeInactivatedConnections();
 
         // Refresh level of connections in pool.
         connectionManager.refreshConnectionLevel();

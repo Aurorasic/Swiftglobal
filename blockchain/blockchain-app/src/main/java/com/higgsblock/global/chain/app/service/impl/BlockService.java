@@ -321,7 +321,7 @@ public class BlockService implements IBlockService {
     public Block packageNewBlock(String preBlockHash) {
         Block block = packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
         if (block == null) {
-            LOGGER.error("cannot packageNewBlock on preBlockHash:{} ", preBlockHash);
+            LOGGER.warn("cannot packageNewBlock on preBlockHash:{} ", preBlockHash);
         }
         return block;
     }

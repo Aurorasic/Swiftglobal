@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.network.socket.constants.ChannelType;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -72,12 +73,6 @@ public class ConnectionManager {
      * Connection pool. In this pool, channel id is used as key.
      */
     private Map<String, Connection> connectionMap = Maps.newConcurrentMap();
-
-    /**
-     * Temporary connection pool, used to cache connections that do not receive peer information for a moment.
-     * In this pool, channel id is used as key.
-     */
-    private Map<String, Connection> peerUnknownConnectionMap = Maps.newConcurrentMap();
 
     @Autowired
     private Client client;
@@ -163,8 +158,10 @@ public class ConnectionManager {
      * @return size of connections meeting the condition
      */
     private int countConnections(ChannelType type, ConnectionLevelEnum connectionLevel) {
-        return (int) connectionMap.values().stream().filter(connection ->
-                connection.getType() == type && connection.getConnectionLevel() == connectionLevel).count();
+        return (int) connectionMap.values().stream()
+                .filter(connection -> connection.getType() == type
+                        && connection.getConnectionLevel() == connectionLevel)
+                .count();
     }
 
 
@@ -185,11 +182,7 @@ public class ConnectionManager {
         if (null == channelId) {
             return;
         }
-        Connection connection = peerUnknownConnectionMap.remove(channelId);
-        if (null != connection) {
-            connection.close();
-        }
-        connection = connectionMap.remove(channelId);
+        Connection connection = connectionMap.remove(channelId);
         if (null != connection) {
             connection.close();
         }
@@ -225,8 +218,8 @@ public class ConnectionManager {
         if (null == channel) {
             return null;
         }
-        return peerUnknownConnectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
-            Connection connection = new Connection(channel, type);
+        return connectionMap.computeIfAbsent(channel.id().toString(), connectionId -> {
+            Connection connection = Connection.newInstance(channel, type);
 
             LOGGER.info("Created a connection, channelId={}, type={}", connectionId, type);
             return connection;
@@ -237,7 +230,7 @@ public class ConnectionManager {
         if (null == channelId) {
             return;
         }
-        Connection connection = peerUnknownConnectionMap.get(channelId);
+        Connection connection = connectionMap.get(channelId);
         if (null == connection) {
             return;
         }
@@ -266,7 +259,6 @@ public class ConnectionManager {
         if (isAllowedConnect(level, connection.getType())) {
             connection.activate(peer);
             connection.setConnectionLevel(level);
-            moveToConnectionMap(connection);
         } else {
             close(connection);
         }
@@ -306,20 +298,6 @@ public class ConnectionManager {
     }
 
     /**
-     * Move connection from temporary pool to pool in which every connection has peer information.
-     *
-     * @param connection conncetion to move
-     */
-    private void moveToConnectionMap(Connection connection) {
-        String channelId = connection.getChannelId();
-        if (null != channelId) {
-            connectionMap.putIfAbsent(channelId, connection);
-            peerUnknownConnectionMap.remove(channelId);
-        }
-    }
-
-
-    /**
      * Get witness connections.
      *
      * @return connections in which remote nodes are witnesses.
@@ -351,11 +329,7 @@ public class ConnectionManager {
         if (null == channelId) {
             return null;
         }
-        Connection connection = connectionMap.get(channelId);
-        if (null == connection) {
-            connection = peerUnknownConnectionMap.get(channelId);
-        }
-        return connection;
+        return connectionMap.get(channelId);
     }
 
     /**
@@ -365,52 +339,67 @@ public class ConnectionManager {
      * @return wanted connection
      */
     public Connection getConnectionByPeerId(String peerId) {
-        return getActivatedConnections().stream().filter(
-                connection -> StringUtils.equals(peerId, connection.getPeerId())).findFirst().orElse(null);
+        return connectionMap.values().stream()
+                .filter(Connection::isActivated)
+                .filter(connection -> StringUtils.equals(peerId, connection.getPeerId()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**
      * Get peers of active connections.
      */
     public List<Peer> getActivatedPeers() {
-        return getActivatedConnections().stream().map(Connection::getPeer).collect(Collectors.toList());
+        return getActivatedConnections().stream()
+                .filter(Connection::isActivated)
+                .map(Connection::getPeer)
+                .collect(Collectors.toList());
+    }
+
+    public List<Connection> getAllConnections() {
+        return Lists.newLinkedList(connectionMap.values());
     }
 
     /**
      * Get connections via which this node can send or receive message.
      */
     public List<Connection> getActivatedConnections() {
-        return connectionMap.values().stream().filter(Connection::isActivated).collect(Collectors.toList());
+        return connectionMap.values().stream()
+                .filter(Connection::isActivated)
+                .collect(Collectors.toList());
     }
 
 
     /**
      * Remove every connection which has not received peer information within timeout.
      */
-    public void removePeerUnknownConnections() {
-        peerUnknownConnectionMap.values().forEach(connection -> {
-            if (connection.isHandshakeTimeOut()) {
-                String channelId = connection.getChannelId();
-                close(connection);
-                LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", channelId);
-            }
-        });
+    public void removeInactivatedConnections() {
+        connectionMap.values().stream()
+                .filter(connection -> !connection.isActivated() && connection.isHandshakeTimeOut())
+                .forEach(connection -> {
+                    String channelId = connection.getChannelId();
+                    close(connection);
+                    LOGGER.info("Connection {} is removed for the reason not receiving peer information within timeout", channelId);
+                });
     }
 
     /**
      * Refresh level of connections in pool.
      */
     public void refreshConnectionLevel() {
-        connectionMap.values().forEach(connection -> {
-            ConnectionLevelEnum newConnectionLevel = calculateConnectionLevel(
-                    peerManager.getNodeRole(peerManager.getSelf()), peerManager.getNodeRole(connection.getPeer()));
+        connectionMap.values().stream()
+                .filter(Connection::isActivated)
+                .forEach(connection -> {
+                    ConnectionLevelEnum newConnectionLevel = calculateConnectionLevel(
+                            peerManager.getNodeRole(peerManager.getSelf()),
+                            peerManager.getNodeRole(connection.getPeer()));
 
-            ConnectionLevelEnum oldConnectionLevel = connection.getConnectionLevel();
-            if (oldConnectionLevel != newConnectionLevel) {
-                connection.setConnectionLevel(newConnectionLevel);
-                LOGGER.debug("Level of connection {} changes from {} to {}", connection.getChannelId(), oldConnectionLevel, newConnectionLevel);
-            }
-        });
+                    ConnectionLevelEnum oldConnectionLevel = connection.getConnectionLevel();
+                    if (oldConnectionLevel != newConnectionLevel) {
+                        connection.setConnectionLevel(newConnectionLevel);
+                        LOGGER.debug("Level of connection {} changes from {} to {}", connection.getChannelId(), oldConnectionLevel, newConnectionLevel);
+                    }
+                });
     }
 
     /**
@@ -434,12 +423,11 @@ public class ConnectionManager {
      * @param numberAllowed   number of connections allowed for the level
      */
     private void removeExtraConnections(ChannelType type, ConnectionLevelEnum connectionLevel, int numberAllowed) {
-        List<Connection> connections = connectionMap.values().stream().filter(connection ->
-                connection.getType() == type && connection.getConnectionLevel() == connectionLevel).collect(Collectors.toList());
-
-        for (int extraIndex = numberAllowed, length = connections.size(); extraIndex < length; extraIndex++) {
-            close(connections.get(extraIndex));
-        }
+        connectionMap.values().stream()
+                .filter(connection -> connection.getType() == type
+                        && connection.getConnectionLevel() == connectionLevel)
+                .skip(numberAllowed)
+                .forEach(this::close);
     }
 
     /**
@@ -467,16 +455,11 @@ public class ConnectionManager {
      * @param numberToRemove number of connections to remove
      */
     public void removeL3RandomConnections(int numberToRemove) {
-        for (int i = 0; i < numberToRemove; i++) {
-            Connection selectedConnection = connectionMap.values().stream().filter(connection ->
-                    connection.getConnectionLevel() == ConnectionLevelEnum.L3
-                            && System.currentTimeMillis() - connection.getCreatedTime()
-                            > (8 + Math.random() * 4) * TimeUnit.HOURS.toMillis(1)).findFirst().orElse(null);
-
-            if (selectedConnection != null) {
-                close(selectedConnection);
-            }
-        }
+        connectionMap.values().stream()
+                .filter(connection -> connection.getConnectionLevel() == ConnectionLevelEnum.L3
+                        && connection.getAge() > TimeUnit.MINUTES.toMillis(10 + RandomUtils.nextInt(50)))
+                .limit(numberToRemove)
+                .forEach(this::close);
     }
 
     /**

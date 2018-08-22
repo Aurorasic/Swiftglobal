@@ -84,7 +84,7 @@ public class Connection {
      */
     private volatile boolean isActivated;
 
-    public Connection(Channel channel, ChannelType type) {
+    private Connection(Channel channel, ChannelType type) {
         this.channel = channel;
         if (null != channel) {
             channelId = channel.id().toString();
@@ -95,11 +95,19 @@ public class Connection {
         this.sendQueue = Queues.newLinkedBlockingQueue();
     }
 
+    public static Connection newInstance(Channel channel, ChannelType type) {
+        return new Connection(channel, type);
+    }
+
+    public long getAge() {
+        return System.currentTimeMillis() - createdTime;
+    }
+
     /**
      * Check if connection handshake timeout or not.
      */
     public boolean isHandshakeTimeOut() {
-        return !isActivated && (System.currentTimeMillis() - createdTime > HANDSHAKE_TIMEOUT);
+        return !isActivated && (getAge() > HANDSHAKE_TIMEOUT);
     }
 
     /**
@@ -122,7 +130,6 @@ public class Connection {
             }
             if (channel != null) {
                 channel.close();
-                channel = null;
             }
             LOGGER.info("Connection is closed, channelId={}, peerId={}", channelId, peerId);
             return true;
@@ -155,7 +162,7 @@ public class Connection {
                     doSend(message);
                     LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, channelId, peerId);
                 } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
+                    LOGGER.error(String.format("send message error, %s, channelId=%s, peerId=%s", e.getMessage(), channelId, peerId), e);
                     isActivated = false;
                 }
             }
@@ -184,7 +191,7 @@ public class Connection {
     protected synchronized boolean doSend(String message) {
         Preconditions.checkNotNull(channel, "channel is null, channelId=%s, peerId=%s", channelId, peerId);
 
-        if (StringUtils.isNotBlank(message)) {
+        if (StringUtils.isNotBlank(message) && channel.isActive()) {
             channel.writeAndFlush(message);
             LOGGER.debug("Message [{}] is sent success, channelId={}, peerId={}", message, channelId, peerId);
             return true;
