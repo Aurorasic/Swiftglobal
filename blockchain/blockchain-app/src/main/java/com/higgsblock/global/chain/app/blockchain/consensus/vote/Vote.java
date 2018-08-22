@@ -19,8 +19,6 @@ import org.apache.commons.lang.StringUtils;
 @Slf4j
 @JSONType(includes = {"height", "voteVersion", "witnessPubKey", "blockHash", "signature", "proofPubKey", "proofBlockHash", "preBlockHash", "proofVersion"})
 public class Vote extends BaseSerializer {
-
-
     /**
      * current height
      */
