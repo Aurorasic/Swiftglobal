@@ -36,11 +36,13 @@ public class ChannelChangedListener implements IEventBusListener {
         LOGGER.info("CreateChannelEvent: channelId={}, type={}", channel.id(), channelType);
         connectionManager.createConnection(channel, channelType);
 
-        Hello hello = new Hello();
-        hello.setPeer(peerManager.getSelf());
+        if (ChannelType.OUT == channelType) {
+            Hello hello = new Hello();
+            hello.setPeer(peerManager.getSelf());
 
-        String channelId = channel.id().toString();
-        messageCenter.handshake(channelId, hello);
+            String channelId = channel.id().toString();
+            messageCenter.handshake(channelId, hello);
+        }
     }
 
     @Subscribe
