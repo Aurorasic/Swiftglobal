@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.network.upnp.model;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.network.enums.ProtocolEnum;
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +13,7 @@ import java.text.MessageFormat;
  * @author yanghuadong
  * @date 2018 -05-21
  */
+@JSONType(includes = {"internalPort", "externalPort", "remoteHost", "internalClient", "protocol", "enabled", "name"})
 public class PortMappingInfo extends BaseSerializer {
     /**
      * The Internal port.
