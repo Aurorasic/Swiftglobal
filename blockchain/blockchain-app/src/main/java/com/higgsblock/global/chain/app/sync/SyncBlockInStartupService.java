@@ -83,8 +83,6 @@ public class SyncBlockInStartupService implements IEventBusListener {
         1.At the beginning of synchronization, ask the nodes you have already connected to about their max height
          */
         messageCenter.broadcast(new MaxHeightRequest());
-        Block block = blockChain.getHighestBlocks().get(0);
-        LOGGER.info("block json string={}", JSONObject.toJSONString(block));
     }
 
     private void sendInitRequest() {
