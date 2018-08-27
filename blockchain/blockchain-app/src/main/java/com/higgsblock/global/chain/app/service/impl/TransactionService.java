@@ -38,6 +38,8 @@ public class TransactionService implements ITransactionService {
 
     private static final int TRANSACTION_NUMBER = 2;
 
+    public static final long WITNESS_NUM = 11;
+
     @Autowired
     private TransactionCacheManager txCacheManager;
 
@@ -454,6 +456,11 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("Producer coinbase transaction: topTenSingleWitnessMoney is error,topTenSingleWitnessMoney={} and lastWitnessMoney is error,lastWitnessMoney={}", rewards.getTopTenSingleWitnessMoney().getValue(), rewards.getLastWitnessMoney().getValue());
             return false;
         }
+        //verify witness coinbase output
+        if (!validateWitnessOutput(outputs.subList(1, outputs.size()), rewards, block.getHeight())) {
+            LOGGER.info("Validate witness reward failed");
+            return false;
+        }
         //verify reward count
         if (!validateRewards(outputs, rewards)) {
             LOGGER.info("Validate witness reward failed");
@@ -542,6 +549,45 @@ public class TransactionService implements ITransactionService {
         }
 
         return true;
+    }
+
+    /**
+     * validate witness
+     *
+     * @param outputs witness reward  output
+     * @param reward  total reward
+     * @return return validate result
+     */
+    public boolean validateWitnessOutput(List<TransactionOutput> outputs, Rewards reward, Long height) {
+        if (outputs.size() <= 0) {
+            LOGGER.info("Witness coinbase transaction: UnLock script is null, outputs={},totalReward={}", outputs, reward.getTotalMoney());
+            return false;
+        }
+        long lastReward = height % WITNESS_NUM;
+        for (int i = 0; i < outputs.size(); i++) {
+            LockScript script = outputs.get(i).getLockScript();
+            if (script == null) {
+                LOGGER.info("Witness coinbase transaction: Lock script is null, outputs={},totalReward={}", outputs, reward.getTotalMoney());
+                return false;
+            }
+
+            if (!SystemCurrencyEnum.CAS.getCurrency().equals(outputs.get(i).getMoney().getCurrency())) {
+                LOGGER.info("Invalid Witness coinbase transaction: Currency is not cas, outputs={},totalReward={}", outputs, reward.getTotalMoney());
+                return false;
+            }
+
+            if (!reward.check()) {
+                LOGGER.debug("Witness reward validate error");
+                return false;
+            }
+
+            if (lastReward == i) {
+                return outputs.get(i).getMoney().compareTo(reward.getLastWitnessMoney()) == 0;
+            } else {
+                return outputs.get(i).getMoney().compareTo(reward.getTopTenSingleWitnessMoney()) == 0;
+            }
+        }
+        return false;
     }
 
     /**

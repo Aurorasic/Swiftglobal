@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @description:
@@ -183,7 +186,7 @@ public class TransactionFeeService implements ITransactionFeeService {
             outputList.add(minerCoinBaseOutput);
         }
 
-        List<TransactionOutput> witnessCoinBaseOutput = genWitnessCoinBaseOutput(rewards);
+        List<TransactionOutput> witnessCoinBaseOutput = genWitnessCoinBaseOutput(rewards, height);
         outputList.addAll(witnessCoinBaseOutput);
 
         if (CollectionUtils.isEmpty(outputList)) {
@@ -295,10 +298,10 @@ public class TransactionFeeService implements ITransactionFeeService {
         return output;
     }
 
-    private List<TransactionOutput> genWitnessCoinBaseOutput(Rewards rewards) {
+    private List<TransactionOutput> genWitnessCoinBaseOutput(Rewards rewards, Long height) {
         List<TransactionOutput> outputList = Lists.newArrayList();
         int witnessSize = witnessService.getWitnessSize();
-        int lastReward = new Random().nextInt(11);
+        long lastReward = height % WITNESS_NUM;
         for (int i = 0; i < witnessSize; i++) {
             if (lastReward == i) {
                 TransactionOutput transactionOutput = generateTransactionOutput(WitnessService.WITNESS_ADDRESS_LIST.get(i), rewards.getLastWitnessMoney());
