@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.message.BlockResponse;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
@@ -84,7 +85,9 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
         for (Block block : message.getData().getBlocks()) {
             boolean success = true;
             try {
-                newBestBlock = blockService.persistBlockAndIndex(block);
+                synchronized (BlockService.class) {
+                    newBestBlock = blockService.persistBlockAndIndex(block);
+                }
             } catch (Exception e) {
                 LOGGER.info(String.format("BlockResponseHandler save block failed %s", block.getSimpleInfo()), e);
                 success = false;

@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IBlockService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.app.sync.message.Inventory;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,9 @@ public class BlockHandler extends BaseMessageHandler<Block> {
         Block newBestBlock = null;
         boolean success = true;
         try {
-            newBestBlock = blockService.persistBlockAndIndex(block);
+            synchronized (BlockService.class) {
+                newBestBlock = blockService.persistBlockAndIndex(block);
+            }
         } catch (Exception e) {
             LOGGER.info(String.format("save block failed %s", block.getSimpleInfo()), e);
             success = false;

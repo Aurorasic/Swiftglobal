@@ -428,7 +428,7 @@ public class BlockService implements IBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public synchronized Block persistBlockAndIndex(Block block) {
+    public Block persistBlockAndIndex(Block block) {
 
         //check block all biz infos
         boolean isValid = false;
