@@ -200,15 +200,19 @@ public class BlockService implements IBlockService {
         }
         // h-N-1 block has ready be bestchain
         Block preBestBlock = getBlockByHash(bestBlock.getPrevBlockHash());
+        if (preBestBlock == null) {
+            LOGGER.warn("Business Error,h-N-1 block not found,blockHash:{},height:{}", bestBlock.getPrevBlockHash(), bestBlock.getHeight() - 1);
+            throw new IllegalStateException(String.format("h-N-1 block not found:height=%s,hash=%s", bestBlock.getHeight(), bestBlock.getPrevBlockHash()));
+        }
         Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
-        if (preBestBlock == null || bestBlockOfHeight == null) {
+        if (bestBlockOfHeight == null) {
             //todo huangshengli business error ,failure bypass 2018-06-30
             LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
-            return null;
+            throw new IllegalStateException(String.format("h-N-1 block[%s]have not been confirmed best chain", preBestBlock.getSimpleInfo()));
         }
         if (!preBestBlock.getHash().equals(bestBlockOfHeight.getHash())) {
             LOGGER.warn("Business Error,h-N-1 blockhash:{} is not match that:{} of the height:{}", preBestBlock.getHash(), bestBlockOfHeight.getHash(), preBestBlock.getHeight());
-            return null;
+            throw new IllegalStateException(String.format("h-N-1 best block[%s] is not match:%s", bestBlockOfHeight.getSimpleInfo(), preBestBlock.getHash()));
         }
 
         return bestBlock;
