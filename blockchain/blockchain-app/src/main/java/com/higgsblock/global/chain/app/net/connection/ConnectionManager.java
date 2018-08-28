@@ -246,6 +246,10 @@ public class ConnectionManager {
             return;
         }
 
+        if (connection.isActivated()) {
+            return;
+        }
+
         // The remote node is not allowed to send the same peer two times in one connection. If not so,
         // connection will be removed.
         // If in two connections, the first one will be kept, the other will be removed.
