@@ -43,7 +43,7 @@ public class MariaDBMyServive extends MariaDB4jSpringService {
         LOGGER.info("mariaDB init start");
         Connection conn = null;
         try {
-            String sql = "SELECT count(1) AS num FROM information_schema.columns WHERE table_schema = 'higgs'";
+            String sql = String.format("SELECT count(1) AS num FROM information_schema.columns WHERE table_schema = '%s'", dbName);
             conn = DriverManager.getConnection(url, userName, password);
             ResultSet resultSet = conn.prepareStatement(sql).executeQuery();
             resultSet.next();
