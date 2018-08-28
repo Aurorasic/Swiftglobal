@@ -31,7 +31,7 @@ public class PeerManageTask extends BaseTask {
     protected void task() {
         // get seed peers from registry center if there are less then 2 peers
         if (peerManager.count() < PeerManager.MIN_LOCAL_PEER_COUNT) {
-            peerManager.getSeedPeers();
+            peerManager.reportAndGetPeers();
         }
 
         List<Peer> peers = peerManager.shuffle(10);

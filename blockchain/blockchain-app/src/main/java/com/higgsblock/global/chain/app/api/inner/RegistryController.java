@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.api.inner;
 
+import com.google.common.base.Preconditions;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +23,6 @@ public class RegistryController {
     @Autowired
     private PeerManager peerManager;
 
-    @RequestMapping("/peers")
-    public List<Peer> peers() {
-        return peerManager.shuffle(DEFAULT_PEER_SEEDS);
-    }
-
     /**
      * Report peer.
      *
@@ -34,16 +30,14 @@ public class RegistryController {
      * @return the boolean
      */
     @RequestMapping("/report")
-    public boolean report(@RequestBody Peer peer) {
-        if (null == peer) {
-            return false;
-        }
-
+    public List<Peer> report(@RequestBody Peer peer) {
+        Preconditions.checkNotNull(peer, "peer is null");
         if (!peer.valid()) {
-            return false;
+            throw new IllegalArgumentException(String.format("the reported peer is invalid：%s", peer.toJson()));
         }
 
         peerManager.add(peer);
-        return true;
+        List<Peer> list = peerManager.shuffle(DEFAULT_PEER_SEEDS);
+        return list;
     }
 }
