@@ -88,7 +88,7 @@ DROP TABLE IF EXISTS `t_utxo`;
 CREATE TABLE `t_utxo` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `amount` varchar(16) NOT NULL,
-  `currency` varchar(8) NOT NULL,
+  `currency` varchar(16) NOT NULL,
   `lock_script` varchar(64) NOT NULL,
   `out_index` int(11) NOT NULL,
   `script_type` int(11) NOT NULL,
