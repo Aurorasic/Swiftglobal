@@ -7,6 +7,8 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
+import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.network.config.PeerConfig;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,7 +19,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,6 +69,10 @@ public class PeerManager {
     @Getter
     @Setter
     private List<String> minerAddresses = Lists.newArrayList();
+    @Autowired
+    IBlockIndexService blockIndexService;
+    @Autowired
+    IDposService dposService;
 
     /**
      * Sets witness peers.
@@ -287,6 +292,12 @@ public class PeerManager {
         if (witnessPeers.stream().anyMatch(witness -> witness.getId().equals(peerId))) {
             return NodeRoleEnum.WITNESS;
         }
+        //if minerAddress is empty,load from db
+        if (CollectionUtils.isEmpty(minerAddresses)) {
+            long sn = dposService.getSn(blockIndexService.getMaxHeight());
+            minerAddresses.addAll(dposService.getDposGroupBySn(sn));
+        }
+
         if (minerAddresses.stream().anyMatch(miner -> miner.equals(peerId))) {
             return NodeRoleEnum.MINER;
         }
