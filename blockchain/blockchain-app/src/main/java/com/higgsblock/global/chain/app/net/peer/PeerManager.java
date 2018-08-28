@@ -17,7 +17,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -118,19 +117,6 @@ public class PeerManager {
     public long count() {
         peerCache.cleanUp();
         return peerCache.estimatedSize();
-    }
-
-    /**
-     * Get the seed peers after starting for each time.
-     */
-    public void getSeedPeers() {
-        List<Peer> peers = null;
-        try {
-            peers = registryApi.peers().execute().body();
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-        }
-        add(peers);
     }
 
     /**
@@ -307,13 +293,16 @@ public class PeerManager {
     }
 
     /**
-     * Report to registry.
+     * Report and get peers.
      */
-    public void reportToRegistry() {
+    public void reportAndGetPeers() {
         try {
-            this.registryApi.report(getSelf()).execute().body();
+            List<Peer> peers = this.registryApi.report(getSelf()).execute().body();
+            add(peers);
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }
+
+
     }
 }

@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.net.api;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 import java.util.List;
@@ -15,15 +14,6 @@ import java.util.List;
  * @create 2018 -03-17
  */
 public interface IRegistryApi {
-
-    /**
-     * Peers call.
-     *
-     * @return the call
-     */
-    @GET("/registry/peers")
-    Call<List<Peer>> peers();
-
     /**
      * Report call.
      *
@@ -31,5 +21,5 @@ public interface IRegistryApi {
      * @return the call
      */
     @POST("/registry/report")
-    Call<Boolean> report(@Body Peer peer);
+    Call<List<Peer>> report(@Body Peer peer);
 }

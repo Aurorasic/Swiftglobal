@@ -54,7 +54,7 @@ public class InetAddressCheckTask extends BaseTask {
             updatePeerInfo(publicDiscovery.getIp(), publicDiscovery.getSocketPort(), publicDiscovery.getHttpPort());
         }
 
-        peerManager.reportToRegistry();
+        peerManager.reportAndGetPeers();
     }
 
     @Override
