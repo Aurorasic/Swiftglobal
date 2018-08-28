@@ -17,6 +17,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -302,7 +303,5 @@ public class PeerManager {
         } catch (Exception e) {
             LOGGER.error(String.format("report peer info to register error:%s", e.getMessage()), e);
         }
-
-
     }
 }
