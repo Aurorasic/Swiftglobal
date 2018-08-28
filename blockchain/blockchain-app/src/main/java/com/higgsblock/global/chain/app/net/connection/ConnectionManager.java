@@ -90,6 +90,7 @@ public class ConnectionManager {
         if (!canConnect(peer)) {
             return;
         }
+        peerManager.removePeer(peer);
         client.connect(peer.getIp(), peer.getSocketServerPort());
     }
 
