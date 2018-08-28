@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.network.socket.channel;
 
 import com.google.common.eventbus.EventBus;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
+import com.higgsblock.global.chain.network.socket.event.ActiveChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.CreateChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.DiscardChannelEvent;
 import com.higgsblock.global.chain.network.socket.handler.MessageCodecHandler;
@@ -50,5 +51,16 @@ public class CommonChannelInitializer extends ChannelInitializer<NioSocketChanne
 
         String channelId = channel.id().toString();
         channel.closeFuture().addListener(channelFuture -> eventBus.post(new DiscardChannelEvent(channelId)));
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        Channel channel = ctx.channel();
+        if (null == channel) {
+            return;
+        }
+        String channelId = channel.id().toString();
+        eventBus.post(new ActiveChannelEvent(channelId));
     }
 }

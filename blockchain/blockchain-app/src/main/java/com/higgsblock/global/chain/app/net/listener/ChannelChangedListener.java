@@ -2,11 +2,13 @@ package com.higgsblock.global.chain.app.net.listener;
 
 import com.google.common.eventbus.Subscribe;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
+import com.higgsblock.global.chain.app.net.connection.Connection;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.message.Hello;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.common.eventbus.listener.IEventBusListener;
 import com.higgsblock.global.chain.network.socket.constants.ChannelType;
+import com.higgsblock.global.chain.network.socket.event.ActiveChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.CreateChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.DiscardChannelEvent;
 import io.netty.channel.Channel;
@@ -35,12 +37,17 @@ public class ChannelChangedListener implements IEventBusListener {
         ChannelType channelType = event.getType();
         LOGGER.info("CreateChannelEvent: channelId={}, type={}", channel.id(), channelType);
         connectionManager.createConnection(channel, channelType);
+    }
 
-        if (ChannelType.OUT == channelType) {
+    @Subscribe
+    public void process(ActiveChannelEvent event) {
+        String channelId = event.getChannelId();
+        LOGGER.info("ActiveChannelEvent: channelId={}", channelId);
+
+        Connection connection = connectionManager.getConnectionByChannelId(channelId);
+        if (null != connection || ChannelType.OUT == connection.getType()) {
             Hello hello = new Hello();
             hello.setPeer(peerManager.getSelf());
-
-            String channelId = channel.id().toString();
             messageCenter.handshake(channelId, hello);
         }
     }
