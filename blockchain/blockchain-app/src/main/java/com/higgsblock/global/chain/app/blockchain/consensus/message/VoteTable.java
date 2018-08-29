@@ -154,7 +154,7 @@ public class VoteTable extends BaseSerializer {
                             || !StringUtils.equals(vote.getWitnessPubKey(), witnessPubKey)) {
                         return false;
                     }
-
+                    //To prevent new witnesses from suddenly joining in a higher version vote, each witness must vote from version 1
                     if (version == 1) {
                         version1Witnesses.add(witnessPubKey);
                     } else if (!version1Witnesses.contains(witnessPubKey)) {
