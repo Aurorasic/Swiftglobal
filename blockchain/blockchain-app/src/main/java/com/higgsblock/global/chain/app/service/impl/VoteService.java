@@ -106,6 +106,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             Map<String, Block> blockMapCache = this.blockCache.get(height, k -> new HashMap<>(7));
             blockMapCache.values().stream().filter(this::validBlock).findAny().ifPresent(this::voteFirstVote);
             dealVoteCache();
+            //Explicitly deletes the specified key
             voteCache.invalidate(height - 3);
             blockCache.invalidate(height - 3);
             LOGGER.info("height {},init witness task success", this.height);
