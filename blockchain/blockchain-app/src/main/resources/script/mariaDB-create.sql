@@ -13,7 +13,10 @@ File Encoding         : 65001
 Date: 2018-08-22 15:18:36
 */
 
+
 SET FOREIGN_KEY_CHECKS = 0;
+SET GLOBAL innodb_file_per_table=1;
+SET GLOBAL innodb_file_format=Barracuda;
 
 -- ----------------------------
 -- Table structure for t_block
