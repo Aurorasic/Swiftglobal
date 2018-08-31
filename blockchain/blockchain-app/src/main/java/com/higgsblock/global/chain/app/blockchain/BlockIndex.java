@@ -86,17 +86,4 @@ public class BlockIndex extends BaseSerializer {
     public boolean hasBestBlock() {
         return StringUtils.isNotEmpty(bestBlockHash);
     }
-
-    public int getIndex(String blockHash) {
-        if (StringUtils.isEmpty(blockHash) || CollectionUtils.isEmpty(blockHashs)) {
-            return -1;
-        }
-
-        for (int i = 0; i < blockHashs.size(); i++) {
-            if (StringUtils.equals(blockHashs.get(i), blockHash)) {
-                return i;
-            }
-        }
-        return -1;
-    }
 }
