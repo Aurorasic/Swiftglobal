@@ -31,7 +31,6 @@ public class BlockDaoImplTest extends BaseTest {
     private void testGetFiled() {
         Block block = new Block();
         block.setHeight(7);
-        //ec5ab00db4329ba7671cd087f5b31b540e98dc636b8ba90776abfb920d9a174f
         block.setHash("ec5ab00db4329ba7671cd087f5b31b540e98dc636b8ba90776abfb920d9a174f");
         block.setPrevBlockHash("9469c4b8e890d6e089f235fd0df43e8c62e1461771abdb8f6569784499736f82");
 //        Block bestBlock = blockDaoService.getToBeBestBlock(block);
@@ -42,11 +41,12 @@ public class BlockDaoImplTest extends BaseTest {
 
     }
 
-    private void saveAndSelectBlock() {
-//        Block block = new Block();
-//        block.setHeight(999999);
-//        block.setHash("abc");
-//        blockService.saveBlock(block);
+    @Test
+    public void saveAndSelectBlock() {
+        Block block = new Block();
+        block.setHeight(999999);
+        block.setHash("abc");
+        blockService.saveBlock(block);
         blockService.getBlockByHash("abc");
         blockService.getBlockByHash("abc");
         blockService.getBlockByHash("abce");
@@ -75,7 +75,7 @@ public class BlockDaoImplTest extends BaseTest {
             blockService.saveBlock(block);
             Thread.sleep(1000);
         } catch (Exception e) {
-            LOGGER.error("ccccccc," + block.getSimpleInfo(), e);
+            LOGGER.error("Exception," + block.getSimpleInfo(), e);
         }
 
         blockService.getBlocksByHeight(height - 1);
