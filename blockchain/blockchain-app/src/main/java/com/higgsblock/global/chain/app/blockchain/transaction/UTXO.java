@@ -66,24 +66,4 @@ public class UTXO extends BaseSerializer {
     public String getCurrency() {
         return output.getMoney().getCurrency();
     }
-
-    public boolean isCASCurrency() {
-        return output.isCASCurrency();
-    }
-
-    public boolean isMinerCurrency() {
-        return output.isMinerCurrency();
-    }
-
-    public boolean hasMinerStake() {
-        return output.hasMinerStake();
-    }
-
-    public boolean isCommunityCurrency() {
-        return output.isCommunityCurrency();
-    }
-
-    public boolean isIssueTokenCurrency() {
-        return output.isIssueTokenCurrency();
-    }
 }

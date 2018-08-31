@@ -74,7 +74,6 @@ public class OrphanBlockCacheManager implements IEventBusListener {
         } catch (Exception e) {
             LOGGER.error(String.format("exception when handle orphan blocks of %s", event), e);
         }
-
     }
 
     private void process(String blockHash, long height) {
