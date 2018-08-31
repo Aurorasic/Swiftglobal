@@ -97,14 +97,14 @@ public class BlockService implements IBlockService {
 
 
     /**
-     * Gets witness sing message.
+     * Gets witness sign message.
      *
      * @param height      the height
      * @param blockHash   the block hash
      * @param voteVersion the vote version
      * @return the witness sing message
      */
-    public static String getWitnessSingMessage(long height, String blockHash, int voteVersion) {
+    public static String buildWitnessSignInfo(long height, String blockHash, int voteVersion) {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(height))
@@ -124,7 +124,7 @@ public class BlockService implements IBlockService {
      * @return the boolean
      */
     public static boolean validSign(long height, String blockHash, int voteVersion, String sign, String pubKey) {
-        String message = getWitnessSingMessage(height, blockHash, voteVersion);
+        String message = buildWitnessSignInfo(height, blockHash, voteVersion);
         return ECKey.verifySign(message, sign, pubKey);
     }
 
@@ -477,24 +477,13 @@ public class BlockService implements IBlockService {
     }
 
     /**
-     * Persist the block and index data. If it is orphan block, add it to cache and do not persist to db
+     * Persist the block and index data.
      * <p>
      * Used by:
      * 1.mining genesis block
      * 2.pre-mining block
      * 3.receiving block
      * </p>
-     * <p>
-     * <p>
-     * Steps:
-     * 1.Roughly check the witness signatures' count;
-     * 2.Check if the block is an orphan block;
-     * 3.Thoroughly validate the block;
-     * 4.Save the block and block index;
-     * 5.Broadcast the persist event;
-     * 6.Update the block producer's score;
-     * 7.Parse dpos;
-     * </P>
      */
     @Transactional(rollbackFor = Exception.class)
     public Block saveBlockCompletely(Block block) {
@@ -627,11 +616,6 @@ public class BlockService implements IBlockService {
 
     public void loadAllBlockData() {
         //todo kongyu 2018-7-17 loadAllBlockData backup
-        /*
-        1.先校验创世块
-        2.然后再校验区块索引信息
-        3.最后设置系统状态为LOADED_ALL_DATA
-         */
         if (!checkBlockNumbers()) {
             throw new RuntimeException("blockMap size is not equal blockIndexMap count number");
         }

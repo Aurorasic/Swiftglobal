@@ -438,7 +438,7 @@ public class VoteService implements IEventBusListener, IVoteService {
         vote.setProofVersion(proofVersion);
         vote.setProofBlockHash(proofBlockHash);
         vote.setPreBlockHash(preBlockHash);
-        String msg = BlockService.getWitnessSingMessage(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
+        String msg = BlockService.buildWitnessSignInfo(vote.getHeight(), vote.getBlockHash(), vote.getVoteVersion());
         String sign = ECKey.signMessage(msg, keyPair.getPriKey());
         vote.setSignature(sign);
         return vote;
