@@ -206,7 +206,6 @@ public class BlockService implements IBlockService {
         }
         Block bestBlockOfHeight = getBestBlockByHeight(preBestBlock.getHeight());
         if (bestBlockOfHeight == null) {
-            //todo huangshengli business error ,failure bypass 2018-06-30
             LOGGER.warn("Business Error,h-N-1 block not found,ToBeBestBlock:[{},{}],preBlockHash:{}", bestBlock.getHash(), bestBlock.getHeight(), bestBlock.getPrevBlockHash());
             throw new IllegalStateException(String.format("h-N-1 block[%s]have not been confirmed best chain", preBestBlock.getSimpleInfo()));
         }
