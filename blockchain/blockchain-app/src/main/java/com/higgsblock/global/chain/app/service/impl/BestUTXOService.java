@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.app.service.IBestUTXOService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,13 +84,13 @@ public class BestUTXOService implements IBestUTXOService {
     }
 
     @Override
-    public List<UTXO> getUTXOsByAddress(String addr) {
-        if (null == addr) {
-            throw new RuntimeException("addr is null");
+    public List<UTXO> getUTXOsByAddress(String address) {
+        if (StringUtils.isEmpty(address)) {
+            throw new RuntimeException("address is empty for getUTXOsByAddress");
         }
 
         List<UTXO> utxos = Lists.newArrayList();
-        List<UTXOEntity> entityList = utxoRepository.findByLockScript(addr);
+        List<UTXOEntity> entityList = utxoRepository.findByLockScript(address);
         if (CollectionUtils.isEmpty(entityList)) {
             return utxos;
         }
