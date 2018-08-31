@@ -268,7 +268,6 @@ public class TransactionFeeService implements ITransactionFeeService {
                 preOutMoney.add(output.getMoney());
             }
         }
-
         LOGGER.debug("Transactions' pre-output amount : {}", preOutMoney.getValue());
 
         Money outPutMoney = new Money("0");
@@ -277,7 +276,6 @@ public class TransactionFeeService implements ITransactionFeeService {
                 outPutMoney.add(output.getMoney());
             }
         }
-
         LOGGER.debug("Transactions' output amount : {}", outPutMoney.getValue());
 
         return preOutMoney.subtract(outPutMoney);

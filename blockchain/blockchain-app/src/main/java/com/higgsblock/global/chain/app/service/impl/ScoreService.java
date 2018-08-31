@@ -92,7 +92,6 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void putIfAbsent(String address, Integer score) {
-
         ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
         if (scoreEntity == null) {
             scoreRepository.save(new ScoreEntity(address, score));
