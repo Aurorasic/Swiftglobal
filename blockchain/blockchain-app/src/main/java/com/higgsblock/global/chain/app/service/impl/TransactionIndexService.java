@@ -43,7 +43,7 @@ public class TransactionIndexService implements ITransactionIndexService {
     }
 
     @Override
-    public void addTransIdxAndUtxo(Block toBeBestBlock, String bestBlockHash) {
+    public void addTxIndexAndUtxo(Block toBeBestBlock, String bestBlockHash) {
 
         List<Transaction> transactionList = toBeBestBlock.getTransactions();
         final int txSize = transactionList.size();

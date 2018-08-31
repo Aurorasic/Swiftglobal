@@ -39,7 +39,7 @@
 //    private TransDaoService transDaoService;
 //
 //    @Test
-//    public void addTransIdxAndUtxo() throws Exception {
+//    public void addTxIndexAndUtxo() throws Exception {
 //        Block bestBlock = new Block();
 //        bestBlock.setHash("bestBlockHash");
 //
@@ -86,7 +86,7 @@
 //        //Spent tx not exits:
 //        PowerMockito.when(transDao.get(spentTxHash)).thenReturn(null);
 //        try {
-//            transDaoService.addTransIdxAndUtxo(bestBlock, bestBlock.getHash());
+//            transDaoService.addTxIndexAndUtxo(bestBlock, bestBlock.getHash());
 //        } catch (Exception e) {
 //            Assert.assertTrue(e instanceof IllegalStateException);
 //            Assert.assertEquals("Spent tx not exits: " + spentTxHash, e.getMessage());
@@ -100,7 +100,7 @@
 //        //UTXO not exists
 //        PowerMockito.when(utxoDao.get(anyString())).thenReturn(null);
 //        try {
-//            transDaoService.addTransIdxAndUtxo(bestBlock, bestBlock.getHash());
+//            transDaoService.addTxIndexAndUtxo(bestBlock, bestBlock.getHash());
 //        } catch (Exception e) {
 //            Assert.assertTrue(e instanceof IllegalStateException);
 //            Assert.assertTrue(e.getMessage().contains("UTXO not exists"));
@@ -116,7 +116,7 @@
 //        //add new UTXO
 //        UTXO newUTXO = new UTXO(transaction, (short) 0, transaction.getOutputs().get(0));
 //        PowerMockito.whenNew(UTXO.class).withAnyArguments().thenReturn(newUTXO);
-//        List<BaseDaoEntity> baseDaoEntities = transDaoService.addTransIdxAndUtxo(bestBlock, bestBlock.getHash());
+//        List<BaseDaoEntity> baseDaoEntities = transDaoService.addTxIndexAndUtxo(bestBlock, bestBlock.getHash());
 //        Assert.assertEquals(4, baseDaoEntities.size());
 //    }
 //

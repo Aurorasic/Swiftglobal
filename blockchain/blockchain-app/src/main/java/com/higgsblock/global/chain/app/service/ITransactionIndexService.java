@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public interface ITransactionIndexService {
      * @param bestBlockHash the best block hash
      * @throws Exception the exception
      */
-    void addTransIdxAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
+    void addTxIndexAndUtxo(Block bestBlock, String bestBlockHash) throws Exception;
 
     /**
      * getTxOfUnSpentUtxo

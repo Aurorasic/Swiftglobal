@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * @author HuangShengli
  * @date 2018-05-23
@@ -37,5 +40,44 @@ public class BlockDaoImplTest extends BaseTest {
     private void testGetBestBlockIndex(long height) {
         System.out.println(blockService.getBestBlockByHeight(height));
 
+    }
+
+    private void saveAndSelectBlock() {
+//        Block block = new Block();
+//        block.setHeight(999999);
+//        block.setHash("abc");
+//        blockService.saveBlock(block);
+        blockService.getBlockByHash("abc");
+        blockService.getBlockByHash("abc");
+        blockService.getBlockByHash("abce");
+        blockService.getBlockByHash("abc");
+        blockService.getBlockByHash("abce");
+        blockService.getBlockByHash("abc");
+        blockService.getBlockByHash("abce");
+    }
+    
+    @Test
+    public void testSaveBlocksConcurrent() {
+        ExecutorService exec = Executors.newFixedThreadPool(15);
+        for (long i = 2; i < 2000; i++) {
+            final long height = i;
+            exec.submit(() -> saveBlock(height));
+        }
+    }
+
+    private void saveBlock(long height) {
+        Block block = new Block();
+        block.setHeight(height);
+        block.setHash(String.valueOf(height));
+        blockService.getBlocksByHeight(height - 1);
+        try {
+            Thread.sleep(1000);
+            blockService.saveBlock(block);
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            LOGGER.error("ccccccc," + block.getSimpleInfo(), e);
+        }
+
+        blockService.getBlocksByHeight(height - 1);
     }
 }

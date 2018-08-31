@@ -22,8 +22,6 @@ import java.util.List;
 @Service
 @Slf4j
 public class BlockIndexService implements IBlockIndexService {
-
-
     @Autowired
     private IBlockIndexRepository blockIndexRepository;
 
@@ -42,10 +40,10 @@ public class BlockIndexService implements IBlockIndexService {
         }
 
         if (block.isGenesisBlock()) {
-            transactionIndexService.addTransIdxAndUtxo(block, block.getHash());
+            transactionIndexService.addTxIndexAndUtxo(block, block.getHash());
         } else {
             if (toBeBestBlock != null) {
-                transactionIndexService.addTransIdxAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
+                transactionIndexService.addTxIndexAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
             }
         }
     }

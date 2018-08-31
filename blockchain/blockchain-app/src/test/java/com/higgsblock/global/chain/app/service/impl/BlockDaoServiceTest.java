@@ -288,7 +288,7 @@
 //        blockIndexDaoEntity.setCreateUtxo(true);
 //        PowerMockito.doNothing().when(blockDao).writeBatch(blockIndexDaoEntity.getBaseDaoEntity());
 //        List<BaseDaoEntity> entityList = new ArrayList<>();
-//        PowerMockito.when(transDaoService.addTransIdxAndUtxo(block, blockHash)).thenReturn(entityList);
+//        PowerMockito.when(transDaoService.addTxIndexAndUtxo(block, blockHash)).thenReturn(entityList);
 //        PowerMockito.doNothing().when(blockDao).writeBatch(entityList);
 //        PowerMockito.mockStatic(MinerScoreStrategy.class);
 //        List<BaseDaoEntity> entityLists = new ArrayList<>();
