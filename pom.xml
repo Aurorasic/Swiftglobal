@@ -9,7 +9,11 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>blockchain</module>
+        <module>blockchain-network</module>
+        <module>blockchain-common</module>
+        <module>blockchain-crypto</module>
+        <module>blockchain-app</module>
+        <module>blockchain-example</module>
     </modules>
 
     <parent>

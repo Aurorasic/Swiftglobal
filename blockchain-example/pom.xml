@@ -9,15 +9,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>blockchain</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>blockchain-network</module>
-        <module>blockchain-common</module>
-        <module>blockchain-crypto</module>
-        <module>blockchain-app</module>
-        <module>blockchain-example</module>
-    </modules>
+    <artifactId>blockchain-example</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.higgsblock</groupId>
+            <artifactId>blockchain-app</artifactId>
+            <version>${module.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

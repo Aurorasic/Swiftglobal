@@ -22,7 +22,12 @@
     <Loggers>
         <asyncRoot level="info" includeLocation="true">
             <AppenderRef ref="DEFAULT-APPENDER"/>
+            <appender-ref ref="STDOUT-APPENDER"/>
         </asyncRoot>
+        <Logger name="com.higgsblock.global" level="debug" includeLocation="true" additivity="false">
+            <AppenderRef ref="STDOUT-APPENDER"/>
+            <AppenderRef ref="DEFAULT-APPENDER"/>
+        </Logger>
     </Loggers>
 
 
