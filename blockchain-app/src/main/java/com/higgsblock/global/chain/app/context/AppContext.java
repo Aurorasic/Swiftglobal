@@ -128,22 +128,22 @@ public class AppContext implements IEventBusListener {
         LOGGER.info("Application starting ...");
 
         checkAndRecoveryBlockData();
-        LOGGER.info("First Step: Application startup detection is complete ==>>");
+        LOGGER.info("1 Step: Application startup detection is completed ==>>");
 
         startFirstStepHandlers();
-        LOGGER.info("Second Step: StartFirstStepHandlers is complete ==>>");
+        LOGGER.info("2 Step: StartFirstStepHandlers is completed ==>>");
 
         startFirstStepListeners();
-        LOGGER.info("Third Step: StartFirstStepListeners is complete ==>>");
+        LOGGER.info("3 Step: StartFirstStepListeners is completed ==>>");
 
         startSocketServer();
-        LOGGER.info("Fourth Step: StartSocketServer is complete ==>>");
+        LOGGER.info("4 Step: StartSocketServer is completed ==>>");
 
         startFirstStepTasks();
-        LOGGER.info("Fifth Step: StartFirstStepTasks is complete ==>>");
+        LOGGER.info("5 Step: StartFirstStepTasks is completed ==>>");
 
         syncBlocks();
-        LOGGER.info("Sixth Step: SyncBlocks is complete ==>>");
+        LOGGER.info("6 Step: SyncBlocks is completed ==>>");
 
         LOGGER.info("Application service started successfully.");
     }
