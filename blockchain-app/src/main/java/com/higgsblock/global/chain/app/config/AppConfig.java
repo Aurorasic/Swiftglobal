@@ -22,6 +22,9 @@ public class AppConfig {
     @Autowired
     private Environment environment;
 
+    @Value("${app.data.path}")
+    private String dataPath;
+
     @Value("${spring.cache.caffeine.spec}")
     private String cacheSpecification;
 
