@@ -168,10 +168,6 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean canPackBlock(long height, String address, String preBlockHash) {
-        long startHeight = getStartHeight(height);
-        if (startHeight > height) {
-            throw new RuntimeException("the batchStartHeight should not be smaller than the height,the batchStartHeight " + startHeight + ",the height=" + height);
-        }
         List<String> dposNodes = getDposGroupByPreBlockHash(preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.warn("the dpos node is empty with the height={}", height);
