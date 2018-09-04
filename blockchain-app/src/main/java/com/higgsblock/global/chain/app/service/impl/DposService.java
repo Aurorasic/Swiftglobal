@@ -256,11 +256,11 @@ public class DposService implements IDposService {
         LOGGER.info("the currentGroup is {}", currentGroup);
 
         // group by score range
-        List<String> level5List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL5_SCORE, currentGroup);
-        List<String> level4List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL4_SCORE, currentGroup);
-        List<String> level3List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL3_SCORE, currentGroup);
-        List<String> level2List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL2_SCORE, currentGroup);
-        List<String> level1List = scoreService.queryTopScoreRangeAddresses(ScoreRangeEnum.LEVEL1_SCORE, currentGroup);
+        List<String> level5List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL5_SCORE, currentGroup);
+        List<String> level4List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL4_SCORE, currentGroup);
+        List<String> level3List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL3_SCORE, currentGroup);
+        List<String> level2List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL2_SCORE, currentGroup);
+        List<String> level1List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL1_SCORE, currentGroup);
         LOGGER.debug("select {} round dpos node from level5List:{},level4List:{},level3List:{},level2List:{},level1List:{}", (sn + 1), level5List, level4List, level3List, level2List, level1List);
 
         // Shuffle by miner address and block hash

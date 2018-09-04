@@ -172,7 +172,7 @@ public class ScoreService implements IScoreService {
      * @return
      */
     @Override
-    public List<String> queryTopScoreRangeAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
+    public List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
         Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD, ADDRESS_ORDERBY_FIELD);
         List<String> placeList = new ArrayList<>();
         placeList.add("");

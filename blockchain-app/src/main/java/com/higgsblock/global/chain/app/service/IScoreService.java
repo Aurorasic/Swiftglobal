@@ -136,6 +136,6 @@ public interface IScoreService {
      * @param exculdeAddresses
      * @return
      */
-    List<String> queryTopScoreRangeAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses);
+    List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses);
 
 }
