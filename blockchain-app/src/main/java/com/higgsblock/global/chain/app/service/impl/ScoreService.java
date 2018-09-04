@@ -145,7 +145,7 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void refreshMinersScore(Block toBeBestBlock) {
-        newScoreStrategy(toBeBestBlock);
+        updateScores(toBeBestBlock);
 
         //handle joined miner and removed miner
         List<Transaction> transactions = toBeBestBlock.getTransactions();
@@ -189,7 +189,7 @@ public class ScoreService implements IScoreService {
         return addresses;
     }
 
-    private void newScoreStrategy(Block toBeBestBlock) {
+    private void updateScores(Block toBeBestBlock) {
         SignaturePair minerPKSig = toBeBestBlock.getMinerSigPair();
         //if the block is only mined by  miner, set score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
