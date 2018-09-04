@@ -294,7 +294,7 @@ public class PeerManager {
         }
         //if minerAddress is empty,load from db
         if (CollectionUtils.isEmpty(minerAddresses)) {
-            long sn = dposService.getSn(blockIndexService.getMaxHeight());
+            long sn = dposService.calculateSn(blockIndexService.getMaxHeight());
             sn = sn == 1 ? 2 : sn;
             minerAddresses.addAll(dposService.getDposGroupBySn(sn));
             minerAddresses.addAll(dposService.getDposGroupBySn(sn + 1));

@@ -197,7 +197,7 @@ public class ScoreService implements IScoreService {
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
-            List<String> dposAddressList = dposService.getDposGroupByPreBlockHash(prevBlockHash);
+            List<String> dposAddressList = dposService.getRestDposMinersByPreHash(prevBlockHash);
             if (CollectionUtils.isNotEmpty(dposAddressList)) {
                 updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
             }

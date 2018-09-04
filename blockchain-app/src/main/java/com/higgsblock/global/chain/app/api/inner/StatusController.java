@@ -106,7 +106,7 @@ public class StatusController {
             return null;
         }
         long height = block.getHeight();
-        long startHeight = dposService.getStartHeight(height);
+        long startHeight = dposService.calculateStartHeight(height);
         DposGroupVO dposGroupVO = buildDposGroup(block);
 
         while (height-- > startHeight) {
@@ -142,11 +142,11 @@ public class StatusController {
 
 
     private DposGroupVO buildDposGroup(Block block) {
-        long sn = dposService.getSn(block.getHeight());
+        long sn = dposService.calculateSn(block.getHeight());
         DposGroupVO dposGroupVO = new DposGroupVO();
         dposGroupVO.setSn(sn);
-        dposGroupVO.setStartHeight(dposService.getStartHeight(block.getHeight()));
-        dposGroupVO.setEndHeight(dposService.getEndHeight((block.getHeight())));
+        dposGroupVO.setStartHeight(dposService.calculateStartHeight(block.getHeight()));
+        dposGroupVO.setEndHeight(dposService.calculateEndHeight((block.getHeight())));
         dposGroupVO.getBlockVOS().add(new SimpleBlockVO(block));
         dposGroupVO.setDposNodes(dposService.getDposGroupBySn(sn));
         dposGroupVO.getLeftDposNodes().addAll(dposGroupVO.getDposNodes());

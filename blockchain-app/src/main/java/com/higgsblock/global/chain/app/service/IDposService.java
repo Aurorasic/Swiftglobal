@@ -73,7 +73,7 @@ public interface IDposService {
      * @param preBlockHash
      * @return
      */
-    List<String> getDposGroupByPreBlockHash(String preBlockHash);
+    List<String> getRestDposMinersByPreHash(String preBlockHash);
 
     /**
      * validate the producer
@@ -99,7 +99,7 @@ public interface IDposService {
      * @param height
      * @return
      */
-    long getStartHeight(long height);
+    long calculateStartHeight(long height);
 
     /**
      * calculate the end height in this round of the height
@@ -107,7 +107,7 @@ public interface IDposService {
      * @param height
      * @return
      */
-    long getEndHeight(long height);
+    long calculateEndHeight(long height);
 
     /**
      * calculate the round num by height
@@ -115,7 +115,7 @@ public interface IDposService {
      * @param height
      * @return
      */
-    long getSn(long height);
+    long calculateSn(long height);
 
     /**
      * check block unstrictly,if the miner is constained in the dpos miners,return true

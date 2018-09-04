@@ -46,7 +46,7 @@ public class BlockChainService implements IBlockChainService {
     @Override
     public boolean isDposMiner(String address, String preBlockHash) {
         // get dpos miners address at branch which the preblock belonged to
-        List<String> dposAddressList = dposService.getDposGroupByPreBlockHash(preBlockHash);
+        List<String> dposAddressList = dposService.getRestDposMinersByPreHash(preBlockHash);
         return CollectionUtils.isNotEmpty(dposAddressList) && dposAddressList.contains(address);
     }
 

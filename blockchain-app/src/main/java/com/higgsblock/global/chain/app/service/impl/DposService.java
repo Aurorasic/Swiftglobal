@@ -61,14 +61,14 @@ public class DposService implements IDposService {
     @Override
     public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
         List<String> dposAddresses = Lists.newLinkedList();
-        boolean isFirstOfRound = getStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
+        boolean isFirstOfRound = calculateStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
 
         //select the next dpos nodes when toBeBestBlock height is first of round
         if (!isFirstOfRound) {
             return dposAddresses;
         }
         LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
-        long sn = getSn(maxHeight);
+        long sn = calculateSn(maxHeight);
         boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
             LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
@@ -100,13 +100,13 @@ public class DposService implements IDposService {
     }
 
     /**
-     * find lucky miners by pre blockhash
+     * find rest miner addresses by pre block hash
      *
      * @param preBlockHash
      * @return
      */
     @Override
-    public List<String> getDposGroupByPreBlockHash(String preBlockHash) {
+    public List<String> getRestDposMinersByPreHash(String preBlockHash) {
         if (preBlockHash == null) {
             return Lists.newLinkedList();
         }
@@ -118,12 +118,12 @@ public class DposService implements IDposService {
         }
         long height = preBlock.getHeight() + 1;
 
-        long sn = getSn(height);
+        long sn = calculateSn(height);
         List<String> dposGroupBySn = getDposGroupBySn(sn);
         if (CollectionUtils.isEmpty(dposGroupBySn)) {
             return Lists.newLinkedList();
         }
-        long startHeight = getStartHeight(height);
+        long startHeight = calculateStartHeight(height);
         while (height-- > startHeight) {
             SignaturePair minerFirstPKSig = preBlock.getMinerSigPair();
             String address = minerFirstPKSig.getAddress();
@@ -148,7 +148,7 @@ public class DposService implements IDposService {
         }
 
         String address = minerPKSig.getAddress();
-        List<String> currentGroup = getDposGroupByPreBlockHash(block.getPrevBlockHash());
+        List<String> currentGroup = getRestDposMinersByPreHash(block.getPrevBlockHash());
         boolean result = CollectionUtils.isNotEmpty(currentGroup) && currentGroup.contains(address);
         if (!result) {
             LOGGER.info("the miner should not produce the block:{},miner:{},dpos:{}", block.getSimpleInfo(), minerPKSig.toJson(), currentGroup);
@@ -168,7 +168,7 @@ public class DposService implements IDposService {
      */
     @Override
     public boolean canPackBlock(long height, String address, String preBlockHash) {
-        List<String> dposNodes = getDposGroupByPreBlockHash(preBlockHash);
+        List<String> dposNodes = getRestDposMinersByPreHash(preBlockHash);
         if (CollectionUtils.isEmpty(dposNodes)) {
             LOGGER.warn("the dpos node is empty with the height={}", height);
             return false;
@@ -189,11 +189,11 @@ public class DposService implements IDposService {
      * @return
      */
     @Override
-    public long getStartHeight(long height) {
+    public long calculateStartHeight(long height) {
         if (height <= 1) {
             return 1;
         }
-        return (getSn(height) - 2) * DPOS_BLOCKS_PER_ROUND + 2L;
+        return (calculateSn(height) - 2) * DPOS_BLOCKS_PER_ROUND + 2L;
     }
 
     /**
@@ -203,11 +203,11 @@ public class DposService implements IDposService {
      * @return
      */
     @Override
-    public long getEndHeight(long height) {
+    public long calculateEndHeight(long height) {
         if (height <= 1) {
             return 1;
         }
-        return (getSn(height) - 1) * DPOS_BLOCKS_PER_ROUND + 1L;
+        return (calculateSn(height) - 1) * DPOS_BLOCKS_PER_ROUND + 1L;
     }
 
     /**
@@ -217,7 +217,7 @@ public class DposService implements IDposService {
      * @return
      */
     @Override
-    public long getSn(long height) {
+    public long calculateSn(long height) {
         if (height == 1L) {
             return 1L;
         }
@@ -235,7 +235,7 @@ public class DposService implements IDposService {
         if (block == null || block.getMinerSigPair() == null) {
             return false;
         }
-        List<String> miners = getDposGroupBySn(getSn(block.getHeight()));
+        List<String> miners = getDposGroupBySn(calculateSn(block.getHeight()));
         if (CollectionUtils.isEmpty(miners)) {
             return false;
         }
@@ -245,7 +245,7 @@ public class DposService implements IDposService {
 
     private List<String> calculateDposAddresses(Block toBeBestBlock, long maxHeight) {
         List<String> selected = Lists.newLinkedList();
-        long sn = getSn(maxHeight);
+        long sn = calculateSn(maxHeight);
         final String hash = toBeBestBlock.getHash();
         LOGGER.debug("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
         final List<String> currentGroup = getDposGroupBySn(sn);

@@ -573,7 +573,7 @@ public class BlockService implements IBlockService {
      */
     private void freshPeerMinerAddr(Block toBeBestBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
-        long sn = dposService.getSn(toBeBestBlock.getHeight());
+        long sn = dposService.calculateSn(toBeBestBlock.getHeight());
         List<String> dpos = dposService.getDposGroupBySn(sn);
         if (!CollectionUtils.isEmpty(dpos)) {
             dposGroupBySn.addAll(dpos);
