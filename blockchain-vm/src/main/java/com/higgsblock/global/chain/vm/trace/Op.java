@@ -17,7 +17,7 @@
  */
 package com.higgsblock.global.chain.vm.trace;
 
-import org.ethereum.vm.OpCode;
+import com.higgsblock.global.chain.vm.OpCode;
 
 import java.math.BigInteger;
 

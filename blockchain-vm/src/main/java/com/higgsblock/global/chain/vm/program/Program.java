@@ -17,13 +17,18 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
-import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.*;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
 import com.higgsblock.global.chain.vm.program.listener.CompositeProgramListener;
+import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 import com.higgsblock.global.chain.vm.program.listener.ProgramStorageChangeListener;
 import com.higgsblock.global.chain.vm.trace.ProgramTrace;
 import com.higgsblock.global.chain.vm.trace.ProgramTraceListener;
+import com.higgsblock.global.chain.vm.util.ByteArraySet;
+import com.higgsblock.global.chain.vm.util.ByteUtil;
+import com.higgsblock.global.chain.vm.util.FastByteComparisons;
+import com.higgsblock.global.chain.vm.util.Utils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.CommonConfig;
@@ -37,16 +42,7 @@ import org.ethereum.util.ByteArraySet;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.Utils;
-import org.ethereum.vm.*;
-import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.vm.program.listener.CompositeProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.program.listener.ProgramStorageChangeListener;
-import org.ethereum.vm.trace.ProgramTrace;
-import org.ethereum.vm.trace.ProgramTraceListener;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +52,12 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
+import static org.apache.logging.log4j.core.util.Assert.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -1141,7 +1139,7 @@ public class Program {
         return ret;
     }
 
-    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContracts.PrecompiledContract contract) {
         returnDataBuffer = null; // reset return buffer right before the call
 
         if (getCallDeep() == MAX_DEPTH) {

@@ -17,9 +17,9 @@
  */
 package com.higgsblock.global.chain.vm.program.invoke;
 
+import com.higgsblock.global.chain.vm.DataWord;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
-import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 import java.util.Arrays;

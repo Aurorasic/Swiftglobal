@@ -17,18 +17,19 @@
  */
 package com.higgsblock.global.chain.vm.trace;
 
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.OpCode;
+import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.OpCode;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
+
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.trace.Serializers.serializeFieldsOnly;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
-import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class ProgramTrace {
 

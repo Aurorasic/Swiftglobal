@@ -17,8 +17,9 @@
  */
 package com.higgsblock.global.chain.vm.trace;
 
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.listener.ProgramListenerAdaptor;
+
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAdaptor;
 
 public class ProgramTraceListener extends ProgramListenerAdaptor {
 

@@ -17,6 +17,7 @@
  */
 package com.higgsblock.global.chain.vm.program.invoke;
 
+import com.higgsblock.global.chain.vm.DataWord;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;

@@ -25,7 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import org.ethereum.vm.DataWord;
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.OpCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -56,7 +57,7 @@ public final class Serializers {
 
         @Override
         public void serialize(Byte op, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-            jgen.writeString(org.ethereum.vm.OpCode.code(op).name());
+            jgen.writeString(OpCode.code(op).name());
         }
     }
 

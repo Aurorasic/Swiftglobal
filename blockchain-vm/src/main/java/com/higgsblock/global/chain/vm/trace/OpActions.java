@@ -18,14 +18,14 @@
 package com.higgsblock.global.chain.vm.trace;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.ethereum.vm.DataWord;
+import com.higgsblock.global.chain.vm.DataWord;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.ethereum.util.ByteUtil.toHexString;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 
 public class OpActions {
 
