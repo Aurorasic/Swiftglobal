@@ -134,7 +134,6 @@ public class VoteService implements IEventBusListener, IVoteService {
         this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
         voteFirstVote(block);
         dealVoteCache();
-        messageCenter.dispatchToWitnesses(this.voteTable);
     }
 
     @Override
