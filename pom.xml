@@ -14,6 +14,7 @@
         <module>blockchain-crypto</module>
         <module>blockchain-app</module>
         <module>blockchain-example</module>
+        <module>blockchain-vm</module>
     </modules>
 
     <parent>
