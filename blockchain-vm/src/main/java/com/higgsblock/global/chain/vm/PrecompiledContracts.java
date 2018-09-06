@@ -17,12 +17,17 @@
  */
 package com.higgsblock.global.chain.vm;
 
+import com.higgsblock.global.chain.vm.util.BIUtil;
 import com.higgsblock.global.chain.vm.util.HashUtil;
+import com.higgsblock.global.chain.vm.util.zksnark.*;
 import org.apache.commons.lang3.tuple.Pair;
 
 
 import java.math.BigInteger;
 
+import static com.higgsblock.global.chain.vm.util.BIUtil.addSafely;
+import static com.higgsblock.global.chain.vm.util.BIUtil.isLessThan;
+import static com.higgsblock.global.chain.vm.util.BIUtil.isZero;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.*;
 
 
@@ -179,10 +184,10 @@ public class PrecompiledContracts {
                 int sLength = data.length < 128 ? data.length - 96 : 32;
                 System.arraycopy(data, 96, s, 0, sLength);
 
-                ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
-                if (validateV(v) && signature.validateComponents()) {
-                    out = new DataWord(ECKey.signatureToAddress(h, signature));
-                }
+//                ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
+//                if (validateV(v) && signature.validateComponents()) {
+//                    out = new DataWord(ECKey.signatureToAddress(h, signature));
+//                }
             } catch (Throwable any) {
             }
 
