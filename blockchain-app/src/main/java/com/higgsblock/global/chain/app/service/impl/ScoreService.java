@@ -15,13 +15,9 @@ import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,13 +70,21 @@ public class ScoreService implements IScoreService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int updateBatch(List<String> addressList, int score) {
-        return scoreRepository.updateByAddress(addressList, score);
+        for (String address : addressList) {
+            put(address, score);
+        }
+        return 1;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int plusAll(Integer score) {
-        return scoreRepository.plusAll(score);
+        List<ScoreEntity> allScore = all();
+        for (ScoreEntity scoreEntity : allScore) {
+            scoreEntity.setScore(scoreEntity.getScore() + 1);
+            scoreRepository.save(scoreEntity);
+        }
+        return 1;
     }
 
     /**
@@ -173,20 +177,22 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
-        Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD, ADDRESS_ORDERBY_FIELD);
-        List<String> placeList = new ArrayList<>();
-        placeList.add("");
-        List<ScoreEntity> scores = scoreRepository.queryTopScoreByRange(
-                scoreRange.getMinScore(),
-                scoreRange.getMaxScore(),
-                CollectionUtils.isEmpty(exculdeAddresses) ? placeList : exculdeAddresses,
-                pageable);
-        if (scores == null) {
-            return Lists.newLinkedList();
+        List<String> result = Lists.newLinkedList();
+        List<ScoreEntity> allScoreEntities = scoreRepository.findAllOrderByScoreAndAddressDesc();
+        for (ScoreEntity scoreEntity : allScoreEntities) {
+            if (scoreEntity.getScore() < scoreRange.getMinScore() ||
+                    scoreEntity.getScore() >= scoreRange.getMaxScore()) {
+                //only in [minScore,maxScore)
+                continue;
+            }
+            if (result.size() == SCORE_LIMIT_NUM) {
+                break;
+            }
+            if (!exculdeAddresses.contains(scoreEntity.getAddress())) {
+                result.add(scoreEntity.getAddress());
+            }
         }
-        List<String> addresses = Lists.newLinkedList();
-        scores.forEach(scoreEntity -> addresses.add(scoreEntity.getAddress()));
-        return addresses;
+        return result;
     }
 
     private void updateScores(Block toBeBestBlock) {

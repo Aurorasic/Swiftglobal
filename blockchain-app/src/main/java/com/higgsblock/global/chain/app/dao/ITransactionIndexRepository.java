@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,7 @@ public interface ITransactionIndexRepository extends JpaRepository<TransactionIn
      * @param txHash
      * @return
      */
+    @IndexQuery("transactionHash")
     @Cacheable(value = "TransactionIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
     TransactionIndexEntity findByTransactionHash(String txHash);
 }

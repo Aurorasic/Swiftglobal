@@ -13,7 +13,7 @@
             <DefaultRolloverStrategy max="20">
                 <Delete basePath="/data/home/admin/higgs-global/log" maxDepth="1">
                     <IfFileName glob="default.log.*"/>
-                    <IfLastModified age="7d"/>
+                    <IfLastModified age="3d"/>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingRandomAccessFile>

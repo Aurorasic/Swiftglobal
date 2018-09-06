@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -18,9 +19,11 @@ public class BlockEntity {
     @Column
     private Long id;
 
+    @Index
     @Column(name = "block_hash", nullable = false, columnDefinition = "VARCHAR", length = 64)
     private String blockHash;
 
+    @Index
     @Column(name = "height", nullable = false, columnDefinition = "INTEGER")
     private long height;
 

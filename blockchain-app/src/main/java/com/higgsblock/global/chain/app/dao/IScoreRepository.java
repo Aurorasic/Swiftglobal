@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -23,7 +24,15 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
+    @IndexQuery("address")
     ScoreEntity findByAddress(String address);
+
+    /**
+     * find all score address order by score and address
+     *
+     * @return
+     */
+    List<ScoreEntity> findAllOrderByScoreAndAddressDesc();
 
     /**
      * delete ScoreEntity by address
@@ -42,6 +51,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param score
      * @return
      */
+    @Deprecated
     @Query("update ScoreEntity ts set ts.score=:updateScore where ts.address in :addresses")
     @Modifying
     int updateByAddress(@Param("addresses") List<String> addresses, @Param("updateScore") int score);
@@ -52,6 +62,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param score
      * @return
      */
+    @Deprecated
     @Query("update ScoreEntity set score=score + :plusScore")
     @Modifying
     int plusAll(@Param("plusScore") int score);
@@ -65,6 +76,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param pageable
      * @return
      */
+    @Deprecated
     @Query("SELECT se FROM ScoreEntity se WHERE score >=:minScore AND score <:maxScore AND address NOT IN (:addressList)")
     List<ScoreEntity> queryTopScoreByRange(@Param("minScore") Integer minScore, @Param("maxScore") Integer maxScore,
                                            @Param("addressList") List<String> addressList, Pageable pageable);
