@@ -154,6 +154,7 @@ public class VM {
                 throw Program.Exception.invalidOpCode(program.getCurrentOp());
             }
 
+            //TODO:
 //            switch (op) {
 //                case DELEGATECALL:
 //                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
@@ -301,6 +302,7 @@ public class VM {
                     DataWord value = op.callHasValue() ?
                             stack.get(stack.size() - 3) : DataWord.ZERO;
 
+                    //TODO:
                     //check to see if account does not exist and is not a precompiled contract
                     if (op == CALL) {
 //                        if (blockchainConfig.eip161()) {
