@@ -17,7 +17,7 @@
  */
 package com.higgsblock.global.chain.vm;
 
-import com.higgsblock.global.chain.core.Bloom;
+import com.higgsblock.global.chain.vm.core.Bloom;
 import com.higgsblock.global.chain.crypto.HashUtil;
 import com.higgsblock.global.chain.datasource.MemSizeEstimator;
 import com.higgsblock.global.chain.util.RLP;

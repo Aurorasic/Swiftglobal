@@ -18,7 +18,7 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.core.Transaction;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.util.ByteUtil;
 import com.higgsblock.global.chain.util.RLP;

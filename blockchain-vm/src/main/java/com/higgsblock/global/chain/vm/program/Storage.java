@@ -21,9 +21,9 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
-import com.higgsblock.global.chain.core.AccountState;
-import com.higgsblock.global.chain.core.Block;
-import com.higgsblock.global.chain.core.Repository;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.db.ByteArrayWrapper;
 import com.higgsblock.global.chain.db.ContractDetails;
 

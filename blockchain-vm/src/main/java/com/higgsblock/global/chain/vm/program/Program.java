@@ -34,9 +34,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.higgsblock.global.chain.config.BlockchainConfig;
 import com.higgsblock.global.chain.config.CommonConfig;
 import com.higgsblock.global.chain.config.SystemProperties;
-import com.higgsblock.global.chain.core.AccountState;
-import com.higgsblock.global.chain.core.Repository;
-import com.higgsblock.global.chain.core.Transaction;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.crypto.HashUtil;
 import com.higgsblock.global.chain.db.ContractDetails;
 
