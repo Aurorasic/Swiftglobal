@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public class UTXOEntity {
     @Column(name = "id", columnDefinition = "INTEGER")
     private Long id;
 
+    @Index
     @Column(name = "transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String transactionHash;
 
@@ -36,6 +38,7 @@ public class UTXOEntity {
     @Column(name = "script_type", nullable = false, columnDefinition = "INTEGER")
     private int scriptType;
 
+    @Index
     @Column(name = "lock_script", nullable = false, columnDefinition = "VARCHAR")
     private String lockScript;
 }

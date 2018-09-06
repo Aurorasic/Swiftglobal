@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,6 +30,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @date 2018/7/13
      */
     @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
+    @IndexQuery("blockHash")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
@@ -40,6 +42,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @date 2018/7/13
      */
     @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
+    @IndexQuery("height")
     List<BlockIndexEntity> findByHeight(long height);
 
     /**

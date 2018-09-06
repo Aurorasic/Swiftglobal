@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -23,6 +24,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @author wangxiangyi
      * @date 2018/7/13
      */
+    @IndexQuery("address")
     ScoreEntity findByAddress(String address);
 
     /**

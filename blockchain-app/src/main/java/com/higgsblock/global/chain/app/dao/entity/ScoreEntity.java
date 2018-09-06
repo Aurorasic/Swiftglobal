@@ -1,14 +1,11 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /**
  * @author yuanjiantao
@@ -31,6 +28,7 @@ public class ScoreEntity {
     @Column(name = "id")
     private Long id;
 
+    @Index
     @Column(name = "address", columnDefinition = "VARCHAR", length = 34, nullable = false)
     private String address;
 

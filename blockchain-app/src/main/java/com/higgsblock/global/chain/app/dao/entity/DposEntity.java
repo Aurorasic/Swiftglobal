@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class DposEntity {
     @Column(name = "id")
     private Long id;
 
+    @Index
     @Column(name = "sn", columnDefinition = "INTEGER", nullable = false)
     private long sn;
 
