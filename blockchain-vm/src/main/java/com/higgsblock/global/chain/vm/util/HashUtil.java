@@ -18,8 +18,6 @@
 package com.higgsblock.global.chain.vm.util;
 
 import com.higgsblock.global.chain.vm.core.SystemProperties;
-import org.ethereum.crypto.jce.SpongyCastleProvider;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.Digest;
@@ -35,7 +33,6 @@ import java.util.Random;
 
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static java.util.Arrays.copyOfRange;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
 

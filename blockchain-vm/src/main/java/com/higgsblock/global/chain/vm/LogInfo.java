@@ -17,18 +17,11 @@
  */
 package com.higgsblock.global.chain.vm;
 
-import com.higgsblock.global.chain.vm.core.Bloom;
-import com.higgsblock.global.chain.crypto.HashUtil;
-import com.higgsblock.global.chain.datasource.MemSizeEstimator;
-import com.higgsblock.global.chain.util.RLP;
-import com.higgsblock.global.chain.util.RLPElement;
-import com.higgsblock.global.chain.util.RLPItem;
-import com.higgsblock.global.chain.util.RLPList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.higgsblock.global.chain.datasource.MemSizeEstimator.ByteArrayEstimator;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 
 /**
  * @author Roman Mandeleil
@@ -42,20 +35,20 @@ public class LogInfo {
 
     public LogInfo(byte[] rlp) {
 
-        RLPList params = RLP.decode2(rlp);
-        RLPList logInfo = (RLPList) params.get(0);
-
-        RLPItem address = (RLPItem) logInfo.get(0);
-        RLPList topics = (RLPList) logInfo.get(1);
-        RLPItem data = (RLPItem) logInfo.get(2);
-
-        this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
-        this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
-
-        for (RLPElement topic1 : topics) {
-            byte[] topic = topic1.getRLPData();
-            this.topics.add(new DataWord(topic));
-        }
+//        RLPList params = RLP.decode2(rlp);
+//        RLPList logInfo = (RLPList) params.get(0);
+//
+//        RLPItem address = (RLPItem) logInfo.get(0);
+//        RLPList topics = (RLPList) logInfo.get(1);
+//        RLPItem data = (RLPItem) logInfo.get(2);
+//
+//        this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
+//        this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
+//
+//        for (RLPElement topic1 : topics) {
+//            byte[] topic = topic1.getRLPData();
+//            this.topics.add(new DataWord(topic));
+//        }
     }
 
     public LogInfo(byte[] address, List<DataWord> topics, byte[] data) {
@@ -77,33 +70,33 @@ public class LogInfo {
     }
 
     /*  [address, [topic, topic ...] data] */
-    public byte[] getEncoded() {
-
-        byte[] addressEncoded = RLP.encodeElement(this.address);
-
-        byte[][] topicsEncoded = null;
-        if (topics != null) {
-            topicsEncoded = new byte[topics.size()][];
-            int i = 0;
-            for (DataWord topic : topics) {
-                byte[] topicData = topic.getData();
-                topicsEncoded[i] = RLP.encodeElement(topicData);
-                ++i;
-            }
-        }
-
-        byte[] dataEncoded = RLP.encodeElement(data);
-        return RLP.encodeList(addressEncoded, RLP.encodeList(topicsEncoded), dataEncoded);
-    }
-
-    public Bloom getBloom() {
-        Bloom ret = Bloom.create(HashUtil.sha3(address));
-        for (DataWord topic : topics) {
-            byte[] topicData = topic.getData();
-            ret.or(Bloom.create(HashUtil.sha3(topicData)));
-        }
-        return ret;
-    }
+//    public byte[] getEncoded() {
+//
+//        byte[] addressEncoded = RLP.encodeElement(this.address);
+//
+//        byte[][] topicsEncoded = null;
+//        if (topics != null) {
+//            topicsEncoded = new byte[topics.size()][];
+//            int i = 0;
+//            for (DataWord topic : topics) {
+//                byte[] topicData = topic.getData();
+//                topicsEncoded[i] = RLP.encodeElement(topicData);
+//                ++i;
+//            }
+//        }
+//
+//        byte[] dataEncoded = RLP.encodeElement(data);
+//        return RLP.encodeList(addressEncoded, RLP.encodeList(topicsEncoded), dataEncoded);
+//    }
+//
+//    public Bloom getBloom() {
+//        Bloom ret = Bloom.create(HashUtil.sha3(address));
+//        for (DataWord topic : topics) {
+//            byte[] topicData = topic.getData();
+//            ret.or(Bloom.create(HashUtil.sha3(topicData)));
+//        }
+//        return ret;
+//    }
 
     @Override
     public String toString() {
@@ -125,8 +118,8 @@ public class LogInfo {
                 '}';
     }
 
-    public static final MemSizeEstimator<LogInfo> MemEstimator = log ->
-            ByteArrayEstimator.estimateSize(log.address) +
-            ByteArrayEstimator.estimateSize(log.data) +
-            log.topics.size() * DataWord.MEM_SIZE + 16;
+//    public static final MemSizeEstimator<LogInfo> MemEstimator = log ->
+//            ByteArrayEstimator.estimateSize(log.address) +
+//            ByteArrayEstimator.estimateSize(log.data) +
+//            log.topics.size() * DataWord.MEM_SIZE + 16;
 }
