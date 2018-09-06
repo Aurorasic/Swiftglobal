@@ -22,12 +22,9 @@ import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.zksnark.*;
 import org.apache.commons.lang3.tuple.Pair;
 
-
 import java.math.BigInteger;
 
-import static com.higgsblock.global.chain.vm.util.BIUtil.addSafely;
-import static com.higgsblock.global.chain.vm.util.BIUtil.isLessThan;
-import static com.higgsblock.global.chain.vm.util.BIUtil.isZero;
+import static com.higgsblock.global.chain.vm.util.BIUtil.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.*;
 
 
@@ -70,6 +67,11 @@ public class PrecompiledContracts {
 ////        if (address.equals(altBN128AddAddr) && config.eip213()) return altBN128Add;
 ////        if (address.equals(altBN128MulAddr) && config.eip213()) return altBN128Mul;
 ////        if (address.equals(altBN128PairingAddr) && config.eip212()) return altBN128Pairing;
+
+        if (address.equals(modExpAddr)) return modExp;
+        if (address.equals(altBN128AddAddr)) return altBN128Add;
+        if (address.equals(altBN128MulAddr)) return altBN128Mul;
+        if (address.equals(altBN128PairingAddr)) return altBN128Pairing;
 
         return null;
     }
