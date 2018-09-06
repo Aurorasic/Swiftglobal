@@ -17,17 +17,15 @@
  */
 package com.higgsblock.global.chain.vm;
 
-import com.higgsblock.global.chain.datasource.MemSizeEstimator;
-import com.higgsblock.global.chain.util.*;
+import com.higgsblock.global.chain.vm.core.Transaction;
+import com.higgsblock.global.chain.vm.util.ByteUtil;
 import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static com.higgsblock.global.chain.datasource.MemSizeEstimator.ByteArrayEstimator;
 
 
 /**
@@ -42,7 +40,7 @@ public class TransactionReceipt {
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
-    private Bloom bloomFilter = new Bloom();
+
     private List<LogInfo> logInfoList = new ArrayList<>();
 
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
@@ -55,61 +53,7 @@ public class TransactionReceipt {
     public TransactionReceipt() {
     }
 
-    public TransactionReceipt(byte[] rlp) {
 
-        RLPList params = RLP.decode2(rlp);
-        RLPList receipt = (RLPList) params.get(0);
-
-        RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
-        RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);
-        RLPItem bloomRLP = (RLPItem) receipt.get(2);
-        RLPList logs = (RLPList) receipt.get(3);
-        RLPItem gasUsedRLP = (RLPItem) receipt.get(4);
-        RLPItem result = (RLPItem) receipt.get(5);
-
-        postTxState = nullToEmpty(postTxStateRLP.getRLPData());
-        cumulativeGas = cumulativeGasRLP.getRLPData();
-        bloomFilter = new Bloom(bloomRLP.getRLPData());
-        gasUsed = gasUsedRLP.getRLPData();
-        executionResult = (executionResult = result.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
-
-        if (receipt.size() > 6) {
-            byte[] errBytes = receipt.get(6).getRLPData();
-            error = errBytes != null ? new String(errBytes, StandardCharsets.UTF_8) : "";
-        }
-
-        for (RLPElement log : logs) {
-            LogInfo logInfo = new LogInfo(log.getRLPData());
-            logInfoList.add(logInfo);
-        }
-
-        rlpEncoded = rlp;
-    }
-
-
-    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas,
-                              Bloom bloomFilter, List<LogInfo> logInfoList) {
-        this.postTxState = postTxState;
-        this.cumulativeGas = cumulativeGas;
-        this.bloomFilter = bloomFilter;
-        this.logInfoList = logInfoList;
-    }
-
-    public TransactionReceipt(final RLPList rlpList) {
-        if (rlpList == null || rlpList.size() != 4)
-            throw new RuntimeException("Should provide RLPList with postTxState, cumulativeGas, bloomFilter, logInfoList");
-
-        this.postTxState = rlpList.get(0).getRLPData();
-        this.cumulativeGas = rlpList.get(1).getRLPData();
-        this.bloomFilter = new Bloom(rlpList.get(2).getRLPData());
-
-        List<LogInfo> logInfos = new ArrayList<>();
-        for (RLPElement logInfoEl: (RLPList) rlpList.get(3)) {
-            LogInfo logInfo = new LogInfo(logInfoEl.getRLPData());
-            logInfos.add(logInfo);
-        }
-        this.logInfoList = logInfos;
-    }
 
     public byte[] getPostTxState() {
         return postTxState;
@@ -132,9 +76,7 @@ public class TransactionReceipt {
     }
 
 
-    public Bloom getBloomFilter() {
-        return bloomFilter;
-    }
+
 
     public List<LogInfo> getLogInfoList() {
         return logInfoList;
@@ -156,58 +98,9 @@ public class TransactionReceipt {
      *  Used for Receipt trie hash calculation. Should contain only the following items encoded:
      *  [postTxState, cumulativeGas, bloomFilter, logInfoList]
      */
-    public byte[] getReceiptTrieEncoded() {
-        return getEncoded(true);
-    }
 
-    /**
-     * Used for serialization, contains all the receipt data encoded
-     */
-    public byte[] getEncoded() {
-        if (rlpEncoded == null) {
-            rlpEncoded = getEncoded(false);
-        }
 
-        return rlpEncoded;
-    }
 
-    public byte[] getEncoded(boolean receiptTrie) {
-
-        byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
-        byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
-        byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
-
-        final byte[] logInfoListRLP;
-        if (logInfoList != null) {
-            byte[][] logInfoListE = new byte[logInfoList.size()][];
-
-            int i = 0;
-            for (LogInfo logInfo : logInfoList) {
-                logInfoListE[i] = logInfo.getEncoded();
-                ++i;
-            }
-            logInfoListRLP = RLP.encodeList(logInfoListE);
-        } else {
-            logInfoListRLP = RLP.encodeList();
-        }
-
-        return receiptTrie ?
-                RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP):
-                RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP,
-                        RLP.encodeElement(gasUsed), RLP.encodeElement(executionResult),
-                        RLP.encodeElement(error.getBytes(StandardCharsets.UTF_8)));
-
-    }
-
-    public void setPostTxState(byte[] postTxState) {
-        this.postTxState = postTxState;
-        rlpEncoded = null;
-    }
-
-    public void setTxStatus(boolean success) {
-        this.postTxState = success ? new byte[]{1} : new byte[0];
-        rlpEncoded = null;
-    }
 
     public boolean hasTxStatus() {
         return postTxState != null && postTxState.length <= 1;
@@ -251,7 +144,7 @@ public class TransactionReceipt {
         this.logInfoList = logInfoList;
 
         for (LogInfo loginfo : logInfoList) {
-            bloomFilter.or(loginfo.getBloom());
+          //  bloomFilter.or(loginfo.getBloom());
         }
         rlpEncoded = null;
     }
@@ -265,40 +158,7 @@ public class TransactionReceipt {
         return transaction;
     }
 
-    @Override
-    public String toString() {
 
-        // todo: fix that
 
-        return "TransactionReceipt[" +
-                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isTxStatusOK() ? "OK" : "FAILED"))
-                                        : ("postTxState=" + toHexString(postTxState))) +
-                "\n  , cumulativeGas=" + toHexString(cumulativeGas) +
-                "\n  , gasUsed=" + toHexString(gasUsed) +
-                "\n  , error=" + error +
-                "\n  , executionResult=" + toHexString(executionResult) +
-                "\n  , bloom=" + bloomFilter.toString() +
-                "\n  , logs=" + logInfoList +
-                ']';
-    }
 
-    public long estimateMemSize() {
-        return MemEstimator.estimateSize(this);
-    }
-
-    public static final MemSizeEstimator<TransactionReceipt> MemEstimator = receipt -> {
-        if (receipt == null) {
-            return 0;
-        }
-        long logSize = receipt.logInfoList.stream().mapToLong(LogInfo.MemEstimator::estimateSize).sum() + 16;
-        return (receipt.transaction == null ? 0 : Transaction.MemEstimator.estimateSize(receipt.transaction)) +
-                (receipt.postTxState == EMPTY_BYTE_ARRAY ? 0 : ByteArrayEstimator.estimateSize(receipt.postTxState)) +
-                (receipt.cumulativeGas == EMPTY_BYTE_ARRAY ? 0 : ByteArrayEstimator.estimateSize(receipt.cumulativeGas)) +
-                (receipt.gasUsed == EMPTY_BYTE_ARRAY ? 0 : ByteArrayEstimator.estimateSize(receipt.gasUsed)) +
-                (receipt.executionResult == EMPTY_BYTE_ARRAY ? 0 : ByteArrayEstimator.estimateSize(receipt.executionResult)) +
-                ByteArrayEstimator.estimateSize(receipt.rlpEncoded) +
-                Bloom.MEM_SIZE +
-                receipt.error.getBytes().length + 40 +
-                logSize;
-    };
 }
