@@ -1,6 +1,8 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.keyvalue.annotation.KeySpace;
 
@@ -9,6 +11,8 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
  * @date 2018-09-06
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @KeySpace("Dictionary")
 public class DictionaryEntity {
     @Id
