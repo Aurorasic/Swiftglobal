@@ -26,6 +26,7 @@ import org.ethereum.util.BIUtil;
 
 import java.math.BigInteger;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.*;
 import static org.ethereum.util.BIUtil.*;
 
 

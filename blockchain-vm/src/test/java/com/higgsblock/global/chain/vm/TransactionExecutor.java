@@ -17,13 +17,15 @@
  */
 package com.higgsblock.global.chain.vm;
 
+import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.ProgramResult;
+import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
+import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
 import com.higgsblock.global.chain.vm.util.ByteArraySet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.CommonConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.listener.EthereumListener;
@@ -40,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 //import static org.ethereum.util.BIUtil.*;

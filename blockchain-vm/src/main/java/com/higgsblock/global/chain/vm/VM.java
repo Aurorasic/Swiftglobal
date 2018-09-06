@@ -17,10 +17,10 @@
  */
 package com.higgsblock.global.chain.vm;
 
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
 import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.db.ContractDetails;
 
 import org.slf4j.Logger;
@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.OpCode.CALL;
+import static com.higgsblock.global.chain.vm.OpCode.PUSH1;
+import static com.higgsblock.global.chain.vm.OpCode.REVERT;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static org.ethereum.crypto.HashUtil.sha3;
@@ -90,7 +93,7 @@ public class VM {
 
     private static VMHook vmHook;
     private boolean vmTrace;
-    private long dumpBlock;
+    //private long dumpBlock;
 
     private final SystemProperties config;
 
@@ -102,7 +105,7 @@ public class VM {
     public VM(SystemProperties config) {
         this.config = config;
         vmTrace = config.vmTrace();
-        dumpBlock = config.dumpBlock();
+        //dumpBlock = config.dumpBlock();
     }
 
     private long calcMemGas(GasCost gasCosts, long oldMemSize, BigInteger newMemSize, long copySize) {
@@ -362,8 +365,8 @@ public class VM {
             program.spendGas(gasCost, op.name());
 
             // Log debugging line for VM
-            if (program.getNumber().intValue() == dumpBlock)
-                this.dumpLine(op, gasBefore, gasCost + callGas, memWords, program);
+//            if (program.getNumber().intValue() == dumpBlock)
+//                this.dumpLine(op, gasBefore, gasCost + callGas, memWords, program);
 
             if (vmHook != null) {
                 vmHook.step(program, op);
@@ -1352,60 +1355,60 @@ public class VM {
      *              vmCounter, internalSteps, operation
                     gasBefore, gasCost, memWords)
      */
-    private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-        if (config.dumpStyle().equals("standard+")) {
-            switch (op) {
-                case STOP:
-                case RETURN:
-                case SUICIDE:
-
-                    ContractDetails details = program.getStorage()
-                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-                    List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-                    Collections.sort(storageKeys);
-
-                    for (DataWord key : storageKeys) {
-                        dumpLogger.trace("{} {}",
-                                toHexString(key.getNoLeadZeroesData()),
-                                toHexString(details.getStorage().get(key).getNoLeadZeroesData()));
-                    }
-                default:
-                    break;
-            }
-            String addressString = toHexString(program.getOwnerAddress().getLast20Bytes());
-            String pcString = toHexString(new DataWord(program.getPC()).getNoLeadZeroesData());
-            String opString = toHexString(new byte[]{op.val()});
-            String gasString = toHexString(program.getGas().getNoLeadZeroesData());
-
-            dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-        } else if (config.dumpStyle().equals("pretty")) {
-            dumpLogger.trace("    STACK");
-            for (DataWord item : program.getStack()) {
-                dumpLogger.trace("{}", item);
-            }
-            dumpLogger.trace("    MEMORY");
-            String memoryString = program.memoryToString();
-            if (!"".equals(memoryString))
-                dumpLogger.trace("{}", memoryString);
-
-            dumpLogger.trace("    STORAGE");
-            ContractDetails details = program.getStorage()
-                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-            List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-            Collections.sort(storageKeys);
-
-            for (DataWord key : storageKeys) {
-                dumpLogger.trace("{}: {}",
-                        key.shortHex(),
-                        details.getStorage().get(key).shortHex());
-            }
-
-            int level = program.getCallDeep();
-            String contract = toHexString(program.getOwnerAddress().getLast20Bytes());
-            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
-            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
-                    level, contract, vmCounter, internalSteps, op,
-                    gasBefore, gasCost, memWords);
-        }
-    }
+//    private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
+//        if (config.dumpStyle().equals("standard+")) {
+//            switch (op) {
+//                case STOP:
+//                case RETURN:
+//                case SUICIDE:
+//
+//                    ContractDetails details = program.getStorage()
+//                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+//                    List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
+//                    Collections.sort(storageKeys);
+//
+//                    for (DataWord key : storageKeys) {
+//                        dumpLogger.trace("{} {}",
+//                                toHexString(key.getNoLeadZeroesData()),
+//                                toHexString(details.getStorage().get(key).getNoLeadZeroesData()));
+//                    }
+//                default:
+//                    break;
+//            }
+//            String addressString = toHexString(program.getOwnerAddress().getLast20Bytes());
+//            String pcString = toHexString(new DataWord(program.getPC()).getNoLeadZeroesData());
+//            String opString = toHexString(new byte[]{op.val()});
+//            String gasString = toHexString(program.getGas().getNoLeadZeroesData());
+//
+//            dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
+//        } else if (config.dumpStyle().equals("pretty")) {
+//            dumpLogger.trace("    STACK");
+//            for (DataWord item : program.getStack()) {
+//                dumpLogger.trace("{}", item);
+//            }
+//            dumpLogger.trace("    MEMORY");
+//            String memoryString = program.memoryToString();
+//            if (!"".equals(memoryString))
+//                dumpLogger.trace("{}", memoryString);
+//
+//            dumpLogger.trace("    STORAGE");
+//            ContractDetails details = program.getStorage()
+//                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+//            List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
+//            Collections.sort(storageKeys);
+//
+//            for (DataWord key : storageKeys) {
+//                dumpLogger.trace("{}: {}",
+//                        key.shortHex(),
+//                        details.getStorage().get(key).shortHex());
+//            }
+//
+//            int level = program.getCallDeep();
+//            String contract = toHexString(program.getOwnerAddress().getLast20Bytes());
+//            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
+//            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
+//                    level, contract, vmCounter, internalSteps, op,
+//                    gasBefore, gasCost, memWords);
+//        }
+//    }
 }
