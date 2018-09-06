@@ -14,7 +14,7 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @NoArgsConstructor
 @AllArgsConstructor
 @KeySpace("Dictionary")
-public class DictionaryEntity {
+public class BlockChainInfoEntity {
     @Id
     private String id;
     private String value;
