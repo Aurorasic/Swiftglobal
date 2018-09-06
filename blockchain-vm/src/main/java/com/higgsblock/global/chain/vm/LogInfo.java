@@ -118,8 +118,5 @@ public class LogInfo {
                 '}';
     }
 
-//    public static final MemSizeEstimator<LogInfo> MemEstimator = log ->
-//            ByteArrayEstimator.estimateSize(log.address) +
-//            ByteArrayEstimator.estimateSize(log.data) +
-//            log.topics.size() * DataWord.MEM_SIZE + 16;
+
 }
