@@ -20,8 +20,10 @@ package com.higgsblock.global.chain.vm;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
+
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ import static com.higgsblock.global.chain.vm.OpCode.PUSH1;
 import static com.higgsblock.global.chain.vm.OpCode.REVERT;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
-import static org.ethereum.crypto.HashUtil.sha3;
+import static com.higgsblock.global.chain.crypto.HashUtil.sha3;
 
 /**
  * The Ethereum Virtual Machine (EVM) is responsible for initialization

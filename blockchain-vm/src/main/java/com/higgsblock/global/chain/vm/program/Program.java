@@ -31,14 +31,14 @@ import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.Utils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.CommonConfig;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ContractDetails;
+import com.higgsblock.global.chain.config.BlockchainConfig;
+import com.higgsblock.global.chain.config.CommonConfig;
+import com.higgsblock.global.chain.config.SystemProperties;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.Transaction;
+import com.higgsblock.global.chain.crypto.HashUtil;
+import com.higgsblock.global.chain.db.ContractDetails;
 
 
 
@@ -56,7 +56,7 @@ import static java.lang.String.format;
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.apache.logging.log4j.core.util.Assert.isEmpty;
-import static org.ethereum.util.BIUtil.*;
+import static com.higgsblock.global.chain.util.BIUtil.*;
 
 /**
  * @author Roman Mandeleil

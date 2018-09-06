@@ -18,16 +18,17 @@
 package com.higgsblock.global.chain.vm;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.zksnark.*;
-import org.ethereum.util.BIUtil;
+import com.higgsblock.global.chain.config.BlockchainConfig;
+import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.crypto.HashUtil;
+import com.higgsblock.global.chain.crypto.zksnark.*;
+import com.higgsblock.global.chain.util.BIUtil;
 
 import java.math.BigInteger;
 
 import static com.higgsblock.global.chain.vm.util.ByteUtil.*;
 import static org.ethereum.util.BIUtil.*;
+
 
 
 /**

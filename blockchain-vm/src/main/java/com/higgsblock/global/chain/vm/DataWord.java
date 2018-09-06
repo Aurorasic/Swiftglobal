@@ -19,16 +19,16 @@ package com.higgsblock.global.chain.vm;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
+import com.higgsblock.global.chain.db.ByteArrayWrapper;
+import com.higgsblock.global.chain.util.ByteUtil;
+import com.higgsblock.global.chain.util.FastByteComparisons;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-import static org.ethereum.util.ByteUtil.toHexString;
+import static com.higgsblock.global.chain.util.ByteUtil.toHexString;
 
 /**
  * DataWord is the 32-byte array representation of a 256-bit number

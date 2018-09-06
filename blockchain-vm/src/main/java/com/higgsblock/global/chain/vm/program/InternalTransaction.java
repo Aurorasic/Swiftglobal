@@ -18,11 +18,11 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
+import com.higgsblock.global.chain.vm.core.Transaction;
+import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.util.ByteUtil;
+import com.higgsblock.global.chain.util.RLP;
+import com.higgsblock.global.chain.util.RLPList;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

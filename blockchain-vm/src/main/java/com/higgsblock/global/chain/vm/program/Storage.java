@@ -21,11 +21,11 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.ContractDetails;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.db.ByteArrayWrapper;
+import com.higgsblock.global.chain.db.ContractDetails;
 
 
 import javax.annotation.Nullable;
