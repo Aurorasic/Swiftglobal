@@ -26,9 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.datasource.MemSizeEstimator.ByteArrayEstimator;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
+
 
 /**
  * The transaction receipt is a tuple of three items
