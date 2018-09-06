@@ -21,8 +21,8 @@ import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
 
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.db.ContractDetails;
+///import org.ethereum.config.BlockchainConfig;
+//import org.ethereum.db.ContractDetails;
 
 
 import org.slf4j.Logger;
@@ -137,7 +137,7 @@ public class VM {
     }
 
     private boolean isDeadAccount(Program program, byte[] addr) {
-        return !program.getStorage().isExist(addr) || program.getStorage().getAccountState(addr).isEmpty();
+        return !program.getStorage().isExist(addr);
     }
 
     public void step(Program program) {
@@ -147,37 +147,37 @@ public class VM {
         }
 
         try {
-            BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+            //BlockchainConfig blockchainConfig = program.getBlockchainConfig();
 
             OpCode op = OpCode.code(program.getCurrentOp());
             if (op == null) {
                 throw Program.Exception.invalidOpCode(program.getCurrentOp());
             }
 
-            switch (op) {
-                case DELEGATECALL:
-                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
-                        // opcode since Homestead release only
-                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-                    }
-                    break;
-                case REVERT:
-                    if (!blockchainConfig.eip206()) {
-                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-                    }
-                    break;
-                case RETURNDATACOPY:
-                case RETURNDATASIZE:
-                    if (!blockchainConfig.eip211()) {
-                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-                    }
-                    break;
-                case STATICCALL:
-                    if (!blockchainConfig.eip214()) {
-                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-                    }
-                    break;
-            }
+//            switch (op) {
+//                case DELEGATECALL:
+//                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
+//                        // opcode since Homestead release only
+//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+//                    }
+//                    break;
+//                case REVERT:
+//                    if (!blockchainConfig.eip206()) {
+//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+//                    }
+//                    break;
+//                case RETURNDATACOPY:
+//                case RETURNDATASIZE:
+//                    if (!blockchainConfig.eip211()) {
+//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+//                    }
+//                    break;
+//                case STATICCALL:
+//                    if (!blockchainConfig.eip214()) {
+//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+//                    }
+//                    break;
+//            }
 
             program.setLastOp(op.val());
             program.verifyStackSize(op.require());
@@ -191,7 +191,7 @@ public class VM {
             long gasCost = op.getTier().asInt();
             long gasBefore = program.getGasLong();
             int stepBefore = program.getPC();
-            GasCost gasCosts = blockchainConfig.getGasCost();
+            GasCost gasCosts = config.getGasCost();
             DataWord adjustedCallGas = null;
 
             /*DEBUG #POC9 if( op.asInt() == 96 || op.asInt() == -128 || op.asInt() == 57 || op.asInt() == 115) {
@@ -214,16 +214,18 @@ public class VM {
                 case SUICIDE:
                     gasCost = gasCosts.getSUICIDE();
                     DataWord suicideAddressWord = stack.get(stack.size() - 1);
-                    if (blockchainConfig.eip161()) {
-                        if (isDeadAccount(program, suicideAddressWord.getLast20Bytes()) &&
-                                !program.getBalance(program.getOwnerAddress()).isZero()) {
-                            gasCost += gasCosts.getNEW_ACCT_SUICIDE();
-                        }
-                    } else {
-                        if (!program.getStorage().isExist(suicideAddressWord.getLast20Bytes())) {
-                            gasCost += gasCosts.getNEW_ACCT_SUICIDE();
-                        }
-                    }
+
+                    //TODO:
+//                    if (blockchainConfig.eip161()) {
+//                        if (isDeadAccount(program, suicideAddressWord.getLast20Bytes()) &&
+//                                !program.getBalance(program.getOwnerAddress()).isZero()) {
+//                            gasCost += gasCosts.getNEW_ACCT_SUICIDE();
+//                        }
+//                    } else {
+//                        if (!program.getStorage().isExist(suicideAddressWord.getLast20Bytes())) {
+//                            gasCost += gasCosts.getNEW_ACCT_SUICIDE();
+//                        }
+//                    }
                     break;
                 case SSTORE:
                     DataWord newValue = stack.get(stack.size() - 2);
@@ -301,15 +303,15 @@ public class VM {
 
                     //check to see if account does not exist and is not a precompiled contract
                     if (op == CALL) {
-                        if (blockchainConfig.eip161()) {
-                            if (isDeadAccount(program, callAddressWord.getLast20Bytes()) && !value.isZero()) {
-                                gasCost += gasCosts.getNEW_ACCT_CALL();
-                            }
-                        } else {
+//                        if (blockchainConfig.eip161()) {
+//                            if (isDeadAccount(program, callAddressWord.getLast20Bytes()) && !value.isZero()) {
+//                                gasCost += gasCosts.getNEW_ACCT_CALL();
+//                            }
+//                        } else {
                             if (!program.getStorage().isExist(callAddressWord.getLast20Bytes())) {
                                 gasCost += gasCosts.getNEW_ACCT_CALL();
                             }
-                        }
+                        //}
                     }
 
                     //TODO #POC9 Make sure this is converted to BigInteger (256num support)
@@ -327,7 +329,7 @@ public class VM {
 
                     DataWord gasLeft = program.getGas().clone();
                     gasLeft.sub(new DataWord(gasCost));
-                    adjustedCallGas = blockchainConfig.getCallGas(op, callGasWord, gasLeft);
+                    adjustedCallGas = config.getCallGas(op, callGasWord, gasLeft);
                     gasCost += adjustedCallGas.longValueSafe();
                     break;
                 case CREATE:
@@ -1236,7 +1238,7 @@ public class VM {
                             outDataOffs, outDataSize);
 
                     PrecompiledContracts.PrecompiledContract contract =
-                            PrecompiledContracts.getContractForAddress(codeAddress, blockchainConfig);
+                            PrecompiledContracts.getContractForAddress(codeAddress);
 
                     if (!op.callIsStateless()) {
                         program.getResult().addTouchAccount(codeAddress.getLast20Bytes());

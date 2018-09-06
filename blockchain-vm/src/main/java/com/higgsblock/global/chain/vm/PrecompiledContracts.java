@@ -55,7 +55,7 @@ public class PrecompiledContracts {
     private static final DataWord altBN128MulAddr =     new DataWord("0000000000000000000000000000000000000000000000000000000000000007");
     private static final DataWord altBN128PairingAddr = new DataWord("0000000000000000000000000000000000000000000000000000000000000008");
 
-    public static PrecompiledContract getContractForAddress(DataWord address, BlockchainConfig config) {
+    public static PrecompiledContract getContractForAddress(DataWord address) {
 
         if (address == null) return identity;
         if (address.equals(ecRecoverAddr)) return ecRecover;
@@ -64,10 +64,10 @@ public class PrecompiledContracts {
         if (address.equals(identityAddr)) return identity;
 
         // Byzantium precompiles
-        if (address.equals(modExpAddr) && config.eip198()) return modExp;
-        if (address.equals(altBN128AddAddr) && config.eip213()) return altBN128Add;
-        if (address.equals(altBN128MulAddr) && config.eip213()) return altBN128Mul;
-        if (address.equals(altBN128PairingAddr) && config.eip212()) return altBN128Pairing;
+//        if (address.equals(modExpAddr) && config.eip198()) return modExp;
+////        if (address.equals(altBN128AddAddr) && config.eip213()) return altBN128Add;
+////        if (address.equals(altBN128MulAddr) && config.eip213()) return altBN128Mul;
+////        if (address.equals(altBN128PairingAddr) && config.eip212()) return altBN128Pairing;
 
         return null;
     }

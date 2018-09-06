@@ -1,5 +1,10 @@
 package com.higgsblock.global.chain.vm.core;
 
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.GasCost;
+import com.higgsblock.global.chain.vm.OpCode;
+import com.higgsblock.global.chain.vm.program.Program;
+
 /**
  * @author tangkun
  * @date 2018-09-06
@@ -8,6 +13,7 @@ public class SystemProperties {
 
     private static SystemProperties CONFIG;
     private static boolean useOnlySpringConfig = false;
+    private static final GasCost GAS_COST = new GasCost();
 
     /**
      * Returns the static config instance. If the config is passed
@@ -46,4 +52,14 @@ public class SystemProperties {
         return true;
     }
 
+    public static GasCost getGasCost() {
+        return GAS_COST;
+    }
+
+    public DataWord getCallGas(OpCode op, DataWord requestedGas, DataWord availableGas) throws Program.OutOfGasException {
+        if (requestedGas.compareTo(availableGas) > 0) {
+            throw Program.Exception.notEnoughOpGas(op, requestedGas, availableGas);
+        }
+        return requestedGas.clone();
+    }
 }
