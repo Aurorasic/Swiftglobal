@@ -18,8 +18,8 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
+import com.higgsblock.global.chain.vm.core.BlockStore;
+import com.higgsblock.global.chain.vm.core.Repository;
 
 
 /**

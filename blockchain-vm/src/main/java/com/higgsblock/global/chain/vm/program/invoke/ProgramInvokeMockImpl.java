@@ -18,13 +18,8 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.datasource.inmem.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.BlockStoreDummy;
-import org.ethereum.db.RepositoryRoot;
+import com.higgsblock.global.chain.vm.core.BlockStore;
+import com.higgsblock.global.chain.vm.core.Repository;
 import org.spongycastle.util.encoders.Hex;
 
 /**
@@ -50,16 +45,16 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     public ProgramInvokeMockImpl() {
 
 
-        this.repository = new RepositoryRoot(new HashMapDB<byte[]>());
-        this.repository.createAccount(ownerAddress);
-
-        this.repository.createAccount(contractAddress);
-        this.repository.saveCode(contractAddress,
-                Hex.decode("385E60076000396000605f556014600054601e60"
-                        + "205463abcddcba6040545b51602001600a525451"
-                        + "6040016014525451606001601e52545160800160"
-                        + "28525460a052546016604860003960166000f260"
-                        + "00603f556103e75660005460005360200235"));
+//        this.repository = new RepositoryRoot(new HashMapDB<byte[]>());
+//        this.repository.createAccount(ownerAddress);
+//
+//        this.repository.createAccount(contractAddress);
+//        this.repository.saveCode(contractAddress,
+//                Hex.decode("385E60076000396000605f556014600054601e60"
+//                        + "205463abcddcba6040545b51602001600a525451"
+//                        + "6040016014525451606001601e52545160800160"
+//                        + "28525460a052546016604860003960166000f260"
+//                        + "00603f556103e75660005460005360200235"));
     }
 
     public ProgramInvokeMockImpl(boolean defaults) {
@@ -81,19 +76,21 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*           ORIGIN op         */
     public DataWord getOriginAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("horse".getBytes());
-        byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
+//        byte[] cowPrivKey = HashUtil.sha3("horse".getBytes());
+//        byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
-        return new DataWord(addr);
+        return new DataWord(new byte[]{});
     }
 
     /*           CALLER op         */
     public DataWord getCallerAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("monkey".getBytes());
-        byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
+//        byte[] cowPrivKey = HashUtil.sha3("monkey".getBytes());
+//        byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
+//
+//        return new DataWord(addr);
 
-        return new DataWord(addr);
+        return null;
     }
 
     /*           GASPRICE op       */
@@ -237,7 +234,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     @Override
     public BlockStore getBlockStore() {
-        return new BlockStoreDummy();
+        return new BlockStore();
     }
 
     public void setRepository(Repository repository) {
