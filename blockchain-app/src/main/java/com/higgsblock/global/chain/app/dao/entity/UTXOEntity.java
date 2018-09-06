@@ -4,8 +4,8 @@ import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
 /**
  * @author Su Jiulong
@@ -14,32 +14,23 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "t_utxo")
+@KeySpace("UTXO")
 public class UTXOEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "INTEGER")
     private Long id;
 
     @Index
-    @Column(name = "transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String transactionHash;
 
-    @Column(name = "out_index", nullable = false, columnDefinition = "INTEGER")
     private short outIndex;
 
-    @Column(name = "amount", nullable = false, columnDefinition = "VARCHAR", length = 16)
     private String amount;
 
-    @Column(name = "currency", nullable = false, columnDefinition = "VARCHAR", length = 8)
     private String currency;
 
-    @Column(name = "script_type", nullable = false, columnDefinition = "INTEGER")
     private int scriptType;
 
     @Index
-    @Column(name = "lock_script", nullable = false, columnDefinition = "VARCHAR")
     private String lockScript;
 }
 

@@ -4,8 +4,8 @@ import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
 /**
  * @author yuanjiantao
@@ -14,8 +14,7 @@ import javax.persistence.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "t_score")
+@KeySpace("Score")
 public class ScoreEntity {
 
     public ScoreEntity(String address, Integer score) {
@@ -24,15 +23,11 @@ public class ScoreEntity {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
     private Long id;
 
     @Index
-    @Column(name = "address", columnDefinition = "VARCHAR", length = 34, nullable = false)
     private String address;
 
-    @Column(name = "score", columnDefinition = "INTEGER", nullable = false)
     private Integer score;
 }
 

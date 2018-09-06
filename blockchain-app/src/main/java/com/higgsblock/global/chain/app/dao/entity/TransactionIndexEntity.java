@@ -4,8 +4,8 @@ import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
 /**
  * @author Su Jiulong
@@ -14,22 +14,16 @@ import javax.persistence.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "t_transaction_index")
+@KeySpace("TxIndex")
 public class TransactionIndexEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", columnDefinition = "INTEGER")
     private Long id;
 
     @Index
-    @Column(name = "transaction_hash", nullable = false, columnDefinition = "VARCHAR")
     private String transactionHash;
 
-    @Column(name = "block_hash", nullable = false, length = 64, columnDefinition = "VARCHAR")
     private String blockHash;
 
-    @Column(name = "transaction_index", nullable = false, columnDefinition = "INTEGER")
     private short transactionIndex;
 }
 
