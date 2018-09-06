@@ -62,4 +62,16 @@ public class SystemProperties {
         }
         return requestedGas.clone();
     }
+
+    public String getCryptoProviderName() {
+        return "SC";
+    }
+
+    public String getHash256AlgName() {
+        return "ETH-KECCAK-256";
+    }
+
+    public String getHash512AlgName() {
+        return "ETH-KECCAK-512";
+    }
 }

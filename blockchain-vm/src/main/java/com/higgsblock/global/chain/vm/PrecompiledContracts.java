@@ -17,6 +17,7 @@
  */
 package com.higgsblock.global.chain.vm;
 
+import com.higgsblock.global.chain.vm.util.HashUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import com.higgsblock.global.chain.config.BlockchainConfig;
 import com.higgsblock.global.chain.crypto.ECKey;
