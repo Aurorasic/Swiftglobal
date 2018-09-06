@@ -72,25 +72,10 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.delete(addr);
     }
 
-    @Override
-    public BigInteger increaseNonce(byte[] addr) {
-        return repository.increaseNonce(addr);
-    }
 
-    @Override
-    public BigInteger setNonce(byte[] addr, BigInteger nonce) {
-        return repository.setNonce(addr, nonce);
-    }
 
-    @Override
-    public BigInteger getNonce(byte[] addr) {
-        return repository.getNonce(addr);
-    }
 
-    @Override
-    public ContractDetails getContractDetails(byte[] addr) {
-        return repository.getContractDetails(addr);
-    }
+
 
     @Override
     public boolean hasContractDetails(byte[] addr) {
@@ -194,49 +179,15 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateBatch(HashMap<ByteArrayWrapper, AccountState> accountStates, HashMap<ByteArrayWrapper, ContractDetails> contractDetails) {
-        for (ByteArrayWrapper address : contractDetails.keySet()) {
-            if (!canListenTrace(address.getData())) return;
-
-            ContractDetails details = contractDetails.get(address);
-            if (details.isDeleted()) {
-                programListener.onStorageClear();
-            } else if (details.isDirty()) {
-                for (Map.Entry<DataWord, DataWord> entry : details.getStorage().entrySet()) {
-                    programListener.onStoragePut(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-        repository.updateBatch(accountStates, contractDetails);
-    }
-
-    @Override
     public byte[] getRoot() {
-        return repository.getRoot();
+        return new byte[0];
     }
 
-    @Override
-    public void loadAccount(byte[] addr, HashMap<ByteArrayWrapper, AccountState> cacheAccounts, HashMap<ByteArrayWrapper, ContractDetails> cacheDetails) {
-        repository.loadAccount(addr, cacheAccounts, cacheDetails);
-    }
 
     @Override
     public Repository getSnapshotTo(byte[] root) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public int getStorageSize(byte[] addr) {
-        return repository.getStorageSize(addr);
-    }
 
-    @Override
-    public Set<DataWord> getStorageKeys(byte[] addr) {
-        return repository.getStorageKeys(addr);
-    }
-
-    @Override
-    public Map<DataWord, DataWord> getStorage(byte[] addr, @Nullable Collection<DataWord> keys) {
-        return repository.getStorage(addr, keys);
-    }
 }
