@@ -227,7 +227,6 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
     @Override
     public void deleteAllOf(Serializable keyspace) {
         doWithLock(writeLock, () -> entries(keyspace).forEachRemaining(entry -> {
-            // todo baizhengwen
             Serializable id = KeyValueAdapterUtils.getId(entry.getKey(), keyspace);
             delete(id, keyspace);
         }));
@@ -275,46 +274,53 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
     }
 
     @Override
-    public Collection<Serializable> saveIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("saveIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
+    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(writeLock, () -> {
-            Collection<Serializable> ids = findIdByIndex(indexName, index, keyspace);
-            ids.add(id);
-            String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-            String value = KeyValueAdapterUtils.toJsonString(ids);
-
             if (isAutoCommit) {
-                levelDbAdapter.saveIndex(indexName, index, id, keyspace);
+                return levelDbAdapter.addIndex(indexName, index, id, keyspace);
             } else {
-                mapAdapter.saveIndex(indexName, index, id, keyspace);
+                Collection<Serializable> ids = mapAdapter.addIndex(indexName, index, id, keyspace);
 
+                String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+                String value = KeyValueAdapterUtils.toJsonString(ids);
                 writeBatch.put(key, value);
+
+                return ids;
             }
-            return ids;
         });
     }
 
     @Override
-    public Collection<Object> findByIndex(String indexName, Serializable index, Serializable keyspace) {
-        return doWithLock(readLock, () -> {
-            Collection<Serializable> ids = findIdByIndex(indexName, index, keyspace);
-            Map<Serializable, Object> map = Maps.newHashMap();
-            for (Serializable id : ids) {
-                map.putIfAbsent(id, get(id, keyspace));
+    public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        return doWithLock(writeLock, () -> {
+            if (isAutoCommit) {
+                return levelDbAdapter.deleteIndex(indexName, index, id, keyspace);
+            } else {
+                Collection<Serializable> ids = mapAdapter.deleteIndex(indexName, index, id, keyspace);
+
+                String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+                if (ids.isEmpty()) {
+                    writeBatch.delete(key);
+                } else {
+                    String value = KeyValueAdapterUtils.toJsonString(ids);
+                    writeBatch.put(key, value);
+                }
+                return ids;
             }
-            return map.values();
         });
     }
 
     @Override
-    public Collection<Serializable> findIdByIndex(String indexName, Serializable index, Serializable keyspace) {
-        LOGGER.debug("findIdByIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
+    public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
+        LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(readLock, () -> {
             Set<Serializable> result = Sets.newHashSet();
+            result.addAll(levelDbAdapter.findIndex(indexName, index, keyspace));
             if (!isAutoCommit) {
-                result.addAll(mapAdapter.findIdByIndex(indexName, index, keyspace));
+                result.addAll(mapAdapter.findIndex(indexName, index, keyspace));
             }
-            result.addAll(levelDbAdapter.findIdByIndex(indexName, index, keyspace));
             return result;
         });
     }

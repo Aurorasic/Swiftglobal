@@ -87,7 +87,7 @@ public class IndexedSpelQueryEngine<T extends KeyValueAdapter> extends QueryEngi
                     ids = in(ids, indexName, param, keyspace);
                     break;
                 default:
-                    throw new RuntimeException("Unsupported saveIndex query");
+                    throw new RuntimeException("Unsupported index query");
             }
         }
 
@@ -187,6 +187,6 @@ public class IndexedSpelQueryEngine<T extends KeyValueAdapter> extends QueryEngi
     }
 
     private Collection<Serializable> findIdsByIndex(String indexName, Serializable index, Serializable keyspace) {
-        return ((IndexedKeyValueAdapter) getAdapter()).findIdByIndex(indexName, index, keyspace);
+        return ((IndexedKeyValueAdapter) getAdapter()).findIndex(indexName, index, keyspace);
     }
 }

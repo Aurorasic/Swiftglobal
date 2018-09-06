@@ -11,9 +11,9 @@ import java.util.Collection;
  */
 public interface IndexedKeyValueAdapter extends KeyValueAdapter {
 
-    Collection<Serializable> saveIndex(String indexName, Serializable index, Serializable id, Serializable keyspace);
+    Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace);
 
-    Collection<Object> findByIndex(String indexName, Serializable index, Serializable keyspace);
+    Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace);
 
-    Collection<Serializable> findIdByIndex(String indexName, Serializable index, Serializable keyspace);
+    Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace);
 }

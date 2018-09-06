@@ -24,7 +24,7 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
 
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
-        return map.put(KeyValueAdapterUtils.getFullKey(keyspace, id), id);
+        return map.put(KeyValueAdapterUtils.getFullKey(keyspace, id), item);
     }
 
     @Override
@@ -56,6 +56,7 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
         String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
         Iterator<Map.Entry<Serializable, Object>> iterator = map.entrySet().stream()
                 .filter(entry -> entry.getKey().toString().startsWith(prefix))
+                .filter(entry -> null != entry.getValue())
                 .iterator();
 
         return new ForwardingCloseableIterator<>(iterator);
@@ -85,34 +86,27 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
     }
 
     @Override
-    public Collection<Serializable> saveIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("saveIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIdByIndex(indexName, index, keyspace);
+    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
         ids.add(id);
         map.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), ids);
         return ids;
     }
 
     @Override
-    public Collection<Object> findByIndex(String indexName, Serializable index, Serializable keyspace) {
-        Collection ids = findIdByIndex(indexName, index, keyspace);
-        Map<Serializable, Object> map = Maps.newHashMap();
-        Serializable key = null;
-        for (Object id : ids) {
-            key = (Serializable) id;
-            map.putIfAbsent(key, get(key, keyspace));
-        }
-        return map.values();
+    public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
+        ids.remove(id);
+        map.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), ids);
+        return ids;
     }
 
     @Override
-    public Collection<Serializable> findIdByIndex(String indexName, Serializable index, Serializable keyspace) {
-        LOGGER.debug("findIdByIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
+    public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
+        LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-        Collection ids = (Collection<Serializable>) map.get(key);
-        if (null == ids) {
-            ids = Sets.newHashSet();
-        }
-        return ids;
+        return (Collection<Serializable>) map.getOrDefault(key, Sets.newHashSet());
     }
 }

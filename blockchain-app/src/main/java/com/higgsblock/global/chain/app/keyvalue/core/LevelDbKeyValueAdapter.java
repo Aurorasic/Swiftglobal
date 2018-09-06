@@ -97,7 +97,9 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
             String key = entry.getKey();
             if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
                 Object value = entry.getValue();
-                map.put(key, value);
+                if (null != value) {
+                    map.put(key, value);
+                }
             }
         });
 
@@ -153,27 +155,26 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
     }
 
     @Override
-    public Collection<Serializable> saveIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("saveIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIdByIndex(indexName, index, keyspace);
+    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
         ids.add(id);
         db.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), KeyValueAdapterUtils.toJsonString(ids));
         return ids;
     }
 
     @Override
-    public Collection<Object> findByIndex(String indexName, Serializable index, Serializable keyspace) {
-        Collection<Serializable> ids = findIdByIndex(indexName, index, keyspace);
-        Map<Serializable, Object> map = Maps.newHashMap();
-        for (Serializable id : ids) {
-            map.putIfAbsent(id, get(id, keyspace));
-        }
-        return map.values();
+    public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
+        ids.remove(id);
+        db.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), KeyValueAdapterUtils.toJsonString(ids));
+        return ids;
     }
 
     @Override
-    public Collection<Serializable> findIdByIndex(String indexName, Serializable index, Serializable keyspace) {
-        LOGGER.debug("findIdByIndex: keyspace={}, indexName={}, saveIndex={}", keyspace, indexName, index);
+    public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
+        LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
         Collection<Serializable> ids = KeyValueAdapterUtils.parseJsonArrayString(db.get(key, readOptions), Serializable.class);
         if (null == ids) {
