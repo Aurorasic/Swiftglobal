@@ -20,7 +20,7 @@ package com.higgsblock.global.chain.vm.trace;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
-import org.ethereum.config.SystemProperties;
+import com.higgsblock.global.chain.config.SystemProperties;
 
 import org.spongycastle.util.encoders.Hex;
 

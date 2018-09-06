@@ -17,18 +17,18 @@
  */
 package com.higgsblock.global.chain.vm;
 
-import org.ethereum.core.Bloom;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.datasource.MemSizeEstimator;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import com.higgsblock.global.chain.core.Bloom;
+import com.higgsblock.global.chain.crypto.HashUtil;
+import com.higgsblock.global.chain.datasource.MemSizeEstimator;
+import com.higgsblock.global.chain.util.RLP;
+import com.higgsblock.global.chain.util.RLPElement;
+import com.higgsblock.global.chain.util.RLPItem;
+import com.higgsblock.global.chain.util.RLPList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.ethereum.datasource.MemSizeEstimator.ByteArrayEstimator;
+import static com.higgsblock.global.chain.datasource.MemSizeEstimator.ByteArrayEstimator;
 
 /**
  * @author Roman Mandeleil

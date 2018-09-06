@@ -17,7 +17,7 @@
  */
 package com.higgsblock.global.chain.vm;
 
-import org.ethereum.config.SystemProperties;
+import com.higgsblock.global.chain.config.SystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
