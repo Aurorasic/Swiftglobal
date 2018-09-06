@@ -28,6 +28,13 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
     ScoreEntity findByAddress(String address);
 
     /**
+     * find all score address order by score and address
+     *
+     * @return
+     */
+    List<ScoreEntity> findAllOrderByScoreAndAddressDesc();
+
+    /**
      * delete ScoreEntity by address
      *
      * @param address
@@ -44,6 +51,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param score
      * @return
      */
+    @Deprecated
     @Query("update ScoreEntity ts set ts.score=:updateScore where ts.address in :addresses")
     @Modifying
     int updateByAddress(@Param("addresses") List<String> addresses, @Param("updateScore") int score);
@@ -54,6 +62,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param score
      * @return
      */
+    @Deprecated
     @Query("update ScoreEntity set score=score + :plusScore")
     @Modifying
     int plusAll(@Param("plusScore") int score);
@@ -67,6 +76,7 @@ public interface IScoreRepository extends JpaRepository<ScoreEntity, Long> {
      * @param pageable
      * @return
      */
+    @Deprecated
     @Query("SELECT se FROM ScoreEntity se WHERE score >=:minScore AND score <:maxScore AND address NOT IN (:addressList)")
     List<ScoreEntity> queryTopScoreByRange(@Param("minScore") Integer minScore, @Param("maxScore") Integer maxScore,
                                            @Param("addressList") List<String> addressList, Pageable pageable);
