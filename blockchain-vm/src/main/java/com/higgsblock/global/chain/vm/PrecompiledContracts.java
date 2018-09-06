@@ -27,7 +27,7 @@ import org.ethereum.util.BIUtil;
 import java.math.BigInteger;
 
 import static org.ethereum.util.BIUtil.*;
-import static org.ethereum.util.ByteUtil.*;
+
 
 /**
  * @author Roman Mandeleil

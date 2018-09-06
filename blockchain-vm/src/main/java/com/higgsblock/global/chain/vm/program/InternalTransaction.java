@@ -17,18 +17,18 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
+import com.higgsblock.global.chain.vm.DataWord;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.DataWord;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static org.apache.commons.lang3.ArrayUtils.*;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 public class InternalTransaction extends Transaction {
 

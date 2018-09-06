@@ -17,13 +17,14 @@
  */
 package com.higgsblock.global.chain.vm.program.invoke;
 
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.program.Program;
+import com.higgsblock.global.chain.vm.util.ByteUtil;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.Program;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

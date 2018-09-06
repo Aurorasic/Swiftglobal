@@ -18,12 +18,11 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.program.Program;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.Program;
 
 import java.math.BigInteger;
 

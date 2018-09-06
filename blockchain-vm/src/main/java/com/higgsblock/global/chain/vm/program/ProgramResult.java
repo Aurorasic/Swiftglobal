@@ -17,19 +17,21 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
-import org.ethereum.util.ByteArraySet;
-import org.ethereum.vm.CallCreate;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
+
+
+import com.higgsblock.global.chain.vm.CallCreate;
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.LogInfo;
+import com.higgsblock.global.chain.vm.util.ByteArraySet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.size;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * @author Roman Mandeleil

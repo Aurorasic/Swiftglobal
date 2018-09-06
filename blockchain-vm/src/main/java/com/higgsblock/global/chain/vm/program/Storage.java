@@ -17,15 +17,16 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
+import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
+import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.listener.ProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
+
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;

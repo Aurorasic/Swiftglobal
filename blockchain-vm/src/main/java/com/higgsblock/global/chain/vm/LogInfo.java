@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.datasource.MemSizeEstimator.ByteArrayEstimator;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * @author Roman Mandeleil

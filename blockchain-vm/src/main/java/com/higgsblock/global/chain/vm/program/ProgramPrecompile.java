@@ -17,10 +17,10 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
+import com.higgsblock.global.chain.vm.OpCode;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.vm.OpCode;
 
 import java.util.HashSet;
 import java.util.Set;

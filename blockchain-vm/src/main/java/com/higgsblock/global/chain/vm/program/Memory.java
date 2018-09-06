@@ -20,18 +20,17 @@ package com.higgsblock.global.chain.vm.program;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.listener.ProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
+
 
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.oneByteToHexString;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.oneByteToHexString;
+
 
 public class Memory implements ProgramListenerAware {
 
