@@ -2,8 +2,6 @@ package com.higgsblock.global.chain.app.keyvalue.core;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.keyvalue.core.KeyValueTemplate;
 import org.springframework.data.keyvalue.core.mapping.context.KeyValueMappingContext;
@@ -11,7 +9,6 @@ import org.springframework.util.ReflectionUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,7 +58,7 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
         Class<?> clazz = object.getClass();
         String keyspace = this.mappingContext.getPersistentEntity(clazz).getKeySpace();
 
-        getFields(clazz).forEach(field -> {
+        EntityClassInfos.getIndexFields(clazz).forEach(field -> {
             Object index = ReflectionUtils.getField(field, object);
             adapter.deleteIndex(field.getName(), (Serializable) index, id, keyspace);
         });
@@ -71,23 +68,9 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
         Class<?> clazz = objectToUpdate.getClass();
         String keyspace = this.mappingContext.getPersistentEntity(clazz).getKeySpace();
 
-        getFields(clazz).forEach(field -> {
+        EntityClassInfos.getIndexFields(clazz).forEach(field -> {
             Object index = ReflectionUtils.getField(field, objectToUpdate);
             adapter.addIndex(field.getName(), (Serializable) index, id, keyspace);
-        });
-    }
-
-    protected Collection<Field> getFields(Class clazz) {
-        return fieldMap.computeIfAbsent(clazz, aClass -> {
-            Set<Field> fields = Sets.newHashSet();
-            ReflectionUtils.doWithLocalFields(clazz, field -> {
-                Index index = field.getAnnotation(Index.class);
-                if (null != index) {
-                    field.setAccessible(true);
-                    fields.add(field);
-                }
-            });
-            return fields;
         });
     }
 }

@@ -36,6 +36,7 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
     protected WriteOptions writeOptions = new WriteOptions().sync(true);
     protected Options options = new Options()
             .createIfMissing(true)
+            .writeBufferSize(50 * 1024 * 1024)
             .compressionType(CompressionType.SNAPPY);
     protected ILevelDb<String> db;
 

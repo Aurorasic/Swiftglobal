@@ -76,6 +76,13 @@ public class IndexedSpelQueryEngine<T extends KeyValueAdapter> extends QueryEngi
             opcode = indexQueryParamNames.get(2 * i);
             indexName = indexQueryParamNames.get(2 * i + 1);
             param = (Serializable) indexQueryParams.get(i);
+            if (EntityClassInfos.isId(clazz, indexName)) {
+                ids.add(param);
+                continue;
+            }
+            if (!EntityClassInfos.isIndex(clazz, indexName)) {
+                throw new RuntimeException("Unknown index");
+            }
             switch (opcode) {
                 case "and":
                     ids = and(ids, indexName, param, keyspace);
