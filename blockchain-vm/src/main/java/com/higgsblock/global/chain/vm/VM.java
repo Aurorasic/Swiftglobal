@@ -39,7 +39,7 @@ import static com.higgsblock.global.chain.vm.OpCode.PUSH1;
 import static com.higgsblock.global.chain.vm.OpCode.REVERT;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
-import static com.higgsblock.global.chain.crypto.HashUtil.sha3;
+import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
 
 /**
  * The Ethereum Virtual Machine (EVM) is responsible for initialization
@@ -136,9 +136,9 @@ public class VM {
         return gasCost;
     }
 
-    private boolean isDeadAccount(Program program, byte[] addr) {
-        return !program.getStorage().isExist(addr);
-    }
+//    private boolean isDeadAccount(Program program, byte[] addr) {
+//        return !program.getStorage().isExist(addr);
+//    }
 
     public void step(Program program) {
 
@@ -308,9 +308,9 @@ public class VM {
 //                                gasCost += gasCosts.getNEW_ACCT_CALL();
 //                            }
 //                        } else {
-                            if (!program.getStorage().isExist(callAddressWord.getLast20Bytes())) {
-                                gasCost += gasCosts.getNEW_ACCT_CALL();
-                            }
+//                            if (!program.getStorage().isExist(callAddressWord.getLast20Bytes())) {
+//                                gasCost += gasCosts.getNEW_ACCT_CALL();
+//                            }
                         //}
                     }
 
@@ -1181,78 +1181,78 @@ public class VM {
                 }
                 break;
                 case CREATE: {
-                    if (program.isStaticCall()) throw new Program.StaticCallModificationException();
-
-                    DataWord value = program.stackPop();
-                    DataWord inOffset = program.stackPop();
-                    DataWord inSize = program.stackPop();
-
-                    if (logger.isInfoEnabled())
-                        logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
-                                String.format("%-12s", op.name()),
-                                program.getGas().value(),
-                                program.getCallDeep(), hint);
-
-                    program.createContract(value, inOffset, inSize);
-
-                    program.step();
+//                    if (program.isStaticCall()) throw new Program.StaticCallModificationException();
+//
+//                    DataWord value = program.stackPop();
+//                    DataWord inOffset = program.stackPop();
+//                    DataWord inSize = program.stackPop();
+//
+//                    if (logger.isInfoEnabled())
+//                        logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+//                                String.format("%-12s", op.name()),
+//                                program.getGas().value(),
+//                                program.getCallDeep(), hint);
+//
+//                    program.createContract(value, inOffset, inSize);
+//
+//                    program.step();
                 }
                 break;
-                case CALL:
-                case CALLCODE:
-                case DELEGATECALL:
-                case STATICCALL: {
-                    program.stackPop(); // use adjustedCallGas instead of requested
-                    DataWord codeAddress = program.stackPop();
-                    DataWord value = op.callHasValue() ?
-                            program.stackPop() : DataWord.ZERO;
-
-                    if (program.isStaticCall() && op == CALL && !value.isZero())
-                        throw new Program.StaticCallModificationException();
-
-                    if( !value.isZero()) {
-                        adjustedCallGas.add(new DataWord(gasCosts.getSTIPEND_CALL()));
-                    }
-
-                    DataWord inDataOffs = program.stackPop();
-                    DataWord inDataSize = program.stackPop();
-
-                    DataWord outDataOffs = program.stackPop();
-                    DataWord outDataSize = program.stackPop();
-
-                    if (logger.isInfoEnabled()) {
-                        hint = "addr: " + toHexString(codeAddress.getLast20Bytes())
-                                + " gas: " + adjustedCallGas.shortHex()
-                                + " inOff: " + inDataOffs.shortHex()
-                                + " inSize: " + inDataSize.shortHex();
-                        logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
-                                String.format("%-12s", op.name()),
-                                program.getGas().value(),
-                                program.getCallDeep(), hint);
-                    }
-
-                    program.memoryExpand(outDataOffs, outDataSize);
-
-                    MessageCall msg = new MessageCall(
-                            op, adjustedCallGas, codeAddress, value, inDataOffs, inDataSize,
-                            outDataOffs, outDataSize);
-
-                    PrecompiledContracts.PrecompiledContract contract =
-                            PrecompiledContracts.getContractForAddress(codeAddress);
-
-                    if (!op.callIsStateless()) {
-                        program.getResult().addTouchAccount(codeAddress.getLast20Bytes());
-                    }
-
-                    if (contract != null) {
-                        program.callToPrecompiledAddress(msg, contract);
-                    } else {
-                        program.callToAddress(msg);
-                    }
-
-                    program.step();
-                }
-                break;
+//                case CALL:
+//                case CALLCODE:
+//                case DELEGATECALL:
+//                case STATICCALL: {
+//                    program.stackPop(); // use adjustedCallGas instead of requested
+//                    DataWord codeAddress = program.stackPop();
+//                    DataWord value = op.callHasValue() ?
+//                            program.stackPop() : DataWord.ZERO;
+//
+//                    if (program.isStaticCall() && op == CALL && !value.isZero())
+//                        throw new Program.StaticCallModificationException();
+//
+//                    if( !value.isZero()) {
+//                        adjustedCallGas.add(new DataWord(gasCosts.getSTIPEND_CALL()));
+//                    }
+//
+//                    DataWord inDataOffs = program.stackPop();
+//                    DataWord inDataSize = program.stackPop();
+//
+//                    DataWord outDataOffs = program.stackPop();
+//                    DataWord outDataSize = program.stackPop();
+//
+//                    if (logger.isInfoEnabled()) {
+//                        hint = "addr: " + toHexString(codeAddress.getLast20Bytes())
+//                                + " gas: " + adjustedCallGas.shortHex()
+//                                + " inOff: " + inDataOffs.shortHex()
+//                                + " inSize: " + inDataSize.shortHex();
+//                        logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+//                                String.format("%-12s", op.name()),
+//                                program.getGas().value(),
+//                                program.getCallDeep(), hint);
+//                    }
+//
+//                    program.memoryExpand(outDataOffs, outDataSize);
+//
+//                    MessageCall msg = new MessageCall(
+//                            op, adjustedCallGas, codeAddress, value, inDataOffs, inDataSize,
+//                            outDataOffs, outDataSize);
+//
+//                    PrecompiledContracts.PrecompiledContract contract =
+//                            PrecompiledContracts.getContractForAddress(codeAddress);
+//
+//                    if (!op.callIsStateless()) {
+//                        program.getResult().addTouchAccount(codeAddress.getLast20Bytes());
+//                    }
+//
+//                    if (contract != null) {
+//                        program.callToPrecompiledAddress(msg, contract);
+//                    } else {
+//                        program.callToAddress(msg);
+//                    }
+//
+//                    program.step();
+//                }
+                //break;
                 case RETURN:
                 case REVERT: {
                     DataWord offset = program.stackPop();
@@ -1275,16 +1275,16 @@ public class VM {
                 }
                 break;
                 case SUICIDE: {
-                    if (program.isStaticCall()) throw new Program.StaticCallModificationException();
-
-                    DataWord address = program.stackPop();
-                    program.suicide(address);
-                    program.getResult().addTouchAccount(address.getLast20Bytes());
-
-                    if (logger.isInfoEnabled())
-                        hint = "address: " + toHexString(program.getOwnerAddress().getLast20Bytes());
-
-                    program.stop();
+//                    if (program.isStaticCall()) throw new Program.StaticCallModificationException();
+//
+//                    DataWord address = program.stackPop();
+//                    program.suicide(address);
+//                    program.getResult().addTouchAccount(address.getLast20Bytes());
+//
+//                    if (logger.isInfoEnabled())
+//                        hint = "address: " + toHexString(program.getOwnerAddress().getLast20Bytes());
+//
+//                    program.stop();
                 }
                 break;
                 default:
