@@ -136,18 +136,18 @@ public class Program {
     }
 
     public ProgramPrecompile getProgramPrecompile() {
-        if (programPrecompile == null) {
-            if (codeHash != null && commonConfig.precompileSource() != null) {
-                programPrecompile = commonConfig.precompileSource().get(codeHash);
-            }
-            if (programPrecompile == null) {
-                programPrecompile = ProgramPrecompile.compile(ops);
-
-                if (codeHash != null && commonConfig.precompileSource() != null) {
-                    commonConfig.precompileSource().put(codeHash, programPrecompile);
-                }
-            }
-        }
+//        if (programPrecompile == null) {
+//            if (codeHash != null && commonConfig.precompileSource() != null) {
+//                programPrecompile = commonConfig.precompileSource().get(codeHash);
+//            }
+//            if (programPrecompile == null) {
+//                programPrecompile = ProgramPrecompile.compile(ops);
+//
+//                if (codeHash != null && commonConfig.precompileSource() != null) {
+//                    commonConfig.precompileSource().put(codeHash, programPrecompile);
+//                }
+//            }
+//        }
         return programPrecompile;
     }
 
@@ -703,7 +703,7 @@ public class Program {
     public void storageSave(byte[] key, byte[] val) {
         DataWord keyWord = new DataWord(key);
         DataWord valWord = new DataWord(val);
-        getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
+        //getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
     }
 
     public byte[] getCode() {
@@ -711,8 +711,9 @@ public class Program {
     }
 
     public byte[] getCodeAt(DataWord address) {
-        byte[] code = invoke.getRepository().getCode(address.getLast20Bytes());
-        return nullToEmpty(code);
+        //byte[] code = invoke.getRepository().getCode(address.getLast20Bytes());
+        //return nullToEmpty(code);
+        return null;
     }
 
     public DataWord getOwnerAddress() {
@@ -720,14 +721,18 @@ public class Program {
     }
 
     public DataWord getBlockHash(int index) {
-        return index < this.getNumber().longValue() && index >= Math.max(256, this.getNumber().intValue()) - 256 ?
-                new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone() :
-                DataWord.ZERO.clone();
+//        return index < this.getNumber().longValue() && index >= Math.max(256, this.getNumber().intValue()) - 256 ?
+//                new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone() :
+//                DataWord.ZERO.clone();
+
+        return null;
     }
 
     public DataWord getBalance(DataWord address) {
-        BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
-        return new DataWord(balance.toByteArray());
+        //BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
+        //return new DataWord(balance.toByteArray());
+
+        return null;
     }
 
     public DataWord getOriginAddress() {
@@ -781,8 +786,10 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        DataWord ret = getStorage().getStorageValue(getOwnerAddress().getLast20Bytes(), key.clone());
-        return ret == null ? null : ret.clone();
+//        DataWord ret = getStorage().getStorageValue(getOwnerAddress().getLast20Bytes(), key.clone());
+//        return ret == null ? null : ret.clone();
+
+        return null;
     }
 
     public DataWord getPrevHash() {
@@ -900,7 +907,7 @@ public class Program {
             logger.trace(" -- OPS --     {}", opsString);
             logger.trace(" -- STACK --   {}", stackData);
             logger.trace(" -- MEMORY --  {}", memoryData);
-            logger.trace(" -- STORAGE -- {}\n", storageData);
+            logger.trace(" -- STORAGE -- {}\n", "");
             logger.trace("\n  Spent Gas: [{}]/[{}]\n  Left Gas:  [{}]\n",
                     getResult().getGasUsed(),
                     invoke.getGas().longValue(),
@@ -915,7 +922,7 @@ public class Program {
             globalOutput.append(" -- OPS --     ").append(opsString).append("\n");
             globalOutput.append(" -- STACK --   ").append(stackData).append("\n");
             globalOutput.append(" -- MEMORY --  ").append(memoryData).append("\n");
-            globalOutput.append(" -- STORAGE -- ").append(storageData).append("\n");
+            globalOutput.append(" -- STORAGE -- ").append("").append("\n");
 
             if (getResult().getHReturn() != null)
                 globalOutput.append("\n  HReturn: ").append(
