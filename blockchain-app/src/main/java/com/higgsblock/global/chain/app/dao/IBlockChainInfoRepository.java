@@ -10,13 +10,14 @@ import org.springframework.cache.annotation.Cacheable;
  * @author wangxiangyi
  * @date 2018/7/12
  */
-public interface IBlockChainInfoRepository extends IKeyValueRepository<BlockChainInfoEntity, Long> {
+public interface IBlockChainInfoRepository extends IKeyValueRepository<BlockChainInfoEntity, String> {
 
     @Override
     @CachePut(value = "BlockInfo", key = "#p0.id", condition = "null != #p0 && null != #p0.id")
     @CacheEvict(value = "BlockInfo", key = "#p0.id", condition = "null != #p0")
     BlockChainInfoEntity save(BlockChainInfoEntity entity);
 
+    @Override
     @Cacheable(value = "BlockInfo", key = "#p0", condition = "null != #p0", unless = "#result != null")
     BlockChainInfoEntity findOne(String id);
 }
