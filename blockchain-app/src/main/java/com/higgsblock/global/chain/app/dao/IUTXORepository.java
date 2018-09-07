@@ -11,7 +11,7 @@ import java.util.List;
  * @author yangshenghong
  * @date 2018-07-12
  */
-public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, Long> {
+public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, String> {
 
     /**
      * find by txHash and outIndex

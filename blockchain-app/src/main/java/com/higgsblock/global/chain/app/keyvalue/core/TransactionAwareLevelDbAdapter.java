@@ -299,6 +299,7 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
                 return levelDbAdapter.deleteIndex(indexName, index, id, keyspace);
             } else {
                 Collection<Serializable> ids = mapAdapter.deleteIndex(indexName, index, id, keyspace);
+                ids.addAll(levelDbAdapter.deleteIndex(indexName, index, id, keyspace));
 
                 String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
                 if (ids.isEmpty()) {

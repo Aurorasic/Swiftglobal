@@ -169,7 +169,12 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
         LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         Collection<Serializable> ids = findIndex(indexName, index, keyspace);
         ids.remove(id);
-        db.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), KeyValueAdapterUtils.toJsonString(ids));
+        String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+        if (ids.isEmpty()) {
+            db.delete(key);
+        } else {
+            db.put(key, KeyValueAdapterUtils.toJsonString(ids));
+        }
         return ids;
     }
 
