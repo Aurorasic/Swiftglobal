@@ -44,6 +44,10 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.List;
 
+import static com.higgsblock.global.chain.vm.VMUtils.saveProgramTraceFile;
+import static com.higgsblock.global.chain.vm.VMUtils.zipAndEncode;
+import static com.higgsblock.global.chain.vm.util.BIUtil.toBI;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;

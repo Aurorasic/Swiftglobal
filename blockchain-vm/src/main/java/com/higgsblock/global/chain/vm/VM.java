@@ -17,6 +17,7 @@
  */
 package com.higgsblock.global.chain.vm;
 
+import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
@@ -147,14 +148,14 @@ public class VM {
         }
 
         try {
-            //BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+            BlockchainConfig blockchainConfig = program.getBlockchainConfig();
 
             OpCode op = OpCode.code(program.getCurrentOp());
             if (op == null) {
                 throw Program.Exception.invalidOpCode(program.getCurrentOp());
             }
 
-            //TODO:
+            //There's no need to check from Byzantium.
 //            switch (op) {
 //                case DELEGATECALL:
 //                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
