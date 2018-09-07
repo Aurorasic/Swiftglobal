@@ -54,11 +54,6 @@ public class BlockIndexService implements IBlockIndexService {
         return blockIndexRepository.deleteByHeight(height);
     }
 
-    @Override
-    public long getMaxHeight() {
-        return blockChainInfoService.getMaxHeight();
-    }
-
     private void insertBlockIndex(Block block) {
         BlockIndexEntity blockIndexDO = new BlockIndexEntity();
         blockIndexDO.setBlockHash(block.getHash());
@@ -113,7 +108,7 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public BlockIndex getLastBlockIndex() {
-        long maxHeight = getMaxHeight();
+        long maxHeight = blockChainInfoService.getMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
 

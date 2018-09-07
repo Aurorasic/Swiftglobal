@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.net.api.IRegistryApi;
 import com.higgsblock.global.chain.app.net.constants.NodeRoleEnum;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.network.config.PeerConfig;
@@ -47,6 +48,9 @@ public class PeerManager {
      */
     @Autowired
     private IRegistryApi registryApi;
+
+    @Autowired
+    private IBlockChainInfoService blockChainInfoService;
 
     /**
      * The Self.
@@ -294,7 +298,7 @@ public class PeerManager {
         }
         //if minerAddress is empty,load from db
         if (CollectionUtils.isEmpty(minerAddresses)) {
-            long sn = dposService.calculateSn(blockIndexService.getMaxHeight());
+            long sn = dposService.calculateSn(blockChainInfoService.getMaxHeight());
             sn = sn == 1 ? 2 : sn;
             minerAddresses.addAll(dposService.getDposGroupBySn(sn));
             minerAddresses.addAll(dposService.getDposGroupBySn(sn + 1));

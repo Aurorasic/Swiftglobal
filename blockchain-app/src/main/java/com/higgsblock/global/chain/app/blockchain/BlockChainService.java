@@ -29,6 +29,9 @@ public class BlockChainService implements IBlockChainService {
     private IBlockIndexService blockIndexService;
 
     @Autowired
+    private IBlockChainInfoService blockChainInfoService;
+
+    @Autowired
     private ITransactionService transactionService;
 
     @Autowired
@@ -123,7 +126,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        return blockIndexService.getMaxHeight();
+        return blockChainInfoService.getMaxHeight();
     }
 
     @Override

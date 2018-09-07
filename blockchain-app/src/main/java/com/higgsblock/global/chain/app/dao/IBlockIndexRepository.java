@@ -28,8 +28,8 @@ public interface IBlockIndexRepository extends IKeyValueRepository<BlockIndexEnt
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
     @IndexQuery("blockHash")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "null != #p0", unless = "#result == null")
     BlockIndexEntity findByBlockHash(String blockHash);
 
     /**
@@ -40,19 +40,9 @@ public interface IBlockIndexRepository extends IKeyValueRepository<BlockIndexEnt
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
     @IndexQuery("height")
+    @Cacheable(value = "BlockIndex", key = "#p0", condition = "#p0 > 0", unless = "#result == null")
     List<BlockIndexEntity> findByHeight(long height);
-
-    /**
-     * query BlockIndexEntity records max height
-     *
-     * @return
-     * @author wangxiangyi
-     * @date 2018/7/13
-     */
-    @Deprecated
-    long queryMaxHeight();
 
     /**
      * delete BlockIndexEntities by height
@@ -60,6 +50,7 @@ public interface IBlockIndexRepository extends IKeyValueRepository<BlockIndexEnt
      * @param height
      * @return
      */
+    @IndexQuery("height")
     @CacheEvict(value = "BlockIndex", allEntries = true)
     int deleteByHeight(long height);
 

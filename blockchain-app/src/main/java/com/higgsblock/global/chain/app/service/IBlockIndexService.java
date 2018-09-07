@@ -11,8 +11,6 @@ public interface IBlockIndexService {
 
     int deleteByHeight(long height);
 
-    long getMaxHeight();
-
     Long getHeightByBlockHash(String blockHash);
 
     /**

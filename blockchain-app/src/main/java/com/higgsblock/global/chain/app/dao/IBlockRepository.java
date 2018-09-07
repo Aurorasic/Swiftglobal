@@ -43,6 +43,7 @@ public interface IBlockRepository extends IKeyValueRepository<BlockEntity, Long>
      * @param height
      * @return
      */
+    @IndexQuery("height")
     @CacheEvict(value = "Block", allEntries = true)
     int deleteByHeight(long height);
 

@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
-import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.service.ITransactionIndexService;
@@ -65,11 +64,6 @@ public class TransactionIndexService implements ITransactionIndexService {
                     if (txIndex == null) {
                         throw new IllegalStateException("Spent tx not exits: " + spentTxHash + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    //update the pre-transaction state
-                    SpentTransactionOutIndexEntity spentTxOutIndexEntity = new SpentTransactionOutIndexEntity();
-                    spentTxOutIndexEntity.setPreTransactionHash(spentTxHash);
-                    spentTxOutIndexEntity.setOutIndex(spentTxOutIndex);
-                    spentTxOutIndexEntity.setNowTransactionHash(tx.getHash());
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {

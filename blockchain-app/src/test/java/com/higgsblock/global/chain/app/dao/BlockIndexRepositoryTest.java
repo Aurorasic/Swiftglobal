@@ -52,10 +52,4 @@ public class BlockIndexRepositoryTest extends BaseTest {
         LOGGER.info("query all by height size : {}", indexEntities.size());
     }
 
-    @Test
-    public void testQueryMaxHeight() {
-        long maxHeight = blockIndexRepository.queryMaxHeight();
-        LOGGER.info("query max height result : {}", maxHeight);
-    }
-
 }
