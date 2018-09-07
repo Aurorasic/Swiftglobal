@@ -55,6 +55,9 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
     }
 
     protected void deleteIndex(Serializable id, Object object) {
+        if (null == object) {
+            return;
+        }
         Class<?> clazz = object.getClass();
         String keyspace = this.mappingContext.getPersistentEntity(clazz).getKeySpace();
 
