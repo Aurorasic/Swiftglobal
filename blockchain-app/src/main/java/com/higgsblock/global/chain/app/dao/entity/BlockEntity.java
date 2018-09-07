@@ -14,9 +14,6 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 public class BlockEntity {
 
     @Id
-    private Long id;
-
-    @Index
     private String blockHash;
 
     @Index

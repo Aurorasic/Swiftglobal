@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
-import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,10 +15,8 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @NoArgsConstructor
 @KeySpace("TxIndex")
 public class TransactionIndexEntity {
-    @Id
-    private Long id;
 
-    @Index
+    @Id
     private String transactionHash;
 
     private String blockHash;

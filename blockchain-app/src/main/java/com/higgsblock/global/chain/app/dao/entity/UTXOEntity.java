@@ -17,7 +17,7 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @KeySpace("UTXO")
 public class UTXOEntity {
     @Id
-    private Long id;
+    private String id;
 
     @Index
     private String transactionHash;
@@ -32,5 +32,9 @@ public class UTXOEntity {
 
     @Index
     private String lockScript;
+
+    public String getId() {
+        return transactionHash + outIndex;
+    }
 }
 

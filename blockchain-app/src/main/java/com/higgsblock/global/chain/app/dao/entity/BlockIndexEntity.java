@@ -12,13 +12,11 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @Data
 @KeySpace("BlockIndex")
 public class BlockIndexEntity {
-    @Id
-    private Long id;
 
     @Index
     private long height;
 
-    @Index
+    @Id
     private String blockHash;
 
     private int isBest;

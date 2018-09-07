@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.dao.entity;
 
-import com.higgsblock.global.chain.app.keyvalue.annotation.Index;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.keyvalue.annotation.KeySpace;
@@ -12,10 +11,8 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @Data
 @KeySpace("Witeness")
 public class WitnessEntity {
-    @Id
-    private Integer id;
 
-    @Index
+    @Id
     private String pubKey;
 
     private String address;
