@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
  * @author yuguojia
  * @date 2018/08/06
  **/
+@Deprecated
 @Service
 @Slf4j
 public class BlockMaxHeightCacheManager {

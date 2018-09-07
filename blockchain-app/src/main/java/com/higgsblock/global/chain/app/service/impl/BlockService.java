@@ -21,6 +21,7 @@ import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -32,7 +33,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,6 +57,7 @@ public class BlockService implements IBlockService {
      * The starting height of the main chain
      */
     private static final int MAIN_CHAIN_START_HEIGHT = 2;
+
 
     @Autowired
     private AppConfig config;
@@ -91,7 +92,7 @@ public class BlockService implements IBlockService {
     @Autowired
     private IBlockChainService blockChainService;
     @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
+    private IBlockChainInfoService blockChainInfoService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -494,6 +495,7 @@ public class BlockService implements IBlockService {
             Block newBestBlock = null;
             if (isFirst) {
                 newBestBlock = getToBeBestBlock(block);
+                blockChainInfoService.setMaxHeight(block.getHeight());
             } else {
                 LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
             }
@@ -543,11 +545,6 @@ public class BlockService implements IBlockService {
      */
     private void refreshCache(Block block) {
         LOGGER.info("refresh block caches,{}", block.getSimpleInfo());
-
-        Long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
-        if (block.getHeight() > maxHeight) {
-            blockMaxHeightCacheManager.updateMaxHeight(block.getHeight());
-        }
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());

@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.dao.IScoreRepository;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
@@ -16,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -178,7 +178,8 @@ public class ScoreService implements IScoreService {
     @Override
     public List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
         List<String> result = Lists.newLinkedList();
-        List<ScoreEntity> allScoreEntities = scoreRepository.findAllOrderByScoreAndAddressDesc();
+        //todo yuguojia find all, then sort
+        List<ScoreEntity> allScoreEntities = scoreRepository.findAll();
         for (ScoreEntity scoreEntity : allScoreEntities) {
             if (scoreEntity.getScore() < scoreRange.getMinScore() ||
                     scoreEntity.getScore() >= scoreRange.getMaxScore()) {

@@ -2,11 +2,10 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -14,7 +13,7 @@ import java.util.List;
  * @author wangxiangyi
  * @date 2018/7/12
  */
-public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, Long> {
+public interface IBlockIndexRepository extends IKeyValueRepository<BlockIndexEntity, Long> {
 
     @Override
     @CachePut(value = "BlockIndex", key = "#p0.blockHash", condition = "null != #p0 && null != #p0.blockHash")
@@ -52,7 +51,7 @@ public interface IBlockIndexRepository extends JpaRepository<BlockIndexEntity, L
      * @author wangxiangyi
      * @date 2018/7/13
      */
-    @Query(value = "select height from t_block_index order by height desc limit 1", nativeQuery = true)
+    @Deprecated
     long queryMaxHeight();
 
     /**

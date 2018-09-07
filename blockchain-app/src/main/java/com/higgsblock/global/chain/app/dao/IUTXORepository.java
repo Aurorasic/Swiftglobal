@@ -2,9 +2,7 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -13,7 +11,7 @@ import java.util.List;
  * @author yangshenghong
  * @date 2018-07-12
  */
-public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
+public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, Long> {
 
     /**
      * find by txHash and outIndex
@@ -32,8 +30,6 @@ public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
      * @param outIndex
      */
     @IndexQuery("transactionHash")
-    @Query(value = "delete from UTXOEntity where transactionHash=:transactionHash and outIndex=:outIndex", nativeQuery = false)
-    @Modifying
     void deleteByTransactionHashAndOutIndex(@Param("transactionHash") String transactionHash, @Param("outIndex") short outIndex);
 
     /**

@@ -3,15 +3,15 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockMaxHeightCacheManager;
 import com.higgsblock.global.chain.app.dao.IBlockIndexRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class BlockIndexService implements IBlockIndexService {
     private TransactionIndexService transactionIndexService;
 
     @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
+    private IBlockChainInfoService blockChainInfoService;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
@@ -56,7 +56,7 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public long getMaxHeight() {
-        return blockIndexRepository.queryMaxHeight();
+        return blockChainInfoService.getMaxHeight();
     }
 
     private void insertBlockIndex(Block block) {
@@ -113,7 +113,7 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public BlockIndex getLastBlockIndex() {
-        long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
+        long maxHeight = getMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
 

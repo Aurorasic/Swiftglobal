@@ -2,15 +2,15 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
  * @author wangxiangyi
  * @date 2018/7/12
  */
-public interface IDposRepository extends JpaRepository<DposEntity, Long> {
+public interface IDposRepository extends IKeyValueRepository<DposEntity, Long> {
 
     @Override
     @CachePut(value = "Dpos", key = "#p0.sn", condition = "null != #p0 && null != #p0.sn")

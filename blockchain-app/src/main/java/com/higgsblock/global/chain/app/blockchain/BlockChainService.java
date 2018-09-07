@@ -40,9 +40,6 @@ public class BlockChainService implements IBlockChainService {
     @Autowired
     private WitnessTimer witnessTimer;
 
-    @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
-
     @Override
     public boolean isDposMiner(String address, String preBlockHash) {
         // get dpos miners address at branch which the preblock belonged to
@@ -126,8 +123,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        long height = blockMaxHeightCacheManager.getMaxHeight();
-        return height;
+        return blockIndexService.getMaxHeight();
     }
 
     @Override

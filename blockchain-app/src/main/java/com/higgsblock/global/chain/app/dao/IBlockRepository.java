@@ -2,10 +2,10 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * @author baizhengwen
  * @date 2018-08-08
  */
-public interface IBlockRepository extends JpaRepository<BlockEntity, Long> {
+public interface IBlockRepository extends IKeyValueRepository<BlockEntity, Long> {
 
     @Override
     @CachePut(value = "Block", key = "#p0.blockHash", condition = "null != #p0 && null != #p0.blockHash")

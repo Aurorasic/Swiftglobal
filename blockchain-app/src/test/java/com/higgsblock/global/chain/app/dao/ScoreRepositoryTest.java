@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.dao;
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.service.IDposService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class ScoreRepositoryTest extends BaseTest {
         LOGGER.info("--->>find by address result : {}", scoreEntity);
 
         scoreEntity.setScore(22);
-        ScoreEntity savedEntity = scoreRepository.saveAndFlush(scoreEntity);
+        ScoreEntity savedEntity = scoreRepository.save(scoreEntity);
         LOGGER.info("--->>saved ScoreEntity : {}", savedEntity);
     }
 

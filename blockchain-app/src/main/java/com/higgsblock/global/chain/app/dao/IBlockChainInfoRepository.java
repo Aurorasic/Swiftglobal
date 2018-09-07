@@ -1,16 +1,16 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.BlockChainInfoEntity;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.repository.CrudRepository;
 
 /**
  * @author wangxiangyi
  * @date 2018/7/12
  */
-public interface IBlockChainInfoRepository extends CrudRepository<BlockChainInfoEntity, Long> {
+public interface IBlockChainInfoRepository extends IKeyValueRepository<BlockChainInfoEntity, Long> {
 
     @Override
     @CachePut(value = "BlockInfo", key = "#p0.id", condition = "null != #p0 && null != #p0.id")
