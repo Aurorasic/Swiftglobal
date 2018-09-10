@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * @author baizhengwen
  * @date 2018-09-06
  */
-public abstract class EntityClassInfos {
+public class EntityInformationCache {
 
     private static final Map<Class, Set<Field>> fieldMap = Maps.newConcurrentMap();
 

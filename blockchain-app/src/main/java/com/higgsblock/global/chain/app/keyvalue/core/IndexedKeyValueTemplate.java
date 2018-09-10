@@ -56,7 +56,7 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
         Class<?> clazz = object.getClass();
         String keyspace = this.mappingContext.getPersistentEntity(clazz).getKeySpace();
 
-        EntityClassInfos.getIndexFields(clazz).forEach(field -> {
+        EntityInformationCache.getIndexFields(clazz).forEach(field -> {
             Object index = ReflectionUtils.getField(field, object);
             adapter.deleteIndex(field.getName(), (Serializable) index, id, keyspace);
         });
@@ -66,7 +66,7 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
         Class<?> clazz = objectToUpdate.getClass();
         String keyspace = this.mappingContext.getPersistentEntity(clazz).getKeySpace();
 
-        EntityClassInfos.getIndexFields(clazz).forEach(field -> {
+        EntityInformationCache.getIndexFields(clazz).forEach(field -> {
             Object index = ReflectionUtils.getField(field, objectToUpdate);
             adapter.addIndex(field.getName(), (Serializable) index, id, keyspace);
         });
