@@ -32,9 +32,5 @@ public class UTXOEntity {
 
     @Index
     private String lockScript;
-
-    public String getId() {
-        return transactionHash + outIndex;
-    }
 }
 

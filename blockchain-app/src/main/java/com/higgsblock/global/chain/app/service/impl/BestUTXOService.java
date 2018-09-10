@@ -34,6 +34,7 @@ public class BestUTXOService implements IBestUTXOService {
         UTXOEntity entity = new UTXOEntity();
         TransactionOutput output = utxo.getOutput();
 
+        entity.setId(entity.getTransactionHash() + entity.getOutIndex());
         entity.setAmount(output.getMoney().getValue());
         entity.setScriptType(output.getLockScript().getType());
         entity.setTransactionHash(utxo.getHash());
