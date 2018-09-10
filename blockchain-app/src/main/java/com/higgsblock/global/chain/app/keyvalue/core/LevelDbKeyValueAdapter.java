@@ -171,14 +171,18 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     protected Class<?> getEntityClass(Serializable keyspace) {
+        Class<?> clazz = super.getEntityClass(keyspace);
+        if (null != clazz) {
+            return clazz;
+        }
         String id = keyspace.toString();
         String key = KeyValueAdapterUtils.getFullKey(KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE, id);
         String className = db.get(key, readOptions);
         try {
-            return StringUtils.isEmpty(className) ? null : Class.forName(className);
+            clazz = StringUtils.isEmpty(className) ? null : Class.forName(className);
         } catch (ClassNotFoundException e) {
             LOGGER.error(e.getMessage(), e);
         }
-        return null;
+        return clazz;
     }
 }

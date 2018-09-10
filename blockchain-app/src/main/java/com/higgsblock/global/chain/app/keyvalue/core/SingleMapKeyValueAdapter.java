@@ -102,15 +102,4 @@ public class SingleMapKeyValueAdapter extends BaseKeyValueAdapter implements Ind
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
         return (Collection<Serializable>) map.getOrDefault(key, Sets.newHashSet());
     }
-
-    @Override
-    protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
-        // ignore
-    }
-
-    @Override
-    protected Class<?> getEntityClass(Serializable keyspace) {
-        // ignore
-        return null;
-    }
 }

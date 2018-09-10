@@ -13,7 +13,7 @@ import java.util.Collection;
 public class KeyValueAdapterUtils {
 
     public static final String DEFAULT_INDEX_NAME = "id";
-    public static final String ENTITY_CLASS_KEY_SPACE = "_EntityClass";
+    public static final String ENTITY_CLASS_KEY_SPACE = "_EC";
 
     private KeyValueAdapterUtils() {
     }

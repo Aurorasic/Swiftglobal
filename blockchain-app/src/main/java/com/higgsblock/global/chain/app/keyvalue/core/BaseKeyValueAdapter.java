@@ -51,7 +51,11 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
         }
     }
 
-    protected abstract void addEntityClass(Serializable keyspace, Class<?> clazz);
+    protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
 
-    protected abstract Class<?> getEntityClass(Serializable keyspace);
+    }
+
+    protected Class<?> getEntityClass(Serializable keyspace) {
+        return cache.get(cache);
+    }
 }
