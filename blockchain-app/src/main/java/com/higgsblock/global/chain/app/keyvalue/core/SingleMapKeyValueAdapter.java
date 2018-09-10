@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.keyvalue.core;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
  * @date 2018-08-29
  */
 @Slf4j
-public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements IndexedKeyValueAdapter {
+public class SingleMapKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
 
     private Map<Serializable, Object> map = Maps.newConcurrentMap();
 
@@ -86,20 +85,14 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
     }
 
     @Override
-    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
-        ids.add(id);
-        map.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), ids);
-        return ids;
-    }
-
-    @Override
-    public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
-        ids.remove(id);
-        map.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), ids);
+    public Collection<Serializable> saveIndex(String indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
+        LOGGER.debug("saveIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+        if (ids.isEmpty()) {
+            map.remove(key);
+        } else {
+            map.put(key, ids);
+        }
         return ids;
     }
 
@@ -108,5 +101,16 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
         return (Collection<Serializable>) map.getOrDefault(key, Sets.newHashSet());
+    }
+
+    @Override
+    protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
+        // ignore
+    }
+
+    @Override
+    protected Class<?> getEntityClass(Serializable keyspace) {
+        // ignore
+        return null;
     }
 }

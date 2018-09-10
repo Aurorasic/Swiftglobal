@@ -4,6 +4,7 @@ import com.google.common.base.Equivalence;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.keyvalue.core.KeyValueAdapterUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.iq80.leveldb.WriteBatch;
 
@@ -31,8 +32,12 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
     @Override
     public ILevelDbWriteBatch put(Serializable indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-        String value = KeyValueAdapterUtils.toJsonString(ids);
-        return put(key, value);
+        if (CollectionUtils.isEmpty(ids)) {
+            delete(key);
+        } else {
+            put(key, KeyValueAdapterUtils.toJsonString(ids));
+        }
+        return this;
     }
 
     @Override

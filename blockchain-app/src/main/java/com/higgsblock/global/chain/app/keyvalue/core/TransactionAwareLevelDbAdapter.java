@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
@@ -12,7 +13,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -122,7 +122,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             Object result = null;
             if (!isAutoCommit) {
                 if (writeBatch.isDeleted(id, keyspace)) {
-                    return null;
+                    return result;
                 }
                 result = mapAdapter.get(id, keyspace);
             }
@@ -136,12 +136,12 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     @Override
     public Object delete(Serializable id, Serializable keyspace) {
         return doWithLock(writeLock, () -> {
-            Object result = null;
+            Object result = get(id, keyspace);
             if (!isAutoCommit) {
-                result = mapAdapter.delete(id, keyspace);
+                mapAdapter.delete(id, keyspace);
                 writeBatch.delete(id, keyspace);
             } else {
-                result = levelDbAdapter.delete(id, keyspace);
+                levelDbAdapter.delete(id, keyspace);
             }
             return result;
         });
@@ -240,13 +240,13 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     }
 
     @Override
-    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+    public Collection<Serializable> saveIndex(String indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
+        LOGGER.debug("saveIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(writeLock, () -> {
             if (isAutoCommit) {
-                return levelDbAdapter.addIndex(indexName, index, id, keyspace);
+                return levelDbAdapter.saveIndex(indexName, index, ids, keyspace);
             } else {
-                Collection<Serializable> ids = mapAdapter.addIndex(indexName, index, id, keyspace);
+                mapAdapter.saveIndex(indexName, index, ids, keyspace);
                 writeBatch.put(indexName, index, ids, keyspace);
                 return ids;
             }
@@ -254,25 +254,23 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     }
 
     @Override
+    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
+        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
+        return doWithLock(writeLock, () -> super.addIndex(indexName, index, id, keyspace));
+    }
+
+    @Override
     public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
         LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(writeLock, () -> {
-            if (isAutoCommit) {
-                return levelDbAdapter.deleteIndex(indexName, index, id, keyspace);
-            } else {
-                Collection<Serializable> ids = mapAdapter.deleteIndex(indexName, index, id, keyspace);
-
-                if (ids.isEmpty()) {
-                    writeBatch.delete(indexName, index, keyspace);
-                } else {
-                    writeBatch.put(indexName, index, ids, keyspace);
-                }
-
-                if (writeBatch.isDeleted(indexName, index, keyspace)) {
-                    Sets.newHashSet();
-                }
-                return ids;
+            if (!isAutoCommit && writeBatch.isDeleted(indexName, index, keyspace)) {
+                return Sets.newHashSet();
             }
+
+            Collection<Serializable> ids = findIndex(indexName, index, keyspace);
+            ids.remove(id);
+            saveIndex(indexName, index, ids, keyspace);
+            return ids;
         });
     }
 
@@ -280,14 +278,16 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(readLock, () -> {
-            Set<Serializable> result = Sets.newHashSet();
-            if (writeBatch.isDeleted(indexName, index, keyspace)) {
-                return result;
+            Collection<Serializable> result = Sets.newHashSet();
+            if (!isAutoCommit) {
+                if (writeBatch.isDeleted(indexName, index, keyspace)) {
+                    return result;
+                }
+                result = mapAdapter.findIndex(indexName, index, keyspace);
             }
 
-            result.addAll(levelDbAdapter.findIndex(indexName, index, keyspace));
-            if (!isAutoCommit) {
-                result.addAll(mapAdapter.findIndex(indexName, index, keyspace));
+            if (CollectionUtils.isEmpty(result)) {
+                result = levelDbAdapter.findIndex(indexName, index, keyspace);
             }
             return result;
         });

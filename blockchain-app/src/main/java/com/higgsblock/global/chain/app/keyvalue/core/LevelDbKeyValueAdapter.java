@@ -140,19 +140,8 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     }
 
     @Override
-    public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
-        ids.add(id);
-        db.put(KeyValueAdapterUtils.getFullKey(keyspace, indexName, index), KeyValueAdapterUtils.toJsonString(ids));
-        return ids;
-    }
-
-    @Override
-    public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
-        LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        Collection<Serializable> ids = findIndex(indexName, index, keyspace);
-        ids.remove(id);
+    public Collection<Serializable> saveIndex(String indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
+        LOGGER.debug("saveIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
         if (ids.isEmpty()) {
             db.delete(key);
