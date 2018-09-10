@@ -331,7 +331,6 @@ public class BlockService implements IBlockService {
     }
 
     public Block packageNewBlockForPreBlockHash(String preBlockHash, KeyPair keyPair) {
-        long startTime = System.currentTimeMillis();
         BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
         if (lastBlockIndex == null) {
             throw new IllegalStateException("The best block index can not be null");
@@ -339,9 +338,7 @@ public class BlockService implements IBlockService {
 
         Collection<Transaction> cacheTmpTransactions = txCacheManager.getTransactionMap().asMap().values();
         ArrayList cacheTransactions = new ArrayList(cacheTmpTransactions);
-        long start_valid_tx = System.currentTimeMillis();
         List txOfUnSpentUtxos = transactionIndexService.getTxOfUnSpentUtxo(preBlockHash, cacheTransactions);
-        LOGGER.info("valid txs spend time is = {} s", (System.currentTimeMillis() - start_valid_tx) / 1000.0);
         if (txOfUnSpentUtxos.size() < MINIMUM_TRANSACTION_IN_BLOCK - 1) {
             LOGGER.warn("There are no enough transactions, less than two, for packaging a block base on={}", preBlockHash);
             return null;
@@ -382,7 +379,6 @@ public class BlockService implements IBlockService {
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
         block.setMinerSignature(sig);
         blockCache.put(block.getHash(), block);
-        LOGGER.info("the package block spend time is = {} s", (System.currentTimeMillis() - startTime) / 1000.0);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
     }
