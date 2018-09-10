@@ -33,14 +33,13 @@ public class BestUTXOService implements IBestUTXOService {
     public void saveUTXO(UTXO utxo) {
         UTXOEntity entity = new UTXOEntity();
         TransactionOutput output = utxo.getOutput();
-
-        entity.setId(entity.getTransactionHash() + entity.getOutIndex());
         entity.setAmount(output.getMoney().getValue());
         entity.setScriptType(output.getLockScript().getType());
         entity.setTransactionHash(utxo.getHash());
         entity.setOutIndex(utxo.getIndex());
         entity.setCurrency(output.getMoney().getCurrency());
         entity.setLockScript(output.getLockScript().getAddress());
+        entity.setId(entity.getTransactionHash() + entity.getOutIndex());
 
         utxoRepository.save(entity);
     }
