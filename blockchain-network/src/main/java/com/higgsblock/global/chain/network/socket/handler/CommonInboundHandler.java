@@ -1,8 +1,10 @@
 package com.higgsblock.global.chain.network.socket.handler;
 
 import com.google.common.eventbus.EventBus;
+import com.higgsblock.global.chain.network.socket.event.ActiveChannelEvent;
 import com.higgsblock.global.chain.network.socket.event.ReceivedMessageEvent;
 import com.higgsblock.global.chain.network.socket.message.StringMessage;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -58,5 +60,16 @@ public class CommonInboundHandler extends SimpleChannelInboundHandler<String> {
             LOGGER.warn("Disconnected from: " + ctx.channel().remoteAddress());
         }
         ctx.close();
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        Channel channel = ctx.channel();
+        if (null == channel) {
+            return;
+        }
+        String channelId = channel.id().toString();
+        eventBus.post(new ActiveChannelEvent(channelId));
     }
 }
