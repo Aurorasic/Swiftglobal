@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDb;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import com.higgsblock.global.chain.app.keyvalue.db.LevelDb;
+import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.iq80.leveldb.CompressionType;
@@ -13,14 +14,12 @@ import org.iq80.leveldb.Options;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteOptions;
 import org.iq80.leveldb.impl.Iq80DBFactory;
-import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ import java.util.Map;
  * @date 2018-08-24
  */
 @Slf4j
-public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements IndexedKeyValueAdapter {
+public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
 
     protected String dataPath;
     protected ReadOptions readOptions = new ReadOptions();
@@ -61,7 +60,8 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
     @Override
     public Object get(Serializable id, Serializable keyspace) {
         String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-        return db.get(key, readOptions);
+        String value = db.get(key, readOptions);
+        return KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
     }
 
     @Override
@@ -93,13 +93,14 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
     public CloseableIterator<Map.Entry<Serializable, Object>> entries(Serializable keyspace) {
         String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
         Map<Serializable, Object> map = Maps.newHashMap();
+        Class<?> clazz = getEntityClass(keyspace);
 
         db.iterator(readOptions).forEachRemaining(entry -> {
             String key = entry.getKey();
             if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
-                Object value = entry.getValue();
+                String value = entry.getValue();
                 if (null != value) {
-                    map.put(key, value);
+                    map.put(key, KeyValueAdapterUtils.parseJsonString(value, clazz));
                 }
             }
         });
@@ -129,17 +130,7 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
 
     @Override
     public long count(Serializable keyspace) {
-        String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
-        Iterator<Map.Entry<String, String>> iterator = db.iterator(readOptions);
-        long num = 0L;
-        String key = null;
-        while (iterator.hasNext()) {
-            key = iterator.next().getKey();
-            if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
-                num++;
-            }
-        }
-        return num;
+        return Lists.newArrayList(entries(keyspace)).size();
     }
 
     @Override
@@ -148,7 +139,7 @@ public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements I
     }
 
     public ILevelDbWriteBatch createWriteBatch() {
-        return db.createWriteBatch();
+        return new LevelDbWriteBatch();
     }
 
     public void write(ILevelDbWriteBatch writeBatch) {

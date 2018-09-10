@@ -47,7 +47,7 @@ public class KeyValueAdapterUtils {
     }
 
     public static String getKeyPrefix(Serializable keyspace) {
-        return getKeyPrefix(keyspace, false);
+        return getKeyPrefix(keyspace, true);
     }
 
     public static String getKeyPrefix(Serializable keyspace, boolean isId) {

@@ -5,8 +5,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
@@ -25,7 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @date 2018-08-29
  */
 @Slf4j
-public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter implements ITransactionAwareKeyValueAdapter, IndexedKeyValueAdapter {
+public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implements ITransactionAwareKeyValueAdapter, IndexedKeyValueAdapter {
 
     private volatile boolean isAutoCommit = true;
     private volatile int transactionHolder;
@@ -100,38 +98,6 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
     }
 
 
-    protected <T> T doWithLock(Lock lock, Callable<T> callable) {
-        LOGGER.debug("try to get a {}", lock.getClass().getSimpleName());
-        lock.lock();
-        LOGGER.debug("get a {}", lock.getClass().getSimpleName());
-        try {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } finally {
-            lock.unlock();
-            LOGGER.debug("unlock a {}", lock.getClass().getSimpleName());
-        }
-    }
-
-    protected void doWithLock(Lock lock, Runnable runnable) {
-        LOGGER.debug("try to get a {}", lock.getClass().getSimpleName());
-        lock.lock();
-        LOGGER.debug("get a {}", lock.getClass().getSimpleName());
-        try {
-            try {
-                runnable.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } finally {
-            lock.unlock();
-            LOGGER.debug("unlock a {}", lock.getClass().getSimpleName());
-        }
-    }
-
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
         return doWithLock(writeLock, () -> {
@@ -157,6 +123,11 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
     @Override
     public Object get(Serializable id, Serializable keyspace) {
         return doWithLock(readLock, () -> {
+            String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
+            if (writeBatch.isDeleted(key)) {
+                return null;
+            }
+
             Object result = null;
             if (!isAutoCommit) {
                 result = mapAdapter.get(id, keyspace);
@@ -176,8 +147,7 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
                 result = mapAdapter.delete(id, keyspace);
                 writeBatch.delete(KeyValueAdapterUtils.getFullKey(keyspace, id));
             } else {
-                String value = (String) levelDbAdapter.delete(id, keyspace);
-                result = KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
+                result = levelDbAdapter.delete(id, keyspace);
             }
             return result;
         });
@@ -203,8 +173,8 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
                     .forEachRemaining(
                             entry -> {
                                 Serializable key = entry.getKey();
-                                if (key.toString().startsWith(dataKeyPrefix)) {
-                                    map.put(key, KeyValueAdapterUtils.parseJsonString((String) entry.getValue(), entityClass));
+                                if (key.toString().startsWith(dataKeyPrefix) && !writeBatch.isDeleted(key)) {
+                                    map.put(key, entry.getValue());
                                 }
                             }
                     );
@@ -242,34 +212,25 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
         });
     }
 
+    /**
+     * Note: The statistics may not be accurate.
+     *
+     * @param keyspace
+     * @return
+     */
     @Override
     public long count(Serializable keyspace) {
         return doWithLock(readLock, () -> mapAdapter.count(keyspace) + levelDbAdapter.count(keyspace));
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         doWithLock(writeLock, () -> {
             if (!isAutoCommit) {
                 mapAdapter.destroy();
             }
             levelDbAdapter.destroy();
             return null;
-        });
-    }
-
-    private void addEntityClass(Serializable keyspace, Class<?> clazz) {
-        doWithLock(writeLock, () -> {
-            String key = keyspace.toString();
-            levelDbAdapter.put(key, clazz.getName(), KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE);
-        });
-    }
-
-    private Class<?> getEntityClass(Serializable keyspace) {
-        return doWithLock(readLock, () -> {
-            String key = keyspace.toString();
-            String className = (String) levelDbAdapter.get(key, KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE);
-            return StringUtils.isEmpty(className) ? null : Class.forName(className);
         });
     }
 
@@ -299,14 +260,17 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
                 return levelDbAdapter.deleteIndex(indexName, index, id, keyspace);
             } else {
                 Collection<Serializable> ids = mapAdapter.deleteIndex(indexName, index, id, keyspace);
-                ids.addAll(levelDbAdapter.deleteIndex(indexName, index, id, keyspace));
-
                 String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+
                 if (ids.isEmpty()) {
                     writeBatch.delete(key);
                 } else {
                     String value = KeyValueAdapterUtils.toJsonString(ids);
                     writeBatch.put(key, value);
+                }
+
+                if (writeBatch.isDeleted(key)) {
+                    Sets.newHashSet();
                 }
                 return ids;
             }
@@ -318,11 +282,48 @@ public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter impl
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(readLock, () -> {
             Set<Serializable> result = Sets.newHashSet();
+            String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+            if (writeBatch.isDeleted(key)) {
+                return result;
+            }
+
             result.addAll(levelDbAdapter.findIndex(indexName, index, keyspace));
             if (!isAutoCommit) {
                 result.addAll(mapAdapter.findIndex(indexName, index, keyspace));
             }
             return result;
         });
+    }
+
+    protected <T> T doWithLock(Lock lock, Callable<T> callable) {
+        LOGGER.debug("try to get a {}", lock.getClass().getSimpleName());
+        lock.lock();
+        LOGGER.debug("get a {}", lock.getClass().getSimpleName());
+        try {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            lock.unlock();
+            LOGGER.debug("unlock a {}", lock.getClass().getSimpleName());
+        }
+    }
+
+    protected void doWithLock(Lock lock, Runnable runnable) {
+        LOGGER.debug("try to get a {}", lock.getClass().getSimpleName());
+        lock.lock();
+        LOGGER.debug("get a {}", lock.getClass().getSimpleName());
+        try {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            lock.unlock();
+            LOGGER.debug("unlock a {}", lock.getClass().getSimpleName());
+        }
     }
 }

@@ -44,7 +44,7 @@ public class IndexedCachingKeyValuePartTreeQuery extends KeyValuePartTreeQuery {
         ParameterAccessor accessor = new ParametersParameterAccessor(getQueryMethod().getParameters(), parameters);
         ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
-        KeyValueQuery<?> query = new IndexedKeyValueQuery(prepareQuery(parameters));
+        KeyValueQuery<?> query = prepareQuery(parameters);
         Field field = ReflectionUtils.findField(queryMethod.getClass(), "method", Method.class);
         field.setAccessible(true);
         Method method = (Method) ReflectionUtils.getField(field, queryMethod);

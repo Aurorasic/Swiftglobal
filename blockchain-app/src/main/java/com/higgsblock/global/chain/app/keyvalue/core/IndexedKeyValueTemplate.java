@@ -1,16 +1,12 @@
 package com.higgsblock.global.chain.app.keyvalue.core;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.keyvalue.core.KeyValueTemplate;
 import org.springframework.data.keyvalue.core.mapping.context.KeyValueMappingContext;
 import org.springframework.util.ReflectionUtils;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author baizhengwen
@@ -20,7 +16,6 @@ public class IndexedKeyValueTemplate extends KeyValueTemplate {
 
     private IndexedKeyValueAdapter adapter;
     private KeyValueMappingContext mappingContext;
-    private Map<Class, Set<Field>> fieldMap = Maps.newConcurrentMap();
 
     public IndexedKeyValueTemplate(IndexedKeyValueAdapter adapter, KeyValueMappingContext mappingContext) {
         super(adapter, mappingContext);

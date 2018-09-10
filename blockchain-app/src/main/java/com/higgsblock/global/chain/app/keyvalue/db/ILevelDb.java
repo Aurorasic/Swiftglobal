@@ -28,8 +28,6 @@ public interface ILevelDb<T extends Serializable> extends Iterable<Map.Entry<Str
 
     Snapshot delete(String key, WriteOptions options) throws DBException;
 
-    ILevelDbWriteBatch createWriteBatch();
-
     void write(ILevelDbWriteBatch updates) throws DBException;
 
     Snapshot write(ILevelDbWriteBatch updates, WriteOptions options) throws DBException;

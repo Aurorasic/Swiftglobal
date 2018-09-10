@@ -81,7 +81,7 @@ public class SingleMapKeyValueAdapter extends AbstractKeyValueAdapter implements
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         clear();
     }
 

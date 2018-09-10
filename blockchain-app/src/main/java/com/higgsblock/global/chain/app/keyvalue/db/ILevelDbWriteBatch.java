@@ -11,9 +11,11 @@ import java.io.Serializable;
  */
 public interface ILevelDbWriteBatch extends Closeable {
 
-    ILevelDbWriteBatch put(String key, Serializable value);
+    ILevelDbWriteBatch put(Serializable key, Serializable value);
 
     ILevelDbWriteBatch delete(Serializable key);
 
-    WriteBatch getWriteBatch();
+    boolean isDeleted(Serializable key);
+
+    WriteBatch wrapper(WriteBatch writeBatch);
 }
