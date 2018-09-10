@@ -14,6 +14,7 @@ import org.iq80.leveldb.Options;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteOptions;
 import org.iq80.leveldb.impl.Iq80DBFactory;
+import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
@@ -22,13 +23,14 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author baizhengwen
  * @date 2018-08-24
  */
 @Slf4j
-public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
+public class LevelDbKeyValueAdapter extends AbstractKeyValueAdapter implements IndexedKeyValueAdapter {
 
     protected String dataPath;
     protected ReadOptions readOptions = new ReadOptions();
@@ -48,7 +50,7 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
         String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-        db.put(key, String.valueOf(item), writeOptions);
+        db.put(key, Objects.toString(item, null), writeOptions);
         return item;
     }
 
@@ -60,13 +62,7 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     @Override
     public Object get(Serializable id, Serializable keyspace) {
         String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-        String value = db.get(key, readOptions);
-        return KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
-    }
-
-    @Override
-    public <T> T get(Serializable id, Serializable keyspace, Class<T> type) {
-        return (T) get(id, keyspace);
+        return db.get(key, readOptions);
     }
 
     @Override
@@ -75,11 +71,6 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
         db.delete(key, writeOptions);
         return value;
-    }
-
-    @Override
-    public <T> T delete(Serializable id, Serializable keyspace, Class<T> type) {
-        return (T) delete(id, keyspace);
     }
 
     @Override
@@ -93,14 +84,13 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     public CloseableIterator<Map.Entry<Serializable, Object>> entries(Serializable keyspace) {
         String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
         Map<Serializable, Object> map = Maps.newHashMap();
-        Class<?> clazz = getEntityClass(keyspace);
 
         db.iterator(readOptions).forEachRemaining(entry -> {
             String key = entry.getKey();
             if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
-                String value = entry.getValue();
+                Object value = entry.getValue();
                 if (null != value) {
-                    map.put(key, KeyValueAdapterUtils.parseJsonString(value, clazz));
+                    map.put(key, value);
                 }
             }
         });

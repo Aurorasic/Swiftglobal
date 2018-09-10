@@ -6,7 +6,7 @@ import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
 import com.higgsblock.global.chain.app.keyvalue.core.query.IndexedKeyValueQuery;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.core.query.KeyValueQuery;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
@@ -48,7 +48,7 @@ public class IndexedCachingKeyValuePartTreeQuery extends KeyValuePartTreeQuery {
         Field field = ReflectionUtils.findField(queryMethod.getClass(), "method", Method.class);
         field.setAccessible(true);
         Method method = (Method) ReflectionUtils.getField(field, queryMethod);
-        IndexQuery indexQuery = AnnotatedElementUtils.findMergedAnnotation(method, IndexQuery.class);
+        IndexQuery indexQuery = AnnotationUtils.findAnnotation(method, IndexQuery.class);
         boolean isIndexQuery = null != indexQuery;
         if (isIndexQuery) {
             String queryString = indexQuery.value().trim();

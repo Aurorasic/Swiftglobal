@@ -5,6 +5,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
@@ -23,7 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @date 2018-08-29
  */
 @Slf4j
-public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implements ITransactionAwareKeyValueAdapter, IndexedKeyValueAdapter {
+public class TransactionAwareLevelDbAdapter extends AbstractKeyValueAdapter implements ITransactionAwareKeyValueAdapter, IndexedKeyValueAdapter {
 
     private volatile boolean isAutoCommit = true;
     private volatile int transactionHolder;
@@ -56,7 +58,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             } else {
                 transactionHolder++;
             }
-
         } catch (Exception e) {
             rollbackTransaction();
         }
@@ -102,14 +103,11 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public Object put(Serializable id, Object item, Serializable keyspace) {
         return doWithLock(writeLock, () -> {
             addEntityClass(keyspace, item.getClass());
-
-            String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-            String value = KeyValueAdapterUtils.toJsonString(item);
             if (isAutoCommit) {
-                levelDbAdapter.put(id, value, keyspace);
+                levelDbAdapter.put(id, KeyValueAdapterUtils.toJsonString(item), keyspace);
             } else {
                 mapAdapter.put(id, item, keyspace);
-                writeBatch.put(key, value);
+                writeBatch.put(id, item, keyspace);
             }
             return item;
         });
@@ -123,17 +121,17 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     @Override
     public Object get(Serializable id, Serializable keyspace) {
         return doWithLock(readLock, () -> {
-            String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-            if (writeBatch.isDeleted(key)) {
-                return null;
-            }
-
             Object result = null;
             if (!isAutoCommit) {
+                if (writeBatch.isDeleted(id, keyspace)) {
+                    return null;
+                }
                 result = mapAdapter.get(id, keyspace);
             }
             if (null == result) {
-                result = KeyValueAdapterUtils.parseJsonString((String) levelDbAdapter.get(id, keyspace), getEntityClass(keyspace));
+                String value = (String) levelDbAdapter.get(id, keyspace);
+                System.out.println(value);
+                result = KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
             }
             return result;
         });
@@ -145,9 +143,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             Object result = null;
             if (!isAutoCommit) {
                 result = mapAdapter.delete(id, keyspace);
-                writeBatch.delete(KeyValueAdapterUtils.getFullKey(keyspace, id));
+                writeBatch.delete(id, keyspace);
             } else {
-                result = levelDbAdapter.delete(id, keyspace);
+                String value = (String) levelDbAdapter.delete(id, keyspace);
+                result = KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
             }
             return result;
         });
@@ -166,15 +165,27 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public CloseableIterator<Map.Entry<Serializable, Object>> entries(Serializable keyspace) {
         return doWithLock(readLock, () -> {
             Map<Serializable, Object> map = Maps.newHashMap();
-            Class<?> entityClass = getEntityClass(keyspace);
-            String dataKeyPrefix = KeyValueAdapterUtils.getKeyPrefix(keyspace, true);
+            String dataKeyPrefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
+            Class<?> clazz = getEntityClass(keyspace);
 
             levelDbAdapter.entries(keyspace)
                     .forEachRemaining(
                             entry -> {
                                 Serializable key = entry.getKey();
-                                if (key.toString().startsWith(dataKeyPrefix) && !writeBatch.isDeleted(key)) {
-                                    map.put(key, entry.getValue());
+                                if (!key.toString().startsWith(dataKeyPrefix)) {
+                                    return;
+                                }
+
+                                Object value = KeyValueAdapterUtils.parseJsonString((String) entry.getValue(), clazz);
+                                if (isAutoCommit) {
+                                    map.put(key, value);
+                                    return;
+                                }
+
+                                String id = KeyValueAdapterUtils.getId(key, keyspace);
+                                if (!writeBatch.isDeleted(id, keyspace)) {
+                                    map.put(key, value);
+                                    return;
                                 }
                             }
                     );
@@ -242,11 +253,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
                 return levelDbAdapter.addIndex(indexName, index, id, keyspace);
             } else {
                 Collection<Serializable> ids = mapAdapter.addIndex(indexName, index, id, keyspace);
-
-                String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-                String value = KeyValueAdapterUtils.toJsonString(ids);
-                writeBatch.put(key, value);
-
+                writeBatch.put(indexName, index, ids, keyspace);
                 return ids;
             }
         });
@@ -260,16 +267,14 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
                 return levelDbAdapter.deleteIndex(indexName, index, id, keyspace);
             } else {
                 Collection<Serializable> ids = mapAdapter.deleteIndex(indexName, index, id, keyspace);
-                String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
 
                 if (ids.isEmpty()) {
-                    writeBatch.delete(key);
+                    writeBatch.delete(indexName, index, keyspace);
                 } else {
-                    String value = KeyValueAdapterUtils.toJsonString(ids);
-                    writeBatch.put(key, value);
+                    writeBatch.put(indexName, index, ids, keyspace);
                 }
 
-                if (writeBatch.isDeleted(key)) {
+                if (writeBatch.isDeleted(indexName, index, keyspace)) {
                     Sets.newHashSet();
                 }
                 return ids;
@@ -282,8 +287,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(readLock, () -> {
             Set<Serializable> result = Sets.newHashSet();
-            String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-            if (writeBatch.isDeleted(key)) {
+            if (writeBatch.isDeleted(indexName, index, keyspace)) {
                 return result;
             }
 
@@ -293,6 +297,22 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             }
             return result;
         });
+    }
+
+    protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
+        String key = keyspace.toString();
+        levelDbAdapter.put(key, clazz.getName(), KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE);
+    }
+
+    protected Class<?> getEntityClass(Serializable keyspace) {
+        String key = keyspace.toString();
+        String className = levelDbAdapter.get(key, KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE, String.class);
+        try {
+            return StringUtils.isEmpty(className) ? null : Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     protected <T> T doWithLock(Lock lock, Callable<T> callable) {
