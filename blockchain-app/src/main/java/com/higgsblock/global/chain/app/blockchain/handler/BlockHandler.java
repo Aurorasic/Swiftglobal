@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.blockchain.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
+import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -65,8 +66,11 @@ public class BlockHandler extends BaseMessageHandler<Block> {
             synchronized (BlockService.class) {
                 newBestBlock = blockService.persistBlockAndIndex(block);
             }
+        } catch (BlockInvalidException e) {
+            LOGGER.warn(e.getMessage());
+            success = false;
         } catch (Exception e) {
-            LOGGER.info(String.format("save block failed %s", block.getSimpleInfo()), e);
+            LOGGER.warn(String.format("save block failed %s", block.getSimpleInfo()), e);
             success = false;
         }
 

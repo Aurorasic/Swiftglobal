@@ -440,11 +440,11 @@ public class BlockService implements IBlockService {
             isValid = checkAll(block);
         } catch (NotExistPreBlockException e) {
             putAndRequestPreBlocks(block);
-            throw new BlockInvalidException("pre block not exist");
+            throw new BlockInvalidException("pre block donot exist:" + block.getSimpleInfo());
         }
 
         if (!isValid) {
-            throw new BlockInvalidException("block is not valid");
+            throw new BlockInvalidException("block is not valid:" + block.getSimpleInfo());
         }
 
         //Save block and index
