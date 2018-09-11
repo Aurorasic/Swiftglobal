@@ -18,6 +18,7 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.*;
+import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
@@ -105,7 +106,7 @@ public class Program {
 
     private final SystemProperties config;
 
-    //private final BlockchainConfig blockchainConfig;
+    private final BlockchainConfig blockchainConfig;
 
     public Program(byte[] ops, ProgramInvoke programInvoke) {
         this(ops, programInvoke, null);
@@ -132,7 +133,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.storage = setupProgramListener(new Storage(programInvoke));
         this.trace = new ProgramTrace(config, programInvoke);
-        //this.blockchainConfig = config.getBlockchainConfig().getConfigForBlock(programInvoke.getNumber().longValue());
+        this.blockchainConfig = config.getBlockchainConfig();
     }
 
     public ProgramPrecompile getProgramPrecompile() {
@@ -808,9 +809,9 @@ public class Program {
         return invoke.getNumber().clone();
     }
 
-//    public BlockchainConfig getBlockchainConfig() {
-//        return blockchainConfig;
-//    }
+    public BlockchainConfig getBlockchainConfig() {
+        return blockchainConfig;
+    }
 
     public DataWord getDifficulty() {
         return invoke.getDifficulty().clone();

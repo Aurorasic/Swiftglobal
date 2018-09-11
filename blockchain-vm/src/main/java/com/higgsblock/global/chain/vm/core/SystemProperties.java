@@ -3,6 +3,8 @@ package com.higgsblock.global.chain.vm.core;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.GasCost;
 import com.higgsblock.global.chain.vm.OpCode;
+import com.higgsblock.global.chain.vm.config.BlockchainConfig;
+import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.program.Program;
 
 /**
@@ -61,6 +63,10 @@ public class SystemProperties {
             throw Program.Exception.notEnoughOpGas(op, requestedGas, availableGas);
         }
         return requestedGas.clone();
+    }
+
+    public BlockchainConfig getBlockchainConfig() {
+        return new ByzantiumConfig();
     }
 
     public String getCryptoProviderName() {
