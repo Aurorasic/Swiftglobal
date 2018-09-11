@@ -27,6 +27,11 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
     }
 
     @Override
+    public void destroy() throws Exception {
+
+    }
+
+    @Override
     public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
         LOGGER.debug("addIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         Collection<Serializable> ids = findIndex(indexName, index, keyspace);
