@@ -15,28 +15,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.higgsblock.global.chain.vm.util;
+package com.higgsblock.global.chain.vm.datasource;
 
-import org.spongycastle.jce.provider.BouncyCastleProvider;
+/**
+ * Interface for estimating size of a specific Java type
+ *
+ * Created by Anton Nashatyrev on 01.12.2016.
+ */
+public interface MemSizeEstimator<E> {
 
-import java.security.Provider;
-import java.security.Security;
+    long estimateSize(E e);
 
-public final class SpongyCastleProvider {
+    /**
+     * byte[] type size estimator
+     */
+    MemSizeEstimator<byte[]> ByteArrayEstimator = bytes -> {
+        return bytes == null ? 0 : bytes.length + 16; // 4 - compressed ref size, 12 - Object header
+    };
 
-  private static class Holder {
-    private static final Provider INSTANCE;
-    static{
-        Provider p = Security.getProvider("SC");
-        
-        INSTANCE = (p != null) ? p : new BouncyCastleProvider();
-            
-        INSTANCE.put("MessageDigest.ETH-KECCAK-256", "com.higgsblock.global.chain.vm.cryptohash.Keccak256");
-        INSTANCE.put("MessageDigest.ETH-KECCAK-512", "com.higgsblock.global.chain.vm.cryptohash.Keccak512");
-    }
-  }
 
-  public static Provider getInstance() {
-    return Holder.INSTANCE;
-  }
 }

@@ -17,26 +17,30 @@
  */
 package com.higgsblock.global.chain.vm.util;
 
-import org.spongycastle.jce.provider.BouncyCastleProvider;
+import java.util.concurrent.locks.Lock;
 
-import java.security.Provider;
-import java.security.Security;
+/**
+ * AutoClosable Lock wrapper. Use case:
+ *
+ * try (ALock l = wLock.lock()) {
+ *     // do smth under lock
+ * }
+ *
+ * Created by Anton Nashatyrev on 27.01.2017.
+ */
+public final class ALock implements AutoCloseable {
+    private final Lock lock;
 
-public final class SpongyCastleProvider {
-
-  private static class Holder {
-    private static final Provider INSTANCE;
-    static{
-        Provider p = Security.getProvider("SC");
-        
-        INSTANCE = (p != null) ? p : new BouncyCastleProvider();
-            
-        INSTANCE.put("MessageDigest.ETH-KECCAK-256", "com.higgsblock.global.chain.vm.cryptohash.Keccak256");
-        INSTANCE.put("MessageDigest.ETH-KECCAK-512", "com.higgsblock.global.chain.vm.cryptohash.Keccak512");
+    public ALock(Lock l) {
+        this.lock = l;
     }
-  }
 
-  public static Provider getInstance() {
-    return Holder.INSTANCE;
-  }
+    public final ALock lock() {
+        this.lock.lock();
+        return this;
+    }
+
+    public final void close() {
+        this.lock.unlock();
+    }
 }
