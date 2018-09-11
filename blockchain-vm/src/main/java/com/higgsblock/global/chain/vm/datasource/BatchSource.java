@@ -15,28 +15,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.higgsblock.global.chain.vm.util;
+package com.higgsblock.global.chain.vm.datasource;
 
-import org.spongycastle.jce.provider.BouncyCastleProvider;
+import java.util.Map;
 
-import java.security.Provider;
-import java.security.Security;
+/**
+ * The Source which is capable of batch updates.
+ * The semantics of a batch update is up to implementation:
+ * it can be just performance optimization or batch update
+ * can be atomic or other.
+ *
+ * Created by Anton Nashatyrev on 01.11.2016.
+ */
+public interface BatchSource<K, V> extends Source<K, V> {
 
-public final class SpongyCastleProvider {
-
-  private static class Holder {
-    private static final Provider INSTANCE;
-    static{
-        Provider p = Security.getProvider("SC");
-        
-        INSTANCE = (p != null) ? p : new BouncyCastleProvider();
-            
-        INSTANCE.put("MessageDigest.ETH-KECCAK-256", "com.higgsblock.global.chain.vm.cryptohash.Keccak256");
-        INSTANCE.put("MessageDigest.ETH-KECCAK-512", "com.higgsblock.global.chain.vm.cryptohash.Keccak512");
-    }
-  }
-
-  public static Provider getInstance() {
-    return Holder.INSTANCE;
-  }
+    /**
+     * Do batch update
+     * @param rows Normally this Map is treated just as a collection
+     *             of key-value pairs and shouldn't conform to a normal
+     *             Map contract. Though it is up to implementation to
+     *             require passing specific Maps
+     */
+    void updateBatch(Map<K, V> rows);
 }

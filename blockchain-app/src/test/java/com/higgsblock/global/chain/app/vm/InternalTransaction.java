@@ -17,4 +17,6 @@ public class InternalTransaction extends Transaction {
     public void setParentHash(byte[] parentHash) {
         this.parentHash = parentHash;
     }
+
+
 }

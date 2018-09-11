@@ -20,6 +20,8 @@ public class AccountDetail implements Serializable{
 
     private BigInteger balance;
 
+    private String currency;
+
     public String getFrom() {
         return from;
     }
@@ -53,5 +55,11 @@ public class AccountDetail implements Serializable{
         this.value = value;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
 
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 }
