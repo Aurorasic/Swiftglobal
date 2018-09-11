@@ -124,6 +124,11 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         return Lists.newArrayList(entries(keyspace)).size();
     }
 
+    @Override
+    public void destroy() throws Exception {
+        db.close();
+    }
+
     public ILevelDbWriteBatch createWriteBatch() {
         return new LevelDbWriteBatch();
     }
