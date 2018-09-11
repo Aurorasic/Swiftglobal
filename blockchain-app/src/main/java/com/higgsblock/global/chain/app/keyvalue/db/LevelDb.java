@@ -20,15 +20,26 @@ import java.util.Map;
 @Slf4j
 public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
-    private Options options = new Options()
-            .createIfMissing(true)
-            .compressionType(CompressionType.SNAPPY);
     private DB db;
+    private Options options;
+    private String dataPath;
 
-    public LevelDb(String dataPath) {
+    public LevelDb(String dataPath, Options options) {
+        this.dataPath = dataPath;
+        this.options = options;
+
         File file = new File(dataPath);
         try {
             db = Iq80DBFactory.factory.open(file, options);
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        try {
+            Iq80DBFactory.factory.destroy(new File(dataPath), options);
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }

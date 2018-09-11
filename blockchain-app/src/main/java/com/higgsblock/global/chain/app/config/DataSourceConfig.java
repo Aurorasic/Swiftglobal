@@ -6,6 +6,8 @@ import com.higgsblock.global.chain.app.keyvalue.core.LevelDbKeyValueAdapter;
 import com.higgsblock.global.chain.app.keyvalue.core.TransactionAwareLevelDbAdapter;
 import com.higgsblock.global.chain.app.keyvalue.repository.config.EnableLevelDbRepositories;
 import lombok.extern.slf4j.Slf4j;
+import org.iq80.leveldb.CompressionType;
+import org.iq80.leveldb.Options;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
@@ -29,7 +31,12 @@ public class DataSourceConfig {
 
     @Bean
     public IndexedKeyValueAdapter keyValueAdapter(AppConfig config) {
-        return new TransactionAwareLevelDbAdapter(new LevelDbKeyValueAdapter(config.getDataPath()));
+        Options options = new Options()
+                .createIfMissing(true)
+                .writeBufferSize(200 * 1024 * 1024)
+                .compressionType(CompressionType.SNAPPY);
+        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataPath(), options);
+        return new TransactionAwareLevelDbAdapter(adapter);
     }
 
 }

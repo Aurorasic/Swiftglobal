@@ -16,6 +16,8 @@ import java.util.Map;
  */
 public interface ILevelDb<T extends Serializable> extends Iterable<Map.Entry<String, T>>, Closeable {
 
+    void destroy();
+
     T get(String key) throws DBException;
 
     T get(String key, ReadOptions options) throws DBException;

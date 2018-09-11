@@ -8,17 +8,15 @@ import com.higgsblock.global.chain.app.keyvalue.db.ILevelDb;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import com.higgsblock.global.chain.app.keyvalue.db.LevelDb;
 import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteOptions;
-import org.iq80.leveldb.impl.Iq80DBFactory;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -31,20 +29,20 @@ import java.util.Map;
 @Slf4j
 public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
 
-    protected String dataPath;
-    protected ReadOptions readOptions = new ReadOptions();
-    protected WriteOptions writeOptions = new WriteOptions().sync(true);
-    protected Options options = new Options()
-            .createIfMissing(true)
-            .writeBufferSize(200 * 1024 * 1024)
-            .compressionType(CompressionType.SNAPPY);
+    @Setter
+    protected ReadOptions readOptions;
+    @Setter
+    protected WriteOptions writeOptions;
     protected ILevelDb<String> db;
 
-    public LevelDbKeyValueAdapter(String dataPath) {
+    public LevelDbKeyValueAdapter(String dataPath, Options options) {
         super(new IndexedSpelQueryEngine());
-        this.dataPath = dataPath;
-        db = new LevelDb<>(dataPath);
+
+        db = new LevelDb<>(dataPath, options);
+        readOptions = new ReadOptions();
+        writeOptions = new WriteOptions().sync(true);
     }
+
 
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
@@ -127,8 +125,8 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     }
 
     @Override
-    public void destroy() throws Exception {
-        Iq80DBFactory.factory.destroy(new File(dataPath), options);
+    public void destroy() {
+        db.destroy();
     }
 
     public ILevelDbWriteBatch createWriteBatch() {
