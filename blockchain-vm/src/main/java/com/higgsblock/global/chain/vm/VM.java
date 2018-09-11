@@ -156,30 +156,30 @@ public class VM {
             }
 
             //There's no need to check from Byzantium.
-//            switch (op) {
-//                case DELEGATECALL:
-//                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
-//                        // opcode since Homestead release only
-//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-//                    }
-//                    break;
-//                case REVERT:
-//                    if (!blockchainConfig.eip206()) {
-//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-//                    }
-//                    break;
-//                case RETURNDATACOPY:
-//                case RETURNDATASIZE:
-//                    if (!blockchainConfig.eip211()) {
-//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-//                    }
-//                    break;
-//                case STATICCALL:
-//                    if (!blockchainConfig.eip214()) {
-//                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
-//                    }
-//                    break;
-//            }
+            switch (op) {
+                case DELEGATECALL:
+                    if (!blockchainConfig.getConstants().hasDelegateCallOpcode()) {
+                        // opcode since Homestead release only
+                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+                    }
+                    break;
+                case REVERT:
+                    if (!blockchainConfig.eip206()) {
+                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+                    }
+                    break;
+                case RETURNDATACOPY:
+                case RETURNDATASIZE:
+                    if (!blockchainConfig.eip211()) {
+                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+                    }
+                    break;
+                case STATICCALL:
+                    if (!blockchainConfig.eip214()) {
+                        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+                    }
+                    break;
+            }
 
             program.setLastOp(op.val());
             program.verifyStackSize(op.require());
