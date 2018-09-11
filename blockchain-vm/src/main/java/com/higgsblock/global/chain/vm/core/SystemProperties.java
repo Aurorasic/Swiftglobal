@@ -39,15 +39,18 @@ public class SystemProperties {
 
 
     public String vmTraceDir() {
-        return "vm.structured.dir";
+//        return System.getProperty("vm.structured.dir");
+        return "trace";
     }
 
     public boolean vmTrace() {
-        return false;
+//        return Boolean.valueOf(System.getProperty("vm.structured.trace"));
+        return true;
     }
 
     public String databaseDir() {
-        return "database.dir";
+//        return System.getProperty("database.dir");
+        return "db";
     }
 
     public boolean playVM() {
