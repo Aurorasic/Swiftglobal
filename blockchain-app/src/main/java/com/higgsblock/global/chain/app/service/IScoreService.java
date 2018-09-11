@@ -3,10 +3,8 @@ package com.higgsblock.global.chain.app.service;
 
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
-import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author HuangShengli
@@ -100,20 +98,6 @@ public interface IScoreService {
      * @return
      */
     void remove(String address);
-
-    /**
-     * load all score
-     *
-     * @return
-     */
-    Map<String, Integer> loadAll();
-
-    /**
-     * load all score of miners
-     *
-     * @return
-     */
-    List<ScoreEntity> all();
 
     /**
      * set score for dpos miners

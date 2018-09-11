@@ -1,14 +1,12 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
-import com.higgsblock.global.chain.app.dao.IScoreRepository;
-import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
@@ -18,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +30,7 @@ import java.util.Set;
 public class ScoreService implements IScoreService {
 
     @Autowired
-    private IScoreRepository scoreRepository;
+    private IBlockChainInfoService blockChainInfoService;
     @Autowired
     private ITransactionService transactionService;
     @Autowired
@@ -45,8 +44,9 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public Integer get(String address) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        return null == scoreEntity ? null : scoreEntity.getScore();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String score = allScores.get(address);
+        return score == null ? null : Integer.valueOf(score);
     }
 
     /**
@@ -57,14 +57,9 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void put(String address, Integer score) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        if (null != scoreEntity) {
-            scoreEntity.setScore(score);
-            scoreRepository.save(scoreEntity);
-        } else {
-            ScoreEntity saveEntity = new ScoreEntity(address, score);
-            scoreRepository.save(saveEntity);
-        }
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        allScores.put(address, String.valueOf(score));
+        blockChainInfoService.setAllScores(allScores);
     }
 
     @Override
@@ -79,11 +74,20 @@ public class ScoreService implements IScoreService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int plusAll(Integer score) {
-        List<ScoreEntity> allScore = all();
-        for (ScoreEntity scoreEntity : allScore) {
-            scoreEntity.setScore(scoreEntity.getScore() + 1);
-            scoreRepository.save(scoreEntity);
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        if (allScores.isEmpty()) {
+            return 1;
         }
+        Set<String> keySet = allScores.keySet();
+        Iterator<String> iterator = keySet.iterator();
+        while (iterator.hasNext()) {
+            String key = iterator.next();
+            String oldScoreStr = allScores.get(key);
+            Integer oldScore = Integer.valueOf(oldScoreStr);
+            allScores.put(key, String.valueOf(oldScore + score));
+        }
+
+        blockChainInfoService.setAllScores(allScores);
         return 1;
     }
 
@@ -96,9 +100,11 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void putIfAbsent(String address, Integer score) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        if (scoreEntity == null) {
-            scoreRepository.save(new ScoreEntity(address, score));
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String value = allScores.get(address);
+        if (value == null) {
+            allScores.put(address, String.valueOf(score));
+            blockChainInfoService.setAllScores(allScores);
         }
     }
 
@@ -109,24 +115,12 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void remove(String address) {
-        scoreRepository.deleteByAddress(address);
-    }
-
-    /**
-     * query all score
-     *
-     * @return
-     */
-    @Override
-    public Map<String, Integer> loadAll() {
-        Map<String, Integer> map = Maps.newHashMap();
-        scoreRepository.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
-        return map;
-    }
-
-    @Override
-    public List<ScoreEntity> all() {
-        return scoreRepository.findAll();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String value = allScores.get(address);
+        if (value != null) {
+            allScores.remove(address);
+            blockChainInfoService.setAllScores(allScores);
+        }
     }
 
     /**
@@ -179,18 +173,22 @@ public class ScoreService implements IScoreService {
     public List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
         List<String> result = Lists.newLinkedList();
         //todo yuguojia find all, then sort
-        List<ScoreEntity> allScoreEntities = scoreRepository.findAll();
-        for (ScoreEntity scoreEntity : allScoreEntities) {
-            if (scoreEntity.getScore() < scoreRange.getMinScore() ||
-                    scoreEntity.getScore() >= scoreRange.getMaxScore()) {
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        Set<Map.Entry<String, String>> entries = allScores.entrySet();
+        for (Map.Entry<String, String> entry : entries) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            Integer score = Integer.valueOf(value);
+            if (score < scoreRange.getMinScore() ||
+                    score >= scoreRange.getMaxScore()) {
                 //only in [minScore,maxScore)
                 continue;
             }
             if (result.size() == SCORE_LIMIT_NUM) {
                 break;
             }
-            if (!exculdeAddresses.contains(scoreEntity.getAddress())) {
-                result.add(scoreEntity.getAddress());
+            if (!exculdeAddresses.contains(key)) {
+                result.add(key);
             }
         }
         return result;

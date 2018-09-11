@@ -4,7 +4,6 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.IDposRepository;
-import com.higgsblock.global.chain.app.dao.IScoreRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
@@ -42,9 +41,6 @@ public class DataErrorService {
     private IDposRepository dposRepository;
 
     @Autowired
-    private IScoreRepository scoreRepository;
-
-    @Autowired
     private IUTXORepository utxoRepository;
 
     @Autowired
@@ -61,7 +57,7 @@ public class DataErrorService {
      */
     private void deleteData() {
         dposRepository.deleteAll();
-        scoreRepository.deleteAll();
+        blockChainInfoService.deleteAllScores();
         utxoRepository.deleteAll();
         transactionIndexRepository.deleteAll();
     }
