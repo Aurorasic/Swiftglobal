@@ -32,9 +32,9 @@ public class RepositoryImpl implements Repository {
     //protected Source<byte[], AccountState> accountStateCache;
     //protected Source<byte[], byte[]> codeCache;
 
-    private Map<byte[], AccountState> accountStateCache;
+    private Map<String, AccountState> accountStateCache;
 
-    private Map<byte[], byte[]> codeCache;
+    private Map<String, byte[]> codeCache;
 
     protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
 
@@ -73,7 +73,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
         AccountState state = new AccountState(BigInteger.ZERO,addr);
-        accountStateCache.put(addr, state);
+        accountStateCache.put(Hex.toHexString(addr), state);
         return state;
     }
 
@@ -85,13 +85,13 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
         System.out.println(Hex.toHexString(addr));
-        accountStateCache.keySet().stream().forEach(item->System.out.println(Hex.toHexString(item)));
+        accountStateCache.keySet().stream().forEach(item->System.out.println(item));
 
-        return accountStateCache.get(addr);
+        return accountStateCache.get(Hex.toHexString(addr));
     }
 
     synchronized AccountState getOrCreateAccountState(byte[] addr) {
-        AccountState ret = accountStateCache.get(addr);
+        AccountState ret = accountStateCache.get((Hex.toHexString(addr)));
         if (ret == null) {
             ret = createAccount(addr);
         }
@@ -100,7 +100,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void delete(byte[] addr) {
-        accountStateCache.remove(addr);
+        accountStateCache.remove((Hex.toHexString(addr)));
         //storageCache.delete(addr);
     }
 
@@ -113,16 +113,20 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
-        codeCache.put(codeKey(codeHash, addr), code);
+        byte[] key =codeKey(codeHash, addr);
+        String strKey =  Hex.toHexString(key);
+        codeCache.put(strKey, code);
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(addr, accountState.withCodeHash(codeHash));
+        accountStateCache.put(Hex.toHexString(addr), accountState.withCodeHash(codeHash));
     }
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
         byte[] codeHash = getCodeHash(addr);
+        byte[] key = codeKey(codeHash, addr);
+        String strKey =  Hex.toHexString(key);
         return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(codeKey(codeHash, addr));
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(strKey);
     }
 
 
@@ -156,7 +160,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized BigInteger addBalance(byte[] addr, BigInteger value) {
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(addr, accountState.withBalanceIncrement(value));
+        accountStateCache.put(Hex.toHexString(addr), accountState.withBalanceIncrement(value));
         return accountState.getBalance();
     }
 
