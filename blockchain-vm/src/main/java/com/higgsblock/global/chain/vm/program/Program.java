@@ -42,13 +42,7 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
-
-import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
-
-import static org.apache.commons.lang3.ArrayUtils.getLength;
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
-import static org.apache.logging.log4j.core.util.Assert.isEmpty;
 
 //import com.higgsblock.global.chain.vm.core.AccountState;
 //import com.higgsblock.global.chain.crypto.HashUtil;
