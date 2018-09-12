@@ -1,6 +1,16 @@
 package com.higgsblock.global.chain.vm.config;
 
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.GasCost;
+import com.higgsblock.global.chain.vm.OpCode;
+import com.higgsblock.global.chain.vm.program.Program;
+
 public class ByzantiumConfig implements BlockchainConfig {
+    @Override
+    public GasCost getGasCost() {
+        return null;
+    }
+
     @Override
     public Constants getConstants() {
         return new Constants();
@@ -40,6 +50,11 @@ public class ByzantiumConfig implements BlockchainConfig {
     @Override
     public boolean eip214() {
         return true;
+    }
+
+    @Override
+    public DataWord getCallGas(OpCode op, DataWord requestedGas, DataWord availableGas) throws Program.OutOfGasException {
+        return null;
     }
 
     @Override
