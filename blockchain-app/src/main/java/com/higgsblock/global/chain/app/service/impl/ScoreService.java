@@ -73,7 +73,7 @@ public class ScoreService implements IScoreService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int plusAll(Integer score) {
+    public int plusAll(Integer plusScore) {
         Map<String, String> allScores = blockChainInfoService.getAllScores();
         if (allScores.isEmpty()) {
             return 1;
@@ -84,7 +84,7 @@ public class ScoreService implements IScoreService {
             String key = iterator.next();
             String oldScoreStr = allScores.get(key);
             Integer oldScore = Integer.valueOf(oldScoreStr);
-            allScores.put(key, String.valueOf(oldScore + score));
+            allScores.put(key, String.valueOf(oldScore + plusScore));
         }
 
         blockChainInfoService.setAllScores(allScores);
