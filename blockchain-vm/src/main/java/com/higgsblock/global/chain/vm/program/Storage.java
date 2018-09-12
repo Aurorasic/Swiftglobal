@@ -182,5 +182,10 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean flushImpl(Repository childRepository) {
+        return false;
+    }
+
 
 }

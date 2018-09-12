@@ -17,9 +17,12 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
-import com.higgsblock.global.chain.vm.*;
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
+import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -29,16 +32,6 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramStorageChangeListe
 import com.higgsblock.global.chain.vm.trace.ProgramTrace;
 import com.higgsblock.global.chain.vm.trace.ProgramTraceListener;
 import com.higgsblock.global.chain.vm.util.*;
-import org.apache.commons.lang3.tuple.Pair;
-
-//import com.higgsblock.global.chain.vm.core.AccountState;
-import com.higgsblock.global.chain.vm.core.Repository;
-import com.higgsblock.global.chain.vm.core.Transaction;
-//import com.higgsblock.global.chain.crypto.HashUtil;
-//import com.higgsblock.global.chain.db.ContractDetails;
-
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -47,11 +40,20 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
+
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
+
+import static org.apache.commons.lang3.ArrayUtils.getLength;
+import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
+import static org.apache.logging.log4j.core.util.Assert.isEmpty;
+
+//import com.higgsblock.global.chain.vm.core.AccountState;
+//import com.higgsblock.global.chain.crypto.HashUtil;
+//import com.higgsblock.global.chain.db.ContractDetails;
+
 //import static com.higgsblock.global.chain.util.BIUtil.*;
 
 /**
@@ -785,10 +787,8 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-//        DataWord ret = getStorage().getStorageValue(getOwnerAddress().getLast20Bytes(), key.clone());
-//        return ret == null ? null : ret.clone();
-
-        return null;
+        DataWord ret = getStorage().getStorageValue(getOwnerAddress().getLast20Bytes(), key.clone());
+        return ret == null ? null : ret.clone();
     }
 
     public DataWord getPrevHash() {

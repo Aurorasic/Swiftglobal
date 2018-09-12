@@ -184,4 +184,11 @@ public interface Repository {
 
 
     Repository getSnapshotTo(byte[] root);
+
+    /**
+     * flush child cache to this cache
+     * @param childRepository child snapshot
+     * @return
+     */
+    boolean flushImpl(Repository childRepository);
 }

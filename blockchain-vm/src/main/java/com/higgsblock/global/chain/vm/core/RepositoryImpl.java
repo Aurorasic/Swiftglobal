@@ -13,7 +13,10 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
+
 import java.util.HashMap;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +28,7 @@ public class RepositoryImpl implements Repository {
 
     protected RepositoryImpl parent;
 
+
     //protected Source<byte[], AccountState> accountStateCache;
     //protected Source<byte[], byte[]> codeCache;
 
@@ -33,6 +37,13 @@ public class RepositoryImpl implements Repository {
     private Map<byte[], byte[]> codeCache;
 
     protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
+
+
+    /**
+     * utxo cache
+     */
+    protected Map<String,List<UTXOBO>> utxoCache;
+
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
@@ -45,6 +56,7 @@ public class RepositoryImpl implements Repository {
     }
 
     public RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
+
                           MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         init(accountStateCache, codeCache, storageCache);
     }
@@ -53,7 +65,9 @@ public class RepositoryImpl implements Repository {
                         MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         //this.accountStateCache = accountStateCache;
         //this.codeCache = codeCache;
+
         this.storageCache = storageCache;
+        this.utxoCache = utxoCache;
     }
 
     @Override
@@ -201,6 +215,11 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
+    public boolean flushImpl(Repository childRepository) {
+        return false;
+    }
+
+    @Override
     public synchronized void commit() {
         Repository parentSync = parent == null ? this : parent;
         // need to synchronize on parent since between different caches flush
@@ -210,6 +229,7 @@ public class RepositoryImpl implements Repository {
 //            storageCache.flush();
 ////            codeCache.flush();
 ////            accountStateCache.flush();
+
         }
     }
 
@@ -251,4 +271,25 @@ public class RepositoryImpl implements Repository {
         throw new RuntimeException("Not supported");
     }
 
+    //@Override
+    public boolean flushImpl(RepositoryImpl childRepository) {
+
+        //if parent utxo include child utxo and child's utxo is spent
+        Map<String, List<UTXOBO>> utxoCache = childRepository.getUtxoCache();
+        for (Map.Entry<String, List<UTXOBO>> en:utxoCache.entrySet()){
+            List<UTXOBO> cList = en.getValue();
+            List<UTXOBO> pList = this.utxoCache.get(en.getKey());
+
+        }
+
+        return false;
+    }
+
+    public Map<String, List<UTXOBO>> getUtxoCache() {
+        return utxoCache;
+    }
+
+    public void setUtxoCache(Map<String, List<UTXOBO>> utxoCache) {
+        this.utxoCache = utxoCache;
+    }
 }

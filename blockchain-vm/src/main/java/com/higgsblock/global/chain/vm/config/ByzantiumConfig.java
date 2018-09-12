@@ -1,6 +1,10 @@
 package com.higgsblock.global.chain.vm.config;
 
 public class ByzantiumConfig implements BlockchainConfig {
+    @Override
+    public Constants getConstants() {
+        return new Constants();
+    }
 
     //Since 160HF
     @Override
