@@ -52,7 +52,6 @@ import static java.lang.StrictMath.min;
 import static java.lang.String.format;
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
-import static org.apache.logging.log4j.core.util.Assert.isEmpty;
 //import static com.higgsblock.global.chain.util.BIUtil.*;
 
 /**
@@ -390,9 +389,9 @@ public class Program {
 //        getResult().addDeleteAccount(this.getOwnerAddress());
 //    }
 //
-//    public Repository getStorage() {
-//        return this.storage;
-//    }
+    public Repository getStorage() {
+        return this.storage;
+    }
 //
 //    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 //    public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
@@ -712,9 +711,8 @@ public class Program {
     }
 
     public byte[] getCodeAt(DataWord address) {
-        //byte[] code = invoke.getRepository().getCode(address.getLast20Bytes());
-        //return nullToEmpty(code);
-        return null;
+        byte[] code = invoke.getRepository().getCode(address.getLast20Bytes());
+        return nullToEmpty(code);
     }
 
     public DataWord getOwnerAddress() {

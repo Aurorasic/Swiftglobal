@@ -15,40 +15,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.higgsblock.global.chain.vm.core;
+package com.higgsblock.global.chain.vm.util;
 
 /**
- * Base interface for all data source classes
+ * Converter from one type to another and vice versa
  *
- * Created by Anton Nashatyrev on 05.10.2016.
+ * Created by Anton Nashatyrev on 17.03.2016.
  */
-public interface Source<K, V> {
-
+public interface Serializer<T, S> {
     /**
-     * Puts key-value pair into source
+     * Converts T ==> S
+     * Should correctly handle null parameter
      */
-    void put(K key, V val);
-
+    S serialize(T object);
     /**
-     * Gets a value by its key
-     * @return value or <null/> if no such key in the source
+     * Converts S ==> T
+     * Should correctly handle null parameter
      */
-    V get(K key);
-
-    /**
-     * Deletes the key-value pair from the source
-     */
-    void delete(K key);
-
-    /**
-     * If this source has underlying level source then all
-     * changes collected in this source are flushed into the
-     * underlying source.
-     * The implementation may do 'cascading' flush, i.e. call
-     * flush() on the underlying Source
-     * @return true if any changes we flushed, false if the underlying
-     * Source didn't change
-     */
-    boolean flush();
-
+    T deserialize(S stream);
 }

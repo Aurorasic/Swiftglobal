@@ -1,12 +1,20 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.datasource.CachedSource;
+import com.higgsblock.global.chain.vm.datasource.MultiCache;
+import com.higgsblock.global.chain.vm.datasource.Source;
+import com.higgsblock.global.chain.vm.datasource.WriteCache;
 import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
+import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,25 +25,34 @@ public class RepositoryImpl implements Repository {
 
     protected RepositoryImpl parent;
 
-    protected Source<byte[], AccountState> accountStateCache;
-    protected Source<byte[], byte[]> codeCache;
-    protected Source<byte[],Source<DataWord,DataWord>> storageCache;
+    //protected Source<byte[], AccountState> accountStateCache;
+    //protected Source<byte[], byte[]> codeCache;
+
+    private Map<byte[], AccountState> accountStateCache;
+
+    private Map<byte[], byte[]> codeCache;
+
+    protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
 
-    protected RepositoryImpl() {
+    public RepositoryImpl() {
+
+        this.codeCache = new HashMap<>();
+        this.accountStateCache = new HashMap<>();
+
     }
 
     public RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
-                          Source<byte[],Source<DataWord,DataWord>> storageCache) {
+                          MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         init(accountStateCache, codeCache, storageCache);
     }
 
     protected void init(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
-                        Source<byte[],Source<DataWord,DataWord>> storageCache) {
-        this.accountStateCache = accountStateCache;
-        this.codeCache = codeCache;
+                        MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
+        //this.accountStateCache = accountStateCache;
+        //this.codeCache = codeCache;
         this.storageCache = storageCache;
     }
 
@@ -53,6 +70,9 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
+        System.out.println(Hex.toHexString(addr));
+        accountStateCache.keySet().stream().forEach(item->System.out.println(Hex.toHexString(item)));
+
         return accountStateCache.get(addr);
     }
 
@@ -66,8 +86,8 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void delete(byte[] addr) {
-        accountStateCache.delete(addr);
-        storageCache.delete(addr);
+        accountStateCache.remove(addr);
+        //storageCache.delete(addr);
     }
 
     @Override
@@ -79,7 +99,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
-        codeCache.put(codeHash, code);
+        codeCache.put(codeKey(codeHash, addr), code);
         AccountState accountState = getOrCreateAccountState(addr);
         accountStateCache.put(addr, accountState.withCodeHash(codeHash));
     }
@@ -88,7 +108,7 @@ public class RepositoryImpl implements Repository {
     public synchronized byte[] getCode(byte[] addr) {
         byte[] codeHash = getCodeHash(addr);
         return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(codeHash);
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(codeKey(codeHash, addr));
     }
 
 
@@ -136,10 +156,10 @@ public class RepositoryImpl implements Repository {
 
     }
 
-    @Override
-    public Repository startTracking() {
-        return null;
-    }
+//    @Override
+//    public Repository startTracking() {
+//        return null;
+//    }
 
     @Override
     public void flush() {
@@ -151,8 +171,8 @@ public class RepositoryImpl implements Repository {
 
     }
 
-//    @Override
-//    public synchronized RepositoryImpl startTracking() {
+    @Override
+    public synchronized RepositoryImpl startTracking() {
 //        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
 //                WriteCache.CacheType.SIMPLE);
 //        Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
@@ -166,7 +186,14 @@ public class RepositoryImpl implements Repository {
 //        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
 //        ret.parent = this;
 //        return ret;
-//    }
+
+        return null;
+    }
+
+    // composing a key as there can be several contracts with the same code
+    private byte[] codeKey(byte[] codeHash, byte[] addr) {
+        return NodeKeyCompositor.compose(codeHash, addr);
+    }
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
@@ -180,9 +207,9 @@ public class RepositoryImpl implements Repository {
         // the parent repo would not be in consistent state
         // when no parent just take this instance as a mock
         synchronized (parentSync) {
-            storageCache.flush();
-            codeCache.flush();
-            accountStateCache.flush();
+//            storageCache.flush();
+////            codeCache.flush();
+////            accountStateCache.flush();
         }
     }
 
