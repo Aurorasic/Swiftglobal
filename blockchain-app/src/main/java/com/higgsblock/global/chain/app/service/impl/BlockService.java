@@ -494,26 +494,26 @@ public class BlockService implements IBlockService {
             if (isFirst) {
                 newBestBlock = getToBeBestBlock(block);
                 blockChainInfoService.setMaxHeight(block.getHeight());
-            } else {
-                LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
             }
+            LOGGER.info("block:{} is the first?={}", block.getSimpleInfo(), isFirst);
+
             //step 2 whether this block can be confirmed pre N block
             blockIndexService.addBlockIndex(block, newBestBlock);
 
             if (block.isGenesisBlock()) {
                 //step 3
-                scoreService.refreshMinersScore(block);
+                scoreService.refreshMinersScore(block, block);
                 //step 4
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
-                scoreService.refreshMinersScore(newBestBlock);
+                scoreService.refreshMinersScore(newBestBlock, block);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
                 scoreService.setSelectedDposScore(nextDposAddressList);
                 //step5
-                freshPeerMinerAddr(newBestBlock);
+                freshPeerMinerAddr(newBestBlock, block);
             }
             return newBestBlock;
         } catch (Exception e) {
@@ -566,7 +566,7 @@ public class BlockService implements IBlockService {
      *
      * @param toBeBestBlock
      */
-    private void freshPeerMinerAddr(Block toBeBestBlock) {
+    private void freshPeerMinerAddr(Block toBeBestBlock, Block newBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
         long sn = dposService.calculateSn(toBeBestBlock.getHeight());
         List<String> dpos = dposService.getDposGroupBySn(sn);
@@ -578,6 +578,7 @@ public class BlockService implements IBlockService {
             dposGroupBySn.addAll(dpos);
         }
         peerManager.setMinerAddresses(dposGroupBySn);
+        LOGGER.debug("end freshPeerMinerAddr,bestBlock={},newBlock={}", toBeBestBlock.getSimpleInfo(), newBlock.getSimpleInfo());
     }
 
     public void broadBlockPersistedEvent(Block block, Block newBestBlock) {

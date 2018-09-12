@@ -62,16 +62,17 @@ public class DposService implements IDposService {
     public List<String> calcNextDposNodes(Block toBeBestBlock, long maxHeight) {
         List<String> dposAddresses = Lists.newLinkedList();
         boolean isFirstOfRound = calculateStartHeight(toBeBestBlock.getHeight()) == toBeBestBlock.getHeight();
+        LOGGER.info("the best block={},is the first for dpos?={}, height={}",
+                toBeBestBlock.getSimpleInfo(), isFirstOfRound, maxHeight);
 
         //select the next dpos nodes when toBeBestBlock height is first of round
         if (!isFirstOfRound) {
             return dposAddresses;
         }
-        LOGGER.info("toBeBestBlcok:{} is the first of this round,select next dpos nodes", toBeBestBlock.getSimpleInfo());
         long sn = calculateSn(maxHeight);
         boolean selectedNextGroup = isDposGroupSeleted(sn + 1L);
         if (selectedNextGroup) {
-            LOGGER.info("next dpos group has selected,blockheight:{},sn+1:{}", maxHeight, (sn + 1L));
+            LOGGER.info("next dpos group has selected,height={},sn+1:{}", maxHeight, (sn + 1L));
             return dposAddresses;
         }
         dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
@@ -80,6 +81,7 @@ public class DposService implements IDposService {
             dposAddresses = Lists.newLinkedList();
         }
         persistDposNodes(sn, dposAddresses);
+        LOGGER.info("persisted new dpos addresses for height={}", maxHeight);
         return dposAddresses;
     }
 
@@ -247,7 +249,7 @@ public class DposService implements IDposService {
         List<String> selected = Lists.newLinkedList();
         long sn = calculateSn(maxHeight);
         final String hash = toBeBestBlock.getHash();
-        LOGGER.debug("begin to select dpos node,the bestblock hash is {},bestblock height is {}", hash, toBeBestBlock.getHeight());
+        LOGGER.debug("begin to select dpos node,bestblock:{},height={}", toBeBestBlock.getSimpleInfo(), maxHeight);
         final List<String> currentGroup = getDposGroupBySn(sn);
         LOGGER.info("the currentGroup is {}", currentGroup);
 
@@ -257,7 +259,8 @@ public class DposService implements IDposService {
         List<String> level3List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL3_SCORE, currentGroup);
         List<String> level2List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL2_SCORE, currentGroup);
         List<String> level1List = scoreService.queryAddresses(ScoreRangeEnum.LEVEL1_SCORE, currentGroup);
-        LOGGER.debug("select {} round dpos node from level5List:{},level4List:{},level3List:{},level2List:{},level1List:{}", (sn + 1), level5List, level4List, level3List, level2List, level1List);
+        LOGGER.debug("height={} for select {} round dpos node from level5List:{},level4List:{},level3List:{},level2List:{},level1List:{}",
+                maxHeight, (sn + 1), level5List, level4List, level3List, level2List, level1List);
 
         // Shuffle by miner address and block hash
         HashFunction function = Hashing.sha256();
@@ -285,7 +288,7 @@ public class DposService implements IDposService {
 
         int size = level5Size + level4Size + level3Size + level2Size - selected.size();
         if (size <= 0) {
-            LOGGER.info("first select the dpos node is {},sn+1:{}", selected, (sn + 1));
+            LOGGER.info("first select the dpos node is {},sn+1:{},height={}", selected, (sn + 1), maxHeight);
             return selected;
         }
 
@@ -298,7 +301,7 @@ public class DposService implements IDposService {
         left.addAll(level1List);
         left.removeAll(selected);
         selected.addAll(left.stream().limit(size).collect(Collectors.toList()));
-        LOGGER.info("the dpos node is sn+1:{}->{}", (sn + 1), selected);
+        LOGGER.info("the dpos node is sn+1:{}->{},height={}", (sn + 1), selected, maxHeight);
         if (selected.size() < NODE_SIZE) {
             LOGGER.warn("can not find enough dpos node,sn+1:{}->{}", (sn + 1), selected);
         }
