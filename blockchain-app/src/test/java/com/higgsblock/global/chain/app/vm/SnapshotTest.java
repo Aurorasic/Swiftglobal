@@ -46,7 +46,6 @@ public class SnapshotTest {
         chainUTXO.addAll(transactionUTXO);
         //合并db+tx的uxto为账户余额模型
 
-
         AccountState accountState = new AccountState(BigInteger.ZERO,contractAddress.getBytes());
         accountState = accountState.withBalanceIncrement(convertBalance(chainUTXO));
         accountStates.put(new String(accountState.getCodeHash()),accountState);
@@ -148,14 +147,11 @@ public class SnapshotTest {
         to=to.withBalanceIncrement(new BigInteger(amount));
         accountStates.put(new String(to.getCodeHash()),to);
 
-        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance());
+        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance(),currency);
         accountDetails.add(accountDetail);
     }
 
-    //按账户余额生成内部交易
-//    public Transaction createInternalTransaction(){
-//
-//    }
+
 
 
 }

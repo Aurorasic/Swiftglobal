@@ -1,7 +1,5 @@
 package com.higgsblock.global.chain.app.vm;
 
-import lombok.AllArgsConstructor;
-
 import java.io.Serializable;
 import java.math.BigInteger;
 
@@ -9,7 +7,7 @@ import java.math.BigInteger;
  * @author tangkun
  * @date 2018-09-07
  */
-@AllArgsConstructor
+
 public class AccountDetail implements Serializable{
 
     private String from;
@@ -60,6 +58,14 @@ public class AccountDetail implements Serializable{
     }
 
     public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public AccountDetail(String from, String to, BigInteger value, BigInteger balance, String currency) {
+        this.from = from;
+        this.to = to;
+        this.value = value;
+        this.balance = balance;
         this.currency = currency;
     }
 }
