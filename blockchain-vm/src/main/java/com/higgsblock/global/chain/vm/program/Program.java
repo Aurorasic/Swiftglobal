@@ -367,7 +367,7 @@ public class Program {
     }
 
 
-//    public void suicide(DataWord obtainerAddress) {
+    public void suicide(DataWord obtainerAddress) {
 //
 //        byte[] owner = getOwnerAddress().getLast20Bytes();
 //        byte[] obtainer = obtainerAddress.getLast20Bytes();
@@ -388,14 +388,14 @@ public class Program {
 //        }
 //
 //        getResult().addDeleteAccount(this.getOwnerAddress());
-//    }
-//
-//    public Repository getStorage() {
-//        return this.storage;
-//    }
-//
-//    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-//    public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
+    }
+
+    public Repository getStorage() {
+        return this.storage;
+    }
+
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+    public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
 //        returnDataBuffer = null; // reset return buffer right before the call
 //
 //        if (getCallDeep() == MAX_DEPTH) {
@@ -532,17 +532,17 @@ public class Program {
 //                        refundGas);
 //            }
 //        }
-//    }
-//
-//    /**
-//     * That method is for internal code invocations
-//     * <p/>
-//     * - Normal calls invoke a specified contract which updates itself
-//     * - Stateless calls invoke code from another contract, within the context of the caller
-//     *
-//     * @param msg is the message call object
-//     */
-//    public void callToAddress(MessageCall msg) {
+    }
+
+    /**
+     * That method is for internal code invocations
+     * <p/>
+     * - Normal calls invoke a specified contract which updates itself
+     * - Stateless calls invoke code from another contract, within the context of the caller
+     *
+     * @param msg is the message call object
+     */
+    public void callToAddress(MessageCall msg) {
 //        returnDataBuffer = null; // reset return buffer right before the call
 //
 //        if (getCallDeep() == MAX_DEPTH) {
@@ -666,7 +666,7 @@ public class Program {
 //        } else {
 //            refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
 //        }
-//    }
+    }
 
     public void spendGas(long gasValue, String cause) {
         if (logger.isDebugEnabled()) {
@@ -1141,7 +1141,7 @@ public class Program {
         return ret;
     }
 
-//    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContracts.PrecompiledContract contract) {
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContracts.PrecompiledContract contract) {
 //        returnDataBuffer = null; // reset return buffer right before the call
 //
 //        if (getCallDeep() == MAX_DEPTH) {
@@ -1210,7 +1210,7 @@ public class Program {
 //
 //            this.memorySave(msg.getOutDataOffs().intValue(), msg.getOutDataSize().intValueSafe(), out.getRight());
 //        }
-//    }
+    }
 
     public boolean byTestingSuite() {
         return invoke.byTestingSuite();
