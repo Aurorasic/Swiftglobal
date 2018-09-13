@@ -47,7 +47,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public TransactionAwareLevelDbAdapter(LevelDbKeyValueAdapter levelDbAdapter) {
         super(new IndexedSpelQueryEngine());
         this.levelDbAdapter = levelDbAdapter;
-        startBatchNo = LocalDateTime.now().format(DateTimeFormatter.ofPattern("_yyyyMMddHHmmss."));
+        startBatchNo = LocalDateTime.now().format(DateTimeFormatter.ofPattern("$yyyyMMddHHmmss."));
         batchNoCounter = new AtomicLong();
     }
 
