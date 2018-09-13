@@ -75,6 +75,8 @@ public class AppContext implements IEventBusListener {
     private ConnectionManageTask connectionManageTask;
     @Autowired
     private GetMaxHeightTask getMaxHeightTask;
+    @Autowired
+    private DBMonitorTask dbMonitorTask;
 
     /**
      * =================all handlers:
@@ -181,6 +183,7 @@ public class AppContext implements IEventBusListener {
         inetAddressCheckTask.start();
         connectionManageTask.start();
         getMaxHeightTask.start();
+        dbMonitorTask.start();
     }
 
     private void startTasksAfterSyncedBlocks() {

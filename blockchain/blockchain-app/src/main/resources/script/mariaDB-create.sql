@@ -23,10 +23,10 @@ SET GLOBAL innodb_file_format=Barracuda;
 -- ----------------------------
 DROP TABLE IF EXISTS `t_block`;
 CREATE TABLE `t_block` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id`         int(11)     NOT NULL AUTO_INCREMENT,
   `block_hash` varchar(64) NOT NULL,
-  `data` text NOT NULL,
-  `height` int(11) NOT NULL,
+  `data`       MEDIUMTEXT  NOT NULL,
+  `height`     int(11)     NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_block_hash` (`block_hash`),
   KEY `idx_block_height` (`height`)

@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.config;
 
 import ch.vorburger.exec.ManagedProcessException;
 import ch.vorburger.mariadb4j.springframework.MariaDB4jSpringService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.Connection;
@@ -14,6 +15,7 @@ import java.sql.SQLException;
  * @date 2018-08-27
  **/
 @Slf4j
+@Getter
 public class MariaDBMyServive extends MariaDB4jSpringService {
 
     private String createSql;
@@ -22,6 +24,8 @@ public class MariaDBMyServive extends MariaDB4jSpringService {
     private String password;
     private String dbName;
     private String url;
+
+    private DBStatus status = DBStatus.STARTING;
 
     public MariaDBMyServive(String createSql, String initSql, String userName, String password, String dbName, String url) {
         this.createSql = createSql;
@@ -37,12 +41,16 @@ public class MariaDBMyServive extends MariaDB4jSpringService {
         LOGGER.info("mariaDB instance start");
         super.start();
         initDB();
+        status = DBStatus.READY;
     }
 
     private void initDB() {
         LOGGER.info("mariaDB init start");
         Connection conn = null;
         try {
+            db.run("SET @@global.key_buffer_size = 10485760;");
+            db.run("SET @@global.max_connections = 50;");
+            LOGGER.info("mariaDB set buffer size successfully");
             String sql = String.format("SELECT count(1) AS num FROM information_schema.columns WHERE table_schema = '%s'", dbName);
             conn = DriverManager.getConnection(url, userName, password);
             ResultSet resultSet = conn.prepareStatement(sql).executeQuery();
@@ -66,5 +74,9 @@ public class MariaDBMyServive extends MariaDB4jSpringService {
                 LOGGER.error(e.getMessage(), e);
             }
         }
+    }
+
+    public enum DBStatus {
+        STARTING, READY
     }
 }
