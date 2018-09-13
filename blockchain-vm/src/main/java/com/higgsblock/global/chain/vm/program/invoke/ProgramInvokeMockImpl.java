@@ -66,17 +66,20 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*           ADDRESS op         */
+    @Override
     public DataWord getOwnerAddress() {
         return new DataWord(ownerAddress);
     }
 
     /*           BALANCE op         */
+    @Override
     public DataWord getBalance() {
         byte[] balance = Hex.decode("0DE0B6B3A7640000");
         return new DataWord(balance);
     }
 
     /*           ORIGIN op         */
+    @Override
     public DataWord getOriginAddress() {
 
 //        byte[] cowPrivKey = HashUtil.sha3("horse".getBytes());
@@ -86,6 +89,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*           CALLER op         */
+    @Override
     public DataWord getCallerAddress() {
 
 //        byte[] cowPrivKey = HashUtil.sha3("monkey".getBytes());
@@ -97,6 +101,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*           GASPRICE op       */
+    @Override
     public DataWord getMinGasPrice() {
 
         byte[] minGasPrice = Hex.decode("09184e72a000");
@@ -104,6 +109,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*           GAS op       */
+    @Override
     public DataWord getGas() {
 
         return new DataWord(gasLimit);
@@ -119,6 +125,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*          CALLVALUE op    */
+    @Override
     public DataWord getCallValue() {
         byte[] balance = Hex.decode("0DE0B6B3A7640000");
         return new DataWord(balance);
@@ -131,6 +138,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
      */
 
     /*     CALLDATALOAD  op   */
+    @Override
     public DataWord getDataValue(DataWord indexData) {
 
         byte[] data = new byte[32];
@@ -148,6 +156,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*  CALLDATASIZE */
+    @Override
     public DataWord getDataSize() {
 
         if (msgData == null || msgData.length == 0) return new DataWord(new byte[32]);
@@ -156,6 +165,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     /*  CALLDATACOPY */
+    @Override
     public byte[] getDataCopy(DataWord offsetData, DataWord lengthData) {
 
         int offset = offsetData.value().intValue();

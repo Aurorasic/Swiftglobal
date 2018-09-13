@@ -134,18 +134,18 @@ public class Program {
     }
 
     public ProgramPrecompile getProgramPrecompile() {
-//        if (programPrecompile == null) {
+        if (programPrecompile == null) {
 //            if (codeHash != null && commonConfig.precompileSource() != null) {
 //                programPrecompile = commonConfig.precompileSource().get(codeHash);
 //            }
-//            if (programPrecompile == null) {
-//                programPrecompile = ProgramPrecompile.compile(ops);
+            if (programPrecompile == null) {
+                programPrecompile = ProgramPrecompile.compile(ops);
 //
 //                if (codeHash != null && commonConfig.precompileSource() != null) {
 //                    commonConfig.precompileSource().put(codeHash, programPrecompile);
 //                }
-//            }
-//        }
+            }
+        }
         return programPrecompile;
     }
 
@@ -701,7 +701,7 @@ public class Program {
     public void storageSave(byte[] key, byte[] val) {
         DataWord keyWord = new DataWord(key);
         DataWord valWord = new DataWord(val);
-        //getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
+        getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
     }
 
     public byte[] getCode() {
@@ -726,10 +726,8 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        //BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
-        //return new DataWord(balance.toByteArray());
-
-        return null;
+        BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
+        return new DataWord(balance.toByteArray());
     }
 
     public DataWord getOriginAddress() {

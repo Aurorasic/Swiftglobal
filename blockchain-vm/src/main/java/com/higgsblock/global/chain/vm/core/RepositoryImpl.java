@@ -32,11 +32,13 @@ public class RepositoryImpl implements Repository {
     //protected Source<byte[], AccountState> accountStateCache;
     //protected Source<byte[], byte[]> codeCache;
 
-    private Map<byte[], AccountState> accountStateCache;
+    private Map<String, AccountState> accountStateCache;
 
-    private Map<byte[], byte[]> codeCache;
+    private Map<String, byte[]> codeCache;
 
-    protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
+    //protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
+
+    private  Map<String, Map<String, DataWord>> storageCache;
 
 
     /**
@@ -52,7 +54,7 @@ public class RepositoryImpl implements Repository {
 
         this.codeCache = new HashMap<>();
         this.accountStateCache = new HashMap<>();
-
+        this.storageCache = new HashMap<>();
     }
 
     public RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
@@ -66,14 +68,14 @@ public class RepositoryImpl implements Repository {
         //this.accountStateCache = accountStateCache;
         //this.codeCache = codeCache;
 
-        this.storageCache = storageCache;
+        //this.storageCache = storageCache;
         this.utxoCache = utxoCache;
     }
 
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
         AccountState state = new AccountState(BigInteger.ZERO,addr);
-        accountStateCache.put(addr, state);
+        accountStateCache.put(Hex.toHexString(addr), state);
         return state;
     }
 
@@ -85,13 +87,13 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
         System.out.println(Hex.toHexString(addr));
-        accountStateCache.keySet().stream().forEach(item->System.out.println(Hex.toHexString(item)));
+        accountStateCache.keySet().stream().forEach(item->System.out.println(item));
 
-        return accountStateCache.get(addr);
+        return accountStateCache.get(Hex.toHexString(addr));
     }
 
     synchronized AccountState getOrCreateAccountState(byte[] addr) {
-        AccountState ret = accountStateCache.get(addr);
+        AccountState ret = accountStateCache.get((Hex.toHexString(addr)));
         if (ret == null) {
             ret = createAccount(addr);
         }
@@ -100,7 +102,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void delete(byte[] addr) {
-        accountStateCache.remove(addr);
+        accountStateCache.remove((Hex.toHexString(addr)));
         //storageCache.delete(addr);
     }
 
@@ -113,16 +115,20 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
-        codeCache.put(codeKey(codeHash, addr), code);
+        byte[] key =codeKey(codeHash, addr);
+        String strKey =  Hex.toHexString(key);
+        codeCache.put(strKey, code);
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(addr, accountState.withCodeHash(codeHash));
+        accountStateCache.put(Hex.toHexString(addr), accountState.withCodeHash(codeHash));
     }
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
         byte[] codeHash = getCodeHash(addr);
+        byte[] key = codeKey(codeHash, addr);
+        String strKey =  Hex.toHexString(key);
         return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(codeKey(codeHash, addr));
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(strKey);
     }
 
 
@@ -137,14 +143,39 @@ public class RepositoryImpl implements Repository {
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         getOrCreateAccountState(addr);
 
-        Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
-        contractStorage.put(key, value.isZero() ? null : value);
+        String strKey = Hex.toHexString(addr);
+        Map<String, DataWord> contractStorage = storageCache.get(addr);
+        if (contractStorage == null) {
+            contractStorage = new HashMap<>();
+            storageCache.put(strKey, contractStorage);
+        }
+
+        String strSubKey = Hex.toHexString(key.getData());
+        contractStorage.put(strSubKey, value.isZero() ? null : value);
+
+        //Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+        //contractStorage.put(key, value.isZero() ? null : value);
     }
 
     @Override
     public synchronized DataWord getStorageValue(byte[] addr, DataWord key) {
         AccountState accountState = getAccountState(addr);
-        return accountState == null ? null : storageCache.get(addr).get(key);
+
+        if (accountState == null) {
+            return  null;
+        } else {
+            String strKey = Hex.toHexString(addr);
+            Map<String, DataWord> contractStorage = storageCache.get(strKey);
+            String strSubKey = Hex.toHexString(key.getData());
+
+            if (contractStorage == null) {
+                contractStorage = new HashMap<>();
+                storageCache.put(strKey, contractStorage);
+                return null;
+            }
+
+            return  contractStorage.get(strSubKey);
+        }
     }
 
     @Override
@@ -156,7 +187,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized BigInteger addBalance(byte[] addr, BigInteger value) {
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(addr, accountState.withBalanceIncrement(value));
+        accountStateCache.put(Hex.toHexString(addr), accountState.withBalanceIncrement(value));
         return accountState.getBalance();
     }
 
