@@ -4,7 +4,7 @@ import org.iq80.leveldb.WriteBatch;
 
 import java.io.Closeable;
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * @author baizhengwen
@@ -12,17 +12,17 @@ import java.util.Collection;
  */
 public interface ILevelDbWriteBatch extends Closeable {
 
-    ILevelDbWriteBatch put(Serializable id, Object item, Serializable keyspace);
+    Object get(Serializable key, Serializable keyspace);
 
-    ILevelDbWriteBatch put(Serializable indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace);
+    ILevelDbWriteBatch put(Serializable key, Object item, Serializable keyspace);
 
-    ILevelDbWriteBatch delete(Serializable id, Serializable keyspace);
+    ILevelDbWriteBatch delete(Serializable key, Serializable keyspace);
 
-    ILevelDbWriteBatch delete(Serializable indexName, Serializable index, Serializable keyspace);
-
-    boolean isDeleted(Serializable id, Serializable keyspace);
-
-    boolean isDeleted(Serializable indexName, Serializable index, Serializable keyspace);
+    boolean isDeleted(Serializable key, Serializable keyspace);
 
     WriteBatch wrapper(WriteBatch writeBatch);
+
+    List<DataItem> copy();
+
+    void clear();
 }

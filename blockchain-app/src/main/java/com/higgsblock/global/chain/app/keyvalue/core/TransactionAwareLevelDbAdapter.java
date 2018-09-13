@@ -33,12 +33,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     private Lock readLock = lock.readLock();
     private Lock writeLock = lock.writeLock();
 
-    private IndexedKeyValueAdapter mapAdapter;
     private LevelDbKeyValueAdapter levelDbAdapter;
 
     public TransactionAwareLevelDbAdapter(LevelDbKeyValueAdapter levelDbAdapter) {
         super(new IndexedSpelQueryEngine());
-        mapAdapter = new SingleMapKeyValueAdapter();
         this.levelDbAdapter = levelDbAdapter;
     }
 
@@ -49,7 +47,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("get a WriteLock");
         try {
             if (transactionHolder == 0) {
-                mapAdapter.clear();
                 writeBatch = levelDbAdapter.createWriteBatch();
                 transactionHolder = 1;
                 isAutoCommit = false;
@@ -67,7 +64,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (transactionHolder > 1) {
                 transactionHolder--;
             } else {
-                mapAdapter.clear();
                 writeBatch = null;
                 transactionHolder = 0;
                 isAutoCommit = true;
@@ -84,7 +80,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (transactionHolder > 1) {
                 transactionHolder--;
             } else {
-                mapAdapter.clear();
                 levelDbAdapter.write(writeBatch);
                 writeBatch = null;
                 transactionHolder = 0;
@@ -104,7 +99,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (isAutoCommit) {
                 levelDbAdapter.put(id, item, keyspace);
             } else {
-                mapAdapter.put(id, item, keyspace);
                 writeBatch.put(id, item, keyspace);
             }
             return item;
@@ -121,11 +115,9 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         return doWithLock(readLock, () -> {
             Object result = null;
             if (!isAutoCommit) {
-                if (writeBatch.isDeleted(id, keyspace)) {
-                    return result;
-                }
-                result = mapAdapter.get(id, keyspace);
+                result = writeBatch.get(id, keyspace);
             }
+
             if (null == result) {
                 result = levelDbAdapter.get(id, keyspace);
             }
@@ -138,7 +130,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         return doWithLock(writeLock, () -> {
             Object result = get(id, keyspace);
             if (!isAutoCommit) {
-                mapAdapter.delete(id, keyspace);
                 writeBatch.delete(id, keyspace);
             } else {
                 levelDbAdapter.delete(id, keyspace);
@@ -162,37 +153,19 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             Map<Serializable, Object> map = Maps.newHashMap();
             String dataKeyPrefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
 
-            levelDbAdapter.entries(keyspace)
-                    .forEachRemaining(
-                            entry -> {
-                                Serializable key = entry.getKey();
-                                if (!key.toString().startsWith(dataKeyPrefix)) {
-                                    return;
-                                }
-
-                                Object value = entry.getValue();
-                                if (isAutoCommit) {
-                                    map.put(key, value);
-                                    return;
-                                }
-
-                                String id = KeyValueAdapterUtils.getId(key, keyspace);
-                                if (!writeBatch.isDeleted(id, keyspace)) {
-                                    map.put(key, value);
-                                    return;
-                                }
-                            }
-                    );
+            levelDbAdapter.entries(keyspace).forEachRemaining(entry -> {
+                String key = String.valueOf(entry.getKey());
+                if (key.startsWith(dataKeyPrefix)) {
+                    map.put(key, entry.getValue());
+                }
+            });
             if (!isAutoCommit) {
-                mapAdapter.entries(keyspace)
-                        .forEachRemaining(
-                                entry -> {
-                                    Serializable key = entry.getKey();
-                                    if (key.toString().startsWith(dataKeyPrefix)) {
-                                        map.put(key, entry.getValue());
-                                    }
-                                }
-                        );
+                writeBatch.copy().forEach(entry -> {
+                    String key = String.valueOf(entry.getKey());
+                    if (key.startsWith(dataKeyPrefix)) {
+                        map.put(key, entry.getValue());
+                    }
+                });
             }
 
             return new ForwardingCloseableIterator<>(map.entrySet().iterator());
@@ -211,7 +184,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public void clear() {
         doWithLock(writeLock, () -> {
             if (!isAutoCommit) {
-                mapAdapter.clear();
+                writeBatch.clear();
             }
             levelDbAdapter.clear();
         });
@@ -225,14 +198,14 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
      */
     @Override
     public long count(Serializable keyspace) {
-        return doWithLock(readLock, () -> mapAdapter.count(keyspace) + levelDbAdapter.count(keyspace));
+        return doWithLock(readLock, () -> levelDbAdapter.count(keyspace));
     }
 
     @Override
     public void destroy() {
         doWithLock(writeLock, () -> {
             if (!isAutoCommit) {
-                mapAdapter.destroy();
+                writeBatch.clear();
             }
             levelDbAdapter.destroy();
             return null;
@@ -246,8 +219,8 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (isAutoCommit) {
                 return levelDbAdapter.saveIndex(indexName, index, ids, keyspace);
             } else {
-                mapAdapter.saveIndex(indexName, index, ids, keyspace);
-                writeBatch.put(indexName, index, ids, keyspace);
+                String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
+                writeBatch.put(index, ids, indexKeyspace);
                 return ids;
             }
         });
@@ -263,10 +236,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public Collection<Serializable> deleteIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {
         LOGGER.debug("deleteIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(writeLock, () -> {
-            if (!isAutoCommit && writeBatch.isDeleted(indexName, index, keyspace)) {
-                return Sets.newHashSet();
-            }
-
             Collection<Serializable> ids = findIndex(indexName, index, keyspace);
             ids.remove(id);
             saveIndex(indexName, index, ids, keyspace);
@@ -279,11 +248,9 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
         return doWithLock(readLock, () -> {
             Collection<Serializable> result = Sets.newHashSet();
+            String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
             if (!isAutoCommit) {
-                if (writeBatch.isDeleted(indexName, index, keyspace)) {
-                    return result;
-                }
-                result = mapAdapter.findIndex(indexName, index, keyspace);
+                result = (Collection<Serializable>) writeBatch.get(index, indexKeyspace);
             }
 
             if (CollectionUtils.isEmpty(result)) {

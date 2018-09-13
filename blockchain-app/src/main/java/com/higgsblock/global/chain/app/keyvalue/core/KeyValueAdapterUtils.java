@@ -18,6 +18,22 @@ public class KeyValueAdapterUtils {
     private KeyValueAdapterUtils() {
     }
 
+    public static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
+        return String.format("$index:%s|%s", keyspace, indexName);
+    }
+
+    public static String getRealKeyspace(Serializable internalKey) {
+        return StringUtils.substringBeforeLast(internalKey.toString(), "_");
+    }
+
+    public static String getRealKey(Serializable internalKey, Serializable keyspace) {
+        return StringUtils.substringAfter(String.valueOf(internalKey), String.format("%s_", keyspace));
+    }
+
+    public static String internalKey(Serializable keyspace, Serializable id) {
+        return String.format("%s_%s", keyspace, id);
+    }
+
     public static String getId(Serializable key, Serializable keyspace) {
         return getIndex(key, keyspace, DEFAULT_INDEX_NAME);
     }

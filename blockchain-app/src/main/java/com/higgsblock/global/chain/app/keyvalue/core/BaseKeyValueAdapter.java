@@ -45,10 +45,10 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
     }
 
     protected final void putEntityClass(Serializable keyspace, Class<?> clazz) {
-        if (!cache.containsKey(keyspace)) {
+        if (null == getEntityClass(keyspace)) {
             addEntityClass(keyspace, clazz);
-            cache.putIfAbsent(keyspace, clazz);
         }
+        cache.putIfAbsent(keyspace, clazz);
     }
 
     protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
@@ -56,6 +56,6 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
     }
 
     protected Class<?> getEntityClass(Serializable keyspace) {
-        return cache.get(cache);
+        return cache.get(keyspace);
     }
 }
