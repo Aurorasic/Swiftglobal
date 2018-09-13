@@ -73,7 +73,7 @@ public class ScoreService implements IScoreService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int plusAll(Integer score) {
+    public int plusAll(Integer plusScore) {
         Map<String, String> allScores = blockChainInfoService.getAllScores();
         if (allScores.isEmpty()) {
             return 1;
@@ -84,7 +84,7 @@ public class ScoreService implements IScoreService {
             String key = iterator.next();
             String oldScoreStr = allScores.get(key);
             Integer oldScore = Integer.valueOf(oldScoreStr);
-            allScores.put(key, String.valueOf(oldScore + score));
+            allScores.put(key, String.valueOf(oldScore + plusScore));
         }
 
         blockChainInfoService.setAllScores(allScores);
@@ -142,13 +142,14 @@ public class ScoreService implements IScoreService {
      * @param toBeBestBlock
      */
     @Override
-    public void refreshMinersScore(Block toBeBestBlock) {
+    public void refreshMinersScore(Block toBeBestBlock, Block newBlock) {
+        LOGGER.info("start refreshMinersScore, block={}", newBlock.getSimpleInfo());
         updateScores(toBeBestBlock);
 
         //handle joined miner and removed miner
+        LOGGER.info("start handle joined miner and removed miner, block={}", newBlock.getSimpleInfo());
         List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
-            LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
             Set<String> removedMiners = transactionService.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 remove(removedMiner);
@@ -159,7 +160,8 @@ public class ScoreService implements IScoreService {
                 putIfAbsent(addedMiner, INIT_SCORE);
             }
         }
-        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+        LOGGER.info("end refreshMinersScore,bestBlock={},newBlock=",
+                toBeBestBlock.getHash(), newBlock.getSimpleInfo());
     }
 
     /**

@@ -111,7 +111,7 @@ public interface IScoreService {
      *
      * @param toBeBestBlock
      */
-    void refreshMinersScore(Block toBeBestBlock);
+    void refreshMinersScore(Block toBeBestBlock, Block newBlock);
 
     /**
      * list top 1000 by score range
