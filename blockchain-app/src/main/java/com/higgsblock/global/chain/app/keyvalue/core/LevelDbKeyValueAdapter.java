@@ -30,7 +30,7 @@ import java.util.Map;
 @Slf4j
 public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
 
-    private static final String KEYSPACE_ENTITY_CLASS = "_EC";
+    private static final String KEYSPACE_ENTITY_CLASS = "$EC";
 
     @Setter
     protected String dataDir;

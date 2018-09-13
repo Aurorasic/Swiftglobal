@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j
 public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implements ITransactionAwareKeyValueAdapter, IndexedKeyValueAdapter {
 
-    private static final String KEYSPACE_BATCH = "_batch";
+    private static final String KEYSPACE_BATCH = "$batch";
 
     private volatile boolean isAutoCommit = true;
     private volatile int transactionHolder;

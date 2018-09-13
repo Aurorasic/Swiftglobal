@@ -16,7 +16,7 @@ public class KeyValueAdapterUtils {
     }
 
     public static String getInternalKey(Serializable keyspace, Serializable key) {
-        return String.format("%s_%s", keyspace, key);
+        return String.format("%s.%s", keyspace, key);
     }
 
     public static String getIndexKey(Serializable keyspace, Serializable indexName, Serializable index) {
@@ -24,15 +24,15 @@ public class KeyValueAdapterUtils {
     }
 
     public static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
-        return String.format("_index.%s.%s", keyspace, indexName);
+        return String.format("$index_%s_%s", keyspace, indexName);
     }
 
     public static String getRealKeyspace(Serializable internalKey) {
-        return StringUtils.substringBeforeLast(internalKey.toString(), "_");
+        return StringUtils.substringBeforeLast(internalKey.toString(), ".");
     }
 
     public static String getRealKey(Serializable internalKey, Serializable keyspace) {
-        return StringUtils.substringAfter(String.valueOf(internalKey), String.format("%s_", keyspace));
+        return StringUtils.substringAfter(String.valueOf(internalKey), String.format("%s.", keyspace));
     }
 
     public static String toJsonString(Object value) {
