@@ -724,10 +724,8 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        //BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
-        //return new DataWord(balance.toByteArray());
-
-        return null;
+        BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
+        return new DataWord(balance.toByteArray());
     }
 
     public DataWord getOriginAddress() {
