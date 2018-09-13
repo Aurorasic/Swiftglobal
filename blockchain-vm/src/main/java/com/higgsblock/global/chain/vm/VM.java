@@ -96,7 +96,7 @@ public class VM {
 
     private static VMHook vmHook;
     private boolean vmTrace;
-    //private long dumpBlock;
+    private long dumpBlock;
 
     private final SystemProperties config;
 
@@ -108,7 +108,7 @@ public class VM {
     public VM(SystemProperties config) {
         this.config = config;
         vmTrace = config.vmTrace();
-        //dumpBlock = config.dumpBlock();
+        dumpBlock = config.dumpBlock();
     }
 
     private long calcMemGas(GasCost gasCosts, long oldMemSize, BigInteger newMemSize, long copySize) {
@@ -367,9 +367,9 @@ public class VM {
             //DEBUG System.out.println(" OP IS " + op.name() + " GASCOST IS " + gasCost + " NUM IS " + op.asInt());
             program.spendGas(gasCost, op.name());
 
-//            // Log debugging line for VM
-//            if (program.getNumber().intValue() == dumpBlock)
-//                this.dumpLine(op, gasBefore, gasCost + callGas, memWords, program);
+            // Log debugging line for VM
+            if (program.getNumber().intValue() == dumpBlock)
+                this.dumpLine(op, gasBefore, gasCost + callGas, memWords, program);
 
             if (vmHook != null) {
                 vmHook.step(program, op);
@@ -1237,7 +1237,7 @@ public class VM {
                             outDataOffs, outDataSize);
 
                     PrecompiledContracts.PrecompiledContract contract =
-                            PrecompiledContracts.getContractForAddress(codeAddress/*, blockchainConfig*/);
+                            PrecompiledContracts.getContractForAddress(codeAddress, blockchainConfig);
 
                     if (!op.callIsStateless()) {
                         program.getResult().addTouchAccount(codeAddress.getLast20Bytes());
@@ -1358,7 +1358,7 @@ public class VM {
      *              vmCounter, internalSteps, operation
                     gasBefore, gasCost, memWords)
      */
-//    private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
+    private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
 //        if (config.dumpStyle().equals("standard+")) {
 //            switch (op) {
 //                case STOP:
@@ -1413,5 +1413,5 @@ public class VM {
 //                    level, contract, vmCounter, internalSteps, op,
 //                    gasBefore, gasCost, memWords);
 //        }
-//    }
+    }
 }
