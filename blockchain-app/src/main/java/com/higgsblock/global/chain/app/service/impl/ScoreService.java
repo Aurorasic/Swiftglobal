@@ -160,7 +160,7 @@ public class ScoreService implements IScoreService {
                 putIfAbsent(addedMiner, INIT_SCORE);
             }
         }
-        LOGGER.info("end refreshMinersScore,bestBlock={},newBlock=",
+        LOGGER.info("end refreshMinersScore,bestBlock={},newBlock={}",
                 toBeBestBlock.getHash(), newBlock.getSimpleInfo());
     }
 
