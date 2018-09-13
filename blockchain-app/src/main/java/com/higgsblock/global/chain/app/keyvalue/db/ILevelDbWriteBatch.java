@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.keyvalue.db;
 
 import org.iq80.leveldb.WriteBatch;
 
-import java.io.Closeable;
 import java.io.Serializable;
 import java.util.List;
 
@@ -10,7 +9,9 @@ import java.util.List;
  * @author baizhengwen
  * @date 2018-08-29
  */
-public interface ILevelDbWriteBatch extends Closeable {
+public interface ILevelDbWriteBatch {
+
+    String getBatchNo();
 
     Object get(Serializable key, Serializable keyspace);
 

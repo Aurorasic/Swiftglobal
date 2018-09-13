@@ -35,7 +35,8 @@ public class DataSourceConfig {
                 .createIfMissing(true)
                 .writeBufferSize(200 * 1024 * 1024)
                 .compressionType(CompressionType.SNAPPY);
-        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataPath(), options);
+        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataDir());
+        adapter.setOptions(options);
         return new TransactionAwareLevelDbAdapter(adapter);
     }
 

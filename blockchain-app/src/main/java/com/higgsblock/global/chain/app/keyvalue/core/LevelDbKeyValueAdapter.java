@@ -17,6 +17,7 @@ import org.iq80.leveldb.WriteOptions;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -29,27 +30,34 @@ import java.util.Map;
 @Slf4j
 public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
 
+    private static final String KEYSPACE_ENTITY_CLASS = "_EC";
+
+    @Setter
+    protected String dataDir;
+    @Setter
+    protected Options options;
     @Setter
     protected ReadOptions readOptions;
     @Setter
     protected WriteOptions writeOptions;
-    protected ILevelDb<String> db;
+    @Setter
+    protected Map<Serializable, ILevelDb<String>> dbMap = Maps.newConcurrentMap();
 
-    public LevelDbKeyValueAdapter(String dataPath, Options options) {
+    public LevelDbKeyValueAdapter(String dataDir) {
         super(new IndexedSpelQueryEngine());
 
-        db = new LevelDb<>(dataPath, options);
+        this.dataDir = dataDir;
+        this.options = new Options();
         readOptions = new ReadOptions();
-        writeOptions = new WriteOptions().sync(true);
+        writeOptions = new WriteOptions();
     }
-
 
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
         putEntityClass(keyspace, item.getClass());
-        String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
+        String key = String.valueOf(id);
         String value = JSON.toJSONString(item);
-        db.put(key, value, writeOptions);
+        getDb(keyspace).put(key, value, writeOptions);
         return item;
     }
 
@@ -60,16 +68,16 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     public Object get(Serializable id, Serializable keyspace) {
-        String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-        String value = db.get(key, readOptions);
+        String key = String.valueOf(id);
+        String value = getDb(keyspace).get(key, readOptions);
         return KeyValueAdapterUtils.parseJsonString(value, getEntityClass(keyspace));
     }
 
     @Override
     public Object delete(Serializable id, Serializable keyspace) {
         Object value = get(id, keyspace);
-        String key = KeyValueAdapterUtils.getFullKey(keyspace, id);
-        db.delete(key, writeOptions);
+        String key = String.valueOf(id);
+        getDb(keyspace).delete(key, writeOptions);
         return value;
     }
 
@@ -82,17 +90,13 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     public CloseableIterator<Map.Entry<Serializable, Object>> entries(Serializable keyspace) {
-        String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
         Class<?> entityClass = getEntityClass(keyspace);
         Map<Serializable, Object> map = Maps.newHashMap();
 
-        db.iterator(readOptions).forEachRemaining(entry -> {
-            String key = entry.getKey();
-            if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
-                String value = entry.getValue();
-                if (null != value) {
-                    map.put(key, KeyValueAdapterUtils.parseJsonString(value, entityClass));
-                }
+        getDb(keyspace).iterator(readOptions).forEachRemaining(entry -> {
+            String value = entry.getValue();
+            if (null != value) {
+                map.put(entry.getKey(), KeyValueAdapterUtils.parseJsonString(value, entityClass));
             }
         });
 
@@ -101,13 +105,10 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     public void deleteAllOf(Serializable keyspace) {
-        String prefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
-        db.iterator(readOptions).forEachRemaining(entry -> {
-            String key = entry.getKey();
-            if (StringUtils.isNotEmpty(key) && key.startsWith(prefix)) {
-                db.delete(key, writeOptions);
-            }
-        });
+        ILevelDb<String> db = removeDb(keyspace);
+        if (null != db) {
+            db.destroy();
+        }
     }
 
     @Override
@@ -125,22 +126,30 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     }
 
     @Override
-    public void destroy() throws Exception {
-        db.close();
+    public void destroy() {
+        dbMap.values().forEach(db -> {
+            try {
+                db.close();
+            } catch (IOException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        });
     }
 
-    public ILevelDbWriteBatch createWriteBatch() {
-        return new LevelDbWriteBatch();
+    public ILevelDbWriteBatch createWriteBatch(Serializable keyspace) {
+        return new LevelDbWriteBatch(String.valueOf(keyspace));
     }
 
     public void write(ILevelDbWriteBatch writeBatch) {
-        db.write(writeBatch, writeOptions);
+        getDb(writeBatch.getBatchNo()).write(writeBatch, writeOptions);
     }
 
     @Override
     public Collection<Serializable> saveIndex(String indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
         LOGGER.debug("saveIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
+        String key = String.valueOf(index);
+        String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
+        ILevelDb<String> db = getDb(indexKeyspace);
         if (ids.isEmpty()) {
             db.delete(key);
         } else {
@@ -152,8 +161,9 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     @Override
     public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        String key = KeyValueAdapterUtils.getFullKey(keyspace, indexName, index);
-        Collection<Serializable> ids = KeyValueAdapterUtils.parseJsonArrayString(db.get(key, readOptions), Serializable.class);
+        String key = String.valueOf(index);
+        String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
+        Collection<Serializable> ids = KeyValueAdapterUtils.parseJsonArrayString(getDb(indexKeyspace).get(key, readOptions), String.class);
         if (null == ids) {
             ids = Sets.newHashSet();
         }
@@ -162,9 +172,8 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     protected void addEntityClass(Serializable keyspace, Class<?> clazz) {
-        String id = keyspace.toString();
-        String key = KeyValueAdapterUtils.getFullKey(KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE, id);
-        db.put(key, clazz.getName(), writeOptions);
+        String key = String.valueOf(keyspace);
+        getEntityClassDb().put(key, clazz.getName(), writeOptions);
     }
 
     @Override
@@ -173,14 +182,43 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         if (null != clazz) {
             return clazz;
         }
-        String id = keyspace.toString();
-        String key = KeyValueAdapterUtils.getFullKey(KeyValueAdapterUtils.ENTITY_CLASS_KEY_SPACE, id);
-        String className = db.get(key, readOptions);
+        String key = String.valueOf(keyspace);
+        String className = getEntityClassDb().get(key, readOptions);
         try {
             clazz = StringUtils.isEmpty(className) ? null : Class.forName(className);
         } catch (ClassNotFoundException e) {
             LOGGER.error(e.getMessage(), e);
         }
         return clazz;
+    }
+
+    public Map<String, String> stringEntries(Serializable keyspace) {
+        Map<String, String> map = Maps.newHashMap();
+
+        getDb(keyspace).iterator(readOptions).forEachRemaining(entry -> {
+            map.put(entry.getKey(), entry.getValue());
+        });
+        return map;
+    }
+
+    protected String putString(Serializable id, String item, Serializable keyspace) {
+        getDb(keyspace).put(String.valueOf(id), item, writeOptions);
+        return item;
+    }
+
+    protected String getString(Serializable id, Serializable keyspace) {
+        return getDb(keyspace).get(String.valueOf(id), readOptions);
+    }
+
+    protected ILevelDb<String> removeDb(Serializable keyspace) {
+        return dbMap.remove(keyspace);
+    }
+
+    protected ILevelDb<String> getDb(Serializable keyspace) {
+        return dbMap.computeIfAbsent(keyspace, db -> new LevelDb<>(dataDir + "/" + db, options));
+    }
+
+    protected ILevelDb<String> getEntityClassDb() {
+        return getDb(KEYSPACE_ENTITY_CLASS);
     }
 }

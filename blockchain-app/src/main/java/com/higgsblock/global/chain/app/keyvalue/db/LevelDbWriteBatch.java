@@ -16,7 +16,17 @@ import java.util.List;
  */
 public class LevelDbWriteBatch implements ILevelDbWriteBatch {
 
+    private String batchNo;
     private List<DataItem> data = Collections.synchronizedList(Lists.newLinkedList());
+
+    public LevelDbWriteBatch(String batchNo) {
+        this.batchNo = batchNo;
+    }
+
+    @Override
+    public String getBatchNo() {
+        return batchNo;
+    }
 
     @Override
     public Object get(Serializable key, Serializable keyspace) {
@@ -50,7 +60,7 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
     @Override
     public WriteBatch wrapper(WriteBatch writeBatch) {
         data.forEach(item -> {
-            byte[] key = SerializationUtils.serialize(KeyValueAdapterUtils.internalKey(item.getKeyspace(), item.getKey()));
+            byte[] key = SerializationUtils.serialize(KeyValueAdapterUtils.getInternalKey(item.getKeyspace(), item.getKey()));
             byte[] value = SerializationUtils.serialize(KeyValueAdapterUtils.toJsonString(item.getValue()));
             if (null == value) {
                 writeBatch.delete(key);
@@ -69,10 +79,5 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
     @Override
     public void clear() {
         data.clear();
-    }
-
-    @Override
-    public void close() {
-
     }
 }

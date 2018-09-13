@@ -39,6 +39,7 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
     @Override
     public void destroy() {
         try {
+            db.close();
             Iq80DBFactory.factory.destroy(new File(dataPath), options);
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
