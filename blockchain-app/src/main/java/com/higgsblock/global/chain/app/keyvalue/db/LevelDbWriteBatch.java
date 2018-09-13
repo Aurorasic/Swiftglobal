@@ -30,11 +30,11 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
 
     @Override
     public Object get(Serializable key, Serializable keyspace) {
-        String internalKey = KeyValueAdapterUtils.getInternalKey(keyspace, key);
         DataItem item = null;
         for (int i = data.size() - 1; i >= 0; i--) {
             item = data.get(i);
-            if (Equivalence.equals().equivalent(internalKey, item.getKey())) {
+            if (Equivalence.equals().equivalent(key, item.getKey())
+                    && Equivalence.equals().equivalent(keyspace, item.getKeyspace())) {
                 return item.getValue();
             }
         }
