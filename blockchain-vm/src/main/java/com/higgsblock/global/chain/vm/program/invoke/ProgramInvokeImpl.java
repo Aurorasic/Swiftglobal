@@ -131,31 +131,37 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*           ADDRESS op         */
+    @Override
     public DataWord getOwnerAddress() {
         return address;
     }
 
     /*           BALANCE op         */
+    @Override
     public DataWord getBalance() {
         return balance;
     }
 
     /*           ORIGIN op         */
+    @Override
     public DataWord getOriginAddress() {
         return origin;
     }
 
     /*           CALLER op         */
+    @Override
     public DataWord getCallerAddress() {
         return caller;
     }
 
     /*           GASPRICE op       */
+    @Override
     public DataWord getMinGasPrice() {
         return gasPrice;
     }
 
     /*           GAS op       */
+    @Override
     public DataWord getGas() {
         return gas;
     }
@@ -166,6 +172,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*          CALLVALUE op    */
+    @Override
     public DataWord getCallValue() {
         return callValue;
     }
@@ -179,6 +186,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private static BigInteger MAX_MSG_DATA = BigInteger.valueOf(Integer.MAX_VALUE);
 
     /*     CALLDATALOAD  op   */
+    @Override
     public DataWord getDataValue(DataWord indexData) {
 
         BigInteger tempIndex = indexData.value();
@@ -197,6 +205,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATASIZE */
+    @Override
     public DataWord getDataSize() {
 
         if (msgData == null || msgData.length == 0) return DataWord.ZERO;
@@ -205,6 +214,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATACOPY */
+    @Override
     public byte[] getDataCopy(DataWord offsetData, DataWord lengthData) {
 
         int offset = offsetData.intValueSafe();
@@ -223,31 +233,37 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     /*     PREVHASH op    */
+    @Override
     public DataWord getPrevHash() {
         return prevHash;
     }
 
     /*     COINBASE op    */
+    @Override
     public DataWord getCoinbase() {
         return coinbase;
     }
 
     /*     TIMESTAMP op    */
+    @Override
     public DataWord getTimestamp() {
         return timestamp;
     }
 
     /*     NUMBER op    */
+    @Override
     public DataWord getNumber() {
         return number;
     }
 
     /*     DIFFICULTY op    */
+    @Override
     public DataWord getDifficulty() {
         return difficulty;
     }
 
     /*     GASLIMIT op    */
+    @Override
     public DataWord getGaslimit() {
         return gaslimit;
     }
@@ -256,7 +272,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     public Map<DataWord, DataWord> getStorage() {
         return storage;
     }
-
+    @Override
     public Repository getRepository() {
         return repository;
     }
