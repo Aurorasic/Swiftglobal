@@ -40,7 +40,7 @@ public class InternalTransaction extends Transaction {
     private String note;
 
     public InternalTransaction(byte[] rawData) {
-        //super(rawData);
+//        super(rawData);
     }
 
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,

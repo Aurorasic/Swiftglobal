@@ -1313,7 +1313,7 @@ public class VMTest {
         List<LogInfo> logInfoList = program.getResult().getLogInfoList();
         LogInfo logInfo = logInfoList.get(0);
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(logInfo.getAddress()));
+        assertEquals("d67da73f6891af29d6222ab5c0a415b929b98911", Hex.toHexString(logInfo.getAddress()));
         assertEquals(0, logInfo.getTopics().size());
         assertEquals("0000000000000000000000000000000000000000000000000000000000001234", Hex.toHexString(logInfo
                 .getData()));
@@ -1336,7 +1336,7 @@ public class VMTest {
         List<LogInfo> logInfoList = program.getResult().getLogInfoList();
         LogInfo logInfo = logInfoList.get(0);
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(logInfo.getAddress()));
+        assertEquals("d67da73f6891af29d6222ab5c0a415b929b98911", Hex.toHexString(logInfo.getAddress()));
         assertEquals(1, logInfo.getTopics().size());
         assertEquals("0000000000000000000000000000000000000000000000000000000000001234", Hex.toHexString(logInfo
                 .getData()));
@@ -1360,7 +1360,7 @@ public class VMTest {
         List<LogInfo> logInfoList = program.getResult().getLogInfoList();
         LogInfo logInfo = logInfoList.get(0);
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(logInfo.getAddress()));
+        assertEquals("d67da73f6891af29d6222ab5c0a415b929b98911", Hex.toHexString(logInfo.getAddress()));
         assertEquals(2, logInfo.getTopics().size());
         assertEquals("0000000000000000000000000000000000000000000000000000000000001234", Hex.toHexString(logInfo
                 .getData()));
@@ -1385,7 +1385,7 @@ public class VMTest {
         List<LogInfo> logInfoList = program.getResult().getLogInfoList();
         LogInfo logInfo = logInfoList.get(0);
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(logInfo.getAddress()));
+        assertEquals("d67da73f6891af29d6222ab5c0a415b929b98911", Hex.toHexString(logInfo.getAddress()));
         assertEquals(3, logInfo.getTopics().size());
         assertEquals("0000000000000000000000000000000000000000000000000000000000001234", Hex.toHexString(logInfo
                 .getData()));
@@ -1412,7 +1412,7 @@ public class VMTest {
         List<LogInfo> logInfoList = program.getResult().getLogInfoList();
         LogInfo logInfo = logInfoList.get(0);
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(logInfo.getAddress()));
+        assertEquals("d67da73f6891af29d6222ab5c0a415b929b98911", Hex.toHexString(logInfo.getAddress()));
         assertEquals(4, logInfo.getTopics().size());
         assertEquals("0000000000000000000000000000000000000000000000000000000000001234", Hex.toHexString(logInfo
                 .getData()));

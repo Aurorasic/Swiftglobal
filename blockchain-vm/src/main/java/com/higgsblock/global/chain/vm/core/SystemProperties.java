@@ -43,6 +43,16 @@ public class SystemProperties {
         return "trace";
     }
 
+    public int dumpBlock() {
+//        return System.getProperty("dump.block");
+        return 0;
+    }
+
+    public String dumpStyle() {
+//        return config.getString("dump.style");
+        return "pretty";
+    }
+
     public boolean vmTrace() {
 //        return Boolean.valueOf(System.getProperty("vm.structured.trace"));
         return true;
