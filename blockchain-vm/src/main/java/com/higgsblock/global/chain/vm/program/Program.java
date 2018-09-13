@@ -699,7 +699,7 @@ public class Program {
     public void storageSave(byte[] key, byte[] val) {
         DataWord keyWord = new DataWord(key);
         DataWord valWord = new DataWord(val);
-        //getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
+        getStorage().addStorageRow(getOwnerAddress().getLast20Bytes(), keyWord, valWord);
     }
 
     public byte[] getCode() {
