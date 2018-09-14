@@ -191,4 +191,7 @@ public interface Repository {
      * @return
      */
     boolean flushImpl(Repository childRepository);
+
+
+    String getBlockHashByNumber(long blockNumber, String branchBlockHash);
 }

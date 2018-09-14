@@ -168,9 +168,8 @@ public class ContractContext {
         Transaction transaction = getTransaction();
         Block block = getBlock();
         Repository contractRepository = new RepositoryImpl();
-        BlockStore blockStore = new BlockStore();
 
         ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
-        return programInvokeFactory.createProgramInvoke(transaction, block, contractRepository, blockStore);
+        return programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
     }
 }
