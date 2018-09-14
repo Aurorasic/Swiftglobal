@@ -4,7 +4,10 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.PrecompiledContracts;
 import com.higgsblock.global.chain.vm.VM;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
@@ -25,7 +28,6 @@ public class Executor {
     private Block block;
     private Repository transactionRepository;
     private Repository contractRepository;
-    protected BlockStore blockStore;
     private ProgramInvokeFactory programInvokeFactory;
     private long gasUsedInTheBlock;
     SystemProperties systemProperties;
@@ -42,7 +44,7 @@ public class Executor {
             contractRepository.createAccount(contractAddress);
 
 
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(transaction, block, contractRepository, blockStore);
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
 
             VM vm = new VM(systemProperties);
             program = new Program(transaction.getData(), programInvoke, transaction, systemProperties);
@@ -87,7 +89,7 @@ public class Executor {
                 byte[] code = transactionRepository.getCode(contractAddress);
                 if (!isEmpty(code)) {
                     ProgramInvoke programInvoke =
-                            programInvokeFactory.createProgramInvoke(transaction, block, contractRepository, blockStore);
+                            programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
 
                     VM vm = new VM(systemProperties);
                     program = new Program(transactionRepository.getCodeHash(contractAddress), code, programInvoke, transaction, systemProperties);
