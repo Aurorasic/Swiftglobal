@@ -62,6 +62,11 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Override
     protected void process(IMessage<OriginalBlock> message) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(message.getData());
+            LOGGER.info(" dispatch to witnesses");
+            return;
+        }
         OriginalBlock originalBlock = message.getData();
         Block block = originalBlock.getBlock();
         String sourceId = message.getSourceId();
