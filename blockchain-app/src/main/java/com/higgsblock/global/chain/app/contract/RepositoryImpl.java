@@ -103,7 +103,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void delete(byte[] addr) {
         accountStateCache.remove((Hex.toHexString(addr)));
-        //storageCache.delete(addr);
+        storageCache.remove(Hex.toHexString(addr));
     }
 
     @Override
