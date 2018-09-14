@@ -373,7 +373,12 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
                     Serializable key = entry.getKey();
                     String keyspace = KeyValueAdapterUtils.getRealKeyspace(key);
                     String id = KeyValueAdapterUtils.getRealKey(key, keyspace);
-                    levelDbAdapter.putString(id, entry.getValue(), keyspace);
+                    String value = entry.getValue();
+                    if (null == value) {
+                        levelDbAdapter.delete(id, keyspace);
+                    } else {
+                        levelDbAdapter.putString(id, value, keyspace);
+                    }
                 });
                 levelDbAdapter.deleteAllOf(batchNo);
             }
