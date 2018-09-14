@@ -1,5 +1,7 @@
 package com.higgsblock.global.chain.app.contract;
 
+
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
@@ -13,18 +15,17 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author tangkun
  * @date 2018-09-06
  */
-public class RepositoryImpl implements Repository {
+public class RepositoryImpl implements Repository<UTXO> {
 
     protected RepositoryImpl parent;
+
 
 
     //protected Source<byte[], AccountState> accountStateCache;
@@ -39,14 +40,16 @@ public class RepositoryImpl implements Repository {
     private  Map<String, Map<String, DataWord>> storageCache;
 
 
-    /**
-     * utxo cache
-     */
-    protected Map<String,List<UTXOBO>> utxoCache;
 
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
+
+    Map<String,AccountState> accountStates = new HashMap<>();
+    List<AccountDetail> accountDetails = new ArrayList<>();
+    //区块级别未花费缓存，交易执行成功花费后会移除到spentUTXOCache中，并新增加新的utxo
+    List<UTXO> unspentUTXOCache = new ArrayList<>();
+    List<UTXO> spentUTXOCache = new ArrayList<>();
 
     public RepositoryImpl() {
 
@@ -67,7 +70,7 @@ public class RepositoryImpl implements Repository {
         //this.codeCache = codeCache;
 
         //this.storageCache = storageCache;
-        this.utxoCache = utxoCache;
+
     }
 
     @Override
@@ -204,9 +207,23 @@ public class RepositoryImpl implements Repository {
 //        return null;
 //    }
 
+    /**
+     * flush child cache to parent cache
+     * 1: UTXO
+     * 2: storageCache
+     * 3:codeCache
+     */
     @Override
     public void flush() {
 
+        //flush UTXO
+        parent.mergeUTXO(this.spentUTXOCache,this.unspentUTXOCache);
+
+        //flush storage
+        parent.storageCache.putAll(this.storageCache);
+
+        //flush codeCache
+        parent.codeCache.putAll(this.codeCache);
     }
 
     @Override
@@ -243,10 +260,7 @@ public class RepositoryImpl implements Repository {
         return parent.getSnapshotTo(root);
     }
 
-    @Override
-    public boolean flushImpl(Repository childRepository) {
-        return false;
-    }
+
 
     @Override
     public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
@@ -305,25 +319,76 @@ public class RepositoryImpl implements Repository {
         throw new RuntimeException("Not supported");
     }
 
-    //@Override
-    public boolean flushImpl(RepositoryImpl childRepository) {
 
-        //if parent utxo include child utxo and child's utxo is spent
-        Map<String, List<UTXOBO>> utxoCache = childRepository.getUtxoCache();
-        for (Map.Entry<String, List<UTXOBO>> en:utxoCache.entrySet()){
-            List<UTXOBO> cList = en.getValue();
-            List<UTXOBO> pList = this.utxoCache.get(en.getKey());
 
-        }
 
-        return false;
+    /**
+     * transfer assert from to address
+     *
+     * @param from     balance must glt amount
+     * @param address  receive address
+     * @param amount   transfer amount
+     * @param currency assert type
+     */
+    @Override
+    public void transfer(String from, String address, String amount, String currency) {
+        AccountState to = accountStates.getOrDefault(address,new AccountState(BigInteger.ZERO,address.getBytes(),currency)) ;
+        to=to.withBalanceIncrement(new BigInteger(amount));
+        accountStates.put(new String(to.getCodeHash()),to);
+
+        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance(),currency);
+        accountDetails.add(accountDetail);
     }
 
-    public Map<String, List<UTXOBO>> getUtxoCache() {
-        return utxoCache;
+    @Override
+    public List<UTXO> getUnSpendAsset(String address) {
+        return unspentUTXOCache.stream().filter(item -> item.getAddress().equals(address)).collect(Collectors.toList());
     }
 
-    public void setUtxoCache(Map<String, List<UTXOBO>> utxoCache) {
-        this.utxoCache = utxoCache;
+    /**
+     * get spend asset
+     *
+     * @param address
+     * @return
+     */
+    @Override
+    public List<UTXO> getSpendAsset(String address) {
+        return spentUTXOCache.stream().filter(item -> item.getAddress().equals(address)).collect(Collectors.toList());
+    }
+
+    /**
+     * @param address
+     * @param balance
+     * @param currency
+     * @return
+     */
+    @Override
+    public AccountState createAccountState(String address, BigInteger balance, String currency) {
+
+        AccountState accountState = new AccountState(balance,address.getBytes(), currency);
+        accountStateCache.put(address,accountState);
+
+        return accountState;
+    }
+
+    @Override
+    public List<AccountDetail> getAccountDetails() {
+        return accountDetails;
+    }
+
+    /**
+     * merge utxo
+     *
+     * @param spendUTXO
+     * @param unSpendUTXO
+     * @return
+     */
+    @Override
+    public boolean mergeUTXO(List<UTXO> spendUTXO, List<UTXO> unSpendUTXO) {
+
+        spentUTXOCache.addAll(spendUTXO);
+        unspentUTXOCache.addAll(unSpendUTXO);
+
+        return true;
     }
 }

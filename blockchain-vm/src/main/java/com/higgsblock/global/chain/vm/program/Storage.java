@@ -18,6 +18,7 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.core.AccountDetail;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.core.Block;
 import com.higgsblock.global.chain.vm.core.Repository;
@@ -26,6 +27,7 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Set;
 
 public class Storage implements Repository, ProgramListenerAware {
@@ -182,13 +184,72 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public boolean flushImpl(Repository childRepository) {
-        return false;
-    }
 
     @Override
     public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
+        return null;
+    }
+
+    /**
+     * transfer assert from to address
+     *
+     * @param from     balance must glt amount
+     * @param address  receive address
+     * @param amount   transfer amount
+     * @param currency assert type
+     */
+    @Override
+    public void transfer(String from, String address, String amount, String currency) {
+
+    }
+
+    /**
+     * get unSpend asset
+     *
+     * @param address
+     * @return
+     */
+    @Override
+    public List getUnSpendAsset(String address) {
+        return null;
+    }
+
+    /**
+     * get spend asset
+     *
+     * @param address
+     * @return
+     */
+    @Override
+    public List getSpendAsset(String address) {
+        return null;
+    }
+
+    /**
+     * merge utxo
+     *
+     * @param spendUTXO
+     * @param unSpendUTXO
+     * @return
+     */
+    @Override
+    public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+        return false;
+    }
+
+    /**
+     * @param address
+     * @param balance
+     * @param currency
+     * @return
+     */
+    @Override
+    public AccountState createAccountState(String address, BigInteger balance, String currency) {
+        return null;
+    }
+
+    @Override
+    public List<AccountDetail> getAccountDetails() {
         return null;
     }
 

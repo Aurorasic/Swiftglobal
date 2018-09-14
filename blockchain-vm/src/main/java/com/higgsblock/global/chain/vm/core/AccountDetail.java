@@ -1,4 +1,4 @@
-package com.higgsblock.global.chain.app.vm;
+package com.higgsblock.global.chain.vm.core;
 
 import java.io.Serializable;
 import java.math.BigInteger;
