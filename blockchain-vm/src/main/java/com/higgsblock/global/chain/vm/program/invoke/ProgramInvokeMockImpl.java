@@ -45,7 +45,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
 
         //this.repository = new RepositoryRoot(new HashMapDB<byte[]>());
-        this.repository = new RepositoryImpl();
+        //this.repository = new RepositoryImpl();
         this.repository.createAccount(ownerAddress);
 
         this.repository.createAccount(contractAddress);
@@ -242,10 +242,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         return this.repository;
     }
 
-    @Override
-    public BlockStore getBlockStore() {
-        return new BlockStore();
-    }
+
 
     public void setRepository(Repository repository) {
         this.repository = repository;

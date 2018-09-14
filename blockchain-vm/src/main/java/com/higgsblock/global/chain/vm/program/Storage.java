@@ -187,5 +187,23 @@ public class Storage implements Repository, ProgramListenerAware {
         return false;
     }
 
+    @Override
+    public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
+        return null;
+    }
+
+    /**
+     * transfer assert from to address
+     *
+     * @param from     balance must glt amount
+     * @param address  receive address
+     * @param amount   transfer amount
+     * @param currency assert type
+     */
+    @Override
+    public void transfer(String from, String address, String amount, String currency) {
+
+    }
+
 
 }

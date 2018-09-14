@@ -1,7 +1,11 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
 import com.higgsblock.global.chain.vm.datasource.MultiCache;
 import com.higgsblock.global.chain.vm.datasource.Source;
@@ -13,10 +17,7 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author tangkun
@@ -39,10 +40,11 @@ public class RepositoryImpl implements Repository {
     private  Map<String, Map<String, DataWord>> storageCache;
 
 
-    /**
-     * utxo cache
-     */
-    protected Map<String,List<UTXOBO>> utxoCache;
+    Map<String,AccountState> accountStates = new HashMap<>();
+    List<AccountDetail> accountDetails = new ArrayList<>();
+    //区块级别未花费缓存，交易执行成功花费后会移除到spentUTXOCache中，并新增加新的utxo
+    Map<String,List<UTXO>> unspentUTXOCache = new HashMap<>();
+    Map<String,List<UTXO>> spentUTXOCache = new HashMap<>();
 
 
     @Autowired
@@ -67,7 +69,7 @@ public class RepositoryImpl implements Repository {
         //this.codeCache = codeCache;
 
         //this.storageCache = storageCache;
-        this.utxoCache = utxoCache;
+       // this.utxoCache = utxoCache;
     }
 
     @Override
@@ -309,21 +311,32 @@ public class RepositoryImpl implements Repository {
     public boolean flushImpl(RepositoryImpl childRepository) {
 
         //if parent utxo include child utxo and child's utxo is spent
-        Map<String, List<UTXOBO>> utxoCache = childRepository.getUtxoCache();
-        for (Map.Entry<String, List<UTXOBO>> en:utxoCache.entrySet()){
-            List<UTXOBO> cList = en.getValue();
-            List<UTXOBO> pList = this.utxoCache.get(en.getKey());
+        //Map<String, List<UTXOBO>> utxoCache = childRepository.getUtxoCache();
+       // for (Map.Entry<String, List<UTXOBO>> en:utxoCache.entrySet()){
+//            List<UTXOBO> cList = en.getValue();
+//            List<UTXOBO> pList = this.utxoCache.get(en.getKey());
 
-        }
+        //}
 
         return false;
     }
 
-    public Map<String, List<UTXOBO>> getUtxoCache() {
-        return utxoCache;
+    /**
+     * transfer assert from to address
+     *
+     * @param from     balance must glt amount
+     * @param address  receive address
+     * @param amount   transfer amount
+     * @param currency assert type
+     */
+    @Override
+    public void transfer(String from, String address, String amount, String currency) {
+        AccountState to = accountStates.getOrDefault(address,new AccountState(BigInteger.ZERO,address.getBytes())) ;
+        to=to.withBalanceIncrement(new BigInteger(amount));
+        accountStates.put(new String(to.getCodeHash()),to);
+
+        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance(),currency);
+        accountDetails.add(accountDetail);
     }
 
-    public void setUtxoCache(Map<String, List<UTXOBO>> utxoCache) {
-        this.utxoCache = utxoCache;
-    }
 }

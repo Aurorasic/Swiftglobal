@@ -194,4 +194,13 @@ public interface Repository {
 
 
     String getBlockHashByNumber(long blockNumber, String branchBlockHash);
+
+    /**
+     * transfer assert from to address
+     * @param from balance must glt amount
+     * @param address  receive address
+     * @param amount transfer amount
+     * @param currency assert type
+     */
+    void transfer(String from,String address ,String amount,String currency);
 }

@@ -138,18 +138,10 @@ public class SnapshotTest {
            balance.add(utxo.getOutput().getMoney());
         }
         //合约使用的单位是否为整数
-        return  new BigInteger("21");
+        return  new BigInteger(balance.getValue());
     }
 
-    //转账操作
-    public void transfer(String from,String address ,String amount,String currency){
-        AccountState to = accountStates.getOrDefault(address,new AccountState(BigInteger.ZERO,address.getBytes())) ;
-        to=to.withBalanceIncrement(new BigInteger(amount));
-        accountStates.put(new String(to.getCodeHash()),to);
 
-        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance(),currency);
-        accountDetails.add(accountDetail);
-    }
 
 
 

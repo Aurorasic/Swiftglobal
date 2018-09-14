@@ -6,7 +6,10 @@ import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.VM;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
@@ -167,7 +170,7 @@ public class ContractContext {
     private ProgramInvoke getProgramInvoke() {
         Transaction transaction = getTransaction();
         Block block = getBlock();
-        Repository contractRepository = new RepositoryImpl();
+        Repository contractRepository =null;
 
         ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
         return programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
