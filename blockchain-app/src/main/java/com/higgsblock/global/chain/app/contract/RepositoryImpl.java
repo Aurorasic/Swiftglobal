@@ -105,6 +105,11 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
+    public Map<String, DataWord> getContractDetails(byte[] addr) {
+        return storageCache.get(Hex.toHexString(addr));
+    }
+
+    @Override
     public boolean hasContractDetails(byte[] addr) {
         return false;
     }

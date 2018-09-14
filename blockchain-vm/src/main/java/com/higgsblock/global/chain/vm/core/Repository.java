@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.vm.core;
 import com.higgsblock.global.chain.vm.DataWord;
 
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,7 +44,13 @@ public interface Repository {
 
 
 
-
+    /**
+     * Retrieve contract details for a given account from the database
+     *
+     * @param addr of the account
+     * @return new contract details
+     */
+    Map<String, DataWord> getContractDetails(byte[] addr);
 
 
 
