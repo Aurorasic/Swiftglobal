@@ -58,10 +58,12 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     @Override
     public T get(String key, ReadOptions options) throws DBException {
+        byte[] bytes = null;
         try {
-            return deserialize(db.get(serialize(key), options));
+            bytes = db.get(serialize(key), options);
+            return deserialize(bytes);
         } catch (Exception e) {
-            LOGGER.error(String.format("%s. key=%s, options=%s", e.getMessage(), key, options), e);
+            LOGGER.error(String.format("%s. key=%s, options=%s, db=%s, bytes=%s", e.getMessage(), key, options, db, bytes), e);
         }
         return null;
     }
