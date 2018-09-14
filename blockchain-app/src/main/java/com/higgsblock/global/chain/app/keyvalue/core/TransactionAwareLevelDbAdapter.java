@@ -368,6 +368,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         doWithLock(writeLock, () -> {
             List<String> batchNos = getBatchNos();
             for (String batchNo : batchNos) {
+                LOGGER.info("archive: batchNo={}", batchNo);
                 levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
                     Serializable key = entry.getKey();
                     String keyspace = KeyValueAdapterUtils.getRealKeyspace(key);
