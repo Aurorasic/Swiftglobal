@@ -94,7 +94,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
                 transactionHolder--;
             } else {
                 levelDbAdapter.write(writeBatch);
-                threadPool.submit(this::archive);
+                archive();
                 writeBatch = null;
                 transactionHolder = 0;
                 isAutoCommit = true;
