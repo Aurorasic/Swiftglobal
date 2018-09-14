@@ -18,10 +18,8 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.BlockStore;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.RepositoryImpl;
-import com.higgsblock.global.chain.vm.datasource.HashMapDB;
 import org.spongycastle.util.encoders.Hex;
 
 /**

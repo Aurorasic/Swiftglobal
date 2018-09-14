@@ -18,7 +18,6 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.BlockStore;
 import com.higgsblock.global.chain.vm.core.Repository;
 
 import java.math.BigInteger;
@@ -30,8 +29,6 @@ import java.util.Map;
  * @since 03.06.2014
  */
 public class ProgramInvokeImpl implements ProgramInvoke {
-
-    private BlockStore blockStore;
     /**
      * TRANSACTION  env **
      */
@@ -60,7 +57,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord gasPrice, DataWord gas, DataWord callValue, byte[] msgData,
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord
                                      difficulty,
-                             DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
+                             DataWord gaslimit, Repository repository, int callDeep,
                              boolean isStaticCall, boolean byTestingSuite) {
 
         // Transaction env
@@ -85,7 +82,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.repository = repository;
         this.byTransaction = false;
         this.callDeep = callDeep;
-        this.blockStore = blockStore;
         this.isStaticCall = isStaticCall;
         this.byTestingSuite = byTestingSuite;
     }
@@ -94,9 +90,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, byte[] difficulty,
                              byte[] gaslimit,
-                             Repository repository, BlockStore blockStore, boolean byTestingSuite) {
+                             Repository repository, boolean byTestingSuite) {
         this(address, origin, caller, balance, gasPrice, gas, callValue, msgData, lastHash, coinbase,
-                timestamp, number, difficulty, gaslimit, repository, blockStore);
+                timestamp, number, difficulty, gaslimit, repository);
         this.byTestingSuite = byTestingSuite;
     }
 
@@ -105,7 +101,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, byte[] difficulty,
                              byte[] gaslimit,
-                             Repository repository, BlockStore blockStore) {
+                             Repository repository) {
 
         // Transaction env
         this.address = new DataWord(address);
@@ -127,7 +123,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.gaslimit = new DataWord(gaslimit);
 
         this.repository = repository;
-        this.blockStore = blockStore;
     }
 
     /*           ADDRESS op         */
@@ -275,11 +270,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     @Override
     public Repository getRepository() {
         return repository;
-    }
-
-    @Override
-    public BlockStore getBlockStore() {
-        return blockStore;
     }
 
     @Override

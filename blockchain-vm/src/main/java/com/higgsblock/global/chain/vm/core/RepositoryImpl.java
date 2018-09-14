@@ -251,6 +251,11 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
+    public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
+        return null;
+    }
+
+    @Override
     public synchronized void commit() {
         Repository parentSync = parent == null ? this : parent;
         // need to synchronize on parent since between different caches flush

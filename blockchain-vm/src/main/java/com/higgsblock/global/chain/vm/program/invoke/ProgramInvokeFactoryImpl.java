@@ -19,7 +19,6 @@ package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.Block;
-import com.higgsblock.global.chain.vm.core.BlockStore;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.Program;
@@ -43,8 +42,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
     // Invocation by the wire tx
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, Block block, Repository repository,
-                                             BlockStore blockStore) {
+    public ProgramInvoke createProgramInvoke(Transaction tx, Block block, Repository repository) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
@@ -128,7 +126,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, gas, callValue, data,
                 lastHash, coinbase, timestamp, number, difficulty, gaslimit,
-                repository, blockStore);
+                repository);
     }
 
     /**
@@ -138,7 +136,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue, DataWord inGas,
                                              BigInteger balanceInt, byte[] dataIn,
-                                             Repository repository, BlockStore blockStore,
+                                             Repository repository,
                                              boolean isStaticCall, boolean byTestingSuite) {
 
         DataWord address = toAddress;
@@ -192,6 +190,6 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, gas, callValue,
                 data, lastHash, coinbase, timestamp, number, difficulty, gasLimit,
-                repository, program.getCallDeep() + 1, blockStore, isStaticCall, byTestingSuite);
+                repository, program.getCallDeep() + 1, isStaticCall, byTestingSuite);
     }
 }

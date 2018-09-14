@@ -18,7 +18,6 @@
 package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.BlockStore;
 import com.higgsblock.global.chain.vm.core.Repository;
 
 
@@ -69,8 +68,6 @@ public interface ProgramInvoke {
     int getCallDeep();
 
     Repository getRepository();
-
-    BlockStore getBlockStore();
 
     boolean isStaticCall();
 }
