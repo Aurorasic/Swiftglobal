@@ -6,8 +6,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDb;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
-import com.higgsblock.global.chain.app.keyvalue.db.LevelDb;
 import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
+import com.higgsblock.global.chain.app.keyvalue.db.StringLevelDb;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -215,7 +215,7 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     }
 
     protected ILevelDb<String> getDb(Serializable keyspace) {
-        return dbMap.computeIfAbsent(keyspace, db -> new LevelDb<>(dataDir + "/" + db, options));
+        return dbMap.computeIfAbsent(keyspace, db -> new StringLevelDb(dataDir + "/" + db, options));
     }
 
     protected ILevelDb<String> getEntityClassDb() {

@@ -111,8 +111,8 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         db.close();
     }
 
-    protected byte[] serialize(Serializable serializable) {
-        return null == serializable ? new byte[0] : SerializationUtils.serialize(serializable);
+    protected byte[] serialize(Serializable data) {
+        return null == data ? new byte[0] : SerializationUtils.serialize(data);
     }
 
     protected T deserialize(byte[] bytes) {
