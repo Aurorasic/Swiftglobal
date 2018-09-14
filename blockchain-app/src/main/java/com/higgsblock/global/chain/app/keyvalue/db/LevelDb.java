@@ -41,7 +41,7 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         try {
             close();
             Iq80DBFactory.factory.destroy(new File(dataPath), options);
-            LOGGER.warn("db is destroyed. dataPath={}", dataPath);
+            throw new RuntimeException("db is destroyed. dataPath=" + dataPath);
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -121,8 +121,12 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     @Override
     public void close() throws IOException {
-        db.close();
-        LOGGER.warn("db is closed. dataPath={}", dataPath);
+        try {
+            db.close();
+            throw new RuntimeException("db is closed. dataPath=" + dataPath);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 
     protected byte[] serialize(Serializable data) {
