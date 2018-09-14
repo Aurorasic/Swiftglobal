@@ -10,6 +10,8 @@ import org.iq80.leveldb.impl.Iq80DBFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +34,7 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         File file = new File(dataDir);
         do {
             try {
+                Files.deleteIfExists(Paths.get(dataDir + "/LOCK"));
                 db = Iq80DBFactory.factory.open(file, options);
                 TimeUnit.MILLISECONDS.sleep(1);
             } catch (Exception e) {
