@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author baizhengwen
@@ -22,27 +23,30 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     private DB db;
     private Options options;
-    private String dataPath;
+    private String dataDir;
 
-    public LevelDb(String dataPath, Options options) {
-        this.dataPath = dataPath;
+    public LevelDb(String dataDir, Options options) {
+        this.dataDir = dataDir;
         this.options = options;
 
-        File file = new File(dataPath);
-        try {
-            db = Iq80DBFactory.factory.open(file, options);
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-        }
+        File file = new File(dataDir);
+        do {
+            try {
+                db = Iq80DBFactory.factory.open(file, options);
+                TimeUnit.MILLISECONDS.sleep(1);
+            } catch (Exception e) {
+                LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
+            }
+        } while (null == db);
     }
 
     @Override
     public void destroy() {
         try {
             close();
-            Iq80DBFactory.factory.destroy(new File(dataPath), options);
+            Iq80DBFactory.factory.destroy(new File(dataDir), options);
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
         }
     }
 
