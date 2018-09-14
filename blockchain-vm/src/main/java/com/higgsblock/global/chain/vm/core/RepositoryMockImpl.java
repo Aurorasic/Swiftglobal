@@ -100,7 +100,12 @@ public class RepositoryMockImpl implements Repository {
     @Override
     public synchronized void delete(byte[] addr) {
         accountStateCache.remove((Hex.toHexString(addr)));
-        //storageCache.delete(addr);
+        storageCache.remove(Hex.toHexString(addr));
+    }
+
+    @Override
+    public Map<String, DataWord> getContractDetails(byte[] addr) {
+        return storageCache.get(Hex.toHexString(addr));
     }
 
     @Override

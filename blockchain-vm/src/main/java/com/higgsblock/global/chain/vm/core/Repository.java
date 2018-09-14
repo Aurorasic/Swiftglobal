@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.vm.core;
 import com.higgsblock.global.chain.vm.DataWord;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,7 +44,13 @@ public interface Repository<ASSET> {
 
 
 
-
+    /**
+     * Retrieve contract details for a given account from the database
+     *
+     * @param addr of the account
+     * @return new contract details
+     */
+    Map<String, DataWord> getContractDetails(byte[] addr);
 
 
 
@@ -237,4 +243,13 @@ public interface Repository<ASSET> {
 
 
 
+
+    /**
+     * transfer assert from to address
+     * @param from balance must glt amount
+     * @param address  receive address
+     * @param amount transfer amount
+     * @param currency assert type
+     */
+    void transfer(String from,String address ,String amount,String currency);
 }

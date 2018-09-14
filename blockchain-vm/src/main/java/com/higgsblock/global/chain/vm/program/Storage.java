@@ -67,10 +67,10 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.delete(addr);
     }
 
-
-
-
-
+    @Override
+    public Map<String, DataWord> getContractDetails(byte[] addr) {
+        return repository.getContractDetails(addr);
+    }
 
     @Override
     public boolean hasContractDetails(byte[] addr) {
@@ -253,5 +253,5 @@ public class Storage implements Repository, ProgramListenerAware {
         return null;
     }
 
-
+    }
 }

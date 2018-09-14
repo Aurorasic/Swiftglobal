@@ -1,9 +1,17 @@
 package com.higgsblock.global.chain.app.contract;
 
+<<<<<<< .mine
 
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+=======
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+
+>>>>>>> .theirs
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
 import com.higgsblock.global.chain.vm.datasource.MultiCache;
 import com.higgsblock.global.chain.vm.datasource.Source;
@@ -15,8 +23,13 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
+<<<<<<< .mine
 import java.util.*;
 import java.util.stream.Collectors;
+=======
+import java.util.*;
+
+>>>>>>> .theirs
 
 /**
  * @author tangkun
@@ -47,7 +60,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     Map<String,AccountState> accountStates = new HashMap<>();
     List<AccountDetail> accountDetails = new ArrayList<>();
-    //鍖哄潡绾у埆鏈姳璐圭紦瀛橈紝浜ゆ槗鎵ц鎴愬姛鑺辫垂鍚庝細绉婚櫎鍒皊pentUTXOCache涓紝骞舵柊澧炲姞鏂扮殑utxo
+    //区块级别未花费缓存，交易执行成功花费后会移除到spentUTXOCache中，并新增加新的utxo
     List<UTXO> unspentUTXOCache = new ArrayList<>();
     List<UTXO> spentUTXOCache = new ArrayList<>();
 
@@ -104,7 +117,12 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized void delete(byte[] addr) {
         accountStateCache.remove((Hex.toHexString(addr)));
-        //storageCache.delete(addr);
+        storageCache.remove(Hex.toHexString(addr));
+    }
+
+    @Override
+    public Map<String, DataWord> getContractDetails(byte[] addr) {
+        return storageCache.get(Hex.toHexString(addr));
     }
 
     @Override
@@ -321,6 +339,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
 
 
+        //}
 
     /**
      * transfer assert from to address
