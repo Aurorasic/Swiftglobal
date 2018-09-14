@@ -19,7 +19,6 @@ package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.Block;
-import com.higgsblock.global.chain.vm.core.BlockStore;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.Program;
@@ -33,12 +32,12 @@ import java.math.BigInteger;
 public interface ProgramInvokeFactory {
 
     ProgramInvoke createProgramInvoke(Transaction tx, Block block,
-                                      Repository repository, BlockStore blockStore);
+                                      Repository repository);
 
     ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                       DataWord inValue, DataWord inGas,
                                       BigInteger balanceInt, byte[] dataIn,
-                                      Repository repository, BlockStore blockStore,
+                                      Repository repository,
                                       boolean staticCall, boolean byTestingSuite);
 
 

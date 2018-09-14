@@ -73,7 +73,7 @@ public class VMComplexTest {
         DataWord value1 = new DataWord(3);
 
         // Set contract into Database
-        String callerAddr = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+        String callerAddr = "d67da73f6891af29d6222ab5c0a415b929b98911";
         String contractAddr = "77045e71a7a2c50903d88e564cd72fab11e82051";
         String code =
                 "6103e75460005260006000511115630000004c576001600051036103e755600060006000600060007377045e71a7a2c50903d88e564cd72fab11e820516008600a5a0402f1630000004c00565b00";
@@ -149,7 +149,7 @@ public class VMComplexTest {
         long expectedVal_2 = 22;
 
         // Set contract into Database
-        String callerAddr = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+        String callerAddr = "d67da73f6891af29d6222ab5c0a415b929b98911";
 
         String contractA_addr = "77045e71a7a2c50903d88e564cd72fab11e82051";
         String contractB_addr = "83c5541a6c8d2dbad642f385d8d06ca9b6c731ee";
@@ -247,7 +247,7 @@ public class VMComplexTest {
         long expectedVal_6 = 66;
 
         // Set contract into Database
-        byte[] caller_addr_bytes = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        byte[] caller_addr_bytes = Hex.decode("d67da73f6891af29d6222ab5c0a415b929b98911");
 
         byte[] contractA_addr_bytes = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051");
         byte[] contractB_addr_bytes = Hex.decode("83c5541a6c8d2dbad642f385d8d06ca9b6c731ee");
@@ -326,7 +326,7 @@ public class VMComplexTest {
          */
 
         // Set contract into Database
-        byte[] caller_addr_bytes = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        byte[] caller_addr_bytes = Hex.decode("d67da73f6891af29d6222ab5c0a415b929b98911");
 
         byte[] contractA_addr_bytes = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051");
 

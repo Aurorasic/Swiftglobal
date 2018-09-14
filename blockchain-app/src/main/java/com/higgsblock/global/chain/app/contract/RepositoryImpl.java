@@ -1,10 +1,10 @@
-package com.higgsblock.global.chain.vm.core;
+package com.higgsblock.global.chain.app.contract;
 
 import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
 import com.higgsblock.global.chain.vm.datasource.MultiCache;
 import com.higgsblock.global.chain.vm.datasource.Source;
-import com.higgsblock.global.chain.vm.datasource.WriteCache;
 import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
@@ -13,9 +13,7 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
-
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -248,6 +246,11 @@ public class RepositoryImpl implements Repository {
     @Override
     public boolean flushImpl(Repository childRepository) {
         return false;
+    }
+
+    @Override
+    public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
+        return null;
     }
 
     @Override
