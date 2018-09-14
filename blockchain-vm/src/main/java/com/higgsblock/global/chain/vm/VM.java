@@ -19,13 +19,9 @@ package com.higgsblock.global.chain.vm;
 
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
+//import org.ethereum.db.ContractDetails;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
-
-///import org.ethereum.config.BlockchainConfig;
-//import org.ethereum.db.ContractDetails;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +30,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import static com.higgsblock.global.chain.vm.OpCode.CALL;
-import static com.higgsblock.global.chain.vm.OpCode.PUSH1;
-import static com.higgsblock.global.chain.vm.OpCode.REVERT;
+import static com.higgsblock.global.chain.vm.OpCode.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
@@ -78,6 +73,29 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  *
  * @author Roman Mandeleil
  * @since 01.06.2014
+ */
+
+
+/**
+ * TODO: chenjiawei 外部参数：
+ * SystemProperties config
+ * boolean config.vmTrace();
+ * long config.dumpBlock();
+ * Program program
+ * setVmHook(VMHook vmHook)
+ * program.byTestingSuite()
+ * program.isStopped()
+ * program.setRuntimeFailure(e);
+ * program.saveOpTrace();
+ * program.getCurrentOp()
+ * program.getBlockchainConfig().getConstants().hasDelegateCallOpcode()
+ * program.getBlockchainConfig().eip206()
+ * program.getBlockchainConfig().eip211()
+ * program.getBlockchainConfig().eip214()
+ *
+ *
+ *
+ *
  */
 public class VM {
 
@@ -1319,7 +1337,7 @@ public class VM {
             if (program.byTestingSuite()) return;
 
             while (!program.isStopped()) {
-                step(program);
+                this.step(program);
             }
 
         } catch (RuntimeException e) {
@@ -1359,59 +1377,61 @@ public class VM {
                     gasBefore, gasCost, memWords)
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-//        if (config.dumpStyle().equals("standard+")) {
-//            switch (op) {
-//                case STOP:
-//                case RETURN:
-//                case SUICIDE:
-//
+        if (config.dumpStyle().equals("standard+")) {
+            switch (op) {
+                case STOP:
+                case RETURN:
+                case SUICIDE:
+
+                    Map<String, DataWord> details = program.getStorage().getContractDetails(program.getOwnerAddress().getLast20Bytes());
 //                    ContractDetails details = program.getStorage()
 //                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-//                    List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-//                    Collections.sort(storageKeys);
-//
-//                    for (DataWord key : storageKeys) {
-//                        dumpLogger.trace("{} {}",
-//                                toHexString(key.getNoLeadZeroesData()),
-//                                toHexString(details.getStorage().get(key).getNoLeadZeroesData()));
-//                    }
-//                default:
-//                    break;
-//            }
-//            String addressString = toHexString(program.getOwnerAddress().getLast20Bytes());
-//            String pcString = toHexString(new DataWord(program.getPC()).getNoLeadZeroesData());
-//            String opString = toHexString(new byte[]{op.val()});
-//            String gasString = toHexString(program.getGas().getNoLeadZeroesData());
-//
-//            dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-//        } else if (config.dumpStyle().equals("pretty")) {
-//            dumpLogger.trace("    STACK");
-//            for (DataWord item : program.getStack()) {
-//                dumpLogger.trace("{}", item);
-//            }
-//            dumpLogger.trace("    MEMORY");
-//            String memoryString = program.memoryToString();
-//            if (!"".equals(memoryString))
-//                dumpLogger.trace("{}", memoryString);
-//
-//            dumpLogger.trace("    STORAGE");
+                    List<String> storageKeys = new ArrayList<>(details.keySet());
+                    Collections.sort(storageKeys);
+
+                    for (String key : storageKeys) {
+                        dumpLogger.trace("{} {}",
+                                key,
+                                toHexString(details.get(key).getNoLeadZeroesData()));
+                    }
+                default:
+                    break;
+            }
+            String addressString = toHexString(program.getOwnerAddress().getLast20Bytes());
+            String pcString = toHexString(new DataWord(program.getPC()).getNoLeadZeroesData());
+            String opString = toHexString(new byte[]{op.val()});
+            String gasString = toHexString(program.getGas().getNoLeadZeroesData());
+
+            dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
+        } else if (config.dumpStyle().equals("pretty")) {
+            dumpLogger.trace("    STACK");
+            for (DataWord item : program.getStack()) {
+                dumpLogger.trace("{}", item);
+            }
+            dumpLogger.trace("    MEMORY");
+            String memoryString = program.memoryToString();
+            if (!"".equals(memoryString))
+                dumpLogger.trace("{}", memoryString);
+
+            dumpLogger.trace("    STORAGE");
+            Map<String, DataWord> details = program.getStorage().getContractDetails(program.getOwnerAddress().getLast20Bytes());
 //            ContractDetails details = program.getStorage()
 //                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-//            List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-//            Collections.sort(storageKeys);
-//
-//            for (DataWord key : storageKeys) {
-//                dumpLogger.trace("{}: {}",
-//                        key.shortHex(),
-//                        details.getStorage().get(key).shortHex());
-//            }
-//
-//            int level = program.getCallDeep();
-//            String contract = toHexString(program.getOwnerAddress().getLast20Bytes());
-//            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
-//            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
-//                    level, contract, vmCounter, internalSteps, op,
-//                    gasBefore, gasCost, memWords);
-//        }
+            List<String> storageKeys = new ArrayList<>(details.keySet());
+            Collections.sort(storageKeys);
+
+            for (String key : storageKeys) {
+                dumpLogger.trace("{}: {}",
+                        key,
+                        details.get(key).shortHex());
+            }
+
+            int level = program.getCallDeep();
+            String contract = toHexString(program.getOwnerAddress().getLast20Bytes());
+            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
+            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
+                    level, contract, vmCounter, internalSteps, op,
+                    gasBefore, gasCost, memWords);
+        }
     }
 }

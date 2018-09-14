@@ -19,6 +19,7 @@ package com.higgsblock.global.chain.vm.program.invoke;
 
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.RepositoryMockImpl;
 import org.spongycastle.util.encoders.Hex;
 
 /**
@@ -45,7 +46,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
 
         //this.repository = new RepositoryRoot(new HashMapDB<byte[]>());
-        //this.repository = new RepositoryImpl();
+        this.repository = new RepositoryMockImpl();
         this.repository.createAccount(ownerAddress);
 
         this.repository.createAccount(contractAddress);
@@ -241,7 +242,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     public Repository getRepository() {
         return this.repository;
     }
-
 
 
     public void setRepository(Repository repository) {

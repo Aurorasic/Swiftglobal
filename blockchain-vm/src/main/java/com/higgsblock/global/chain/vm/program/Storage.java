@@ -26,6 +26,7 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.Set;
 
 public class Storage implements Repository, ProgramListenerAware {
@@ -65,10 +66,10 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.delete(addr);
     }
 
-
-
-
-
+    @Override
+    public Map<String, DataWord> getContractDetails(byte[] addr) {
+        return repository.getContractDetails(addr);
+    }
 
     @Override
     public boolean hasContractDetails(byte[] addr) {
@@ -204,6 +205,4 @@ public class Storage implements Repository, ProgramListenerAware {
     public void transfer(String from, String address, String amount, String currency) {
 
     }
-
-
 }
