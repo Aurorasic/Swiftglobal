@@ -19,13 +19,9 @@ package com.higgsblock.global.chain.vm;
 
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
+//import org.ethereum.db.ContractDetails;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
-
-///import org.ethereum.config.BlockchainConfig;
-//import org.ethereum.db.ContractDetails;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.higgsblock.global.chain.vm.OpCode.CALL;
-import static com.higgsblock.global.chain.vm.OpCode.PUSH1;
-import static com.higgsblock.global.chain.vm.OpCode.REVERT;
+import static com.higgsblock.global.chain.vm.OpCode.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
@@ -79,6 +73,29 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  *
  * @author Roman Mandeleil
  * @since 01.06.2014
+ */
+
+
+/**
+ * TODO: chenjiawei 外部参数：
+ * SystemProperties config
+ * boolean config.vmTrace();
+ * long config.dumpBlock();
+ * Program program
+ * setVmHook(VMHook vmHook)
+ * program.byTestingSuite()
+ * program.isStopped()
+ * program.setRuntimeFailure(e);
+ * program.saveOpTrace();
+ * program.getCurrentOp()
+ * program.getBlockchainConfig().getConstants().hasDelegateCallOpcode()
+ * program.getBlockchainConfig().eip206()
+ * program.getBlockchainConfig().eip211()
+ * program.getBlockchainConfig().eip214()
+ *
+ *
+ *
+ *
  */
 public class VM {
 
@@ -1320,7 +1337,7 @@ public class VM {
             if (program.byTestingSuite()) return;
 
             while (!program.isStopped()) {
-                step(program);
+                this.step(program);
             }
 
         } catch (RuntimeException e) {
