@@ -187,5 +187,10 @@ public class Storage implements Repository, ProgramListenerAware {
         return false;
     }
 
+    @Override
+    public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
+        return null;
+    }
+
 
 }

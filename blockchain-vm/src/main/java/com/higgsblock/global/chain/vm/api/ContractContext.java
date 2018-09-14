@@ -167,7 +167,7 @@ public class ContractContext {
     private ProgramInvoke getProgramInvoke() {
         Transaction transaction = getTransaction();
         Block block = getBlock();
-        Repository contractRepository = new RepositoryImpl();
+        Repository contractRepository = new RepositoryMockImpl();
 
         ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
         return programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
