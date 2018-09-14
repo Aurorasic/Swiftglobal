@@ -10,11 +10,8 @@ import org.iq80.leveldb.impl.Iq80DBFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author baizhengwen
@@ -32,15 +29,11 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         this.options = options;
 
         File file = new File(dataDir);
-        do {
-            try {
-                Files.deleteIfExists(Paths.get(dataDir + "/LOCK"));
-                db = Iq80DBFactory.factory.open(file, options);
-                TimeUnit.MILLISECONDS.sleep(1);
-            } catch (Exception e) {
-                LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
-            }
-        } while (null == db);
+        try {
+            db = Iq80DBFactory.factory.open(file, options);
+        } catch (Exception e) {
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
+        }
     }
 
     @Override
