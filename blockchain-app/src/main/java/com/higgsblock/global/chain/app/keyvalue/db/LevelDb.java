@@ -41,7 +41,6 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         try {
             close();
             Iq80DBFactory.factory.destroy(new File(dataPath), options);
-            throw new RuntimeException("db is destroyed. dataPath=" + dataPath);
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -49,24 +48,12 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     @Override
     public T get(String key) throws DBException {
-        try {
-            return deserialize(db.get(serialize(key)));
-        } catch (Exception e) {
-            LOGGER.error(String.format("%s. key=%s", e.getMessage(), key), e);
-        }
-        return null;
+        return deserialize(db.get(serialize(key)));
     }
 
     @Override
     public T get(String key, ReadOptions options) throws DBException {
-        byte[] bytes = null;
-        try {
-            bytes = db.get(serialize(key), options);
-            return deserialize(bytes);
-        } catch (Exception e) {
-            LOGGER.error(String.format("%s. key=%s, options=%s, db=%s, bytes=%s", e.getMessage(), key, options, db, bytes), e);
-        }
-        return null;
+        return deserialize(db.get(serialize(key), options));
     }
 
     @Override
@@ -121,12 +108,7 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     @Override
     public void close() throws IOException {
-        try {
-            db.close();
-            throw new RuntimeException("db is closed. dataPath=" + dataPath);
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-        }
+        db.close();
     }
 
     protected byte[] serialize(Serializable data) {

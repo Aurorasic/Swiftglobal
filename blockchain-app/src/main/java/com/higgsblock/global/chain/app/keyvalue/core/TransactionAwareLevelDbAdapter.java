@@ -367,6 +367,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     private void archive() {
         doWithLock(writeLock, () -> {
             List<String> batchNos = getBatchNos();
+            LOGGER.info("archive: batchNos={}", batchNos);
             for (String batchNo : batchNos) {
                 LOGGER.info("archive: batchNo={}", batchNo);
                 levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
