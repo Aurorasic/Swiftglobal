@@ -450,7 +450,7 @@ public class MemoryTest {
         memoryBuffer.write(2720, data1, data1.length, true);
 
         byte lastZero = memoryBuffer.readByte(2719);
-        byte firstOne = memoryBuffer.readByte(2721);
+        byte firstOne = memoryBuffer.readByte(2720);
 
         assertTrue(memoryBuffer.size() == 3072);
         assertTrue(lastZero == 0);
