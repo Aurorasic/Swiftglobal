@@ -117,6 +117,22 @@ public class Program {
         this(null, ops, programInvoke, transaction, config);
     }
 
+    public Program () {
+        this.config = null;
+//        this.invoke = programInvoke;
+//        this.transaction = transaction;
+//
+//        this.codeHash = codeHash == null || FastByteComparisons.equal(HashUtil.EMPTY_DATA_HASH, codeHash) ? null : codeHash;
+//        this.ops = nullToEmpty(ops);
+//
+//        traceListener = new ProgramTraceListener(config.vmTrace());
+//        this.memory = setupProgramListener(new Memory());
+//        this.stack = setupProgramListener(new Stack());
+//        this.storage = setupProgramListener(new Storage(programInvoke));
+//        this.trace = new ProgramTrace(config, programInvoke);
+        this.blockchainConfig = config.getBlockchainConfig();
+    }
+
     public Program(byte[] codeHash, byte[] ops, ProgramInvoke programInvoke, Transaction transaction, SystemProperties config) {
         this.config = config;
         this.invoke = programInvoke;
