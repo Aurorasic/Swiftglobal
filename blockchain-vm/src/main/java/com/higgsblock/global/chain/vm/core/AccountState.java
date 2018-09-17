@@ -2,6 +2,8 @@ package com.higgsblock.global.chain.vm.core;
 
 import java.math.BigInteger;
 
+import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
+
 /**
  * @author tangkun
  * @date 2018-09-06
@@ -53,5 +55,34 @@ public class AccountState {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+
+    public boolean isEmpty() {
+        return bytesEqual(codeHash, sha3(new byte[0])) &&
+                BigInteger.ZERO.equals(balance);
+    }
+
+    private boolean bytesEqual(byte[] b1, byte[] b2) {
+        return b1.length == b2.length && compareTo(b1, 0, b1.length, b2, 0, b2.length) == 0;
+    }
+
+    private int compareTo(byte[] buffer1, int offset1, int length1,
+                         byte[] buffer2, int offset2, int length2) {
+        // Short circuit equal case
+        if (buffer1 == buffer2 &&
+                offset1 == offset2 &&
+                length1 == length2) {
+            return 0;
+        }
+        int end1 = offset1 + length1;
+        int end2 = offset2 + length2;
+        for (int i = offset1, j = offset2; i < end1 && j < end2; i++, j++) {
+            int a = (buffer1[i] & 0xff);
+            int b = (buffer2[j] & 0xff);
+            if (a != b) {
+                return a - b;
+            }
+        }
+        return length1 - length2;
     }
 }
