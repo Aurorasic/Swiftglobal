@@ -48,7 +48,7 @@ public class Helpers {
         for (AccountDetail ad : accountDetails ){
             TransactionOutput txOut = new TransactionOutput();
 
-            txOut.setMoney(new Money(ad.getValue().intValue(),ad.getCurrency()));
+            txOut.setMoney(BalanceUtil.convertGasToMoney(ad.getValue(),ad.getCurrency()));
             LockScript lockScript = new LockScript();
             lockScript.setAddress(ad.getTo());
             txOut.setLockScript(lockScript);
@@ -58,11 +58,12 @@ public class Helpers {
         }
 
         //合约地址找零
-        TransactionOutput txOut = new TransactionOutput();
-        txOut.setMoney(new Money(accountState.getBalance().intValue(),accountState.getCurrency()));
+        TransactionOutput giveChangeOut = new TransactionOutput();
+        giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(),accountState.getCurrency()));
         LockScript lockScript = new LockScript();
         lockScript.setAddress(new String(accountState.getCodeHash()));
-        txOut.setLockScript(lockScript);
+        giveChangeOut.setLockScript(lockScript);
+        outputs.add(giveChangeOut);
 
         ctx.setInputs(inputs);
         ctx.setOutputs(outputs);

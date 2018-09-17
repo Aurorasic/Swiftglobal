@@ -17,7 +17,7 @@ public class BalanceUtilTest {
 
     @Test
     public void testConvertGasToMoney() throws Exception {
-        System.out.println(BalanceUtil.convertGasToMoney(gas).getValue());
+        System.out.println(BalanceUtil.convertGasToMoney(gas,"cas").getValue());
 
     }
 

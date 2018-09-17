@@ -34,25 +34,39 @@ public class SnapshotTest {
         Repository txR = parent.startTracking();
         //三级缓存
         Repository conR = txR.startTracking();
-        String from = "oxaa",
+        String from = "0xaa",
          amount="10", currency="cas";
-        conR.transfer(from,"oxbb","10",currency);
-        conR.transfer(from,"oxcc","110",currency);
+        conR.transfer(from,"0xbb","10",currency);
+        conR.transfer(from,"0xcc","20",currency);
+
+        System.out.println(conR.getAccountState(from,currency).getBalance());
 
         //检查input>=outputs
 
 //        List<UTXO>
-//        ContractTransaction internalTx =  Helpers.buildContractTransaction(chainUTXO,accountState,repository.getAccountDetails());
-//
-//        int outputSize = internalTx.getOutputs().size();
-//        List<UTXO> unSpendUTXO = new ArrayList<>(outputSize);
-//        for (int i = 0; i < outputSize; i++) {
-//            TransactionOutput output = internalTx.getOutputs().get(i);
-//            UTXO utxo = new UTXO(internalTx, (short) i, output);
-//            unSpendUTXO.add(utxo);
-//        }
-//
-//        repository.mergeUTXO(chainUTXO,unSpendUTXO);
+        ContractTransaction internalTx =  Helpers.buildContractTransaction(Helpers.buildTestUTXO(from),
+                conR.getAccountState(from,currency),conR.getAccountDetails());
+
+
+        int outputSize = internalTx.getOutputs().size();
+        List<UTXO> unSpendUTXO = new ArrayList<>(outputSize);
+        for (int i = 0; i < outputSize; i++) {
+            TransactionOutput output = internalTx.getOutputs().get(i);
+            UTXO utxo = new UTXO(internalTx, (short) i, output);
+            unSpendUTXO.add(utxo);
+        }
+
+        conR.mergeUTXO(Helpers.buildTestUTXO(from),unSpendUTXO);
+
+        conR.flush();
+        txR.flush();
+
+        parent.getUnSpendAsset("0xaa").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getSpendAsset("0xaa").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+
+        parent.getUnSpendAsset("0xbb").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getUnSpendAsset("0xcc").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+
 
         //刷新
 

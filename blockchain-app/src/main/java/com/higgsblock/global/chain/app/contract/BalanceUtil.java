@@ -22,9 +22,9 @@ public class BalanceUtil {
      * @param gas
      * @return money
      */
-    public static Money convertGasToMoney(BigInteger gas){
+    public static Money convertGasToMoney(BigInteger gas,String currency){
 
-        return  new Money(gas.intValue()).divide(GAS_TO_MONEY);
+        return  new Money(gas.longValue(),currency).divide(GAS_TO_MONEY);
 
     }
 

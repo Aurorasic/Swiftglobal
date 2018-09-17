@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.contract;
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
+import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
@@ -346,13 +347,14 @@ public class RepositoryImpl implements Repository<UTXO> {
      */
     @Override
     public void transfer(String from, String address, String amount, String currency) {
-        AccountState to = this.getAccountState(from,address) ;
-        if(to.getBalance().compareTo(new BigInteger(amount)) < 0 ){
+        AccountState contractAccount = this.getAccountState(from,currency) ;
+        BigInteger  gasAmount= BalanceUtil.convertMoneyToGas(new Money(amount,currency));
+        if(contractAccount.getBalance().compareTo(gasAmount) < 0 ){
             //余额不足
+            throw new RuntimeException("not enough balance ");
         }
-        to.withBalanceDecrement(new BigInteger(amount));
-        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),
-                new BigInteger(amount),to.getBalance(),currency);
+        contractAccount.withBalanceDecrement(gasAmount);
+        AccountDetail accountDetail = new AccountDetail(from,address,gasAmount,contractAccount.getBalance(),currency);
         accountDetails.add(accountDetail);
     }
 
@@ -402,22 +404,22 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public boolean mergeUTXO(List<UTXO> spendUTXO, List<UTXO> unSpendUTXO) {
 
-        unSpendUTXO.removeAll(spendUTXO);
+        unspentUTXOCache.removeAll(spendUTXO);
         unspentUTXOCache.addAll(unSpendUTXO);
         spentUTXOCache.addAll(spendUTXO);
 
         //更新utxo时，刷新账户考虑是否合约账户才需要做该操作
-        for(UTXO utxo:spendUTXO){
-           AccountState accountState =  accountStates.get(utxo.getAddress());
-            accountState.withBalanceDecrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-        }
-
-        for(UTXO utxo:unSpendUTXO){
-            AccountState accountState =  accountStates.get(utxo.getAddress());
-            if(accountState != null) {
-                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-            }
-        }
+//        for(UTXO utxo:spendUTXO){
+//           AccountState accountState =  accountStates.get(utxo.getAddress());
+//            accountState.withBalanceDecrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+//        }
+//
+//        for(UTXO utxo:unSpendUTXO){
+//            AccountState accountState =  accountStates.get(utxo.getAddress());
+//            if(accountState != null) {
+//                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+//            }
+//        }
         return true;
     }
 

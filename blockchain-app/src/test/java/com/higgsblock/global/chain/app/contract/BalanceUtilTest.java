@@ -12,11 +12,11 @@ import java.math.BigInteger;
 public class BalanceUtilTest {
 
     public static final Money money = new Money("10.09090909");
-    public static final BigInteger gas = new BigInteger("1");
+    public static final BigInteger gas = new BigInteger("8000000000");
 
     @Test
     public void testConvertGasToMoney() throws Exception {
-        System.out.println(BalanceUtil.convertGasToMoney(gas).getValue());
+        System.out.println(BalanceUtil.convertGasToMoney(gas,"cas").getValue());
     }
 
     @Test
