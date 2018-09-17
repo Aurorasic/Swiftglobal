@@ -1,5 +1,7 @@
 package com.higgsblock.global.chain.app.contract;
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.CachedSource;
@@ -25,6 +27,9 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     protected RepositoryImpl parent;
 
+    @Autowired
+    private UTXOServiceProxy utxoServiceProxy;
+
 
 
     //protected Source<byte[], AccountState> accountStateCache;
@@ -45,6 +50,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     protected SystemProperties config = SystemProperties.getDefault();
 
     Map<String,AccountState> accountStates = new HashMap<>();
+
     List<AccountDetail> accountDetails = new ArrayList<>();
 
     List<UTXO> unspentUTXOCache = new ArrayList<>();
@@ -394,6 +400,30 @@ public class RepositoryImpl implements Repository<UTXO> {
         spentUTXOCache.addAll(spendUTXO);
         unspentUTXOCache.addAll(unSpendUTXO);
 
+        return true;
+    }
+
+    /**
+     * add utxo into first cache and build Account
+     *
+     * @return
+     */
+    @Override
+    public boolean addUTXOAndBuildAccount(String address,UTXO utxo,String currency) {
+
+        AccountState accountState = accountStates.get(address);
+        if(accountState == null){
+            accountState = createAccountState(address, BigInteger.ZERO, currency);
+            List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
+            if(chainUTXO != null && chainUTXO.size() != 0) {
+                unspentUTXOCache.addAll(chainUTXO);
+                accountState.withBalanceIncrement(Helpers.convertBalance(chainUTXO));
+            }
+        }
+        unspentUTXOCache.add(utxo);
+        accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+
+        accountStates.put(address,accountState);
         return true;
     }
 }

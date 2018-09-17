@@ -40,6 +40,7 @@ public class AccountState {
     }
 
     public AccountState withBalanceIncrement(BigInteger value) {
+        this.balance=balance.add(value);
         return new AccountState( balance.add(value),  codeHash,currency);
     }
 

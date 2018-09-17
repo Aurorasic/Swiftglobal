@@ -242,5 +242,9 @@ public interface Repository<ASSET> {
 
     List<AccountDetail> getAccountDetails();
 
-
+    /**
+     * add utxo into first cache and build Account
+     * @return
+     */
+    boolean addUTXOAndBuildAccount(String address,ASSET asset,String currency);
 }
