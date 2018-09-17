@@ -85,7 +85,7 @@ public class MiningListener implements IEventBusListener {
 
         // cancel running task
         if (null != future) {
-            future.cancel(true);
+            future.cancel(false);
             future = null;
             LOGGER.info("cancel mining task, height={}", miningHeight);
         }

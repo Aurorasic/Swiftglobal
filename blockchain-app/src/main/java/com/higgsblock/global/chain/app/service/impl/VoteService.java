@@ -517,6 +517,9 @@ public class VoteService implements IEventBusListener, IVoteService {
     }
 
     private boolean isExist(Vote vote) {
+        if (null == this.voteTable) {
+            return false;
+        }
         return Optional.ofNullable(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()))
                 .map(map2 -> map2.containsKey(vote.getBlockHash())).orElse(false);
     }

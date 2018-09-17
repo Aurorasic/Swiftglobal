@@ -61,6 +61,9 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
 
     @Override
     protected void process(IMessage<VotingBlockResponse> message) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            return;
+        }
         VotingBlockResponse votingBlockResponse = message.getData();
         Block block = votingBlockResponse.getBlock();
         String sourceId = message.getSourceId();

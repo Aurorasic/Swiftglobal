@@ -22,50 +22,38 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     private DB db;
     private Options options;
-    private String dataPath;
+    private String dataDir;
 
-    public LevelDb(String dataPath, Options options) {
-        this.dataPath = dataPath;
+    public LevelDb(String dataDir, Options options) {
+        this.dataDir = dataDir;
         this.options = options;
 
-        File file = new File(dataPath);
+        File file = new File(dataDir);
         try {
             db = Iq80DBFactory.factory.open(file, options);
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+        } catch (Exception e) {
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
         }
     }
 
     @Override
     public void destroy() {
         try {
-            db.close();
-            Iq80DBFactory.factory.destroy(new File(dataPath), options);
+            close();
+            Iq80DBFactory.factory.destroy(new File(dataDir), options);
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
         }
     }
 
     @Override
     public T get(String key) throws DBException {
-        try {
-            return deserialize(db.get(serialize(key)));
-        } catch (Exception e) {
-            LOGGER.error(String.format("%s. key=%s", e.getMessage(), key), e);
-        }
-        return null;
+        return deserialize(db.get(serialize(key)));
     }
 
     @Override
     public T get(String key, ReadOptions options) throws DBException {
-        byte[] bytes = null;
-        try {
-            bytes = db.get(serialize(key), options);
-            return deserialize(bytes);
-        } catch (Exception e) {
-            LOGGER.error(String.format("%s. key=%s, options=%s, db=%s, bytes=%s", e.getMessage(), key, options, db, bytes), e);
-        }
-        return null;
+        return deserialize(db.get(serialize(key), options));
     }
 
     @Override
