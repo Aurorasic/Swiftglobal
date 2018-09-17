@@ -138,7 +138,10 @@ public class VoteService implements IEventBusListener, IVoteService {
         }
         Map<String, Block> blockMap = this.blockCache.get(block.getHeight(), k -> new HashMap<>(7));
         if (blockMap.size() < MAX_ORIGINAL_BLOCK_SIZ || checkMatchVote(block)) {
+            LOGGER.debug("add OriginalBlock to blockMap height {} hash {} size {}", block.getHeight(), block.getHash(), blockMap.size());
             blockMap.put(block.getHash(), block);
+        } else {
+            LOGGER.debug("don't add OriginalBlock to blockMap height {} hash {} size {}", block.getHeight(), block.getHash(), blockMap.size());
         }
 
         voteFirstVote(block);
