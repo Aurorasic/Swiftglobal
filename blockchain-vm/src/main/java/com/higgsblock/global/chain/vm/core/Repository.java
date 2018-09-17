@@ -253,5 +253,5 @@ public interface Repository<ASSET> {
      * add utxo into first cache and build Account
      * @return
      */
-    boolean addUTXOAndBuildAccount(String address,ASSET asset,String currency);
+    boolean addUTXO(ASSET asset);
 }

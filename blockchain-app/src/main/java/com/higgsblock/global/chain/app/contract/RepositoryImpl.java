@@ -257,7 +257,10 @@ public class RepositoryImpl implements Repository<UTXO> {
 //        ret.parent = this;
 //        return ret;
 
-        return null;
+        //只需复制状态，code
+        RepositoryImpl ret = new RepositoryImpl();
+        ret.parent = this;
+        return ret;
     }
 
     // composing a key as there can be several contracts with the same code
@@ -424,21 +427,10 @@ public class RepositoryImpl implements Repository<UTXO> {
      * @return
      */
     @Override
-    public boolean addUTXOAndBuildAccount(String address,UTXO utxo,String currency) {
+    public boolean addUTXO(UTXO utxo) {
 
-        AccountState accountState = accountStates.get(address);
-        if(accountState == null){
-            accountState = createAccountState(address, BigInteger.ZERO, currency);
-            List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
-            if(chainUTXO != null && chainUTXO.size() != 0) {
-                unspentUTXOCache.addAll(chainUTXO);
-                accountState.withBalanceIncrement(Helpers.convertBalance(chainUTXO));
-            }
-        }
         unspentUTXOCache.add(utxo);
-        accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
 
-        accountStates.put(address,accountState);
         return true;
     }
 
@@ -464,7 +456,8 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         // first cache
         accountState = createAccountState(address, BigInteger.ZERO, currency);
-        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
+        List<UTXO> chainUTXO = Helpers.buildTestUTXO(address);
+                //utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
         if(chainUTXO != null && chainUTXO.size() != 0) {
             unspentUTXOCache.addAll(chainUTXO);
         }

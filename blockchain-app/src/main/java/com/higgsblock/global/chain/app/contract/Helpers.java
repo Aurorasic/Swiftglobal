@@ -22,11 +22,6 @@ import java.util.List;
  */
 public class Helpers {
 
-    @Autowired
-    private UTXOServiceProxy utxoServiceProxy;
-
-
-
     /**
      * 生成合约执行后的交易 暂不包含退gas
      * @param chainUTXO
@@ -93,5 +88,29 @@ public class Helpers {
         return  BalanceUtil.convertMoneyToGas(balance);
     }
 
+    public static List<UTXO> buildTestUTXO(String address){
 
+        return  new ArrayList(){{
+            add(buildUTXO(address,"ox11","100","cas"));
+            add(buildUTXO(address,"ox12","10","cas"));
+        }};
+
+
+
+    }
+
+    public static UTXO buildUTXO(String address,String hash,String amount ,String currency){
+        UTXO utxo = new UTXO();
+        utxo.setAddress(address);
+        utxo.setHash(hash);
+        utxo.setIndex((short) 1);
+        TransactionOutput txOut = new TransactionOutput();
+        Money money = new Money(amount,currency);
+        txOut.setMoney(money);
+        LockScript ls = new LockScript();
+        ls.setAddress(address);
+        txOut.setLockScript(ls);
+        utxo.setOutput(txOut);
+        return  utxo;
+    }
 }

@@ -62,6 +62,18 @@ public class Storage implements Repository, ProgramListenerAware {
         return repository.getAccountState(addr);
     }
 
+    /**
+     * get account local cache if not find , and find in parent cache and put local cache
+     *
+     * @param address  account address
+     * @param currency
+     * @return
+     */
+    @Override
+    public AccountState getAccountState(String address, String currency) {
+        return null;
+    }
+
     @Override
     public void delete(byte[] addr) {
         if (canListenTrace(addr)) programListener.onStorageClear();
@@ -252,6 +264,17 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public List<AccountDetail> getAccountDetails() {
         return null;
+    }
+
+    /**
+     * add utxo into first cache and build Account
+     *
+     * @param o
+     * @return
+     */
+    @Override
+    public boolean addUTXO(Object o) {
+        return false;
     }
 
 

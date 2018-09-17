@@ -89,6 +89,18 @@ public class RepositoryMockImpl implements Repository {
         return accountStateCache.get(Hex.toHexString(addr));
     }
 
+    /**
+     * get account local cache if not find , and find in parent cache and put local cache
+     *
+     * @param address  account address
+     * @param currency
+     * @return
+     */
+    @Override
+    public AccountState getAccountState(String address, String currency) {
+        return null;
+    }
+
     synchronized AccountState getOrCreateAccountState(byte[] addr) {
         AccountState ret = accountStateCache.get((Hex.toHexString(addr)));
         if (ret == null) {
@@ -315,6 +327,17 @@ public class RepositoryMockImpl implements Repository {
     @Override
     public List<AccountDetail> getAccountDetails() {
         return null;
+    }
+
+    /**
+     * add utxo into first cache and build Account
+     *
+     * @param o
+     * @return
+     */
+    @Override
+    public boolean addUTXO(Object o) {
+        return false;
     }
 
     @Override

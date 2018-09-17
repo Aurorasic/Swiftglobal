@@ -24,51 +24,35 @@ import java.util.*;
  */
 public class SnapshotTest {
 
-    @Autowired
-    private UTXOServiceProxy utxoServiceProxy;
-
-    @Autowired
-    private Repository repository;
-
-
-
     @Test
     public void testUTXO(){
 
-        Repository repository  = new RepositoryImpl();
 
-        String contractAddress = "oxcc";
-        String preBlockHash=null, address="0xaa" , currency="cas";
-        //查询以上一个区块hash为基础的
-        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO(preBlockHash,address,currency);
-        //获取合约上下文utxo
-        List<UTXO> transactionUTXO = new ArrayList<>();
-        chainUTXO.addAll(transactionUTXO);
-        //合并db+tx的uxto为账户余额模型
-        BigInteger balance = Helpers.convertBalance(chainUTXO);
-        AccountState accountState = repository.createAccountState(address, balance, currency);
-
-
-        //转给A 11个cas
-        if(accountState.getBalance().intValue() < 11){
-            //余额不足
-            //String from,String address ,String amount,String currency
-
-        }
-        repository.transfer(contractAddress,address,"11",currency);
+        //一级缓存
+        Repository parent  = new RepositoryImpl();
+        //二级缓存
+        Repository txR = parent.startTracking();
+        //三级缓存
+        Repository conR = txR.startTracking();
+        String from = "oxaa",
+         amount="10", currency="cas";
+        conR.transfer(from,"oxbb","10",currency);
+        conR.transfer(from,"oxcc","110",currency);
 
         //检查input>=outputs
-        ContractTransaction internalTx =  Helpers.buildContractTransaction(chainUTXO,accountState,repository.getAccountDetails());
 
-        int outputSize = internalTx.getOutputs().size();
-        List<UTXO> unSpendUTXO = new ArrayList<>(outputSize);
-        for (int i = 0; i < outputSize; i++) {
-            TransactionOutput output = internalTx.getOutputs().get(i);
-            UTXO utxo = new UTXO(internalTx, (short) i, output);
-            unSpendUTXO.add(utxo);
-        }
-
-        repository.mergeUTXO(chainUTXO,unSpendUTXO);
+//        List<UTXO>
+//        ContractTransaction internalTx =  Helpers.buildContractTransaction(chainUTXO,accountState,repository.getAccountDetails());
+//
+//        int outputSize = internalTx.getOutputs().size();
+//        List<UTXO> unSpendUTXO = new ArrayList<>(outputSize);
+//        for (int i = 0; i < outputSize; i++) {
+//            TransactionOutput output = internalTx.getOutputs().get(i);
+//            UTXO utxo = new UTXO(internalTx, (short) i, output);
+//            unSpendUTXO.add(utxo);
+//        }
+//
+//        repository.mergeUTXO(chainUTXO,unSpendUTXO);
 
         //刷新
 
