@@ -34,6 +34,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     private volatile int transactionHolder;
 
     private ILevelDbWriteBatch writeBatch;
+    private Map<Serializable, ILevelDbWriteBatch> writeBatchMap;
     private ReadWriteLock lock = new ReentrantReadWriteLock();
     private Lock readLock = lock.readLock();
     private Lock writeLock = lock.writeLock();
@@ -47,6 +48,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     public TransactionAwareLevelDbAdapter(LevelDbKeyValueAdapter levelDbAdapter) {
         super(new IndexedSpelQueryEngine());
         this.levelDbAdapter = levelDbAdapter;
+        writeBatchMap = Maps.newConcurrentMap();
         startBatchNo = LocalDateTime.now().format(DateTimeFormatter.ofPattern("$yyyyMMddHHmmss."));
         batchNoCounter = new AtomicLong();
     }
@@ -60,7 +62,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (transactionHolder == 0) {
                 String batchNo = newBatchNo();
                 addBatchNos(batchNo);
-                writeBatch = levelDbAdapter.createWriteBatch(batchNo);
+                writeBatch = writeBatchMap.computeIfAbsent(batchNo, keyspace -> levelDbAdapter.createWriteBatch(keyspace));
                 transactionHolder = 1;
                 isAutoCommit = false;
             } else {
@@ -367,20 +369,26 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     private void archive() {
         doWithLock(writeLock, () -> {
             List<String> batchNos = getBatchNos();
-            LOGGER.info("archive: batchNos={}", batchNos);
+            LOGGER.debug("archive: batchNos={}", batchNos);
+            ILevelDbWriteBatch writeBatch = null;
             for (String batchNo : batchNos) {
-                LOGGER.info("archive: batchNo={}", batchNo);
-                levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
-                    Serializable key = entry.getKey();
-                    String keyspace = KeyValueAdapterUtils.getRealKeyspace(key);
-                    String id = KeyValueAdapterUtils.getRealKey(key, keyspace);
-                    String value = entry.getValue();
-                    if (null == value) {
-                        levelDbAdapter.delete(id, keyspace);
-                    } else {
-                        levelDbAdapter.putString(id, value, keyspace);
-                    }
-                });
+                LOGGER.debug("archive: batchNo={}", batchNo);
+                writeBatch = writeBatchMap.remove(batchNo);
+                if (null != writeBatch) {
+                    writeBatch.copy().forEach(item -> levelDbAdapter.put(item.getKey(), item.getValue(), item.getKeyspace()));
+                } else {
+                    levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
+                        Serializable key = entry.getKey();
+                        String keyspace = KeyValueAdapterUtils.getRealKeyspace(key);
+                        String id = KeyValueAdapterUtils.getRealKey(key, keyspace);
+                        String value = entry.getValue();
+                        if (null == value) {
+                            levelDbAdapter.delete(id, keyspace);
+                        } else {
+                            levelDbAdapter.putString(id, value, keyspace);
+                        }
+                    });
+                }
                 levelDbAdapter.deleteAllOf(batchNo);
             }
             deleteBatchNos(batchNos);
