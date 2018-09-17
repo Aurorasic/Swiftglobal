@@ -37,6 +37,13 @@ public interface Repository<ASSET> {
     AccountState getAccountState(byte[] addr);
 
     /**
+     * get account local cache if not find , and find in parent cache and put local cache
+     * @param address account address
+     * @return
+     */
+    AccountState getAccountState(String address,String currency);
+
+    /**
      * Deletes the account
      *
      * @param addr of the account

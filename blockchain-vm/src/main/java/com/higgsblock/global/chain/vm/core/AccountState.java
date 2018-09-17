@@ -43,7 +43,10 @@ public class AccountState {
         this.balance=balance.add(value);
         return new AccountState( balance.add(value),  codeHash,currency);
     }
-
+    public AccountState withBalanceDecrement(BigInteger value) {
+        this.balance=balance.subtract(value);
+        return new AccountState( balance.add(value),  codeHash,currency);
+    }
     public String getCurrency() {
         return currency;
     }

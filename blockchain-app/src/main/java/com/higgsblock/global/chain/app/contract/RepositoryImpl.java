@@ -343,11 +343,13 @@ public class RepositoryImpl implements Repository<UTXO> {
      */
     @Override
     public void transfer(String from, String address, String amount, String currency) {
-        AccountState to = accountStates.getOrDefault(address,new AccountState(BigInteger.ZERO,address.getBytes(),currency)) ;
-        to=to.withBalanceIncrement(new BigInteger(amount));
-        accountStates.put(new String(to.getCodeHash()),to);
-
-        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),new BigInteger(amount),to.getBalance(),currency);
+        AccountState to = this.getAccountState(from,address) ;
+        if(to.getBalance().compareTo(new BigInteger(amount)) < 0 ){
+            //余额不足
+        }
+        to.withBalanceDecrement(new BigInteger(amount));
+        AccountDetail accountDetail = new AccountDetail(from,new String(to.getCodeHash()),
+                new BigInteger(amount),to.getBalance(),currency);
         accountDetails.add(accountDetail);
     }
 
@@ -397,9 +399,22 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public boolean mergeUTXO(List<UTXO> spendUTXO, List<UTXO> unSpendUTXO) {
 
-        spentUTXOCache.addAll(spendUTXO);
+        unSpendUTXO.removeAll(spendUTXO);
         unspentUTXOCache.addAll(unSpendUTXO);
+        spentUTXOCache.addAll(spendUTXO);
 
+        //更新utxo时，刷新账户考虑是否合约账户才需要做该操作
+        for(UTXO utxo:spendUTXO){
+           AccountState accountState =  accountStates.get(utxo.getAddress());
+            accountState.withBalanceDecrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+        }
+
+        for(UTXO utxo:unSpendUTXO){
+            AccountState accountState =  accountStates.get(utxo.getAddress());
+            if(accountState != null) {
+                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+            }
+        }
         return true;
     }
 
@@ -425,5 +440,41 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         accountStates.put(address,accountState);
         return true;
+    }
+
+    /**
+     * get account local cache if not find , and find in parent cache and put local cache
+     *
+     * @param address account address
+     * @return
+     */
+    @Override
+    public AccountState getAccountState(String address,String currency) {
+
+        AccountState accountState = accountStateCache.get(address);
+        if(accountState != null){
+            return  accountState;
+        }
+
+        if(accountState == null && parent != null){
+            accountState = parent.getAccountState(address,currency);
+            accountStates.put(address,accountState);
+            return  accountState;
+        }
+
+        // first cache
+        accountState = createAccountState(address, BigInteger.ZERO, currency);
+        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
+        if(chainUTXO != null && chainUTXO.size() != 0) {
+            unspentUTXOCache.addAll(chainUTXO);
+        }
+
+        for(UTXO utxo:unspentUTXOCache){
+            if(utxo.getAddress().equals(address)){
+                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
+            }
+        }
+        accountStates.put(address,accountState);
+        return accountState;
     }
 }
