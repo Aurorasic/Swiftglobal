@@ -8,19 +8,27 @@ import java.math.BigInteger;
  */
 public class AccountState {
 
-    private final BigInteger balance;
+    private  BigInteger balance;
 
-    private final byte[] codeHash;
+    private  byte[] codeHash;
 
+    private String currency;
 
+    public AccountState(BigInteger balance,byte[] codeHash,String currency){
+        this.balance = balance;
+        this.codeHash = codeHash;
+        this.currency = currency;
+    }
 
     public AccountState(BigInteger balance,byte[] codeHash){
         this.balance=balance;
         this.codeHash=codeHash;
     }
 
+
+
     public AccountState withCodeHash(byte[] codeHash) {
-        return new AccountState(balance,  codeHash);
+        return new AccountState(balance,  codeHash,currency);
     }
 
     public BigInteger getBalance() {
@@ -32,6 +40,14 @@ public class AccountState {
     }
 
     public AccountState withBalanceIncrement(BigInteger value) {
-        return new AccountState( balance.add(value),  codeHash);
+        return new AccountState( balance.add(value),  codeHash,currency);
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

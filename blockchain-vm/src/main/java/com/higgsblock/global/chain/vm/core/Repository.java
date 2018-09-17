@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.vm.core;
 import com.higgsblock.global.chain.vm.DataWord;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,7 +11,7 @@ import java.util.Set;
  * @author tangkun
  * @date 2018-09-06
  */
-public interface Repository {
+public interface Repository<ASSET> {
     /**
      * Create a new account in the database
      *
@@ -142,7 +143,11 @@ public interface Repository {
      */
     Repository startTracking();
 
+    /**
+     * flush child cache to parent cache
+     */
     void flush();
+
     void flushNoReconnect();
 
 
@@ -192,13 +197,50 @@ public interface Repository {
 
     Repository getSnapshotTo(byte[] root);
 
-    /**
-     * flush child cache to this cache
-     * @param childRepository child snapshot
-     * @return
-     */
-    boolean flushImpl(Repository childRepository);
-
 
     String getBlockHashByNumber(long blockNumber, String branchBlockHash);
+
+    /**
+     * transfer assert from to address
+     * @param from balance must glt amount
+     * @param address  receive address
+     * @param amount transfer amount
+     * @param currency assert type
+     */
+    void transfer(String from,String address ,String amount,String currency);
+
+    /**
+     * get unSpend asset
+     * @param address
+     * @return
+     */
+    List<ASSET> getUnSpendAsset(String address);
+
+    /**
+     * get spend asset
+     * @param address
+     * @return
+     */
+    List<ASSET> getSpendAsset(String address);
+
+    /**
+     * merge utxo
+     * @param spendUTXO
+     * @param unSpendUTXO
+     * @return
+     */
+    boolean mergeUTXO(List<ASSET> spendUTXO,List<ASSET> unSpendUTXO);
+
+    /**
+     *
+     * @param address
+     * @param balance
+     * @param currency
+     * @return
+     */
+    AccountState createAccountState(String address,BigInteger balance,String currency);
+
+    List<AccountDetail> getAccountDetails();
+
+
 }

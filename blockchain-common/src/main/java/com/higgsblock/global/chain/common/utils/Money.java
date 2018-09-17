@@ -70,7 +70,7 @@ public class Money extends BaseSerializer implements Comparable {
     }
 
     public String getValue() {
-        return value.toString();
+        return value.toPlainString();
     }
 
     public void setValue(String val) {

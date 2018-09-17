@@ -6,7 +6,10 @@ import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.VM;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.Block;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
+import com.higgsblock.global.chain.vm.core.Transaction;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
@@ -148,11 +151,6 @@ public class ContractContext {
 //                return data;
 //            }
 //        }
-//
-//        {
-//            "6d4ce63c": "get()",
-//            "60fe47b1": "set(uint256)"
-//        }
         byte[] data = Hex.decode("608060405234801561001057600080fd5b5060bf8061001f6000396000f30060806040526004361060485763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166360fe47b18114604d5780636d4ce63c146064575b600080fd5b348015605857600080fd5b5060626004356088565b005b348015606f57600080fd5b506076608d565b60408051918252519081900360200190f35b600055565b600054905600a165627a7a72305820e1d0b14af22a8bc992cb2f3788c2ae1d260f6c4ff559b49864d0e5577e20408f0029");
 
         return new Transaction(isCreate, receiveAddress, sendAddress, gasPrice, gasLimit, value, data);
@@ -172,7 +170,7 @@ public class ContractContext {
     private ProgramInvoke getProgramInvoke() {
         Transaction transaction = getTransaction();
         Block block = getBlock();
-        Repository contractRepository = new RepositoryMockImpl();
+        Repository contractRepository =null;
 
         ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
         return programInvokeFactory.createProgramInvoke(transaction, block, contractRepository);
