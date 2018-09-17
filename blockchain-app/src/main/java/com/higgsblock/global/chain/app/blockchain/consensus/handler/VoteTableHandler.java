@@ -79,6 +79,10 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
             LOGGER.info("the height is lower than local,voteHeight={},localHeight={}", voteHeight, localHeight);
             return;
         }
+        if (voteHeight > localHeight + 1) {
+            LOGGER.info("the height is more than local+1,voteHeight={},localHeight={}", voteHeight, localHeight);
+            return;
+        }
         //step4:if height > my vote height, sync block
         if (voteHeight > localHeight) {
             eventBus.post(new SyncBlockEvent(voteHeight, null, sourceId));

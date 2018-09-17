@@ -21,6 +21,7 @@ import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
@@ -43,6 +44,10 @@ public class VoteService implements IEventBusListener, IVoteService {
     private static final int MIN_VOTE = 7;
 
     private static final int MIN_SAME_SIGN = 7;
+
+    private static final int MAX_ORIGINAL_BLOCK_SIZ = 21;
+
+    private static final int MAX_VOTE_CACHE_SIZE = 110;
 
     @Autowired
     private KeyPair keyPair;
@@ -101,7 +106,7 @@ public class VoteService implements IEventBusListener, IVoteService {
             }
             LOGGER.info("start the witness task for height {}", height);
             this.height = height;
-            this.voteTable = new VoteTable(new HashMap<>(7), this.height);
+            this.voteTable = new VoteTable(this.height);
             this.blockWithEnoughSign = null;
             Map<String, Block> blockMapCache = this.blockCache.get(height, k -> new HashMap<>(7));
             blockMapCache.values().stream().filter(this::validBlock).findAny().ifPresent(this::voteFirstVote);
@@ -131,16 +136,51 @@ public class VoteService implements IEventBusListener, IVoteService {
         if (this.height != block.getHeight() || !validBlock(block)) {
             return;
         }
-        this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
+        Map<String, Block> blockMap = this.blockCache.get(block.getHeight(), k -> new HashMap<>(7));
+        if (blockMap.size() < MAX_ORIGINAL_BLOCK_SIZ || checkMatchVote(block)) {
+            blockMap.put(block.getHash(), block);
+        }
+
         voteFirstVote(block);
         dealVoteCache();
         messageCenter.dispatchToWitnesses(this.voteTable);
     }
 
+    private boolean checkMatchVote(Block block) {
+        if (block == null || block.getHeight() != this.height) {
+            return false;
+        }
+        Map<Integer, Set<Vote>> voteMap = this.voteCache.getIfPresent(block.getHeight());
+        if (MapUtils.isEmpty(voteMap)) {
+            LOGGER.debug("the vote cache is empty,height {} hash {} ", this.height, block.getHash());
+            return false;
+        }
+        int maxVersion = 1;
+        VoteTable tempTable = new VoteTable(this.height);
+        for (Set<Vote> voteSet : voteMap.values()) {
+            if (CollectionUtils.isEmpty(voteSet)) {
+                continue;
+            }
+            for (Vote vote : voteSet) {
+                maxVersion = Math.max(maxVersion, vote.getVoteVersion());
+                tempTable.addVote(vote);
+            }
+        }
+        Vote vote = tempTable.getMatchVote(block, maxVersion);
+        LOGGER.debug("find match vote in cache,height {} hash {} vote {}", this.height, block.getHash(), vote);
+        if (vote == null) {
+            return false;
+        }
+        return MapUtils.isEmpty(this.voteTable.getVoteMap(vote.getVoteVersion(), vote.getWitnessPubKey()));
+    }
+
     @Override
     public synchronized void addOriginalBlockToCache(Block block) {
-        if (block.getHeight() > height) {
-            this.blockCache.get(block.getHeight(), k -> new HashMap<>(7)).put(block.getHash(), block);
+        if (block.getHeight() == 1 + height) {
+            Map<String, Block> blockMap = this.blockCache.get(block.getHeight(), k -> new HashMap<>(7));
+            if (blockMap.size() <= MAX_ORIGINAL_BLOCK_SIZ) {
+                blockMap.put(block.getHash(), block);
+            }
         }
     }
 
@@ -230,12 +270,10 @@ public class VoteService implements IEventBusListener, IVoteService {
     @Override
     public synchronized void updateVoteCache(VoteTable otherVoteTable) {
         long voteHeight = otherVoteTable.getHeight();
-        if (this.height == voteHeight) {
-            return;
-        }
         if (this.height > voteHeight) {
             return;
         }
+        Map<Integer, Set<Vote>> voteCache = this.voteCache.get(voteHeight, k -> new HashMap<>(6));
         Map<Integer, Map<String, Map<String, Vote>>> voteMap = otherVoteTable.getVoteTable();
         voteMap.values().forEach(map -> {
             if (MapUtils.isEmpty(map)) {
@@ -252,7 +290,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                     if (isExist(vote)) {
                         return;
                     }
-                    voteCache.get(voteHeight, k -> new HashMap<>(6)).compute(vote.getVoteVersion(), (k, v) -> {
+                    voteCache.compute(vote.getVoteVersion(), (k, v) -> {
                         if (null == v) {
                             v = new HashSet<>();
                         }
@@ -262,6 +300,23 @@ public class VoteService implements IEventBusListener, IVoteService {
                 });
             });
         });
+        removeRedundantVoteCache(voteHeight, voteCache);
+    }
+
+    private void removeRedundantVoteCache(long height, Map<Integer, Set<Vote>> voteCache) {
+        int voteSize = 0;
+        int maxVersion = 0;
+        for (Map.Entry<Integer, Set<Vote>> entry : voteCache.entrySet()) {
+            if (CollectionUtils.isEmpty(entry.getValue())) {
+                continue;
+            }
+            int version = entry.getKey();
+            maxVersion = maxVersion == 0 ? version : Math.max(maxVersion, version);
+            voteSize = voteSize + entry.getValue().size();
+        }
+        if (voteSize > MAX_VOTE_CACHE_SIZE) {
+            voteCache.remove(maxVersion);
+        }
     }
 
     @Override
