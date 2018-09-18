@@ -5,9 +5,9 @@ package com.higgsblock.global.chain.vm.core;
  * @date 2018-09-13
  */
 public class Transaction {
-    private boolean isCreate;
-    private byte[] receiveAddress;
-    private byte[] sendAddress;
+    private boolean isContractCreation;
+    private byte[] contractAddress;
+    private byte[] senderAddress;
     private byte[] gasPrice;
     private byte[] gasLimit;
     private byte[] value;
@@ -15,10 +15,10 @@ public class Transaction {
 
     public Transaction() {}
 
-    public Transaction(boolean isCreate, byte[] receiveAddress, byte[] sendAddress, byte[] gasPrice, byte[] gasLimit, byte[] value, byte[] data) {
-        this.isCreate = isCreate;
-        this.receiveAddress = receiveAddress;
-        this.sendAddress = sendAddress;
+    public Transaction(boolean isContractCreation, byte[] contractAddress, byte[] senderAddress, byte[] gasPrice, byte[] gasLimit, byte[] value, byte[] data) {
+        this.isContractCreation = isContractCreation;
+        this.contractAddress = contractAddress;
+        this.senderAddress = senderAddress;
         this.gasPrice = gasPrice;
         this.gasLimit = gasLimit;
         this.value = value;
@@ -26,19 +26,19 @@ public class Transaction {
     }
 
     public boolean isContractCreation() {
-        return isCreate;
+        return isContractCreation;
     }
 
     public byte[] getContractAddress() {
-        return receiveAddress;
+        return contractAddress;
     }
 
     public byte[] getReceiveAddress() {
-        return receiveAddress;
+        return contractAddress;
     }
 
     public byte[] getSender() {
-        return sendAddress;
+        return senderAddress;
     }
 
     public byte[] getGasPrice() {
