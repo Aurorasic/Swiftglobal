@@ -209,8 +209,8 @@ public class AppContext implements IEventBusListener {
     }
 
     private void syncBlocks() {
-        syncBlockInStartupService.startSyncBlock();
         eventBus.register(syncBlockInStartupService);
+        syncBlockInStartupService.startSyncBlock();
     }
 
     @Subscribe
