@@ -92,8 +92,8 @@ public class Helpers {
     public static List<UTXO> buildTestUTXO(String address){
 
         return  new ArrayList(){{
-            add(buildUTXO(address,"ox11","100","cas"));
-            add(buildUTXO(address,"ox12","10","cas"));
+            add(buildUTXO(address,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2","100","cas"));
+            add(buildUTXO(address,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3","10","cas"));
         }};
 
 
