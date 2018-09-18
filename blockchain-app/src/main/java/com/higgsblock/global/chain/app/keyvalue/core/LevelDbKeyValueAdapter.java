@@ -54,6 +54,9 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
 
     @Override
     public Object put(Serializable id, Object item, Serializable keyspace) {
+        if (null == item) {
+            return delete(id, keyspace);
+        }
         putEntityClass(keyspace, item.getClass());
         String key = String.valueOf(id);
         String value = JSON.toJSONString(item);

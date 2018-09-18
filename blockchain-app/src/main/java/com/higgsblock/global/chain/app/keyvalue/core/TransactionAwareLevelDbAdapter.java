@@ -301,7 +301,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             try {
                 runnable.run();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                LOGGER.error(e.getMessage(), e);
             }
         } finally {
             lock.unlock();
@@ -375,7 +375,14 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
                 LOGGER.debug("archive: batchNo={}", batchNo);
                 writeBatch = writeBatchMap.remove(batchNo);
                 if (null != writeBatch) {
-                    writeBatch.copy().forEach(item -> levelDbAdapter.put(item.getKey(), item.getValue(), item.getKeyspace()));
+                    writeBatch.copy().forEach(item -> {
+                        Object value = item.getValue();
+                        if (null == value) {
+                            levelDbAdapter.delete(item.getKey(), item.getKeyspace());
+                        } else {
+                            levelDbAdapter.put(item.getKey(), value, item.getKeyspace());
+                        }
+                    });
                 } else {
                     levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
                         Serializable key = entry.getKey();
