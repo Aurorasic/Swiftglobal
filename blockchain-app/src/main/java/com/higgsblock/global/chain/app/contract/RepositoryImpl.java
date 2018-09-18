@@ -1,18 +1,16 @@
 package com.higgsblock.global.chain.app.contract;
-import com.google.common.collect.Maps;
+
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
-import com.higgsblock.global.chain.vm.datasource.CachedSource;
-import com.higgsblock.global.chain.vm.datasource.MultiCache;
-import com.higgsblock.global.chain.vm.datasource.Source;
+import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
@@ -32,25 +30,22 @@ public class RepositoryImpl implements Repository<UTXO> {
     private UTXOServiceProxy utxoServiceProxy;
 
 
+    private Source<byte[], AccountState> accountStateCache;
+    private Source<byte[], byte[]> codeCache;
 
-    //protected Source<byte[], AccountState> accountStateCache;
-    //protected Source<byte[], byte[]> codeCache;
+    //private Map<String, AccountState> accountStateCache;
 
-    private Map<String, AccountState> accountStateCache;
+    //private Map<String, byte[]> codeCache;
 
-    private Map<String, byte[]> codeCache;
+    protected MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
 
-    //protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
-
-    private  Map<String, Map<String, DataWord>> storageCache;
-
-
+    //private  Map<String, Map<String, DataWord>> storageCache;
 
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
 
-    Map<String,AccountState> accountStates = new HashMap<>();
+    Map<String, AccountState> accountStates = new HashMap<>();
 
     List<AccountDetail> accountDetails = new ArrayList<>();
 
@@ -59,9 +54,18 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     public RepositoryImpl() {
 
-        this.codeCache = new HashMap<>();
-        this.accountStateCache = new HashMap<>();
-        this.storageCache = new HashMap<>();
+        Source dbSource = new HashMapDB<byte[]>();
+        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey<>(dbSource,
+                WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(dbSource, WriteCache.CacheType.SIMPLE);
+        MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(dbSource) {
+            @Override
+            protected CachedSource create(byte[] key, CachedSource srcCache) {
+                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
+            }
+        };
+
+        init(accountStateCache, codeCache, storageCache);
     }
 
     public RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
@@ -72,17 +76,16 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     protected void init(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
                         MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
-        //this.accountStateCache = accountStateCache;
-        //this.codeCache = codeCache;
+        this.accountStateCache = accountStateCache;
+        this.codeCache = codeCache;
 
-        //this.storageCache = storageCache;
-
+        this.storageCache = storageCache;
     }
 
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
-        AccountState state = new AccountState(BigInteger.ZERO,addr);
-        accountStateCache.put(Hex.toHexString(addr), state);
+        AccountState state = new AccountState(BigInteger.ZERO, addr);
+        accountStateCache.put(addr, state);
         return state;
     }
 
@@ -93,14 +96,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
-        System.out.println(Hex.toHexString(addr));
-        accountStateCache.keySet().stream().forEach(item->System.out.println(item));
-
-        return accountStateCache.get(Hex.toHexString(addr));
+        return accountStateCache.get(addr);
     }
 
     synchronized AccountState getOrCreateAccountState(byte[] addr) {
-        AccountState ret = accountStateCache.get((Hex.toHexString(addr)));
+        AccountState ret = accountStateCache.get(addr);
         if (ret == null) {
             ret = createAccount(addr);
         }
@@ -109,13 +109,13 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized void delete(byte[] addr) {
-        accountStateCache.remove((Hex.toHexString(addr)));
-        storageCache.remove(Hex.toHexString(addr));
+        accountStateCache.delete(addr);
+        storageCache.delete(addr);
     }
 
     @Override
-    public Map<String, DataWord> getContractDetails(byte[] addr) {
-        return storageCache.get(Hex.toHexString(addr));
+    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
+        return storageCache.get(addr);
     }
 
     @Override
@@ -127,22 +127,20 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
-        byte[] key =codeKey(codeHash, addr);
-        String strKey =  Hex.toHexString(key);
-        codeCache.put(strKey, code);
+        byte[] key = codeKey(codeHash, addr);
+        codeCache.put(key, code);
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(Hex.toHexString(addr), accountState.withCodeHash(codeHash));
+        accountStateCache.put(addr, accountState.withCodeHash(codeHash));
     }
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
         byte[] codeHash = getCodeHash(addr);
         byte[] key = codeKey(codeHash, addr);
-        String strKey =  Hex.toHexString(key);
-        return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(strKey);
-    }
 
+        return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(key);
+    }
 
 
     @Override
@@ -155,18 +153,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         getOrCreateAccountState(addr);
 
-        String strKey = Hex.toHexString(addr);
-        Map<String, DataWord> contractStorage = storageCache.get(addr);
-        if (contractStorage == null) {
-            contractStorage = new HashMap<>();
-            storageCache.put(strKey, contractStorage);
-        }
-
-        String strSubKey = Hex.toHexString(key.getData());
-        contractStorage.put(strSubKey, value.isZero() ? null : value);
-
-        //Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
-        //contractStorage.put(key, value.isZero() ? null : value);
+        Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+        contractStorage.put(key, value.isZero() ? null : value);
     }
 
     @Override
@@ -174,19 +162,10 @@ public class RepositoryImpl implements Repository<UTXO> {
         AccountState accountState = getAccountState(addr);
 
         if (accountState == null) {
-            return  null;
+            return null;
         } else {
-            String strKey = Hex.toHexString(addr);
-            Map<String, DataWord> contractStorage = storageCache.get(strKey);
-            String strSubKey = Hex.toHexString(key.getData());
-
-            if (contractStorage == null) {
-                contractStorage = new HashMap<>();
-                storageCache.put(strKey, contractStorage);
-                return null;
-            }
-
-            return  contractStorage.get(strSubKey);
+            Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+            return contractStorage.get(key);
         }
     }
 
@@ -199,7 +178,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized BigInteger addBalance(byte[] addr, BigInteger value) {
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(Hex.toHexString(addr), accountState.withBalanceIncrement(value));
+        accountStateCache.put(addr, accountState.withBalanceIncrement(value));
         return accountState.getBalance();
     }
 
@@ -228,13 +207,13 @@ public class RepositoryImpl implements Repository<UTXO> {
     public void flush() {
 
         //flush UTXO
-        parent.mergeUTXO(this.spentUTXOCache,this.unspentUTXOCache);
+        parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
 
         //flush storage
-        parent.storageCache.putAll(this.storageCache);
+        //parent.storageCache.putAll(this.storageCache);
 
         //flush codeCache
-        parent.codeCache.putAll(this.codeCache);
+        //parent.codeCache.putAll(this.codeCache);
     }
 
     @Override
@@ -244,22 +223,17 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized RepositoryImpl startTracking() {
-//        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
-//                WriteCache.CacheType.SIMPLE);
-//        Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
-//        MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
-//            @Override
-//            protected CachedSource create(byte[] key, CachedSource srcCache) {
-//                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
-//            }
-//        };
-//
-//        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
-//        ret.parent = this;
-//        return ret;
+        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
+                WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
+        MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
+            @Override
+            protected CachedSource create(byte[] key, CachedSource srcCache) {
+                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
+            }
+        };
 
-        //只需复制状态，code
-        RepositoryImpl ret = new RepositoryImpl();
+        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
         ret.parent = this;
         return ret;
     }
@@ -275,7 +249,6 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
 
-
     @Override
     public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
         return null;
@@ -288,10 +261,9 @@ public class RepositoryImpl implements Repository<UTXO> {
         // the parent repo would not be in consistent state
         // when no parent just take this instance as a mock
         synchronized (parentSync) {
-//            storageCache.flush();
-////            codeCache.flush();
-////            accountStateCache.flush();
-
+            storageCache.flush();
+            codeCache.flush();
+            accountStateCache.flush();
         }
     }
 
@@ -334,8 +306,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
 
-
-        //}
+    //}
 
     /**
      * transfer assert from to address
@@ -347,14 +318,14 @@ public class RepositoryImpl implements Repository<UTXO> {
      */
     @Override
     public void transfer(String from, String address, String amount, String currency) {
-        AccountState contractAccount = this.getAccountState(from,currency) ;
-        BigInteger  gasAmount= BalanceUtil.convertMoneyToGas(new Money(amount,currency));
-        if(contractAccount.getBalance().compareTo(gasAmount) < 0 ){
+        AccountState contractAccount = this.getAccountState(from, currency);
+        BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(amount, currency));
+        if (contractAccount.getBalance().compareTo(gasAmount) < 0) {
             //余额不足
             throw new RuntimeException("not enough balance ");
         }
         contractAccount.withBalanceDecrement(gasAmount);
-        AccountDetail accountDetail = new AccountDetail(from,address,gasAmount,contractAccount.getBalance(),currency);
+        AccountDetail accountDetail = new AccountDetail(from, address, gasAmount, contractAccount.getBalance(), currency);
         accountDetails.add(accountDetail);
     }
 
@@ -383,8 +354,9 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public AccountState createAccountState(String address, BigInteger balance, String currency) {
 
-        AccountState accountState = new AccountState(balance,address.getBytes(), currency);
-        accountStateCache.put(address,accountState);
+        byte[] contractAddr = AddrUtil.toContractAddr(address);
+        AccountState accountState = new AccountState(balance, address.getBytes(), currency);
+        accountStateCache.put(contractAddr, accountState);
 
         return accountState;
     }
@@ -443,33 +415,33 @@ public class RepositoryImpl implements Repository<UTXO> {
      * @return
      */
     @Override
-    public AccountState getAccountState(String address,String currency) {
-
-        AccountState accountState = accountStateCache.get(address);
-        if(accountState != null){
-            return  accountState;
+    public AccountState getAccountState(String address, String currency) {
+        byte[] contractAddr = AddrUtil.toContractAddr(address);
+        AccountState accountState = accountStateCache.get(contractAddr);
+        if (accountState != null) {
+            return accountState;
         }
 
-        if(accountState == null && parent != null){
-            accountState = parent.getAccountState(address,currency);
-            accountStates.put(address,accountState);
-            return  accountState;
+        if (accountState == null && parent != null) {
+            accountState = parent.getAccountState(address, currency);
+            accountStates.put(address, accountState);
+            return accountState;
         }
 
         // first cache
         accountState = createAccountState(address, BigInteger.ZERO, currency);
         List<UTXO> chainUTXO = Helpers.buildTestUTXO(address);
-                //utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
-        if(chainUTXO != null && chainUTXO.size() != 0) {
+        //utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
+        if (chainUTXO != null && chainUTXO.size() != 0) {
             unspentUTXOCache.addAll(chainUTXO);
         }
 
-        for(UTXO utxo:unspentUTXOCache){
-            if(utxo.getAddress().equals(address)){
+        for (UTXO utxo : unspentUTXOCache) {
+            if (utxo.getAddress().equals(address)) {
                 accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
             }
         }
-        accountStates.put(address,accountState);
+        accountStates.put(address, accountState);
         return accountState;
     }
 }

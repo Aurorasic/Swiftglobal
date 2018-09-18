@@ -34,10 +34,10 @@ public class SnapshotTest {
         Repository txR = parent.startTracking();
         //三级缓存
         Repository conR = txR.startTracking();
-        String from = "0xaa",
+        String from = "1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV",
          amount="10", currency="cas";
-        conR.transfer(from,"0xbb","10",currency);
-        conR.transfer(from,"0xcc","20",currency);
+        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2","10",currency);
+        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3","20",currency);
 
         System.out.println(conR.getAccountState(from,currency).getBalance());
 
@@ -61,11 +61,11 @@ public class SnapshotTest {
         conR.flush();
         txR.flush();
 
-        parent.getUnSpendAsset("0xaa").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
-        parent.getSpendAsset("0xaa").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
 
-        parent.getUnSpendAsset("0xbb").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
-        parent.getUnSpendAsset("0xcc").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
 
 
         //刷新

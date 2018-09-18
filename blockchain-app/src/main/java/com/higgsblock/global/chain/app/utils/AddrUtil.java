@@ -1,40 +1,35 @@
-package com.higgsblock.global.chain.crypto;
+package com.higgsblock.global.chain.app.utils;
 
 import com.google.common.primitives.Bytes;
-import org.spongycastle.util.encoders.Hex;
+import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-public class ECKeyTest {
-
-    private static final BigInteger BASE = BigInteger.valueOf(58);
-
-    public static void main(String args[]) {
-//        ECKey key = new ECKey();
-//        String addr = key.getKeyPair().getAddress();
-//        String priKey = key.getKeyPair().getPriKey();
-//        String pubKey = key.getKeyPair().getPubKey();
-//
-//        System.out.println("Addr: " + addr);
-//
-//        System.out.println("PriKey: " + priKey);
-//        System.out.println("PubKey: " + pubKey);
-        String addr = "1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV";
-        System.out.println("AddrHex: " + Hex.toHexString(decodeBase58To25Bytes(addr)));
-
-        String now = "d67da73f6891af29d6222ab5c0a415b929b98911";
-        byte[] nowByte = Hex.decode(now);
-        byte[] hash1 = sha256(sha256(Bytes.concat(new byte[]{0}, nowByte)));
-        String result = Hex.toHexString(Bytes.concat(new byte[]{0}, nowByte, Arrays.copyOfRange(hash1, 0, 4)));
-        System.out.println("AddrHex: " + result);
-
-        System.out.println("AddrHex2: " + encode(Bytes.concat(new byte[]{0}, nowByte, Arrays.copyOfRange(hash1, 0, 4))));
-    }
+public class AddrUtil {
 
     private static final String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    private static final BigInteger BASE = BigInteger.valueOf(58);
+
+    public static byte[] toContractAddr(String txAddr) {
+        if (StringUtils.isEmpty(txAddr)) {
+            throw new IllegalArgumentException("Can not be null");
+        }
+
+        byte[] decoded = decodeBase58To25Bytes(txAddr);
+
+        return Arrays.copyOfRange(decoded, 1, 21);
+    }
+
+
+    public static String toTransactionAddr(byte[] contractAddr) {
+        byte[] hash1 = sha256(sha256(Bytes.concat(new byte[]{0}, contractAddr)));
+
+        return encode(Bytes.concat(new byte[]{0}, contractAddr, Arrays.copyOfRange(hash1, 0, 4)));
+    }
+
 
     private static byte[] decodeBase58To25Bytes(String input) {
         BigInteger num = BigInteger.ZERO;
@@ -61,7 +56,7 @@ public class ECKeyTest {
         }
     }
 
-    public static String encode(byte[] input) {
+    private static String encode(byte[] input) {
         // This could be a lot more efficient.
         BigInteger bi = new BigInteger(1, input);
         StringBuffer s = new StringBuffer();
@@ -79,6 +74,12 @@ public class ECKeyTest {
                 break;
         }
         return s.toString();
+    }
+
+    public static void main(String args[]) {
+        byte[] contractAddr = toContractAddr("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV");
+
+        System.out.println(toTransactionAddr(contractAddr));
     }
 
 }

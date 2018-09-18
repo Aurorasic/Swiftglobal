@@ -1,13 +1,8 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.datasource.CachedSource;
-import com.higgsblock.global.chain.vm.datasource.MultiCache;
-import com.higgsblock.global.chain.vm.datasource.Source;
-import com.higgsblock.global.chain.vm.util.ByteUtil;
-import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import com.higgsblock.global.chain.vm.util.HashUtil;
-import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import com.higgsblock.global.chain.vm.datasource.*;
+import com.higgsblock.global.chain.vm.util.*;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author tangkun
+ * @author zhao xiaogang
  * @date 2018-09-06
  */
 public class RepositoryMockImpl implements Repository {
@@ -26,16 +21,9 @@ public class RepositoryMockImpl implements Repository {
     protected RepositoryMockImpl parent;
 
 
-    //protected Source<byte[], AccountState> accountStateCache;
-    //protected Source<byte[], byte[]> codeCache;
-
-    private Map<String, AccountState> accountStateCache;
-
-    private Map<String, byte[]> codeCache;
-
-    //protected MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
-
-    private  Map<String, Map<String, DataWord>> storageCache;
+    private Source<byte[], AccountState> accountStateCache;
+    private Source<byte[], byte[]> codeCache;
+    private MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
 
 
     /**
@@ -48,10 +36,18 @@ public class RepositoryMockImpl implements Repository {
     protected SystemProperties config = SystemProperties.getDefault();
 
     public RepositoryMockImpl() {
+        Source dbSource = new HashMapDB<byte[]>();
+        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey<>(dbSource,
+                WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(dbSource, WriteCache.CacheType.SIMPLE);
+        MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(dbSource) {
+            @Override
+            protected CachedSource create(byte[] key, CachedSource srcCache) {
+                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
+            }
+        };
 
-        this.codeCache = new HashMap<>();
-        this.accountStateCache = new HashMap<>();
-        this.storageCache = new HashMap<>();
+        init(accountStateCache, codeCache, storageCache);
     }
 
     public RepositoryMockImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
@@ -60,19 +56,19 @@ public class RepositoryMockImpl implements Repository {
         init(accountStateCache, codeCache, storageCache);
     }
 
-    protected void init(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
+    private void init(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
                         MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
-        //this.accountStateCache = accountStateCache;
-        //this.codeCache = codeCache;
+        this.accountStateCache = accountStateCache;
+        this.codeCache = codeCache;
 
-        //this.storageCache = storageCache;
+        this.storageCache = storageCache;
         this.utxoCache = utxoCache;
     }
 
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
         AccountState state = new AccountState(BigInteger.ZERO,addr);
-        accountStateCache.put(Hex.toHexString(addr), state);
+        accountStateCache.put(addr, state);
         return state;
     }
 
@@ -83,10 +79,7 @@ public class RepositoryMockImpl implements Repository {
 
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
-        System.out.println(Hex.toHexString(addr));
-        accountStateCache.keySet().stream().forEach(item->System.out.println(item));
-
-        return accountStateCache.get(Hex.toHexString(addr));
+        return accountStateCache.get(addr);
     }
 
     /**
@@ -102,7 +95,7 @@ public class RepositoryMockImpl implements Repository {
     }
 
     synchronized AccountState getOrCreateAccountState(byte[] addr) {
-        AccountState ret = accountStateCache.get((Hex.toHexString(addr)));
+        AccountState ret = accountStateCache.get((addr));
         if (ret == null) {
             ret = createAccount(addr);
         }
@@ -111,13 +104,13 @@ public class RepositoryMockImpl implements Repository {
 
     @Override
     public synchronized void delete(byte[] addr) {
-        accountStateCache.remove((Hex.toHexString(addr)));
-        storageCache.remove(Hex.toHexString(addr));
+        accountStateCache.delete(addr);
+        storageCache.delete(addr);
     }
 
     @Override
-    public Map<String, DataWord> getContractDetails(byte[] addr) {
-        return storageCache.get(Hex.toHexString(addr));
+    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
+        return storageCache.get(addr);
     }
 
     @Override
@@ -130,19 +123,17 @@ public class RepositoryMockImpl implements Repository {
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
         byte[] key =codeKey(codeHash, addr);
-        String strKey =  Hex.toHexString(key);
-        codeCache.put(strKey, code);
+        codeCache.put(key, code);
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(Hex.toHexString(addr), accountState.withCodeHash(codeHash));
+        accountStateCache.put(addr, accountState.withCodeHash(codeHash));
     }
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
         byte[] codeHash = getCodeHash(addr);
         byte[] key = codeKey(codeHash, addr);
-        String strKey =  Hex.toHexString(key);
         return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(strKey);
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(key);
     }
 
 
@@ -157,18 +148,8 @@ public class RepositoryMockImpl implements Repository {
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         getOrCreateAccountState(addr);
 
-        String strKey = Hex.toHexString(addr);
-        Map<String, DataWord> contractStorage = storageCache.get(addr);
-        if (contractStorage == null) {
-            contractStorage = new HashMap<>();
-            storageCache.put(strKey, contractStorage);
-        }
-
-        String strSubKey = Hex.toHexString(key.getData());
-        contractStorage.put(strSubKey, value.isZero() ? null : value);
-
-        //Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
-        //contractStorage.put(key, value.isZero() ? null : value);
+        Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+        contractStorage.put(key, value.isZero() ? null : value);
     }
 
     @Override
@@ -178,17 +159,8 @@ public class RepositoryMockImpl implements Repository {
         if (accountState == null) {
             return  null;
         } else {
-            String strKey = Hex.toHexString(addr);
-            Map<String, DataWord> contractStorage = storageCache.get(strKey);
-            String strSubKey = Hex.toHexString(key.getData());
-
-            if (contractStorage == null) {
-                contractStorage = new HashMap<>();
-                storageCache.put(strKey, contractStorage);
-                return null;
-            }
-
-            return  contractStorage.get(strSubKey);
+            Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+            return contractStorage.get(key);
         }
     }
 
@@ -201,7 +173,7 @@ public class RepositoryMockImpl implements Repository {
     @Override
     public synchronized BigInteger addBalance(byte[] addr, BigInteger value) {
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(Hex.toHexString(addr), accountState.withBalanceIncrement(value));
+        accountStateCache.put(addr, accountState.withBalanceIncrement(value));
         return accountState.getBalance();
     }
 
@@ -215,11 +187,6 @@ public class RepositoryMockImpl implements Repository {
 
     }
 
-//    @Override
-//    public Repository startTracking() {
-//        return null;
-//    }
-
     @Override
     public void flush() {
 
@@ -232,21 +199,19 @@ public class RepositoryMockImpl implements Repository {
 
     @Override
     public synchronized RepositoryMockImpl startTracking() {
-//        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
-//                WriteCache.CacheType.SIMPLE);
-//        Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
-//        MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
-//            @Override
-//            protected CachedSource create(byte[] key, CachedSource srcCache) {
-//                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
-//            }
-//        };
-//
-//        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
-//        ret.parent = this;
-//        return ret;
+        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
+                WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
+        MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
+            @Override
+            protected CachedSource create(byte[] key, CachedSource srcCache) {
+                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
+            }
+        };
 
-        return null;
+        RepositoryMockImpl ret = new RepositoryMockImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
+        ret.parent = this;
+        return ret;
     }
 
     // composing a key as there can be several contracts with the same code
@@ -347,9 +312,9 @@ public class RepositoryMockImpl implements Repository {
         // the parent repo would not be in consistent state
         // when no parent just take this instance as a mock
         synchronized (parentSync) {
-//            storageCache.flush();
-////            codeCache.flush();
-////            accountStateCache.flush();
+            storageCache.flush();
+            codeCache.flush();
+            accountStateCache.flush();
 
         }
     }

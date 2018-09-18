@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.datasource.Source;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -41,7 +42,7 @@ public interface Repository<ASSET> {
      * @param address account address
      * @return
      */
-    AccountState getAccountState(String address,String currency);
+    AccountState getAccountState(String addr,String currency);
 
     /**
      * Deletes the account
@@ -58,7 +59,7 @@ public interface Repository<ASSET> {
      * @param addr of the account
      * @return new contract details
      */
-    Map<String, DataWord> getContractDetails(byte[] addr);
+    Source<DataWord, DataWord> getContractDetails(byte[] addr);
 
 
 

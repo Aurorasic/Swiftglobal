@@ -22,6 +22,7 @@ import com.higgsblock.global.chain.vm.core.AccountDetail;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.core.Block;
 import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
@@ -81,7 +82,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Map<String, DataWord> getContractDetails(byte[] addr) {
+    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
         return repository.getContractDetails(addr);
     }
 
