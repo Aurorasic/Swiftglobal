@@ -9,6 +9,7 @@ import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.Program;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -228,7 +229,7 @@ public class ExecutorTest {
 
             @Override
             public Repository startTracking() {
-                return null;
+                return new RepositoryMockImpl();
             }
 
             @Override
@@ -330,6 +331,12 @@ public class ExecutorTest {
     @Test
     public void testExecute() {
         ExecutionResult executionResult = executor.execute();
+
+        // 45 is used for ops fee.
+        Assert.assertEquals(45, executionResult.getGasUsed().intValue());
+        //constructor has no payable modifier, check fails.
+        Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
+        Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
     }
 
     @After
