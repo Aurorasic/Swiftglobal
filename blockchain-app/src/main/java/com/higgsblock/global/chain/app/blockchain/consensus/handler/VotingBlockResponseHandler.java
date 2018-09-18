@@ -95,12 +95,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             voteService.addOriginalBlockToCache(block);
             return;
         }
-        LOGGER.info("check the VotingBlockResponse success, height={}, hash={}", height, blockHash);
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(votingBlockResponse);
-            return;
-        }
-        LOGGER.info("add VotingBlockResponse height={}, hash={}", block.getHeight(), block.getHash());
+        LOGGER.info("check the VotingBlock success,add VotingBlock height={}, hash={}", height, blockHash);
         voteService.addVotingBlock(block);
         messageCenter.dispatchToWitnesses(votingBlockResponse);
     }
