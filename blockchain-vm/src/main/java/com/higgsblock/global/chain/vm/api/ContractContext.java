@@ -39,6 +39,7 @@ public class ContractContext {
             public void saveOpTrace() {
             }
 
+            @Override
             public BlockchainConfig getBlockchainConfig() {
                 return blockchainConfig;
             }
@@ -46,6 +47,13 @@ public class ContractContext {
 
         VM vm = new VM(systemProperties);
         vm.play(program);
+
+
+
+//        ExecutionEnvironment executionEnvironment = new ExecutionEnvironment(transactionClone.isContractCreation(),
+//                transactionClone.getContractAddress(), transactionClone.getSender(), transactionClone.getGasPrice(), transactionClone.getGasLimit(),
+//                transactionClone.getValue(), transactionClone.getData(), blockchainConfig);
+////        Executor executor = new Executor(executionEnvironment, );
 
     }
 
