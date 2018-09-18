@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author tangkun
+ * @author zhao xiaogang
  * @date 2018-09-06
  */
 public class RepositoryMockImpl implements Repository {
@@ -23,14 +23,7 @@ public class RepositoryMockImpl implements Repository {
 
     private Source<byte[], AccountState> accountStateCache;
     private Source<byte[], byte[]> codeCache;
-
-    //private Map<String, AccountState> accountStateCache;
-
-    //private Map<String, byte[]> codeCache;
-
     private MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
-
-    //private  Map<String, Map<String, DataWord>> storageCache;
 
 
     /**
@@ -43,11 +36,6 @@ public class RepositoryMockImpl implements Repository {
     protected SystemProperties config = SystemProperties.getDefault();
 
     public RepositoryMockImpl() {
-
-//        this.codeCache = new HashMap<>();
-//        this.accountStateCache = new HashMap<>();
-//        this.storageCache = new HashMap<>();
-
         Source dbSource = new HashMapDB<byte[]>();
         Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey<>(dbSource,
                 WriteCache.CacheType.SIMPLE);
@@ -60,7 +48,6 @@ public class RepositoryMockImpl implements Repository {
         };
 
         init(accountStateCache, codeCache, storageCache);
-
     }
 
     public RepositoryMockImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
@@ -92,9 +79,6 @@ public class RepositoryMockImpl implements Repository {
 
     @Override
     public synchronized AccountState getAccountState(byte[] addr) {
-        System.out.println(Hex.toHexString(addr));
-        //accountStateCache.keySet().stream().forEach(item->System.out.println(item));
-
         return accountStateCache.get(addr);
     }
 

@@ -236,11 +236,6 @@ public class RepositoryImpl implements Repository<UTXO> {
         RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
         ret.parent = this;
         return ret;
-
-        //只需复制状态，code
-//        RepositoryImpl ret = new RepositoryImpl();
-//        ret.parent = this;
-//        return ret;
     }
 
     // composing a key as there can be several contracts with the same code
