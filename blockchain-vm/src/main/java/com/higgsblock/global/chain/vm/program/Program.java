@@ -39,8 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import static com.higgsblock.global.chain.vm.util.BIUtil.isPositive;
-import static com.higgsblock.global.chain.vm.util.BIUtil.toBI;
+import static com.higgsblock.global.chain.vm.util.BIUtil.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
@@ -380,26 +379,26 @@ public class Program {
 
 
     public void suicide(DataWord obtainerAddress) {
-//
-//        byte[] owner = getOwnerAddress().getLast20Bytes();
-//        byte[] obtainer = obtainerAddress.getLast20Bytes();
-//        BigInteger balance = getStorage().getBalance(owner);
-//
-//        if (logger.isInfoEnabled())
-//            logger.info("Transfer to: [{}] heritage: [{}]",
-//                    toHexString(obtainer),
-//                    balance);
-//
-//        addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
-//
-//        if (FastByteComparisons.compareTo(owner, 0, 20, obtainer, 0, 20) == 0) {
-//            // if owner == obtainer just zeroing account according to Yellow Paper
-//            getStorage().addBalance(owner, balance.negate());
-//        } else {
-//            transfer(getStorage(), owner, obtainer, balance);
-//        }
-//
-//        getResult().addDeleteAccount(this.getOwnerAddress());
+
+        byte[] owner = getOwnerAddress().getLast20Bytes();
+        byte[] obtainer = obtainerAddress.getLast20Bytes();
+        BigInteger balance = getStorage().getBalance(owner);
+
+        if (logger.isInfoEnabled())
+            logger.info("Transfer to: [{}] heritage: [{}]",
+                    toHexString(obtainer),
+                    balance);
+
+        addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
+
+        if (FastByteComparisons.compareTo(owner, 0, 20, obtainer, 0, 20) == 0) {
+            // if owner == obtainer just zeroing account according to Yellow Paper
+            getStorage().addBalance(owner, balance.negate());
+        } else {
+            transfer(getStorage(), owner, obtainer, balance);
+        }
+
+        getResult().addDeleteAccount(this.getOwnerAddress());
     }
 
     public Repository getStorage() {
@@ -578,14 +577,12 @@ public class Program {
 
         // 2.1 PERFORM THE VALUE (endowment) PART
         BigInteger endowment = msg.getEndowment().value();
-
-        //TODO:compute balance
-//        BigInteger senderBalance = track.getBalance(senderAddress);
-//        if (isNotCovers(senderBalance, endowment)) {
-//            stackPushZero();
-//            refundGas(msg.getGas().longValue(), "refund gas from message call");
-//            return;
-//        }
+        BigInteger senderBalance = track.getBalance(senderAddress);
+        if (isNotCovers(senderBalance, endowment)) {
+            stackPushZero();
+            refundGas(msg.getGas().longValue(), "refund gas from message call");
+            return;
+        }
 
 
         // FETCH THE CODE
