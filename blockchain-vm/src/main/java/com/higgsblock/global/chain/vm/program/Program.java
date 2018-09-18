@@ -17,10 +17,7 @@
  */
 package com.higgsblock.global.chain.vm.program;
 
-import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.MessageCall;
-import com.higgsblock.global.chain.vm.OpCode;
-import com.higgsblock.global.chain.vm.PrecompiledContracts;
+import com.higgsblock.global.chain.vm.*;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
@@ -42,8 +39,12 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
+import static com.higgsblock.global.chain.vm.util.BIUtil.isPositive;
+import static com.higgsblock.global.chain.vm.util.BIUtil.toBI;
+import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
+import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
 
 //import com.higgsblock.global.chain.vm.core.AccountState;
@@ -174,20 +175,18 @@ public class Program {
         return invoke.getCallDeep();
     }
 
-//    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, byte[] senderAddress, byte[] receiveAddress,
-//                                              BigInteger value, byte[] data, String note) {
-//
-//        InternalTransaction result = null;
-//        if (transaction != null) {
-//            byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
-//
-//            data = config.recordInternalTransactionsData() ? data : null;
-//            result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(), senderNonce,
-//                    getGasPrice(), gasLimit, senderAddress, receiveAddress, value.toByteArray(), data, note);
-//        }
-//
-//        return result;
-//    }
+    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, byte[] senderAddress, byte[] receiveAddress,
+                                              BigInteger value, byte[] data, String note) {
+
+        InternalTransaction result = null;
+        if (transaction != null) {
+            //byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
+            result = getResult().addInternalTransaction(HashUtil.sha3(transaction.getData()), getCallDeep(), null,
+                    getGasPrice(), gasLimit, senderAddress, receiveAddress, value.toByteArray(), data, note);
+        }
+
+        return result;
+    }
 
     private <T extends ProgramListenerAware> T setupProgramListener(T programListenerAware) {
         if (programListener.isEmpty()) {
@@ -556,129 +555,129 @@ public class Program {
      * @param msg is the message call object
      */
     public void callToAddress(MessageCall msg) {
-//        returnDataBuffer = null; // reset return buffer right before the call
-//
-//        if (getCallDeep() == MAX_DEPTH) {
+        returnDataBuffer = null; // reset return buffer right before the call
+
+        if (getCallDeep() == MAX_DEPTH) {
+            stackPushZero();
+            refundGas(msg.getGas().longValue(), " call deep limit reach");
+            return;
+        }
+
+        byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
+
+        // FETCH THE SAVED STORAGE
+        byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
+        byte[] senderAddress = getOwnerAddress().getLast20Bytes();
+        byte[] contextAddress = msg.getType().callIsStateless() ? senderAddress : codeAddress;
+
+        if (logger.isInfoEnabled())
+            logger.info(msg.getType().name() + " for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ",
+                    toHexString(contextAddress), msg.getOutDataOffs().longValue(), msg.getOutDataSize().longValue());
+
+        Repository track = getStorage().startTracking();
+
+        // 2.1 PERFORM THE VALUE (endowment) PART
+        BigInteger endowment = msg.getEndowment().value();
+
+        //TODO:compute balance
+//        BigInteger senderBalance = track.getBalance(senderAddress);
+//        if (isNotCovers(senderBalance, endowment)) {
 //            stackPushZero();
-//            refundGas(msg.getGas().longValue(), " call deep limit reach");
+//            refundGas(msg.getGas().longValue(), "refund gas from message call");
 //            return;
 //        }
-//
-//        byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
-//
-//        // FETCH THE SAVED STORAGE
-//        byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
-//        byte[] senderAddress = getOwnerAddress().getLast20Bytes();
-//        byte[] contextAddress = msg.getType().callIsStateless() ? senderAddress : codeAddress;
-//
-//        if (logger.isInfoEnabled())
-//            logger.info(msg.getType().name() + " for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ",
-//                    toHexString(contextAddress), msg.getOutDataOffs().longValue(), msg.getOutDataSize().longValue());
-//
-//        Repository track = getStorage().startTracking();
-//
-//        // 2.1 PERFORM THE VALUE (endowment) PART
-//        BigInteger endowment = msg.getEndowment().value();
-//
-//        //TODO:compute balance
-////        BigInteger senderBalance = track.getBalance(senderAddress);
-////        if (isNotCovers(senderBalance, endowment)) {
-////            stackPushZero();
-////            refundGas(msg.getGas().longValue(), "refund gas from message call");
-////            return;
-////        }
-//
-//
-//        // FETCH THE CODE
-//        byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
-//
-//
-//        BigInteger contextBalance = ZERO;
-//        if (byTestingSuite()) {
-//            // This keeps track of the calls created for a test
-//            getResult().addCallCreate(data, contextAddress,
-//                    msg.getGas().getNoLeadZeroesData(),
-//                    msg.getEndowment().getNoLeadZeroesData());
-//        } else {
-//            track.addBalance(senderAddress, endowment.negate());
-//            contextBalance = track.addBalance(contextAddress, endowment);
-//        }
-//
-//        // CREATE CALL INTERNAL TRANSACTION
-//        InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, data, "call");
-//
-//        ProgramResult result = null;
-//        if (isNotEmpty(programCode)) {
-//            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-//                    this, new DataWord(contextAddress),
-//                    msg.getType().callIsDelegate() ? getCallerAddress() : getOwnerAddress(),
-//                    msg.getType().callIsDelegate() ? getCallValue() : msg.getEndowment(),
-//                    msg.getGas(), contextBalance, data, track, this.invoke.getBlockStore(),
-//                    msg.getType().callIsStatic() || isStaticCall(), byTestingSuite());
-//
-//            VM vm = new VM(config);
-//            Program program = new Program(getStorage().getCodeHash(codeAddress), programCode, programInvoke, internalTx, config).withCommonConfig(commonConfig);
-//            vm.play(program);
-//            result = program.getResult();
-//
-//            getTrace().merge(program.getTrace());
-//            getResult().merge(result);
-//
-//            if (result.getException() != null || result.isRevert()) {
-//                logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-//                        toHexString(contextAddress),
-//                        result.getException());
-//
-//                internalTx.reject();
-//                result.rejectInternalTransactions();
-//
-//                track.rollback();
-//                stackPushZero();
-//
-//                if (result.getException() != null) {
-//                    return;
-//                }
-//            } else {
-//                // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
-//                track.commit();
-//                stackPushOne();
-//            }
-//
-//            if (byTestingSuite()) {
-//                logger.info("Testing run, skipping storage diff listener");
-//            } else if (Arrays.equals(transaction.getReceiveAddress(), internalTx.getReceiveAddress())) {
-//                storageDiffListener.merge(program.getStorageDiff());
-//            }
-//        } else {
-//            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
-//            track.commit();
-//            stackPushOne();
-//        }
-//
-//        // 3. APPLY RESULTS: result.getHReturn() into out_memory allocated
-//        if (result != null) {
-//            byte[] buffer = result.getHReturn();
-//            int offset = msg.getOutDataOffs().intValue();
-//            int size = msg.getOutDataSize().intValue();
-//
-//            memorySaveLimited(offset, buffer, size);
-//
-//            returnDataBuffer = buffer;
-//        }
-//
-//        // 5. REFUND THE REMAIN GAS
-//        if (result != null) {
-//            BigInteger refundGas = msg.getGas().value().subtract(toBI(result.getGasUsed()));
-//            if (isPositive(refundGas)) {
-//                refundGas(refundGas.longValue(), "remaining gas from the internal call");
-//                if (logger.isInfoEnabled())
-//                    logger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
-//                            toHexString(senderAddress),
-//                            refundGas.toString());
-//            }
-//        } else {
-//            refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
-//        }
+
+
+        // FETCH THE CODE
+        byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+
+
+        BigInteger contextBalance = ZERO;
+        if (byTestingSuite()) {
+            // This keeps track of the calls created for a test
+            getResult().addCallCreate(data, contextAddress,
+                    msg.getGas().getNoLeadZeroesData(),
+                    msg.getEndowment().getNoLeadZeroesData());
+        } else {
+            track.addBalance(senderAddress, endowment.negate());
+            contextBalance = track.addBalance(contextAddress, endowment);
+        }
+
+        // CREATE CALL INTERNAL TRANSACTION
+        InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, data, "call");
+
+        ProgramResult result = null;
+        if (isNotEmpty(programCode)) {
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
+                    this, new DataWord(contextAddress),
+                    msg.getType().callIsDelegate() ? getCallerAddress() : getOwnerAddress(),
+                    msg.getType().callIsDelegate() ? getCallValue() : msg.getEndowment(),
+                    msg.getGas(), contextBalance, data, track,
+                    msg.getType().callIsStatic() || isStaticCall(), byTestingSuite());
+
+            VM vm = new VM(config);
+            Program program = new Program(getStorage().getCodeHash(codeAddress), programCode, programInvoke, internalTx, config);
+            vm.play(program);
+            result = program.getResult();
+
+            getTrace().merge(program.getTrace());
+            getResult().merge(result);
+
+            if (result.getException() != null || result.isRevert()) {
+                logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                        toHexString(contextAddress),
+                        result.getException());
+
+                internalTx.reject();
+                result.rejectInternalTransactions();
+
+                track.rollback();
+                stackPushZero();
+
+                if (result.getException() != null) {
+                    return;
+                }
+            } else {
+                // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
+                track.commit();
+                stackPushOne();
+            }
+
+            if (byTestingSuite()) {
+                logger.info("Testing run, skipping storage diff listener");
+            } else if (Arrays.equals(transaction.getReceiveAddress(), internalTx.getReceiveAddress())) {
+                storageDiffListener.merge(program.getStorageDiff());
+            }
+        } else {
+            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
+            track.commit();
+            stackPushOne();
+        }
+
+        // 3. APPLY RESULTS: result.getHReturn() into out_memory allocated
+        if (result != null) {
+            byte[] buffer = result.getHReturn();
+            int offset = msg.getOutDataOffs().intValue();
+            int size = msg.getOutDataSize().intValue();
+
+            memorySaveLimited(offset, buffer, size);
+
+            returnDataBuffer = buffer;
+        }
+
+        // 5. REFUND THE REMAIN GAS
+        if (result != null) {
+            BigInteger refundGas = msg.getGas().value().subtract(toBI(result.getGasUsed()));
+            if (isPositive(refundGas)) {
+                refundGas(refundGas.longValue(), "remaining gas from the internal call");
+                if (logger.isInfoEnabled())
+                    logger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
+                            toHexString(senderAddress),
+                            refundGas.toString());
+            }
+        } else {
+            refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
+        }
     }
 
     public void spendGas(long gasValue, String cause) {
