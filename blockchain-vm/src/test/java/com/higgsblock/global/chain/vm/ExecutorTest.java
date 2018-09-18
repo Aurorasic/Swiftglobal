@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.vm.api.Executor;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
 import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.Program;
 import org.junit.After;
 import org.junit.Before;
@@ -171,7 +172,7 @@ public class ExecutorTest {
             }
 
             @Override
-            public Map<String, DataWord> getContractDetails(byte[] addr) {
+            public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
                 return null;
             }
 
