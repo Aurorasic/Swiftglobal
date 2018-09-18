@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
-import com.higgsblock.global.chain.common.utils.ExecutorServices;
+import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -43,7 +42,6 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
 
     private String startBatchNo;
     private AtomicLong batchNoCounter;
-    private ExecutorService threadPool = ExecutorServices.newSingleThreadExecutor(getClass().getName(), 100);
 
     public TransactionAwareLevelDbAdapter(LevelDbKeyValueAdapter levelDbAdapter) {
         super(new IndexedSpelQueryEngine());
@@ -79,7 +77,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (transactionHolder > 1) {
                 transactionHolder--;
             } else {
-                writeBatch = null;
+                if (null != writeBatch) {
+                    writeBatchMap.remove(writeBatch.getBatchNo());
+                    writeBatch = null;
+                }
                 transactionHolder = 0;
                 isAutoCommit = true;
             }
@@ -95,11 +96,11 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             if (transactionHolder > 1) {
                 transactionHolder--;
             } else {
-                levelDbAdapter.write(writeBatch);
-                threadPool.submit(this::archive);
+                levelDbAdapter.write(writeBatch.getBatchNo(), writeBatch);
                 writeBatch = null;
                 transactionHolder = 0;
                 isAutoCommit = true;
+                archive();
             }
         } finally {
             writeLock.unlock();
@@ -177,7 +178,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             map.putAll(getDataInBatches(keyspace));
 
             if (!isAutoCommit) {
-                writeBatch.copy().forEach(entry -> map.put(entry.getKey(), entry.getValue()));
+                writeBatch.copy(keyspace).forEach(entry -> map.put(entry.getKey(), entry.getValue()));
             }
 
             Iterator<Map.Entry<Serializable, Object>> iterator = map.entrySet().stream()
@@ -353,7 +354,13 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             List<String> batchNos = getBatchNos();
             String prefix = String.valueOf(keyspace);
             Class<?> entityClass = getEntityClass(keyspace);
+            ILevelDbWriteBatch batch = null;
             for (String batchNo : batchNos) {
+                batch = writeBatchMap.get(batchNo);
+                if (null != batch) {
+                    batch.copy(keyspace).forEach(item -> map.put(item.getKey(), item.getValue()));
+                    continue;
+                }
                 levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
                     String key = entry.getKey();
                     String id = KeyValueAdapterUtils.getRealKey(key, batchNo);
@@ -374,28 +381,17 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             for (String batchNo : batchNos) {
                 LOGGER.debug("archive: batchNo={}", batchNo);
                 writeBatch = writeBatchMap.remove(batchNo);
-                if (null != writeBatch) {
-                    writeBatch.copy().forEach(item -> {
-                        Object value = item.getValue();
-                        if (null == value) {
-                            levelDbAdapter.delete(item.getKey(), item.getKeyspace());
-                        } else {
-                            levelDbAdapter.put(item.getKey(), value, item.getKeyspace());
-                        }
-                    });
-                } else {
-                    levelDbAdapter.stringEntries(batchNo).entrySet().forEach(entry -> {
+                if (null == writeBatch) {
+                    writeBatch = new LevelDbWriteBatch();
+                    for (Map.Entry<String, String> entry : levelDbAdapter.stringEntries(batchNo).entrySet()) {
                         Serializable key = entry.getKey();
                         String keyspace = KeyValueAdapterUtils.getRealKeyspace(key);
                         String id = KeyValueAdapterUtils.getRealKey(key, keyspace);
                         String value = entry.getValue();
-                        if (null == value) {
-                            levelDbAdapter.delete(id, keyspace);
-                        } else {
-                            levelDbAdapter.putString(id, value, keyspace);
-                        }
-                    });
+                        writeBatch.put(id, value, keyspace);
+                    }
                 }
+                writeBatch.splitByKeyspace().parallelStream().forEach(batch -> levelDbAdapter.write(batch.getBatchNo(), batch));
                 levelDbAdapter.deleteAllOf(batchNo);
             }
             deleteBatchNos(batchNos);

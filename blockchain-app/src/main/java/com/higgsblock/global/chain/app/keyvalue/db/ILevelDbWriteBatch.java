@@ -15,15 +15,17 @@ public interface ILevelDbWriteBatch {
 
     Object get(Serializable key, Serializable keyspace);
 
-    ILevelDbWriteBatch put(Serializable key, Object item, Serializable keyspace);
+    void put(Serializable key, Object item, Serializable keyspace);
 
-    ILevelDbWriteBatch delete(Serializable key, Serializable keyspace);
-
-    boolean isDeleted(Serializable key, Serializable keyspace);
+    void delete(Serializable key, Serializable keyspace);
 
     WriteBatch wrapper(WriteBatch writeBatch);
+
+    List<DataItem> copy(Serializable keyspace);
 
     List<DataItem> copy();
 
     void clear();
+
+    List<ILevelDbWriteBatch> splitByKeyspace();
 }

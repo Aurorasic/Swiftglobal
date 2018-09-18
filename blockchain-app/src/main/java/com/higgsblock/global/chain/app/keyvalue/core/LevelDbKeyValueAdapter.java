@@ -143,8 +143,8 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         return new LevelDbWriteBatch(String.valueOf(keyspace));
     }
 
-    public void write(ILevelDbWriteBatch writeBatch) {
-        getDb(writeBatch.getBatchNo()).write(writeBatch, writeOptions);
+    public void write(Serializable keyspace, ILevelDbWriteBatch writeBatch) {
+        getDb(keyspace).write(writeBatch, writeOptions);
     }
 
     @Override
