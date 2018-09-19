@@ -5,6 +5,7 @@ package com.higgsblock.global.chain.vm.core;
  * @date 2018-09-13
  */
 public class Transaction {
+    private byte[] hash;
     private boolean isContractCreation;
     private byte[] contractAddress;
     private byte[] senderAddress;
@@ -23,6 +24,14 @@ public class Transaction {
         this.gasLimit = gasLimit;
         this.value = value;
         this.data = data;
+    }
+
+    public byte[] getHash() {
+        return hash;
+    }
+
+    public void setHash(byte[] hash) {
+        this.hash = hash;
     }
 
     public boolean isContractCreation() {
