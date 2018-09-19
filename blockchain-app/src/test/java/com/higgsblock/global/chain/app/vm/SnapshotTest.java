@@ -36,8 +36,8 @@ public class SnapshotTest {
         Repository conR = txR.startTracking();
         String from = "1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV",
          amount="10", currency="cas";
-        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2","10",currency);
-        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3","20",currency);
+        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2",BigInteger.valueOf(10),currency);
+        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3",BigInteger.valueOf(20),currency);
 
         System.out.println(conR.getAccountState(from,currency).getBalance());
 

@@ -257,7 +257,7 @@ public class RepositoryMockImpl implements Repository {
      * @param currency assert type
      */
     @Override
-    public void transfer(String from, String address, String amount, String currency) {
+    public void transfer(String from, String address, BigInteger amount, String currency) {
         
     }
 

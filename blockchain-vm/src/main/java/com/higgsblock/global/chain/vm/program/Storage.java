@@ -24,6 +24,7 @@ import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
@@ -220,7 +221,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @param currency assert type
      */
     @Override
-    public void transfer(String from, String address, String amount, String currency) {
+    public void transfer(String from, String address, BigInteger amount, String currency) {
 
     }
 
