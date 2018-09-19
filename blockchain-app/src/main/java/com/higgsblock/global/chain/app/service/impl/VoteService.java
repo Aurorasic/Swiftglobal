@@ -297,6 +297,7 @@ public class VoteService implements IEventBusListener, IVoteService {
                         if (null == v) {
                             v = new HashSet<>();
                         }
+                        LOGGER.info("add new vote to cache ,vote={}", vote);
                         v.add(vote);
                         return v;
                     });
