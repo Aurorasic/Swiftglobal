@@ -101,6 +101,14 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
     @Override
+    public synchronized BigInteger getNonce(byte[] addr) {
+//        AccountState accountState = getAccountState(addr);
+//        return accountState == null ? config.getBlockchainConfig().getCommonConstants().getInitialNonce() :
+//                accountState.getNonce();
+        return BigInteger.ZERO;
+    }
+
+    @Override
     public synchronized void delete(byte[] addr) {
         accountStateCache.delete(addr);
         storageCache.delete(addr);

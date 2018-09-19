@@ -78,6 +78,14 @@ public class SystemProperties {
         return requestedGas.clone();
     }
 
+    public boolean recordInternalTransactionsData() {
+//        if (recordInternalTransactionsData == null) {
+//            recordInternalTransactionsData = config.getBoolean("record.internal.transactions.data");
+//        }
+//        return recordInternalTransactionsData;
+        return true;
+    }
+
     public BlockchainConfig getBlockchainConfig() {
         return new ByzantiumConfig();
     }

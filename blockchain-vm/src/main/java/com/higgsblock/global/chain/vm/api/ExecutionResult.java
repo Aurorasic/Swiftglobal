@@ -23,6 +23,8 @@ public class ExecutionResult {
     private BigInteger gasUsed;
     private BigInteger gasRefund;
 
+    private List<TransferInfo> transferInfoList;
+
     public String getTransactionHash() {
         return transactionHash;
     }
@@ -97,5 +99,13 @@ public class ExecutionResult {
 
     public void setGasRefund(BigInteger gasRefund) {
         this.gasRefund = gasRefund;
+    }
+
+    public List<TransferInfo> getTransferInfoList() {
+        return transferInfoList;
+    }
+
+    public void setTransferInfoList(List<TransferInfo> transferInfoList) {
+        this.transferInfoList = transferInfoList;
     }
 }

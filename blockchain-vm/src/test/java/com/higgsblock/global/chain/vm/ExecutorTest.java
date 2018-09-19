@@ -148,6 +148,11 @@ public class ExecutorTest {
             private Map<byte[], byte[]> db = new HashMap<byte[], byte[]>();
 
             @Override
+            public synchronized BigInteger getNonce(byte[] addr) {
+                return null;
+            }
+
+            @Override
             public AccountState createAccount(byte[] addr) {
                 return null;
             }
