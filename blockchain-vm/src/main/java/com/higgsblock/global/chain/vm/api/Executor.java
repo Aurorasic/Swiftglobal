@@ -17,6 +17,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Chen Jiawei
@@ -38,6 +40,8 @@ public class Executor {
     private byte[] value;
     private ByteArraySet touchedAccountAddresses;
     private BlockchainConfig blockchainConfig;
+    private byte[] senderAddress;
+    private List<TransferInfo> transferInfoList;
 
     public Executor(Repository transactionRepository, ExecutionEnvironment executionEnvironment) {
         this.transactionRepository = transactionRepository;
@@ -56,6 +60,8 @@ public class Executor {
         value = executionEnvironment.getValue();
         touchedAccountAddresses = new ByteArraySet();
         blockchainConfig = executionEnvironment.getBlockchainConfig();
+        senderAddress = executionEnvironment.getSenderAddress();
+        transferInfoList = new ArrayList<>();
     }
 
     public ExecutionResult execute() {
@@ -78,10 +84,12 @@ public class Executor {
     private ExecutionResult createContract() {
         contractRepository.createAccount(contractAddress);
         contractRepository.addBalance(contractAddress, convertToBigInteger(value));
+        transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
         touchedAccountAddresses.add(contractAddress);
 
         VM vm = new VM(systemProperties);
         Program program = new Program(data, programInvoke, transaction, systemProperties);
+        program.setTransferInfoList(transferInfoList);
         if (systemProperties.playVM()) {
             vm.play(program);
         }
@@ -108,6 +116,7 @@ public class Executor {
                 programResult.getDeleteAccounts().clear();
                 programResult.getLogInfoList().clear();
                 programResult.resetFutureRefund();
+                program.getTransferInfoList().clear();
                 rollback();
 
                 if (programResult.getException() != null) {
@@ -133,6 +142,7 @@ public class Executor {
         executionResult.setInternalTransactions(programResult.getInternalTransactions());
         executionResult.setLogInfoList(programResult.getLogInfoList());
         executionResult.setResult(programResult.getHReturn());
+        executionResult.setTransferInfoList(transferInfoList);
 
         for (DataWord address : programResult.getDeleteAccounts()) {
             transactionRepository.delete(address.getLast20Bytes());
@@ -158,6 +168,7 @@ public class Executor {
         VM vm = new VM(systemProperties);
         Program program = new Program(transactionRepository.getCodeHash(contractAddress),
                 transactionRepository.getCode(contractAddress), programInvoke, transaction, systemProperties);
+        program.setTransferInfoList(transferInfoList);
         if (systemProperties.playVM()) {
             vm.play(program);
         }
@@ -170,6 +181,7 @@ public class Executor {
                 programResult.getDeleteAccounts().clear();
                 programResult.getLogInfoList().clear();
                 programResult.resetFutureRefund();
+                program.getTransferInfoList().clear();
                 rollback();
 
                 if (programResult.getException() != null) {
@@ -196,6 +208,7 @@ public class Executor {
         executionResult.setInternalTransactions(programResult.getInternalTransactions());
         executionResult.setLogInfoList(programResult.getLogInfoList());
         executionResult.setResult(programResult.getHReturn());
+        executionResult.setTransferInfoList(transferInfoList);
 
         for (DataWord address : programResult.getDeleteAccounts()) {
             transactionRepository.delete(address.getLast20Bytes());

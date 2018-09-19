@@ -50,6 +50,14 @@ public class RepositoryMockImpl implements Repository {
         init(accountStateCache, codeCache, storageCache);
     }
 
+    @Override
+    public BigInteger getNonce(byte[] addr) {
+//        AccountState accountState = getAccountState(addr);
+//        return accountState == null ? config.getBlockchainConfig().getCommonConstants().getInitialNonce() :
+//                accountState.getNonce();
+        return BigInteger.ZERO;
+    }
+
     public RepositoryMockImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
 
                               MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
