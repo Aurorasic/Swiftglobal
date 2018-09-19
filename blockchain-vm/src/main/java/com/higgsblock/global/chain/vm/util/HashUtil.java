@@ -22,13 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.jcajce.provider.digest.Keccak;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Random;
 
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -246,5 +249,37 @@ public class HashUtil {
 
     public static String shortHash(byte[] hash) {
         return Hex.toHexString(hash).substring(0, 6);
+    }
+
+    /**
+     * Computes the address of a deployed contract.
+     *
+     * @param address
+     *            the sender's address
+     * @param nonce
+     *            the sender's nonce
+     * @return an 20 bytes array
+     * @implNote the implementation is slightly different from Ethereum's specs;
+     *           we're not using RLP codec to encode the address and nonce.
+     */
+    public static byte[] calcNewAddress(byte[] address, long nonce) {
+        ByteBuffer buffer = ByteBuffer.allocate(20 + 8);
+        buffer.put(address).putLong(nonce);
+        byte[] keccak256 = keccak256(buffer.array());
+
+        return Arrays.copyOfRange(keccak256, 12, 32);
+    }
+
+    /**
+     * Computes the Keccak-256 hash digest.
+     *
+     * @param input
+     *            the input data
+     * @return a 32 bytes digest
+     */
+    public static byte[] keccak256(byte[] input) {
+        Keccak.Digest256 digest = new Keccak.Digest256();
+        digest.update(input);
+        return digest.digest();
     }
 }

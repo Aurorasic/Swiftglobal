@@ -102,11 +102,17 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
     @Override
-    public synchronized BigInteger getNonce(byte[] addr) {
-//        AccountState accountState = getAccountState(addr);
-//        return accountState == null ? config.getBlockchainConfig().getCommonConstants().getInitialNonce() :
-//                accountState.getNonce();
-        return BigInteger.ZERO;
+    public synchronized long getNonce(byte[] addr) {
+        AccountState accountState = getAccountState(addr);
+        return accountState == null ? 0 :
+                accountState.getNonce();
+    }
+
+    @Override
+    public long increaseNonce(byte[] addr) {
+        AccountState accountState = getOrCreateAccountState(addr);
+        accountStateCache.put(addr, accountState.withIncrementedNonce());
+        return accountState.getNonce();
     }
 
     @Override
@@ -116,8 +122,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
     @Override
-    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
-        return storageCache.get(addr);
+    public ContractDetails getContractDetails(byte[] addr) {
+        return new ContractDetailsImpl(addr);
     }
 
     @Override
@@ -360,10 +366,15 @@ public class RepositoryImpl implements Repository<UTXO> {
     public AccountState createAccountState(String address, BigInteger balance, String currency) {
 
         byte[] contractAddr = AddrUtil.toContractAddr(address);
-        AccountState accountState = new AccountState(balance, address.getBytes(), currency);
-        accountStateCache.put(contractAddr, accountState);
 
-        return accountState;
+        AccountState ret = accountStateCache.get(contractAddr);
+        if (ret == null) {
+            AccountState accountState = new AccountState(0, balance, address.getBytes(), currency);
+            accountStateCache.put(contractAddr, accountState);
+            return accountState;
+        }
+
+        return ret;
     }
 
     @Override
@@ -448,5 +459,21 @@ public class RepositoryImpl implements Repository<UTXO> {
         }
         accountStates.put(address, accountState);
         return accountState;
+    }
+
+    class ContractDetailsImpl implements ContractDetails{
+
+        private byte[] address;
+
+        public ContractDetailsImpl(byte[] address) {
+            this.address = address;
+        }
+
+        @Override
+        public Map<DataWord, DataWord> getStorage() {
+            Map<DataWord, DataWord> storage = new HashMap<>();
+
+            return storage;
+        }
     }
 }

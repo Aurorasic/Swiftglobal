@@ -57,7 +57,16 @@ public interface Repository<ASSET> {
      * @param addr of the account
      * @return value of the nonce
      */
-    BigInteger getNonce(byte[] addr);
+    long getNonce(byte[] addr);
+
+
+    /**
+     * Increase the account nonce of the given account by one
+     *
+     * @param addr of the account
+     * @return new value of the nonce
+     */
+    long increaseNonce(byte[] addr);
 
     /**
      * Retrieve contract details for a given account from the database
@@ -65,7 +74,7 @@ public interface Repository<ASSET> {
      * @param addr of the account
      * @return new contract details
      */
-    Source<DataWord, DataWord> getContractDetails(byte[] addr);
+    ContractDetails getContractDetails(byte[] addr);
 
 
 

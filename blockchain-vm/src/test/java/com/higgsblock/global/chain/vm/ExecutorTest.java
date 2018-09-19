@@ -148,8 +148,13 @@ public class ExecutorTest {
             private Map<byte[], byte[]> db = new HashMap<byte[], byte[]>();
 
             @Override
-            public synchronized BigInteger getNonce(byte[] addr) {
-                return null;
+            public synchronized long getNonce(byte[] addr) {
+                return 0;
+            }
+
+            @Override
+            public long increaseNonce(byte[] addr) {
+                return 0;
             }
 
             @Override
@@ -178,7 +183,7 @@ public class ExecutorTest {
             }
 
             @Override
-            public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
+            public ContractDetails getContractDetails(byte[] addr) {
                 return null;
             }
 
