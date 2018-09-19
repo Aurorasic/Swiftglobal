@@ -7,10 +7,7 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author zhao xiaogang
@@ -24,7 +21,7 @@ public class RepositoryMockImpl implements Repository {
     private Source<byte[], AccountState> accountStateCache;
     private Source<byte[], byte[]> codeCache;
     private MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
-
+    private Map<ByteArrayWrapper, Set<ByteArrayWrapper>> addrKeys = new HashMap<>();
 
     /**
      * utxo cache
@@ -109,8 +106,8 @@ public class RepositoryMockImpl implements Repository {
     }
 
     @Override
-    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
-        return storageCache.get(addr);
+    public ContractDetails getContractDetails(byte[] addr) {
+        return new ContractDetailsMockImpl(addr);
     }
 
     @Override
@@ -150,6 +147,13 @@ public class RepositoryMockImpl implements Repository {
 
         Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
         contractStorage.put(key, value.isZero() ? null : value);
+
+        Set<ByteArrayWrapper> keys = addrKeys.get(addr);
+        if (keys == null) {
+            addrKeys.put(new ByteArrayWrapper(addr), new HashSet<>());
+        } else {
+            keys.add(new ByteArrayWrapper(value.isZero() ? null : value.getData()) );
+        }
     }
 
     @Override
@@ -377,5 +381,28 @@ public class RepositoryMockImpl implements Repository {
 
     public void setUtxoCache(Map<String, List<UTXOBO>> utxoCache) {
         this.utxoCache = utxoCache;
+    }
+
+
+    class ContractDetailsMockImpl implements ContractDetails{
+
+        private byte[] address;
+
+        public ContractDetailsMockImpl(byte[] address) {
+            this.address = address;
+        }
+
+        @Override
+        public Map<DataWord, DataWord> getStorage() {
+            Map<DataWord, DataWord> storage = new HashMap<>();
+            
+            addrKeys.get(address).stream().forEach(item-> {
+                DataWord key = new DataWord(item.getData());
+                DataWord value = storageCache.get(address).get(key);
+                storage.put(key, value);
+            });
+
+            return storage;
+        }
     }
 }

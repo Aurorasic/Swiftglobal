@@ -59,7 +59,7 @@ public interface Repository<ASSET> {
      * @param addr of the account
      * @return new contract details
      */
-    Source<DataWord, DataWord> getContractDetails(byte[] addr);
+    ContractDetails getContractDetails(byte[] addr);
 
 
 

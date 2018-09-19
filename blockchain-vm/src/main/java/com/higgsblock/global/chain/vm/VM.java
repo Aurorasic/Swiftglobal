@@ -18,6 +18,7 @@
 package com.higgsblock.global.chain.vm;
 
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
+import com.higgsblock.global.chain.vm.core.ContractDetails;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 //import org.ethereum.db.ContractDetails;
 import com.higgsblock.global.chain.vm.datasource.Source;
@@ -1384,17 +1385,16 @@ public class VM {
                 case RETURN:
                 case SUICIDE:
 
-//                    Source<DataWord, DataWord> details = program.getStorage().getContractDetails(program.getOwnerAddress().getLast20Bytes());
-////                    ContractDetails details = program.getStorage()
-////                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-//                    List<String> storageKeys = new ArrayList<>(details.keySet());
-//                    Collections.sort(storageKeys);
-//
-//                    for (String key : storageKeys) {
-//                        dumpLogger.trace("{} {}",
-//                                key,
-//                                toHexString(details.get(key).getNoLeadZeroesData()));
-//                    }
+                    ContractDetails details = program.getStorage()
+                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+                    List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
+                    Collections.sort(storageKeys);
+
+                    for (DataWord key : storageKeys) {
+                        dumpLogger.trace("{} {}",
+                                toHexString(key.getNoLeadZeroesData()),
+                                toHexString(details.getStorage().get(key).getNoLeadZeroesData()));
+                    }
                 default:
                     break;
             }
@@ -1415,17 +1415,16 @@ public class VM {
                 dumpLogger.trace("{}", memoryString);
 
             dumpLogger.trace("    STORAGE");
-//            Map<String, DataWord> details = program.getStorage().getContractDetails(program.getOwnerAddress().getLast20Bytes());
-////            ContractDetails details = program.getStorage()
-////                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
-//            List<String> storageKeys = new ArrayList<>(details.keySet());
-//            Collections.sort(storageKeys);
-//
-//            for (String key : storageKeys) {
-//                dumpLogger.trace("{}: {}",
-//                        key,
-//                        details.get(key).shortHex());
-//            }
+            ContractDetails details = program.getStorage()
+                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+            List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
+            Collections.sort(storageKeys);
+
+            for (DataWord key : storageKeys) {
+                dumpLogger.trace("{}: {}",
+                        key.shortHex(),
+                        details.getStorage().get(key).shortHex());
+            }
 
             int level = program.getCallDeep();
             String contract = toHexString(program.getOwnerAddress().getLast20Bytes());

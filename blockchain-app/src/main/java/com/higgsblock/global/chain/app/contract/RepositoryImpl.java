@@ -114,8 +114,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
     @Override
-    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
-        return storageCache.get(addr);
+    public ContractDetails getContractDetails(byte[] addr) {
+        return new ContractDetailsImpl(addr);
     }
 
     @Override
@@ -443,5 +443,21 @@ public class RepositoryImpl implements Repository<UTXO> {
         }
         accountStates.put(address, accountState);
         return accountState;
+    }
+
+    class ContractDetailsImpl implements ContractDetails{
+
+        private byte[] address;
+
+        public ContractDetailsImpl(byte[] address) {
+            this.address = address;
+        }
+
+        @Override
+        public Map<DataWord, DataWord> getStorage() {
+            Map<DataWord, DataWord> storage = new HashMap<>();
+
+            return storage;
+        }
     }
 }
