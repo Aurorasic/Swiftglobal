@@ -18,6 +18,7 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.*;
+import com.higgsblock.global.chain.vm.api.TransferInfo;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.ContractDetails;
 import com.higgsblock.global.chain.vm.core.Repository;
@@ -100,6 +101,8 @@ public class Program {
 
     private ProgramPrecompile programPrecompile;
 
+    private List<TransferInfo> transferInfoList;
+
     //CommonConfig commonConfig = CommonConfig.getDefault();
 
     private final SystemProperties config;
@@ -150,6 +153,14 @@ public class Program {
         this.blockchainConfig = config.getBlockchainConfig();
     }
 
+    public List<TransferInfo> getTransferInfoList() {
+        return transferInfoList;
+    }
+
+    public void setTransferInfoList(List<TransferInfo> transferInfoList) {
+        this.transferInfoList = transferInfoList;
+    }
+
     public ProgramPrecompile getProgramPrecompile() {
         if (programPrecompile == null) {
 //            if (codeHash != null && commonConfig.precompileSource() != null) {
@@ -180,8 +191,10 @@ public class Program {
 
         InternalTransaction result = null;
         if (transaction != null) {
-            //byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
-            result = getResult().addInternalTransaction(HashUtil.sha3(transaction.getData()), getCallDeep(), null,
+            byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
+
+            data = config.recordInternalTransactionsData() ? data : null;
+            result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(), senderNonce,
                     getGasPrice(), gasLimit, senderAddress, receiveAddress, value.toByteArray(), data, note);
         }
 
@@ -572,7 +585,7 @@ public class Program {
 
         if (logger.isInfoEnabled())
             logger.info(msg.getType().name() + " for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ",
-                    toHexString(contextAddress), msg.getOutDataOffs().longValue(), msg.getOutDataSize().longValue());
+                    ByteUtil.toHexString(contextAddress), msg.getOutDataOffs().longValue(), msg.getOutDataSize().longValue());
 
         Repository track = getStorage().startTracking();
 
@@ -590,7 +603,7 @@ public class Program {
         byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
 
 
-        BigInteger contextBalance = ZERO;
+        BigInteger contextBalance = BigInteger.ZERO;
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             getResult().addCallCreate(data, contextAddress,
@@ -599,6 +612,7 @@ public class Program {
         } else {
             track.addBalance(senderAddress, endowment.negate());
             contextBalance = track.addBalance(contextAddress, endowment);
+            transferInfoList.add(new TransferInfo(senderAddress, contextAddress, endowment));
         }
 
         // CREATE CALL INTERNAL TRANSACTION
@@ -615,6 +629,7 @@ public class Program {
 
             VM vm = new VM(config);
             Program program = new Program(getStorage().getCodeHash(codeAddress), programCode, programInvoke, internalTx, config);
+            program.setTransferInfoList(transferInfoList);
             vm.play(program);
             result = program.getResult();
 
@@ -623,7 +638,7 @@ public class Program {
 
             if (result.getException() != null || result.isRevert()) {
                 logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                        toHexString(contextAddress),
+                        ByteUtil.toHexString(contextAddress),
                         result.getException());
 
                 internalTx.reject();
@@ -665,12 +680,12 @@ public class Program {
 
         // 5. REFUND THE REMAIN GAS
         if (result != null) {
-            BigInteger refundGas = msg.getGas().value().subtract(toBI(result.getGasUsed()));
-            if (isPositive(refundGas)) {
+            BigInteger refundGas = msg.getGas().value().subtract(BIUtil.toBI(result.getGasUsed()));
+            if (BIUtil.isPositive(refundGas)) {
                 refundGas(refundGas.longValue(), "remaining gas from the internal call");
                 if (logger.isInfoEnabled())
                     logger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
-                            toHexString(senderAddress),
+                            ByteUtil.toHexString(senderAddress),
                             refundGas.toString());
             }
         } else {

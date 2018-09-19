@@ -33,14 +33,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     private Source<byte[], AccountState> accountStateCache;
     private Source<byte[], byte[]> codeCache;
 
-    //private Map<String, AccountState> accountStateCache;
-
-    //private Map<String, byte[]> codeCache;
-
     protected MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
-
-    //private  Map<String, Map<String, DataWord>> storageCache;
-
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
@@ -105,6 +98,14 @@ public class RepositoryImpl implements Repository<UTXO> {
             ret = createAccount(addr);
         }
         return ret;
+    }
+
+    @Override
+    public synchronized BigInteger getNonce(byte[] addr) {
+//        AccountState accountState = getAccountState(addr);
+//        return accountState == null ? config.getBlockchainConfig().getCommonConstants().getInitialNonce() :
+//                accountState.getNonce();
+        return BigInteger.ZERO;
     }
 
     @Override

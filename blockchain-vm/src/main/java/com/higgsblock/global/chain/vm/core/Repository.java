@@ -51,7 +51,13 @@ public interface Repository<ASSET> {
      */
     void delete(byte[] addr);
 
-
+    /**
+     * Get current nonce of a given account
+     *
+     * @param addr of the account
+     * @return value of the nonce
+     */
+    BigInteger getNonce(byte[] addr);
 
     /**
      * Retrieve contract details for a given account from the database

@@ -63,6 +63,11 @@ public class Storage implements Repository, ProgramListenerAware {
         return repository.getAccountState(addr);
     }
 
+    @Override
+    public BigInteger getNonce(byte[] addr) {
+        return repository.getNonce(addr);
+    }
+
     /**
      * get account local cache if not find , and find in parent cache and put local cache
      *
