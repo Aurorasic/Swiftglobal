@@ -78,7 +78,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
-        AccountState state = new AccountState(BigInteger.ZERO, addr);
+        AccountState state = new AccountState(0, BigInteger.ZERO);
         accountStateCache.put(addr, state);
         return state;
     }
@@ -104,8 +104,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized long getNonce(byte[] addr) {
         AccountState accountState = getAccountState(addr);
-        return accountState == null ? 0 :
-                accountState.getNonce();
+        return accountState == null ? 0 : accountState.getNonce();
     }
 
     @Override
