@@ -221,7 +221,7 @@ public interface Repository<ASSET> {
      * @param amount transfer amount
      * @param currency assert type
      */
-    void transfer(String from,String address ,String amount,String currency);
+    void transfer(String from,String address ,BigInteger amount,String currency);
 
     /**
      * get unSpend asset

@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -318,9 +319,12 @@ public class RepositoryImpl implements Repository<UTXO> {
      * @param currency assert type
      */
     @Override
-    public void transfer(String from, String address, String amount, String currency) {
+    public void transfer(String from, String address, BigInteger amount, String currency) {
         AccountState contractAccount = this.getAccountState(from, currency);
-        BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(amount, currency));
+        if(StringUtils.isEmpty(currency)){
+            currency = "cas";
+        }
+        BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(String.valueOf(amount), currency));
         if (contractAccount.getBalance().compareTo(gasAmount) < 0) {
             //余额不足
             throw new RuntimeException("not enough balance ");
