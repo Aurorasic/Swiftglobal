@@ -1,7 +1,10 @@
 package com.higgsblock.global.chain.vm.core;
 
+import com.higgsblock.global.chain.vm.util.FastByteComparisons;
+
 import java.math.BigInteger;
 
+import static com.higgsblock.global.chain.vm.util.HashUtil.EMPTY_DATA_HASH;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
 
 /**
@@ -10,13 +13,19 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  */
 public class AccountState {
 
+    /* A value equal to the number of transactions sent
+     * from this address, or, in the case of contract accounts,
+     * the number of contract-creations made by this account */
+    private long nonce;
+
     private  BigInteger balance;
 
     private  byte[] codeHash;
 
     private String currency;
 
-    public AccountState(BigInteger balance,byte[] codeHash,String currency){
+    public AccountState(long nonce, BigInteger balance,byte[] codeHash,String currency){
+        this.nonce = nonce;
         this.balance = balance;
         this.codeHash = codeHash;
         this.currency = currency;
@@ -27,10 +36,16 @@ public class AccountState {
         this.codeHash=codeHash;
     }
 
-
+    public AccountState withIncrementedNonce() {
+        return new AccountState(nonce+=1, balance, codeHash, currency);
+    }
 
     public AccountState withCodeHash(byte[] codeHash) {
-        return new AccountState(balance,  codeHash,currency);
+        return new AccountState(nonce, balance,  codeHash,currency);
+    }
+
+    public long getNonce() {
+        return nonce;
     }
 
     public BigInteger getBalance() {
@@ -43,11 +58,11 @@ public class AccountState {
 
     public AccountState withBalanceIncrement(BigInteger value) {
         this.balance=balance.add(value);
-        return new AccountState( balance.add(value),  codeHash,currency);
+        return new AccountState(nonce, balance.add(value),  codeHash,currency);
     }
     public AccountState withBalanceDecrement(BigInteger value) {
         this.balance=balance.subtract(value);
-        return new AccountState( balance.add(value),  codeHash,currency);
+        return new AccountState(nonce, balance.add(value),  codeHash,currency);
     }
     public String getCurrency() {
         return currency;
@@ -84,5 +99,10 @@ public class AccountState {
             }
         }
         return length1 - length2;
+    }
+
+    public boolean isContractExist() {
+        return !FastByteComparisons.equal(codeHash, EMPTY_DATA_HASH) ||
+                nonce != 0;
     }
 }

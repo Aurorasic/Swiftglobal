@@ -38,12 +38,13 @@ public class InternalTransaction extends Transaction {
     private int index;
     private boolean rejected = false;
     private String note;
+    private long nonce;
 
     public InternalTransaction(byte[] rawData) {
 //        super(rawData);
     }
 
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+    public InternalTransaction(byte[] parentHash, int deep, int index, long nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
         //super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
@@ -54,6 +55,7 @@ public class InternalTransaction extends Transaction {
         //this.sendAddress = nullToEmpty(sendAddress);
         this.note = note;
         //this.parsed = true;
+        this.nonce = nonce;
     }
 
     private static byte[] getData(DataWord gasPrice) {
@@ -96,7 +98,11 @@ public class InternalTransaction extends Transaction {
         return parentHash;
     }
 
-//    @Override
+    public long getNonce() {
+        return nonce;
+    }
+
+    //    @Override
 //    public byte[] getEncoded() {
 //        if (rlpEncoded == null) {
 //

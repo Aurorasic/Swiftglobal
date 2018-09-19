@@ -20,10 +20,7 @@ package com.higgsblock.global.chain.vm.program;
 import com.higgsblock.global.chain.vm.*;
 import com.higgsblock.global.chain.vm.api.TransferInfo;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
-import com.higgsblock.global.chain.vm.core.ContractDetails;
-import com.higgsblock.global.chain.vm.core.Repository;
-import com.higgsblock.global.chain.vm.core.SystemProperties;
-import com.higgsblock.global.chain.vm.core.Transaction;
+import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactory;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -186,15 +183,13 @@ public class Program {
         return invoke.getCallDeep();
     }
 
-    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, byte[] senderAddress, byte[] receiveAddress,
+    private InternalTransaction addInternalTx(long nonce, DataWord gasLimit, byte[] senderAddress, byte[] receiveAddress,
                                               BigInteger value, byte[] data, String note) {
 
         InternalTransaction result = null;
         if (transaction != null) {
-            byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
-
             data = config.recordInternalTransactionsData() ? data : null;
-            result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(), senderNonce,
+            result = getResult().addInternalTransaction(transaction.getHash(), getCallDeep(), nonce,
                     getGasPrice(), gasLimit, senderAddress, receiveAddress, value.toByteArray(), data, note);
         }
 
@@ -403,7 +398,7 @@ public class Program {
                     toHexString(obtainer),
                     balance);
 
-        addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
+        addInternalTx(getStorage().getNonce(owner), null, owner, obtainer, balance, null, "suicide");
 
         if (FastByteComparisons.compareTo(owner, 0, 20, obtainer, 0, 20) == 0) {
             // if owner == obtainer just zeroing account according to Yellow Paper
@@ -421,142 +416,141 @@ public class Program {
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
-//        returnDataBuffer = null; // reset return buffer right before the call
-//
-//        if (getCallDeep() == MAX_DEPTH) {
-//            stackPushZero();
-//            return;
-//        }
-//
-//        byte[] senderAddress = this.getOwnerAddress().getLast20Bytes();
-//        BigInteger endowment = value.value();
-//        if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
-//            stackPushZero();
-//            return;
-//        }
-//
-//        // [1] FETCH THE CODE FROM THE MEMORY
-//        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
-//
-//        if (logger.isInfoEnabled())
-//            logger.info("creating a new contract inside contract run: [{}]", toHexString(senderAddress));
-//
-//        BlockchainConfig blockchainConfig = config.getBlockchainConfig().getConfigForBlock(getNumber().longValue());
-//        //  actual gas subtract
-//        DataWord gasLimit = blockchainConfig.getCreateGas(getGas());
-//        spendGas(gasLimit.longValue(), "internal call");
-//
-//        // [2] CREATE THE CONTRACT ADDRESS
-//        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
-//        byte[] newAddress = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
-//
-//        AccountState existingAddr = getStorage().getAccountState(newAddress);
-//        boolean contractAlreadyExists = existingAddr != null && existingAddr.isContractExist(blockchainConfig);
-//
-//        if (byTestingSuite()) {
-//            // This keeps track of the contracts created for a test
-//            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
-//                    gasLimit.getNoLeadZeroesData(),
-//                    value.getNoLeadZeroesData());
-//        }
-//
-//        // [3] UPDATE THE NONCE
-//        // (THIS STAGE IS NOT REVERTED BY ANY EXCEPTION)
-//        if (!byTestingSuite()) {
-//            getStorage().increaseNonce(senderAddress);
-//        }
-//
-//        Repository track = getStorage().startTracking();
-//
-//        //In case of hashing collisions, check for any balance before createAccount()
-//        BigInteger oldBalance = track.getBalance(newAddress);
-//        track.createAccount(newAddress);
-//        if (blockchainConfig.eip161()) {
-//            track.increaseNonce(newAddress);
-//        }
-//        track.addBalance(newAddress, oldBalance);
-//
-//        // [4] TRANSFER THE BALANCE
-//        BigInteger newBalance = ZERO;
-//        if (!byTestingSuite()) {
-//            track.addBalance(senderAddress, endowment.negate());
-//            newBalance = track.addBalance(newAddress, endowment);
-//        }
-//
-//
-//        // [5] COOK THE INVOKE AND EXECUTE
-//        InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, null, endowment, programCode, "create");
-//        ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-//                this, new DataWord(newAddress), getOwnerAddress(), value, gasLimit,
-//                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
-//
-//        ProgramResult result = ProgramResult.createEmpty();
-//
-//        if (contractAlreadyExists) {
-//            result.setException(new BytecodeExecutionException("Trying to create a contract with existing contract address: 0x" + toHexString(newAddress)));
-//        } else if (isNotEmpty(programCode)) {
-//            VM vm = new VM(config);
-//            Program program = new Program(programCode, programInvoke, internalTx, config).withCommonConfig(commonConfig);
-//            vm.play(program);
-//            result = program.getResult();
-//        }
-//
-//        // 4. CREATE THE CONTRACT OUT OF RETURN
-//        byte[] code = result.getHReturn();
-//
-//        long storageCost = getLength(code) * getBlockchainConfig().getGasCost().getCREATE_DATA();
-//        long afterSpend = programInvoke.getGas().longValue() - storageCost - result.getGasUsed();
-//        if (afterSpend < 0) {
-//            if (!blockchainConfig.getConstants().createEmptyContractOnOOG()) {
-//                result.setException(Program.Exception.notEnoughSpendingGas("No gas to return just created contract",
-//                        storageCost, this));
-//            } else {
-//                track.saveCode(newAddress, EMPTY_BYTE_ARRAY);
-//            }
-//        } else if (getLength(code) > blockchainConfig.getConstants().getMAX_CONTRACT_SZIE()) {
-//            result.setException(Program.Exception.notEnoughSpendingGas("Contract size too large: " + getLength(result.getHReturn()),
-//                    storageCost, this));
-//        } else if (!result.isRevert()){
-//            result.spendGas(storageCost);
-//            track.saveCode(newAddress, code);
-//        }
-//
-//        getResult().merge(result);
-//
-//        if (result.getException() != null || result.isRevert()) {
-//            logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-//                    toHexString(newAddress),
-//                    result.getException());
-//
-//            internalTx.reject();
-//            result.rejectInternalTransactions();
-//
-//            track.rollback();
-//            stackPushZero();
-//
-//            if (result.getException() != null) {
-//                return;
-//            } else {
-//                returnDataBuffer = result.getHReturn();
-//            }
-//        } else {
-//            if (!byTestingSuite())
-//                track.commit();
-//
-//            // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-//            stackPush(new DataWord(newAddress));
-//        }
-//
-//        // 5. REFUND THE REMAIN GAS
-//        long refundGas = gasLimit.longValue() - result.getGasUsed();
-//        if (refundGas > 0) {
-//            refundGas(refundGas, "remain gas from the internal call");
-//            if (logger.isInfoEnabled()) {
-//                logger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-//                        toHexString(getOwnerAddress().getLast20Bytes()),
-//                        refundGas);
-//            }
-//        }
+        returnDataBuffer = null; // reset return buffer right before the call
+
+        if (getCallDeep() == MAX_DEPTH) {
+            stackPushZero();
+            return;
+        }
+
+        byte[] senderAddress = this.getOwnerAddress().getLast20Bytes();
+        BigInteger endowment = value.value();
+        if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
+            stackPushZero();
+            return;
+        }
+
+        // [1] FETCH THE CODE FROM THE MEMORY
+        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+
+        if (logger.isInfoEnabled())
+            logger.info("creating a new contract inside contract run: [{}]", toHexString(senderAddress));
+
+        //  actual gas subtract
+        DataWord gasLimit = getGas();
+        spendGas(gasLimit.longValue(), "internal call");
+
+        // [2] CREATE THE CONTRACT ADDRESS
+        long nonce = getStorage().getNonce(senderAddress);
+        byte[] newAddress = HashUtil.calcNewAddress(getOwnerAddress().getLast20Bytes(), nonce);
+
+        AccountState existingAddr = getStorage().getAccountState(newAddress);
+        boolean contractAlreadyExists = existingAddr != null && existingAddr.isContractExist();
+
+        if (byTestingSuite()) {
+            // This keeps track of the contracts created for a test
+            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
+                    gasLimit.getNoLeadZeroesData(),
+                    value.getNoLeadZeroesData());
+        }
+
+        // [3] UPDATE THE NONCE
+        // (THIS STAGE IS NOT REVERTED BY ANY EXCEPTION)
+        if (!byTestingSuite()) {
+            getStorage().increaseNonce(senderAddress);
+        }
+
+        Repository track = getStorage().startTracking();
+
+        //In case of hashing collisions, check for any balance before createAccount()
+        BigInteger oldBalance = track.getBalance(newAddress);
+        track.createAccount(newAddress);
+        if (blockchainConfig.eip161()) {
+            track.increaseNonce(newAddress);
+        }
+        track.addBalance(newAddress, oldBalance);
+
+        // [4] TRANSFER THE BALANCE
+        BigInteger newBalance = ZERO;
+        if (!byTestingSuite()) {
+            track.addBalance(senderAddress, endowment.negate());
+            newBalance = track.addBalance(newAddress, endowment);
+        }
+
+
+        // [5] COOK THE INVOKE AND EXECUTE
+        InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, null, endowment, programCode, "create");
+        ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
+                this, new DataWord(newAddress), getOwnerAddress(), value, gasLimit,
+                newBalance, null, track, false, byTestingSuite());
+
+        ProgramResult result = ProgramResult.createEmpty();
+
+        if (contractAlreadyExists) {
+            result.setException(new BytecodeExecutionException("Trying to create a contract with existing contract address: 0x" + toHexString(newAddress)));
+        } else if (isNotEmpty(programCode)) {
+            VM vm = new VM(config);
+            Program program = new Program(programCode, programInvoke, internalTx, config);
+            vm.play(program);
+            result = program.getResult();
+        }
+
+        // 4. CREATE THE CONTRACT OUT OF RETURN
+        byte[] code = result.getHReturn();
+
+        long storageCost = getLength(code) * getBlockchainConfig().getGasCost().getCREATE_DATA();
+        long afterSpend = programInvoke.getGas().longValue() - storageCost - result.getGasUsed();
+        if (afterSpend < 0) {
+            if (!blockchainConfig.getConstants().createEmptyContractOnOOG()) {
+                result.setException(Program.Exception.notEnoughSpendingGas("No gas to return just created contract",
+                        storageCost, this));
+            } else {
+                track.saveCode(newAddress, EMPTY_BYTE_ARRAY);
+            }
+        } else if (getLength(code) > blockchainConfig.getConstants().getMAX_CONTRACT_SZIE()) {
+            result.setException(Program.Exception.notEnoughSpendingGas("Contract size too large: " + getLength(result.getHReturn()),
+                    storageCost, this));
+        } else if (!result.isRevert()){
+            result.spendGas(storageCost);
+            track.saveCode(newAddress, code);
+        }
+
+        getResult().merge(result);
+
+        if (result.getException() != null || result.isRevert()) {
+            logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                    toHexString(newAddress),
+                    result.getException());
+
+            internalTx.reject();
+            result.rejectInternalTransactions();
+
+            track.rollback();
+            stackPushZero();
+
+            if (result.getException() != null) {
+                return;
+            } else {
+                returnDataBuffer = result.getHReturn();
+            }
+        } else {
+            if (!byTestingSuite())
+                track.commit();
+
+            // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
+            stackPush(new DataWord(newAddress));
+        }
+
+        // 5. REFUND THE REMAIN GAS
+        long refundGas = gasLimit.longValue() - result.getGasUsed();
+        if (refundGas > 0) {
+            refundGas(refundGas, "remain gas from the internal call");
+            if (logger.isInfoEnabled()) {
+                logger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
+                        toHexString(getOwnerAddress().getLast20Bytes()),
+                        refundGas);
+            }
+        }
     }
 
     /**
@@ -616,7 +610,8 @@ public class Program {
         }
 
         // CREATE CALL INTERNAL TRANSACTION
-        InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, data, "call");
+        InternalTransaction internalTx = addInternalTx(getStorage().getNonce(senderAddress),
+                getGasLimit(), senderAddress, contextAddress, endowment, data, "call");
 
         ProgramResult result = null;
         if (isNotEmpty(programCode)) {

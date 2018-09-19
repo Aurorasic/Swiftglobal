@@ -48,11 +48,16 @@ public class RepositoryMockImpl implements Repository {
     }
 
     @Override
-    public BigInteger getNonce(byte[] addr) {
-//        AccountState accountState = getAccountState(addr);
-//        return accountState == null ? config.getBlockchainConfig().getCommonConstants().getInitialNonce() :
-//                accountState.getNonce();
-        return BigInteger.ZERO;
+    public long getNonce(byte[] addr) {
+        AccountState accountState = getAccountState(addr);
+        return accountState == null ? 0 : accountState.getNonce();
+    }
+
+    @Override
+    public long increaseNonce(byte[] addr) {
+        AccountState accountState = getOrCreateAccountState(addr);
+        accountStateCache.put(addr, accountState.withIncrementedNonce());
+        return accountState.getNonce();
     }
 
     public RepositoryMockImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,

@@ -18,10 +18,7 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.core.AccountDetail;
-import com.higgsblock.global.chain.vm.core.AccountState;
-import com.higgsblock.global.chain.vm.core.Block;
-import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
@@ -64,8 +61,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public BigInteger getNonce(byte[] addr) {
+    public long getNonce(byte[] addr) {
         return repository.getNonce(addr);
+    }
+
+    @Override
+    public long increaseNonce(byte[] addr) {
+        return repository.increaseNonce(addr);
     }
 
     /**
@@ -87,7 +89,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Source<DataWord, DataWord> getContractDetails(byte[] addr) {
+    public ContractDetails getContractDetails(byte[] addr) {
         return repository.getContractDetails(addr);
     }
 
