@@ -31,7 +31,10 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
-
+    /**
+     * key: contract address
+     * value: account obj
+     */
     private Source<byte[], AccountState> accountStateCache;
     private Source<byte[], byte[]> codeCache;
 
@@ -39,8 +42,6 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
-
-    Map<byte[], AccountState> accountStates = new HashMap<>();
 
     List<AccountDetail> accountDetails = new ArrayList<>();
 
@@ -442,7 +443,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         if (accountState == null && parent != null) {
             accountState = parent.getAccountState(address, currency);
-            accountStates.put(address, accountState);
+            accountStateCache.put(address, accountState);
             return accountState;
         }
 
@@ -459,7 +460,7 @@ public class RepositoryImpl implements Repository<UTXO> {
                 accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
             }
         }
-        accountStates.put(address, accountState);
+        accountStateCache.put(address, accountState);
         return accountState;
     }
 
