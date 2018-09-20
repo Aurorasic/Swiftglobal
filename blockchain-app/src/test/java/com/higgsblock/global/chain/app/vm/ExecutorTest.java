@@ -28,6 +28,7 @@ import java.util.Set;
  */
 public class ExecutorTest {
     private Executor executor;
+    private Repository transactionRepository;
 
     @Before
     public void setUp() {
@@ -131,7 +132,7 @@ public class ExecutorTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-        Repository transactionRepository  = new RepositoryImpl();
+       transactionRepository  = new RepositoryImpl();
 
         executor = new Executor(transactionRepository, executionEnvironment);
     }
@@ -140,12 +141,15 @@ public class ExecutorTest {
     public void testExecute() {
         ExecutionResult executionResult = executor.execute();
 
+
         // 45 is used for ops fee.
         //Assert.assertEquals(45, executionResult.getGasUsed().intValue());
         //constructor has no payable modifier, check fails.
       //  Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
     //    Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
        System.out.println("部署合约代码"+Hex.toHexString(executionResult.getResult()));
+
+        transactionRepository.flush();
     }
 
     @After

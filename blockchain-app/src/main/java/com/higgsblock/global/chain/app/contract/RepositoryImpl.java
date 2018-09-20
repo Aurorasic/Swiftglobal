@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 
@@ -41,6 +42,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Autowired
     protected SystemProperties config = SystemProperties.getDefault();
 
+    List<AbstractCachedSource<byte[], ?>> writeCaches = new ArrayList<>();
+
     Map<byte[], AccountState> accountStates = new HashMap<>();
 
     List<AccountDetail> accountDetails = new ArrayList<>();
@@ -55,14 +58,19 @@ public class RepositoryImpl implements Repository<UTXO> {
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
 
-        WriteCache.BytesKey<byte[]> ret = new WriteCache.BytesKey<>(
+        WriteCache.BytesKey<byte[]> cache = new WriteCache.BytesKey<>(
                 new BatchSourceWriter<>(dbSource), WriteCache.CacheType.SIMPLE);
-        ret.setFlushSource(true);
+        cache.setFlushSource(true);
 
-        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey(ret,
-                WriteCache.CacheType.SIMPLE);
-        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(ret, WriteCache.CacheType.SIMPLE);
-        MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(dbSource) {
+        Source<byte[], byte[]> accounts = new XorDataSource<>(cache, HashUtil.sha3("account".getBytes()));
+        Source<byte[], byte[]> codes = new XorDataSource<>(cache, HashUtil.sha3("code".getBytes()));
+        Source<byte[], byte[]> storages = new XorDataSource<>(cache, HashUtil.sha3("storage".getBytes()));
+
+        writeCaches.add(cache);
+
+        Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accounts, WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> codeCache = new ReadWriteCache.BytesKey<>(codes, WriteCache.CacheType.SIMPLE);
+        MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(storages) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
                 return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
@@ -225,13 +233,17 @@ public class RepositoryImpl implements Repository<UTXO> {
     public void flush() {
 
         //flush UTXO
-        parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
+        //parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
 
         //flush storage
         //parent.storageCache.putAll(this.storageCache);
 
         //flush codeCache
         //parent.codeCache.putAll(this.codeCache);
+
+        writeCaches.stream().forEach(writeCache->{
+            writeCache.flush();
+        });
     }
 
     @Override
