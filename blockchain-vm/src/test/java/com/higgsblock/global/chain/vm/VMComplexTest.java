@@ -83,8 +83,8 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, codeKey);
-                //.withCodeHash(codeKey);
+        AccountState accountState = new AccountState(0, BigInteger.ZERO)
+                .withCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);

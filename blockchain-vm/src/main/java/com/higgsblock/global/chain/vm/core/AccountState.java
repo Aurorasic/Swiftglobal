@@ -31,9 +31,8 @@ public class AccountState {
         this.currency = currency;
     }
 
-    public AccountState(BigInteger balance,byte[] codeHash){
-        this.balance=balance;
-        this.codeHash=codeHash;
+    public AccountState(long nonce, BigInteger balance){
+        this(nonce, balance, EMPTY_DATA_HASH, "");
     }
 
     public AccountState withIncrementedNonce() {

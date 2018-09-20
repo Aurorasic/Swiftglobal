@@ -7,9 +7,9 @@ import java.math.BigInteger;
  * @date 2018-09-19
  */
 public class TransferInfo {
-    byte[] from;
-    byte[] to;
-    BigInteger value;
+    private byte[] from;
+    private byte[] to;
+    private BigInteger value;
 
     public TransferInfo(byte[] from, byte[] to, BigInteger value) {
         this.from = from;

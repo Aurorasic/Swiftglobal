@@ -77,7 +77,7 @@ public class RepositoryMockImpl implements Repository {
 
     @Override
     public synchronized AccountState createAccount(byte[] addr) {
-        AccountState state = new AccountState(BigInteger.ZERO,addr);
+        AccountState state = new AccountState(0, BigInteger.ZERO);
         accountStateCache.put(addr, state);
         return state;
     }
