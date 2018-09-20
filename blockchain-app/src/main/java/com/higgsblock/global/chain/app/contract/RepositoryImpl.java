@@ -8,12 +8,10 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
-import com.higgsblock.global.chain.vm.util.ByteUtil;
-import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import com.higgsblock.global.chain.vm.util.HashUtil;
-import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import com.higgsblock.global.chain.vm.util.*;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.SerializationUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
@@ -56,13 +54,15 @@ public class RepositoryImpl implements Repository<UTXO> {
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
 
-        WriteCache.BytesKey<byte[]> ret = new WriteCache.BytesKey<>(
-                new BatchSourceWriter<>(dbSource), WriteCache.CacheType.SIMPLE);
+        BatchSourceWriter writer = new BatchSourceWriter<>(dbSource);
+        writer.setFlushSource(true);
+        WriteCache.BytesKey<byte[]> ret = new WriteCache.BytesKey<>(writer, WriteCache.CacheType.SIMPLE);
         ret.setFlushSource(true);
 
         Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey(ret,
                 WriteCache.CacheType.SIMPLE);
         Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(ret, WriteCache.CacheType.SIMPLE);
+
         MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(dbSource) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
@@ -486,6 +486,21 @@ public class RepositoryImpl implements Repository<UTXO> {
             Map<DataWord, DataWord> storage = new HashMap<>();
 
             return storage;
+        }
+    }
+
+
+    /**
+     *  No conversion
+     */
+    public static class Identity<T> implements Serializer<T, T> {
+        @Override
+        public T serialize(T object) {
+            return object;
+        }
+        @Override
+        public T deserialize(T stream) {
+            return stream;
         }
     }
 }

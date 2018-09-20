@@ -25,6 +25,7 @@ import com.higgsblock.global.chain.vm.util.FileUtil;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
@@ -50,7 +51,7 @@ public class LevelDbDataSource implements DbSource<byte[]> {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
 
-    @Autowired
+
     SystemProperties config  = SystemProperties.getDefault(); // initialized for standalone test
 
     String name;
@@ -251,10 +252,12 @@ public class LevelDbDataSource implements DbSource<byte[]> {
 
     private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
+            System.out.println();
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
                 if (entry.getValue() == null) {
                     batch.delete(entry.getKey());
                 } else {
+                    System.out.println("xxxxxxxx"+ Hex.toHexString(entry.getKey()));
                     batch.put(entry.getKey(), entry.getValue());
                 }
             }

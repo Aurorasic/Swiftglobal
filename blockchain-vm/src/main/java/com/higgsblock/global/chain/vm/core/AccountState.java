@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import static com.higgsblock.global.chain.vm.util.HashUtil.EMPTY_DATA_HASH;
@@ -11,7 +12,7 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  * @author tangkun
  * @date 2018-09-06
  */
-public class AccountState {
+public class AccountState implements Serializable{
 
     /* A value equal to the number of transactions sent
      * from this address, or, in the case of contract accounts,
