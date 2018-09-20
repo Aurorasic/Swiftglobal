@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
+import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
 import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
@@ -48,7 +49,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     public RepositoryImpl() {
 
-        Source dbSource = new HashMapDB<byte[]>();
+        //Source dbSource = new HashMapDB<byte[]>();
+        DbSource<byte[]> dbSource = new LevelDbDataSource();
+        dbSource.setName("contract");
+        dbSource.init(DbSettings.DEFAULT);
+
         Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey<>(dbSource,
                 WriteCache.CacheType.SIMPLE);
         Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(dbSource, WriteCache.CacheType.SIMPLE);
