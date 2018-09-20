@@ -39,10 +39,10 @@ public interface Repository<ASSET> {
 
     /**
      * get account local cache if not find , and find in parent cache and put local cache
-     * @param address account address
+     * @param addr account address
      * @return
      */
-    AccountState getAccountState(String addr,String currency);
+    AccountState getAccountState(byte[] addr,String currency);
 
     /**
      * Deletes the account
@@ -230,21 +230,21 @@ public interface Repository<ASSET> {
      * @param amount transfer amount
      * @param currency assert type
      */
-    void transfer(String from,String address ,BigInteger amount,String currency);
+    void transfer(byte[] from,byte[] address ,BigInteger amount,String currency);
 
     /**
      * get unSpend asset
      * @param address
      * @return
      */
-    List<ASSET> getUnSpendAsset(String address);
+    List<ASSET> getUnSpendAsset(byte[] address);
 
     /**
      * get spend asset
      * @param address
      * @return
      */
-    List<ASSET> getSpendAsset(String address);
+    List<ASSET> getSpendAsset(byte[] address);
 
     /**
      * merge utxo
@@ -261,7 +261,7 @@ public interface Repository<ASSET> {
      * @param currency
      * @return
      */
-    AccountState createAccountState(String address,BigInteger balance,String currency);
+    AccountState createAccountState(byte[] address,BigInteger balance,String currency);
 
     List<AccountDetail> getAccountDetails();
 

@@ -84,7 +84,7 @@ public class Executor {
     private ExecutionResult createContract() {
         contractRepository.createAccount(contractAddress);
         //contractRepository.addBalance(contractAddress, convertToBigInteger(value));
-        transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
+        //transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
         touchedAccountAddresses.add(contractAddress);
 
         VM vm = new VM(systemProperties);
@@ -107,6 +107,7 @@ public class Executor {
                     programResult.setException(
                             Program.Exception.notEnoughSpendingGas("Contract size too large: " + ArrayUtils.getLength(programResult.getHReturn()), contractSaveGas, program));
                 } else {
+                    programResult.spendGas(contractSaveGas);
                     executionResult.spendGas(convertToBigInteger(contractSaveGas));
                     contractRepository.saveCode(contractAddress, programResult.getHReturn());
                 }

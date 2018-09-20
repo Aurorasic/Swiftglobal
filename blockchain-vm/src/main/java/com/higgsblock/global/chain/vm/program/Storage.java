@@ -79,7 +79,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public AccountState getAccountState(String address, String currency) {
+    public AccountState getAccountState(byte[] address, String currency) {
         return null;
     }
 
@@ -221,7 +221,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @param currency assert type
      */
     @Override
-    public void transfer(String from, String address, BigInteger amount, String currency) {
+    public void transfer(byte[] from, byte[] address, BigInteger amount, String currency) {
 
     }
 
@@ -232,7 +232,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public List getUnSpendAsset(String address) {
+    public List getUnSpendAsset(byte[] address) {
         return null;
     }
 
@@ -243,7 +243,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public List getSpendAsset(String address) {
+    public List getSpendAsset(byte[] address) {
         return null;
     }
 
@@ -266,7 +266,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public AccountState createAccountState(String address, BigInteger balance, String currency) {
+    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
         return null;
     }
 

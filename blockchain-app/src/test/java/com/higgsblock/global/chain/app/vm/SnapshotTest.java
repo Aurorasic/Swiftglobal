@@ -9,10 +9,12 @@ import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.contract.RepositoryImpl;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.core.Repository;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
@@ -34,17 +36,17 @@ public class SnapshotTest {
         Repository txR = parent.startTracking();
         //三级缓存
         Repository conR = txR.startTracking();
-        String from = "1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV",
-         amount="10", currency="cas";
-        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2",BigInteger.valueOf(10),currency);
-        conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3",BigInteger.valueOf(20),currency);
+        byte[] from = AddrUtil.toContractAddr("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV");
+        String amount="10", currency="cas";
+        //conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2",BigInteger.valueOf(10),currency);
+        //conR.transfer(from,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3",BigInteger.valueOf(20),currency);
 
         System.out.println(conR.getAccountState(from,currency).getBalance());
 
         //检查input>=outputs
 
 //        List<UTXO>
-        ContractTransaction internalTx =  Helpers.buildContractTransaction(Helpers.buildTestUTXO(from),
+        ContractTransaction internalTx =  Helpers.buildContractTransaction(Helpers.buildTestUTXO(""+from),
                 conR.getAccountState(from,currency),conR.getAccountDetails());
 
 
@@ -56,16 +58,16 @@ public class SnapshotTest {
             unSpendUTXO.add(utxo);
         }
 
-        conR.mergeUTXO(Helpers.buildTestUTXO(from),unSpendUTXO);
+        conR.mergeUTXO(Helpers.buildTestUTXO(""+from),unSpendUTXO);
 
         conR.flush();
         txR.flush();
 
-        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
-        parent.getSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
-
-        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
-        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+//        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+//        parent.getSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZxV").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+//
+//        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
+//        parent.getUnSpendAsset("1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3").forEach(item -> System.out.println(((UTXO)item).getOutput().getMoney().getValue()));
 
 
         //刷新

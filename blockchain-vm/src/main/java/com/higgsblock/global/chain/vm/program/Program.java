@@ -606,7 +606,7 @@ public class Program {
         } else {
           //  track.addBalance(senderAddress, endowment.negate());
            // contextBalance = track.addBalance(contextAddress, endowment);
-            track.transfer(Hex.toHexString(senderAddress),Hex.toHexString(codeAddress),endowment,null);
+            track.transfer(senderAddress,codeAddress,endowment,null);
             transferInfoList.add(new TransferInfo(senderAddress, contextAddress, endowment));
         }
 

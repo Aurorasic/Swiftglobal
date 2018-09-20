@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.vm.api;
 
+import com.alibaba.fastjson.JSON;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.LogInfo;
 import com.higgsblock.global.chain.vm.program.InternalTransaction;
@@ -107,5 +108,10 @@ public class ExecutionResult {
 
     public void setTransferInfoList(List<TransferInfo> transferInfoList) {
         this.transferInfoList = transferInfoList;
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 }
