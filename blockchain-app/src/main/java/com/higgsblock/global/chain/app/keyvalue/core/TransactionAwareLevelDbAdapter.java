@@ -62,18 +62,14 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("try to get a WriteLock");
         writeLock.lock();
         LOGGER.debug("get a WriteLock");
-        try {
-            if (transactionHolder == 0) {
-                String batchNo = newBatchNo();
-                addBatchNos(batchNo);
-                writeBatch = writeBatchMap.computeIfAbsent(batchNo, keyspace -> batchAdapter.createWriteBatch(batchNo));
-                transactionHolder = 1;
-                isAutoCommit = false;
-            } else {
-                transactionHolder++;
-            }
-        } catch (Exception e) {
-            rollbackTransaction();
+        if (transactionHolder == 0) {
+            String batchNo = newBatchNo();
+            addBatchNos(batchNo);
+            writeBatch = writeBatchMap.computeIfAbsent(batchNo, keyspace -> batchAdapter.createWriteBatch(batchNo));
+            transactionHolder = 1;
+            isAutoCommit = false;
+        } else {
+            transactionHolder++;
         }
     }
 
