@@ -1,17 +1,14 @@
 package com.higgsblock.global.chain.app.keyvalue.db;
 
-import com.google.common.base.Equivalence;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import com.higgsblock.global.chain.app.keyvalue.core.KeyValueAdapterUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.iq80.leveldb.WriteBatch;
+import org.iq80.leveldb.impl.WriteBatchImpl;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +18,7 @@ import java.util.Map;
 public class LevelDbWriteBatch implements ILevelDbWriteBatch {
 
     private String batchNo;
-    private Map<Serializable, List<DataItem>> map = Maps.newConcurrentMap();
+    private Table<Serializable, Serializable, Object> table = HashBasedTable.create();
 
     public LevelDbWriteBatch() {
     }
@@ -36,76 +33,68 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
     }
 
     @Override
-    public Object get(Serializable key, Serializable keyspace) {
-        List<DataItem> data = getData(keyspace);
-        DataItem item = null;
-        for (int i = data.size() - 1; i >= 0; i--) {
-            item = data.get(i);
-            if (Equivalence.equals().equivalent(key, item.getKey())) {
-                return item.getValue();
-            }
-        }
-        return null;
+    public boolean contains(Serializable id, Serializable keyspace) {
+        return table.contains(keyspace, id);
     }
 
     @Override
-    public void put(Serializable key, Object item, Serializable keyspace) {
-        getData(keyspace).add(new DataItem(keyspace, key, item));
+    public Object get(Serializable id, Serializable keyspace) {
+        return table.get(keyspace, id);
     }
 
     @Override
-    public void delete(Serializable key, Serializable keyspace) {
-        getData(keyspace).add(new DataItem(keyspace, key, null));
+    public void put(Serializable id, Object item, Serializable keyspace) {
+        table.put(keyspace, id, item);
     }
 
     @Override
-    public WriteBatch wrapper(WriteBatch writeBatch) {
-        copy().forEach(item -> {
-            byte[] key = SerializationUtils.serialize(KeyValueAdapterUtils.getInternalKey(item.getKeyspace(), item.getKey()));
-            byte[] value = SerializationUtils.serialize(KeyValueAdapterUtils.toJsonString(item.getValue()));
-            if (null == value) {
-                writeBatch.delete(key);
-            } else {
-                writeBatch.put(key, value);
-            }
-        });
-        return writeBatch;
+    public void delete(Serializable id, Serializable keyspace) {
+        table.put(keyspace, id, null);
     }
 
     @Override
-    public List<DataItem> copy(Serializable keyspace) {
-        return Lists.newArrayList(getData(keyspace));
-    }
-
-    @Override
-    public List<DataItem> copy() {
-        LinkedList<DataItem> list = Lists.newLinkedList();
-        for (List<DataItem> items : map.values()) {
-            list.addAll(items);
-        }
-        return list;
+    public Map<Serializable, Object> copy(Serializable keyspace) {
+        return Maps.newHashMap(table.row(keyspace));
     }
 
     @Override
     public void clear() {
-        map.clear();
+        table.clear();
     }
 
     @Override
-    public List<ILevelDbWriteBatch> splitByKeyspace() {
-        List<ILevelDbWriteBatch> list = Lists.newLinkedList();
-        ILevelDbWriteBatch batch = null;
-        for (Map.Entry<Serializable, List<DataItem>> entry : map.entrySet()) {
-            batch = new LevelDbWriteBatch(String.valueOf(entry.getKey()));
-            for (DataItem item : entry.getValue()) {
-                batch.put(item.getKey(), item.getValue(), item.getKeyspace());
+    public WriteBatch wrapperAll() {
+        WriteBatch batch = new WriteBatchImpl();
+        byte[] key = null;
+        byte[] value = null;
+        for (Table.Cell<Serializable, Serializable, Object> cell : table.cellSet()) {
+            key = SerializationUtils.serialize(KeyValueAdapterUtils.getBatchKey(cell.getRowKey(), cell.getColumnKey(), batchNo));
+            value = SerializationUtils.serialize(KeyValueAdapterUtils.toJsonString(cell.getValue()));
+            if (null == value) {
+                batch.delete(key);
+            } else {
+                batch.put(key, value);
             }
-            list.add(batch);
         }
-        return list;
+        return batch;
     }
 
-    private List<DataItem> getData(Serializable keyspace) {
-        return map.computeIfAbsent(keyspace, (Function<Serializable, List<DataItem>>) input -> Collections.synchronizedList(Lists.newLinkedList()));
+    @Override
+    public Map<Serializable, WriteBatch> wrapperByKeyspace() {
+        Map<Serializable, WriteBatch> map = Maps.newHashMap();
+        WriteBatch batch = null;
+        byte[] key = null;
+        byte[] value = null;
+        for (Table.Cell<Serializable, Serializable, Object> cell : table.cellSet()) {
+            batch = map.computeIfAbsent(cell.getRowKey(), serializable -> new WriteBatchImpl());
+            key = SerializationUtils.serialize(cell.getColumnKey());
+            value = SerializationUtils.serialize(KeyValueAdapterUtils.toJsonString(cell.getValue()));
+            if (null == value) {
+                batch.delete(key);
+            } else {
+                batch.put(key, value);
+            }
+        }
+        return map;
     }
 }

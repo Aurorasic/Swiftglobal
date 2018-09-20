@@ -1,13 +1,16 @@
 package com.higgsblock.global.chain.app.keyvalue.core;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import org.iq80.leveldb.WriteBatch;
 import org.springframework.data.keyvalue.core.AbstractKeyValueAdapter;
 import org.springframework.data.keyvalue.core.KeyValueAdapter;
 import org.springframework.data.keyvalue.core.QueryEngine;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +28,35 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
     protected BaseKeyValueAdapter(QueryEngine<? extends KeyValueAdapter, ?, ?> engine) {
         super(engine);
     }
+
+    @Override
+    public boolean contains(Serializable id, Serializable keyspace) {
+        return null != get(id, keyspace);
+    }
+
+    @Override
+    public Iterable<?> getAllOf(Serializable keyspace) {
+        List<Object> list = Lists.newLinkedList();
+        entries(keyspace).forEachRemaining(entry -> list.add(entry.getValue()));
+        return list;
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public long count(Serializable keyspace) {
+        return Lists.newArrayList(entries(keyspace)).size();
+    }
+
+    @Override
+    public void destroy() throws Exception {
+
+    }
+
+    public abstract void write(Serializable keyspace, WriteBatch writeBatch);
 
     @Override
     public Collection<Serializable> addIndex(String indexName, Serializable index, Serializable id, Serializable keyspace) {

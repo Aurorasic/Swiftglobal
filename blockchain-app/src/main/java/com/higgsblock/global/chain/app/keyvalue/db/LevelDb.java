@@ -77,14 +77,12 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
     }
 
     @Override
-    public void write(ILevelDbWriteBatch updates) throws DBException {
-        WriteBatch batch = updates.wrapper(db.createWriteBatch());
+    public void write(WriteBatch batch) throws DBException {
         db.write(batch);
     }
 
     @Override
-    public Snapshot write(ILevelDbWriteBatch updates, WriteOptions options) throws DBException {
-        WriteBatch batch = updates.wrapper(db.createWriteBatch());
+    public Snapshot write(WriteBatch batch, WriteOptions options) throws DBException {
         return db.write(batch, options);
     }
 

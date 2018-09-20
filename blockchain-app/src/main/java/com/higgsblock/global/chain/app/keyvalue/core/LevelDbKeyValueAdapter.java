@@ -5,14 +5,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDb;
-import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
 import com.higgsblock.global.chain.app.keyvalue.db.LevelDb;
-import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.ReadOptions;
+import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
@@ -20,7 +19,6 @@ import org.springframework.data.util.CloseableIterator;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,9 +26,9 @@ import java.util.Map;
  * @date 2018-08-24
  */
 @Slf4j
-public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements IndexedKeyValueAdapter {
+public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter {
 
-    private static final String KEYSPACE_ENTITY_CLASS = "$EC";
+    private static final String KEYSPACE_ENTITY_CLASS = "_EC";
 
     @Setter
     protected String dataDir;
@@ -65,11 +63,6 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
     }
 
     @Override
-    public boolean contains(Serializable id, Serializable keyspace) {
-        return null != get(id, keyspace);
-    }
-
-    @Override
     public Object get(Serializable id, Serializable keyspace) {
         String key = String.valueOf(id);
         String value = getDb(keyspace).get(key, readOptions);
@@ -82,13 +75,6 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         String key = String.valueOf(id);
         getDb(keyspace).delete(key, writeOptions);
         return value;
-    }
-
-    @Override
-    public Iterable<?> getAllOf(Serializable keyspace) {
-        List<Object> list = Lists.newLinkedList();
-        entries(keyspace).forEachRemaining(entry -> list.add(entry.getValue()));
-        return list;
     }
 
     @Override
@@ -139,38 +125,26 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter implements Index
         });
     }
 
-    public ILevelDbWriteBatch createWriteBatch(Serializable keyspace) {
-        return new LevelDbWriteBatch(String.valueOf(keyspace));
-    }
-
-    public void write(Serializable keyspace, ILevelDbWriteBatch writeBatch) {
+    @Override
+    public void write(Serializable keyspace, WriteBatch writeBatch) {
         getDb(keyspace).write(writeBatch, writeOptions);
     }
 
     @Override
     public Collection<Serializable> saveIndex(String indexName, Serializable index, Collection<Serializable> ids, Serializable keyspace) {
         LOGGER.debug("saveIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        String key = String.valueOf(index);
         String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
-        ILevelDb<String> db = getDb(indexKeyspace);
-        if (ids.isEmpty()) {
-            db.delete(key);
-        } else {
-            db.put(key, KeyValueAdapterUtils.toJsonString(ids));
-        }
+
+        put(index, ids, indexKeyspace);
         return ids;
     }
 
     @Override
     public Collection<Serializable> findIndex(String indexName, Serializable index, Serializable keyspace) {
         LOGGER.debug("findIndex: keyspace={}, indexName={}, index={}", keyspace, indexName, index);
-        String key = String.valueOf(index);
         String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
-        Collection<Serializable> ids = KeyValueAdapterUtils.parseJsonArrayString(getDb(indexKeyspace).get(key, readOptions), String.class);
-        if (null == ids) {
-            ids = Sets.newHashSet();
-        }
-        return ids;
+        Collection<Serializable> ids = (Collection<Serializable>) get(index, indexKeyspace);
+        return null == ids ? Sets.newHashSet() : Sets.newHashSet(ids);
     }
 
     @Override

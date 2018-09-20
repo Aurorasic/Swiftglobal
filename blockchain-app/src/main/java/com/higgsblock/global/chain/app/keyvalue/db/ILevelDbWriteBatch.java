@@ -3,7 +3,7 @@ package com.higgsblock.global.chain.app.keyvalue.db;
 import org.iq80.leveldb.WriteBatch;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author baizhengwen
@@ -13,19 +13,19 @@ public interface ILevelDbWriteBatch {
 
     String getBatchNo();
 
+    boolean contains(Serializable id, Serializable keyspace);
+
     Object get(Serializable key, Serializable keyspace);
 
     void put(Serializable key, Object item, Serializable keyspace);
 
     void delete(Serializable key, Serializable keyspace);
 
-    WriteBatch wrapper(WriteBatch writeBatch);
-
-    List<DataItem> copy(Serializable keyspace);
-
-    List<DataItem> copy();
+    Map<Serializable, Object> copy(Serializable keyspace);
 
     void clear();
 
-    List<ILevelDbWriteBatch> splitByKeyspace();
+    WriteBatch wrapperAll();
+
+    Map<Serializable, WriteBatch> wrapperByKeyspace();
 }
