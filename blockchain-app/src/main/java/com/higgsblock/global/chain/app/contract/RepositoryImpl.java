@@ -55,9 +55,13 @@ public class RepositoryImpl implements Repository<UTXO> {
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
 
-        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey<>(dbSource,
+        WriteCache.BytesKey<byte[]> ret = new WriteCache.BytesKey<>(
+                new BatchSourceWriter<>(dbSource), WriteCache.CacheType.SIMPLE);
+        ret.setFlushSource(true);
+
+        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey(ret,
                 WriteCache.CacheType.SIMPLE);
-        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(dbSource, WriteCache.CacheType.SIMPLE);
+        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(ret, WriteCache.CacheType.SIMPLE);
         MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(dbSource) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
