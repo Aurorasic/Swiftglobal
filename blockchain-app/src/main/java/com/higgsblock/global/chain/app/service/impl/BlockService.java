@@ -438,11 +438,11 @@ public class BlockService implements IBlockService {
             isValid = checkAll(block);
         } catch (NotExistPreBlockException e) {
             putAndRequestPreBlocks(block);
-            throw new BlockInvalidException("pre block donot exist:" + block.getSimpleInfo());
+            throw new BlockInvalidException("pre block does not exist:" + block.getSimpleInfo());
         }
 
         if (!isValid) {
-            throw new BlockInvalidException("block is not valid:" + block.getSimpleInfo());
+            throw new BlockInvalidException("the block is not valid:" + block.getSimpleInfo());
         }
 
         //Save block and index
@@ -486,7 +486,6 @@ public class BlockService implements IBlockService {
     @Transactional(rollbackFor = Exception.class)
     public Block saveBlockCompletely(Block block) {
         try {
-            //step 1
             saveBlock(block);
 
             boolean isFirst = isFirstBlockByHeight(block);
@@ -497,13 +496,10 @@ public class BlockService implements IBlockService {
             }
             LOGGER.info("block:{} is the first?={}", block.getSimpleInfo(), isFirst);
 
-            //step 2 whether this block can be confirmed pre N block
             blockIndexService.addBlockIndex(block, newBestBlock);
 
             if (block.isGenesisBlock()) {
-                //step 3
                 scoreService.refreshMinersScore(block, block);
-                //step 4
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
@@ -512,7 +508,6 @@ public class BlockService implements IBlockService {
                 scoreService.refreshMinersScore(newBestBlock, block);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
                 scoreService.setSelectedDposScore(nextDposAddressList);
-                //step5
                 freshPeerMinerAddr(newBestBlock, block);
             }
             return newBestBlock;

@@ -5,7 +5,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
-import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
@@ -63,18 +62,21 @@ public class ScoreService implements IScoreService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int updateBatch(List<String> addressList, int score) {
+    public void put(String address, Integer score, Map<String, String> allScores) {
+        allScores.put(address, String.valueOf(score));
+        blockChainInfoService.setAllScores(allScores);
+    }
+
+    @Override
+    public int updateBatch(List<String> addressList, int score, Map<String, String> allScores) {
         for (String address : addressList) {
-            put(address, score);
+            put(address, score, allScores);
         }
         return 1;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int plusAll(Integer plusScore) {
-        Map<String, String> allScores = blockChainInfoService.getAllScores();
+    public int plusAll(Integer plusScore, Map<String, String> allScores) {
         if (allScores.isEmpty()) {
             return 1;
         }
@@ -133,7 +135,8 @@ public class ScoreService implements IScoreService {
         if (CollectionUtils.isEmpty(addressList)) {
             return;
         }
-        updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        updateBatch(addressList, SELECTED_DPOS_SET_SCORE, allScores);
     }
 
     /**
@@ -198,17 +201,18 @@ public class ScoreService implements IScoreService {
 
     private void updateScores(Block toBeBestBlock) {
         SignaturePair minerPKSig = toBeBestBlock.getMinerSigPair();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
         //if the block is only mined by  miner, set score
         if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
-            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
+            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE, allScores);
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
             List<String> dposAddressList = dposService.getRestDposMinersByPreHash(prevBlockHash);
             if (CollectionUtils.isNotEmpty(dposAddressList)) {
-                updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
+                updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE, allScores);
             }
         }
-        plusAll(ONE_BLOCK_ADD_SCORE);
+        plusAll(ONE_BLOCK_ADD_SCORE, allScores);
     }
 }
