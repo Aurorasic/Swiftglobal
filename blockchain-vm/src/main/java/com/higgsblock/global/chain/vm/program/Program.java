@@ -30,6 +30,7 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramStorageChangeListe
 import com.higgsblock.global.chain.vm.trace.ProgramTrace;
 import com.higgsblock.global.chain.vm.trace.ProgramTraceListener;
 import com.higgsblock.global.chain.vm.util.*;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -475,6 +476,8 @@ public class Program {
         if (!byTestingSuite()) {
             track.addBalance(senderAddress, endowment.negate());
             newBalance = track.addBalance(newAddress, endowment);
+//            track.transfer(Hex.toHexString(senderAddress),Hex.toHexString(newAddress),endowment,null);
+            transferInfoList.add(new TransferInfo(senderAddress, newAddress, endowment));
         }
 
 
@@ -1156,74 +1159,74 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContracts.PrecompiledContract contract) {
-//        returnDataBuffer = null; // reset return buffer right before the call
-//
-//        if (getCallDeep() == MAX_DEPTH) {
-//            stackPushZero();
-//            this.refundGas(msg.getGas().longValue(), " call deep limit reach");
-//            return;
-//        }
-//
-//        Repository track = getStorage().startTracking();
-//
-//        byte[] senderAddress = this.getOwnerAddress().getLast20Bytes();
-//        byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
-//        byte[] contextAddress = msg.getType().callIsStateless() ? senderAddress : codeAddress;
-//
-//
-//        BigInteger endowment = msg.getEndowment().value();
-//        BigInteger senderBalance = track.getBalance(senderAddress);
-//        if (senderBalance.compareTo(endowment) < 0) {
-//            stackPushZero();
-//            this.refundGas(msg.getGas().longValue(), "refund gas from message call");
-//            return;
-//        }
-//
-//        byte[] data = this.memoryChunk(msg.getInDataOffs().intValue(),
-//                msg.getInDataSize().intValue());
-//
-//        // Charge for endowment - is not reversible by rollback
-//        transfer(track, senderAddress, contextAddress, msg.getEndowment().value());
-//
-//        if (byTestingSuite()) {
-//            // This keeps track of the calls created for a test
-//            this.getResult().addCallCreate(data,
-//                    msg.getCodeAddress().getLast20Bytes(),
-//                    msg.getGas().getNoLeadZeroesData(),
-//                    msg.getEndowment().getNoLeadZeroesData());
-//
-//            stackPushOne();
-//            return;
-//        }
-//
-//
-//        long requiredGas = contract.getGasForData(data);
-//        if (requiredGas > msg.getGas().longValue()) {
-//
-//            this.refundGas(0, "call pre-compiled"); //matches cpp logic
-//            this.stackPushZero();
-//            track.rollback();
-//        } else {
-//
-//            if (logger.isDebugEnabled())
-//                logger.debug("Call {}(data = {})", contract.getClass().getSimpleName(), toHexString(data));
-//
-//            Pair<Boolean, byte[]> out = contract.execute(data);
-//
-//            if (out.getLeft()) { // success
-//                this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
-//                this.stackPushOne();
-//                returnDataBuffer = out.getRight();
-//                track.commit();
-//            } else {
-//                // spend all gas on failure, push zero and revert state changes
-//                this.refundGas(0, "call pre-compiled");
-//                this.stackPushZero();
-//                track.rollback();
-//            }
-//
-//            this.memorySave(msg.getOutDataOffs().intValue(), msg.getOutDataSize().intValueSafe(), out.getRight());
-//        }
+        returnDataBuffer = null; // reset return buffer right before the call
+
+        if (getCallDeep() == MAX_DEPTH) {
+            stackPushZero();
+            this.refundGas(msg.getGas().longValue(), " call deep limit reach");
+            return;
+        }
+
+        Repository track = getStorage().startTracking();
+
+        byte[] senderAddress = this.getOwnerAddress().getLast20Bytes();
+        byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
+        byte[] contextAddress = msg.getType().callIsStateless() ? senderAddress : codeAddress;
+
+
+        BigInteger endowment = msg.getEndowment().value();
+        BigInteger senderBalance = track.getBalance(senderAddress);
+        if (senderBalance.compareTo(endowment) < 0) {
+            stackPushZero();
+            this.refundGas(msg.getGas().longValue(), "refund gas from message call");
+            return;
+        }
+
+        byte[] data = this.memoryChunk(msg.getInDataOffs().intValue(),
+                msg.getInDataSize().intValue());
+
+        // Charge for endowment - is not reversible by rollback
+        transfer(track, senderAddress, contextAddress, msg.getEndowment().value());
+
+        if (byTestingSuite()) {
+            // This keeps track of the calls created for a test
+            this.getResult().addCallCreate(data,
+                    msg.getCodeAddress().getLast20Bytes(),
+                    msg.getGas().getNoLeadZeroesData(),
+                    msg.getEndowment().getNoLeadZeroesData());
+
+            stackPushOne();
+            return;
+        }
+
+
+        long requiredGas = contract.getGasForData(data);
+        if (requiredGas > msg.getGas().longValue()) {
+
+            this.refundGas(0, "call pre-compiled"); //matches cpp logic
+            this.stackPushZero();
+            track.rollback();
+        } else {
+
+            if (logger.isDebugEnabled())
+                logger.debug("Call {}(data = {})", contract.getClass().getSimpleName(), toHexString(data));
+
+            Pair<Boolean, byte[]> out = contract.execute(data);
+
+            if (out.getLeft()) { // success
+                this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
+                this.stackPushOne();
+                returnDataBuffer = out.getRight();
+                track.commit();
+            } else {
+                // spend all gas on failure, push zero and revert state changes
+                this.refundGas(0, "call pre-compiled");
+                this.stackPushZero();
+                track.rollback();
+            }
+
+            this.memorySave(msg.getOutDataOffs().intValue(), msg.getOutDataSize().intValueSafe(), out.getRight());
+        }
     }
 
     public boolean byTestingSuite() {
