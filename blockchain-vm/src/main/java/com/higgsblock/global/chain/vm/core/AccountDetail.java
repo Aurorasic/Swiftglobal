@@ -10,32 +10,15 @@ import java.math.BigInteger;
 
 public class AccountDetail implements Serializable{
 
-    private String from;
+    private byte[] from;
 
-    private String to;
+    private byte[] to;
 
     private BigInteger value;
 
     private BigInteger balance;
 
     private String currency;
-
-    public String getFrom() {
-        return from;
-    }
-
-    public void setFrom(String from) {
-        this.from = from;
-    }
-
-    public String getTo() {
-        return to;
-    }
-
-    public void setTo(String to) {
-        this.to = to;
-    }
-
 
     public BigInteger getBalance() {
         return balance;
@@ -61,11 +44,27 @@ public class AccountDetail implements Serializable{
         this.currency = currency;
     }
 
-    public AccountDetail(String from, String to, BigInteger value, BigInteger balance, String currency) {
+    public AccountDetail(byte[] from, byte[] to, BigInteger value, BigInteger balance, String currency) {
         this.from = from;
         this.to = to;
         this.value = value;
         this.balance = balance;
         this.currency = currency;
+    }
+
+    public byte[] getFrom() {
+        return from;
+    }
+
+    public void setFrom(byte[] from) {
+        this.from = from;
+    }
+
+    public byte[] getTo() {
+        return to;
+    }
+
+    public void setTo(byte[] to) {
+        this.to = to;
     }
 }

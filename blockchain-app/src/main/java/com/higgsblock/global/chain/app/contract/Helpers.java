@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutPoin
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.core.AccountDetail;
 import com.higgsblock.global.chain.vm.core.AccountState;
@@ -50,7 +51,7 @@ public class Helpers {
 
             txOut.setMoney(BalanceUtil.convertGasToMoney(ad.getValue(),ad.getCurrency()));
             LockScript lockScript = new LockScript();
-            lockScript.setAddress(ad.getTo());
+            lockScript.setAddress(AddrUtil.toTransactionAddr(ad.getTo()));
             txOut.setLockScript(lockScript);
             //lockScript.setType();
 
@@ -92,8 +93,8 @@ public class Helpers {
     public static List<UTXO> buildTestUTXO(String address){
 
         return  new ArrayList(){{
-            add(buildUTXO(address,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx2","100","cas"));
-            add(buildUTXO(address,"1LZ88bckco6XZRywsLEEgbDtin2wPWGZx3","10","cas"));
+            add(buildUTXO(address,"534b428a1277652677b6adff2d1f3381bbc4115c","100","cas"));
+            add(buildUTXO(address,"26004361060485763ffffffff7c0100000000000","10","cas"));
         }};
 
 

@@ -84,7 +84,7 @@ public class Executor {
     private ExecutionResult createContract() {
         contractRepository.createAccount(contractAddress);
         //contractRepository.addBalance(contractAddress, convertToBigInteger(value));
-        transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
+        //transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
         touchedAccountAddresses.add(contractAddress);
 
         VM vm = new VM(systemProperties);
