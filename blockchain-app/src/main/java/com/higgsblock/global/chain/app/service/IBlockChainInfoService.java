@@ -16,4 +16,6 @@ public interface IBlockChainInfoService {
     void setAllScores(Map<String, String> allScores);
 
     void deleteAllScores();
+
+    void setAllWitness(String allWitnesss);
 }

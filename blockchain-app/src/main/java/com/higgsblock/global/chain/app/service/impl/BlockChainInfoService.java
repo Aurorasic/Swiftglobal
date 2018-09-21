@@ -22,6 +22,7 @@ public class BlockChainInfoService implements IBlockChainInfoService {
 
     private static final String KEY_MAX_HEIGHT = "MaxHeight";
     private static final String KEY_ALL_SCORES = "allScores";
+    private static final String KEY_ALL_WITNESS = "allWitness";
 
     @Autowired
     private IBlockChainInfoRepository blockChainInfoRepository;
@@ -53,6 +54,13 @@ public class BlockChainInfoService implements IBlockChainInfoService {
     public void setAllScores(Map<String, String> allScores) {
         String scores = JSON.toJSONString(allScores);
         BlockChainInfoEntity entity = new BlockChainInfoEntity(KEY_ALL_SCORES, scores);
+        blockChainInfoRepository.save(entity);
+    }
+
+    @Override
+    public void setAllWitness(String allWitnesss) {
+        String witness = JSON.toJSONString(allWitnesss);
+        BlockChainInfoEntity entity = new BlockChainInfoEntity(KEY_ALL_WITNESS, witness);
         blockChainInfoRepository.save(entity);
     }
 
