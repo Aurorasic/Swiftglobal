@@ -49,6 +49,10 @@ public class RepositoryImpl implements Repository<UTXO> {
     List<UTXO> spentUTXOCache = new ArrayList<>();
     private Source<byte[], byte[]> sourceWriter;
 
+    public byte[] getInDB(byte[] key){
+       return sourceWriter.get(key);
+    }
+
     public RepositoryImpl() {
 
         //Source dbSource = new HashMapDB<byte[]>();
@@ -224,29 +228,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     }
 
-//    @Override
-//    public Repository startTracking() {
-//        return null;
-//    }
-
     /**
      * flush child cache to parent cache
-     * 1: UTXO
-     * 2: storageCache
-     * 3:codeCache
      */
     @Override
     public void flush() {
-
-        //flush UTXO
-        //parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
-
-        //flush storage
-        //parent.storageCache.putAll(this.storageCache);
-
-        //flush codeCache
-        //parent.codeCache.putAll(this.codeCache);
-
         sourceWriter.flush();
     }
 
@@ -257,12 +243,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized RepositoryImpl startTracking() {
+
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
                 WriteCache.CacheType.SIMPLE);
-        ((WriteCache.BytesKey<AccountState>) trackAccountStateCache).setFlushSource(true);
 
         Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
-        ((WriteCache.BytesKey<byte[]>) trackCodeCache).setFlushSource(true);
 
         MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
             @Override
@@ -270,7 +255,6 @@ public class RepositoryImpl implements Repository<UTXO> {
                 return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
             }
         };
-        trackStorageCache.setFlushSource(true);
 
         RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
         ret.parent = this;
@@ -303,7 +287,10 @@ public class RepositoryImpl implements Repository<UTXO> {
             storageCache.flush();
             codeCache.flush();
             accountStateCache.flush();
+            parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
         }
+
+
     }
 
     @Override
@@ -425,18 +412,6 @@ public class RepositoryImpl implements Repository<UTXO> {
         unspentUTXOCache.addAll(unSpendUTXO);
         spentUTXOCache.addAll(spendUTXO);
 
-        //更新utxo时，刷新账户考虑是否合约账户才需要做该操作
-//        for(UTXO utxo:spendUTXO){
-//           AccountState accountState =  accountStates.get(utxo.getAddress());
-//            accountState.withBalanceDecrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-//        }
-//
-//        for(UTXO utxo:unSpendUTXO){
-//            AccountState accountState =  accountStates.get(utxo.getAddress());
-//            if(accountState != null) {
-//                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-//            }
-//        }
         return true;
     }
 

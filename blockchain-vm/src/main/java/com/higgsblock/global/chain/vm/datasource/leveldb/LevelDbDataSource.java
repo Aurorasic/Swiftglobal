@@ -257,7 +257,6 @@ public class LevelDbDataSource implements DbSource<byte[]> {
                 if (entry.getValue() == null) {
                     batch.delete(entry.getKey());
                 } else {
-                    System.out.println("xxxxxxxx"+ Hex.toHexString(entry.getKey()));
                     batch.put(entry.getKey(), entry.getValue());
                 }
             }
