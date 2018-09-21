@@ -12,11 +12,8 @@ import org.springframework.data.util.CloseableIterator;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -40,15 +37,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
     private MultiLevelDbKeyValueAdapter levelDbAdapter;
     private LevelDbBatchSupporter batchSupporter;
 
-    private String startBatchNo;
-    private AtomicLong batchNoCounter;
-
     public TransactionAwareLevelDbAdapter(MultiLevelDbKeyValueAdapter levelDbAdapter) {
         super(new IndexedSpelQueryEngine());
         this.levelDbAdapter = levelDbAdapter;
         batchSupporter = new LevelDbBatchSupporter(levelDbAdapter.getDb("_batch"));
-        startBatchNo = LocalDateTime.now().format(DateTimeFormatter.ofPattern("_yyyyMMddHHmmss@"));
-        batchNoCounter = new AtomicLong();
     }
 
     @Override
@@ -56,10 +48,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("try to get a WriteLock");
         writeLock.lock();
         LOGGER.debug("get a WriteLock");
+        archive();
         if (transactionHolder == 0) {
-            String batchNo = newBatchNo();
-            batchSupporter.addBatchNo(batchNo);
-            writeBatch = batchSupporter.createWriteBatch(batchNo);
+            writeBatch = batchSupporter.createWriteBatch();
+            batchSupporter.addBatchNo(writeBatch.getBatchNo());
             transactionHolder = 1;
             isAutoCommit = false;
         } else {
@@ -377,9 +369,5 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             }
             batchSupporter.deleteBatchNo(batchNos);
         });
-    }
-
-    private String newBatchNo() {
-        return startBatchNo + batchNoCounter.incrementAndGet();
     }
 }

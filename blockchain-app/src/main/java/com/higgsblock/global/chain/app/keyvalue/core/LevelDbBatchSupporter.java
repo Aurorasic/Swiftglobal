@@ -14,8 +14,11 @@ import org.iq80.leveldb.WriteOptions;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author baizhengwen
@@ -37,16 +40,20 @@ public class LevelDbBatchSupporter {
     protected ILevelDb<String> db;
 
     private Map<Serializable, Class> classMap = Maps.newConcurrentMap();
-    private Map<Serializable, ILevelDbWriteBatch> writeBatchMap = Maps.newConcurrentMap();
+    private Map<String, ILevelDbWriteBatch> writeBatchMap = Maps.newConcurrentMap();
+    private String startBatchNo;
+    private AtomicLong batchNoCounter;
 
     public LevelDbBatchSupporter(ILevelDb<String> db) {
         this.db = db;
         readOptions = new ReadOptions();
         writeOptions = new WriteOptions();
+        startBatchNo = LocalDateTime.now().format(DateTimeFormatter.ofPattern("_yyyyMMddHHmmss@"));
+        batchNoCounter = new AtomicLong();
     }
 
-    public ILevelDbWriteBatch createWriteBatch(String batchNo) {
-        return writeBatchMap.computeIfAbsent(batchNo, key -> new LevelDbWriteBatch(batchNo));
+    public ILevelDbWriteBatch createWriteBatch() {
+        return writeBatchMap.computeIfAbsent(newBatchNo(), key -> new LevelDbWriteBatch(key));
     }
 
     public ILevelDbWriteBatch removeWriteBatch(String batchNo) {
@@ -152,5 +159,9 @@ public class LevelDbBatchSupporter {
             LOGGER.error(e.getMessage(), e);
         }
         return clazz;
+    }
+
+    private String newBatchNo() {
+        return startBatchNo + batchNoCounter.incrementAndGet();
     }
 }

@@ -169,24 +169,6 @@ public class MultiLevelDbKeyValueAdapter extends BaseKeyValueAdapter {
         return clazz;
     }
 
-    public Map<String, String> stringEntries(Serializable keyspace) {
-        Map<String, String> map = Maps.newHashMap();
-
-        getDb(keyspace).iterator(readOptions).forEachRemaining(entry -> {
-            map.put(entry.getKey(), entry.getValue());
-        });
-        return map;
-    }
-
-    protected String putString(Serializable id, String item, Serializable keyspace) {
-        getDb(keyspace).put(String.valueOf(id), item, writeOptions);
-        return item;
-    }
-
-    protected String getString(Serializable id, Serializable keyspace) {
-        return getDb(keyspace).get(String.valueOf(id), readOptions);
-    }
-
     protected ILevelDb<String> removeDb(Serializable keyspace) {
         return dbMap.remove(keyspace);
     }
