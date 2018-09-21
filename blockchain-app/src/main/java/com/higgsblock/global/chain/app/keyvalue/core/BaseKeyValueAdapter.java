@@ -22,9 +22,6 @@ public abstract class BaseKeyValueAdapter extends AbstractKeyValueAdapter implem
 
     private Map<Serializable, Class> cache = Maps.newConcurrentMap();
 
-    public BaseKeyValueAdapter() {
-    }
-
     protected BaseKeyValueAdapter(QueryEngine<? extends KeyValueAdapter, ?, ?> engine) {
         super(engine);
     }

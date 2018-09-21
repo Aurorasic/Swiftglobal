@@ -68,7 +68,7 @@ public class LevelDbWriteBatch implements ILevelDbWriteBatch {
         byte[] value = null;
         for (Map.Entry<Serializable, Map<Serializable, Object>> row : map.entrySet()) {
             for (Map.Entry<Serializable, Object> cell : row.getValue().entrySet()) {
-                key = SerializationUtils.serialize(KeyValueAdapterUtils.getBatchKey(row.getKey(), cell.getKey(), batchNo));
+                key = SerializationUtils.serialize(KeyValueAdapterUtils.getInternalKey(row.getKey(), cell.getKey()));
                 value = SerializationUtils.serialize(KeyValueAdapterUtils.toJsonString(cell.getValue()));
                 if (null == value) {
                     batch.delete(key);

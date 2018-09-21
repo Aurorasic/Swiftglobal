@@ -30,28 +30,28 @@ public class KeyValueAdapterUtils {
         return JSON.parseArray(value, clazz);
     }
 
-    protected static boolean isInKeyspace(String internalKey, Serializable keyspace) {
+    public static boolean isInKeyspace(String internalKey, Serializable keyspace) {
         return internalKey.startsWith(String.valueOf(keyspace) + SEPARATOR_KEYSPACE_ID);
     }
 
-    protected static boolean isIdStartWith(String internalKey, String idPrefix) {
+    public static boolean isIdStartWith(String internalKey, String idPrefix) {
         String id = StringUtils.substringAfter(internalKey, SEPARATOR_KEYSPACE_ID);
         return StringUtils.startsWith(id, idPrefix);
     }
 
-    protected static String parseId(String key) {
+    public static String parseId(String key) {
         return StringUtils.substringAfter(key, SEPARATOR_KEYSPACE_ID);
     }
 
-    protected static String parseKeyspace(String key) {
+    public static String parseKeyspace(String key) {
         return StringUtils.substringBefore(key, SEPARATOR_KEYSPACE_ID);
     }
 
-    protected static String getInternalKey(Serializable keyspace, Serializable id) {
+    public static String getInternalKey(Serializable keyspace, Serializable id) {
         return String.format("%s.%s", keyspace, id);
     }
 
-    protected static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
+    public static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
         return String.format("_%s#%s", keyspace, indexName);
     }
 
@@ -59,7 +59,7 @@ public class KeyValueAdapterUtils {
         return getInternalKey(getIndexKeyspace(keyspace, indexName), index);
     }
 
-    protected static String getBatchKeyspace(Serializable keyspace, String batchNo) {
+    public static String getBatchKeyspace(Serializable keyspace, String batchNo) {
         return String.format("%s.%s", batchNo, keyspace);
     }
 
