@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.vm.config.Constants;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.program.Program;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -28,7 +29,7 @@ import java.util.Set;
  */
 public class ExecutorTest {
     private Executor executor;
-    private Repository transactionRepository;
+    private Repository blockRepository;
 
     @Before
     public void setUp() {
@@ -132,7 +133,8 @@ public class ExecutorTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-       transactionRepository  = new RepositoryImpl();
+        blockRepository  = new RepositoryImpl();
+        Repository transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);
     }
@@ -147,9 +149,9 @@ public class ExecutorTest {
         //constructor has no payable modifier, check fails.
       //  Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
     //    Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
-       System.out.println("部署合约代码"+Hex.toHexString(executionResult.getResult()));
-
-        transactionRepository.flush();
+        System.out.println("部署合约代码"+Hex.toHexString(executionResult.getResult()));
+      //  Assert.assertNull();
+        blockRepository.flush();
     }
 
     @After

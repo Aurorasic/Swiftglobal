@@ -49,25 +49,23 @@ public class RepositoryImpl implements Repository<UTXO> {
     List<UTXO> spentUTXOCache = new ArrayList<>();
     private Source<byte[], byte[]> sourceWriter;
 
+    public byte[] getInDB(byte[] key){
+       return sourceWriter.get(key);
+    }
+
     public RepositoryImpl() {
 
         //Source dbSource = new HashMapDB<byte[]>();
         DbSource<byte[]> dbSource = new LevelDbDataSource();
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
-
         sourceWriter = new BatchSourceWriter<>(dbSource);
-        //WriteCache.BytesKey<byte[]>  cache = new WriteCache.BytesKey<>(sourceWriter, WriteCache.CacheType.SIMPLE);
-        //cache.setFlushSource(true);
 
         Source<byte[], byte[]> accounts = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
-        //((XorDataSource<byte[]>) accounts).setFlushSource(true);
-        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
-        //((XorDataSource<byte[]>) codes).setFlushSource(true);
-        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
-        //((XorDataSource<byte[]>) storages).setFlushSource(true);
 
-        //writeCaches.add(cache);
+        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
+
+        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
 
         SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(accounts, Serializers.AccountStateSerializer);
         Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
@@ -224,29 +222,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     }
 
-//    @Override
-//    public Repository startTracking() {
-//        return null;
-//    }
-
     /**
      * flush child cache to parent cache
-     * 1: UTXO
-     * 2: storageCache
-     * 3:codeCache
      */
     @Override
     public void flush() {
-
-        //flush UTXO
-        //parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
-
-        //flush storage
-        //parent.storageCache.putAll(this.storageCache);
-
-        //flush codeCache
-        //parent.codeCache.putAll(this.codeCache);
-
         sourceWriter.flush();
     }
 
@@ -257,6 +237,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized RepositoryImpl startTracking() {
+
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
                 WriteCache.CacheType.SIMPLE);
 
@@ -300,7 +281,15 @@ public class RepositoryImpl implements Repository<UTXO> {
             storageCache.flush();
             codeCache.flush();
             accountStateCache.flush();
+
+            //flush UTXO into parent cache
+            parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
+            this.spentUTXOCache.clear();
+            this.unspentUTXOCache.clear();
+            this.accountStates.clear();
         }
+
+
     }
 
     @Override
@@ -422,18 +411,6 @@ public class RepositoryImpl implements Repository<UTXO> {
         unspentUTXOCache.addAll(unSpendUTXO);
         spentUTXOCache.addAll(spendUTXO);
 
-        //更新utxo时，刷新账户考虑是否合约账户才需要做该操作
-//        for(UTXO utxo:spendUTXO){
-//           AccountState accountState =  accountStates.get(utxo.getAddress());
-//            accountState.withBalanceDecrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-//        }
-//
-//        for(UTXO utxo:unSpendUTXO){
-//            AccountState accountState =  accountStates.get(utxo.getAddress());
-//            if(accountState != null) {
-//                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-//            }
-//        }
         return true;
     }
 
@@ -501,7 +478,10 @@ public class RepositoryImpl implements Repository<UTXO> {
         @Override
         public Map<DataWord, DataWord> getStorage() {
             Map<DataWord, DataWord> storage = new HashMap<>();
-
+            storageCache.getModified().stream().forEach(item->{
+                DataWord key = new DataWord(item);
+                storage.put(key, storageCache.get(address).get(key));
+            });
             return storage;
         }
     }
