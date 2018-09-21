@@ -59,19 +59,13 @@ public class RepositoryImpl implements Repository<UTXO> {
         DbSource<byte[]> dbSource = new LevelDbDataSource();
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
-
         sourceWriter = new BatchSourceWriter<>(dbSource);
-        //WriteCache.BytesKey<byte[]>  cache = new WriteCache.BytesKey<>(sourceWriter, WriteCache.CacheType.SIMPLE);
-        //cache.setFlushSource(true);
 
         Source<byte[], byte[]> accounts = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
-        //((XorDataSource<byte[]>) accounts).setFlushSource(true);
-        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
-        //((XorDataSource<byte[]>) codes).setFlushSource(true);
-        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
-        //((XorDataSource<byte[]>) storages).setFlushSource(true);
 
-        //writeCaches.add(cache);
+        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
+
+        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
 
         SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(accounts, Serializers.AccountStateSerializer);
         Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
