@@ -36,23 +36,42 @@ public class LevelDbDataSourceTest {
 
         SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(writer, Serializers.AccountStateSerializer);
         accountStateCodec.setFlushSource(true);
-        //二级缓存
-        WriteCache.BytesKey<AccountState> ret = new WriteCache.BytesKey<>(accountStateCodec, WriteCache.CacheType.SIMPLE);
-        ret.setFlushSource(true);
+        WriteCache.BytesKey<AccountState> accountStateCache = new WriteCache.BytesKey<>(accountStateCodec, WriteCache.CacheType.SIMPLE);
+        accountStateCache.setFlushSource(true);
 
-        //三级缓存
-        Source<byte[], AccountState> accountStateCache = new WriteCache.BytesKey(ret,
+        /**********START 账户缓存******************/
+        //交易账户缓存
+        Source<byte[], AccountState> txAccountStateCache = new WriteCache.BytesKey(accountStateCache,
                 WriteCache.CacheType.SIMPLE);
-        ((WriteCache)accountStateCache).setFlushSource(true);
+        ((WriteCache)txAccountStateCache).setFlushSource(true);
+
+        //合约缓存
+        Source<byte[], AccountState> conAccountStateCache = new WriteCache.BytesKey(txAccountStateCache,
+                WriteCache.CacheType.SIMPLE);
+        ((WriteCache)conAccountStateCache).setFlushSource(true);
         byte[] key = "hello1".getBytes();
-      //  byte[] value = "world1".getBytes();
         AccountState accountState = new AccountState(0, BigInteger.valueOf(10));
-        accountStateCache.put(key,accountState);
+        conAccountStateCache.put(key,accountState);
+
+        /**********END 账户缓存******************/
+
+        /*************START code缓存*******************/
+        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(writer, WriteCache.CacheType.COUNTING);
+        ((WriteCache)codeCache).setFlushSource(true);
+        System.out.println(new String(codeCache.get("a".getBytes())));
+        codeCache.put("b".getBytes(),"2".getBytes());
+        codeCache.put("b".getBytes(),"3".getBytes());
+        codeCache.put("c".getBytes(),"4".getBytes());
+        /*************END code缓存*******************/
+
         accountStateCache.flush();
         Assert.assertNotNull(dbSource.get(key));
-        System.out.println(accountStateCache.get("hello1".getBytes()).getBalance());
+        //Assert.assertNull(dbSource.get("a".getBytes()));
 
-
+        codeCache.flush();
+        Assert.assertEquals(new String(dbSource.get("a".getBytes())),"1");
+        Assert.assertEquals(new String(dbSource.get("b".getBytes())),"3");
+        Assert.assertEquals(new String(dbSource.get("c".getBytes())),"4");
     }
 
     @Test

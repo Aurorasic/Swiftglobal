@@ -153,12 +153,11 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
-        return Hex.decode("60806040526004361060525763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663590e1ae38114605757806360fe47b114605f5780636d4ce63c146074575b600080fd5b605d6098565b005b348015606a57600080fd5b50605d60043560c3565b348015607f57600080fd5b50608660c8565b60408051918252519081900360200190f35b6040513390600090600a9082818181858883f1935050505015801560c0573d6000803e3d6000fd5b50565b600055565b600054905600a165627a7a723058207de1f57b6c05faf418f8f4a3566fc2e11137539e3d25b48512bc0e6b8ad176f90029");
-//        byte[] codeHash = getCodeHash(addr);
-//        byte[] key = codeKey(codeHash, addr);
-//
-//        return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
-//                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(key);
+        byte[] codeHash = getCodeHash(addr);
+        byte[] key = codeKey(codeHash, addr);
+
+        return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
+                ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(key);
     }
 
 
