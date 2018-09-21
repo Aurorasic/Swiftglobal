@@ -1,9 +1,6 @@
 package com.higgsblock.global.chain.app.keyvalue.db;
 
-import org.iq80.leveldb.DBException;
-import org.iq80.leveldb.ReadOptions;
-import org.iq80.leveldb.Snapshot;
-import org.iq80.leveldb.WriteOptions;
+import org.iq80.leveldb.*;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -30,9 +27,9 @@ public interface ILevelDb<T extends Serializable> extends Iterable<Map.Entry<Str
 
     Snapshot delete(String key, WriteOptions options) throws DBException;
 
-    void write(ILevelDbWriteBatch updates) throws DBException;
+    void write(WriteBatch batch) throws DBException;
 
-    Snapshot write(ILevelDbWriteBatch updates, WriteOptions options) throws DBException;
+    Snapshot write(WriteBatch batch, WriteOptions options) throws DBException;
 
     Iterator<Map.Entry<String, T>> iterator(ReadOptions options);
 

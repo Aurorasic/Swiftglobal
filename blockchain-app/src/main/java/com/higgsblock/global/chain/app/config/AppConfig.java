@@ -23,7 +23,7 @@ public class AppConfig {
     private Environment environment;
 
     @Value("${app.data.path}")
-    private String dataPath;
+    private String dataDir;
 
     @Value("${spring.cache.caffeine.spec}")
     private String cacheSpecification;

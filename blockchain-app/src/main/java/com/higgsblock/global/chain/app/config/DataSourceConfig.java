@@ -33,9 +33,9 @@ public class DataSourceConfig {
     public IndexedKeyValueAdapter keyValueAdapter(AppConfig config) {
         Options options = new Options()
                 .createIfMissing(true)
-                .writeBufferSize(200 * 1024 * 1024)
+                .writeBufferSize(50 * 1024 * 1024)
                 .compressionType(CompressionType.SNAPPY);
-        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataPath(), options);
+        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataDir(), options);
         return new TransactionAwareLevelDbAdapter(adapter);
     }
 

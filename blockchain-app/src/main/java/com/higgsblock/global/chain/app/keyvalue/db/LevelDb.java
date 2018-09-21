@@ -22,26 +22,27 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
 
     private DB db;
     private Options options;
-    private String dataPath;
+    private String dataDir;
 
-    public LevelDb(String dataPath, Options options) {
-        this.dataPath = dataPath;
+    public LevelDb(String dataDir, Options options) {
+        this.dataDir = dataDir;
         this.options = options;
 
-        File file = new File(dataPath);
+        File file = new File(dataDir);
         try {
             db = Iq80DBFactory.factory.open(file, options);
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+        } catch (Exception e) {
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
         }
     }
 
     @Override
     public void destroy() {
         try {
-            Iq80DBFactory.factory.destroy(new File(dataPath), options);
+            close();
+            Iq80DBFactory.factory.destroy(new File(dataDir), options);
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(String.format("%s, dataDir=%s", e.getMessage(), dataDir), e);
         }
     }
 
@@ -76,14 +77,12 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
     }
 
     @Override
-    public void write(ILevelDbWriteBatch updates) throws DBException {
-        WriteBatch batch = updates.wrapper(db.createWriteBatch());
+    public void write(WriteBatch batch) throws DBException {
         db.write(batch);
     }
 
     @Override
-    public Snapshot write(ILevelDbWriteBatch updates, WriteOptions options) throws DBException {
-        WriteBatch batch = updates.wrapper(db.createWriteBatch());
+    public Snapshot write(WriteBatch batch, WriteOptions options) throws DBException {
         return db.write(batch, options);
     }
 
@@ -110,8 +109,8 @@ public class LevelDb<T extends Serializable> implements ILevelDb<T> {
         db.close();
     }
 
-    protected byte[] serialize(Serializable serializable) {
-        return null == serializable ? new byte[0] : SerializationUtils.serialize(serializable);
+    protected byte[] serialize(Serializable data) {
+        return null == data ? null : SerializationUtils.serialize(data);
     }
 
     protected T deserialize(byte[] bytes) {

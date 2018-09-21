@@ -1,17 +1,18 @@
 package com.higgsblock.global.chain.app.keyvalue.core;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.keyvalue.db.ILevelDbWriteBatch;
+import com.higgsblock.global.chain.app.keyvalue.db.LevelDbWriteBatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.iq80.leveldb.WriteBatch;
 import org.springframework.data.keyvalue.core.ForwardingCloseableIterator;
 import org.springframework.data.util.CloseableIterator;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
@@ -45,16 +46,12 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         LOGGER.debug("try to get a WriteLock");
         writeLock.lock();
         LOGGER.debug("get a WriteLock");
-        try {
-            if (transactionHolder == 0) {
-                writeBatch = levelDbAdapter.createWriteBatch();
-                transactionHolder = 1;
-                isAutoCommit = false;
-            } else {
-                transactionHolder++;
-            }
-        } catch (Exception e) {
-            rollbackTransaction();
+        if (transactionHolder == 0) {
+            writeBatch = new LevelDbWriteBatch();
+            transactionHolder = 1;
+            isAutoCommit = false;
+        } else {
+            transactionHolder++;
         }
     }
 
@@ -76,19 +73,16 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
 
     @Override
     public void commitTransaction() {
-        try {
-            if (transactionHolder > 1) {
-                transactionHolder--;
-            } else {
-                levelDbAdapter.write(writeBatch);
-                writeBatch = null;
-                transactionHolder = 0;
-                isAutoCommit = true;
-            }
-        } finally {
-            writeLock.unlock();
-            LOGGER.debug("unlock a WriteLock");
+        if (transactionHolder > 1) {
+            transactionHolder--;
+        } else {
+            write(writeBatch.wrapperAll());
+            writeBatch = null;
+            transactionHolder = 0;
+            isAutoCommit = true;
         }
+        writeLock.unlock();
+        LOGGER.debug("unlock a WriteLock");
     }
 
 
@@ -107,20 +101,21 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
 
     @Override
     public boolean contains(Serializable id, Serializable keyspace) {
-        return doWithLock(readLock, () -> null != get(id, keyspace));
+        return doWithLock(readLock, () -> super.contains(id, keyspace));
     }
 
     @Override
     public Object get(Serializable id, Serializable keyspace) {
         return doWithLock(readLock, () -> {
             Object result = null;
-            if (!isAutoCommit) {
+            if (!isAutoCommit && writeBatch.contains(id, keyspace)) {
                 result = writeBatch.get(id, keyspace);
             }
 
             if (null == result) {
                 result = levelDbAdapter.get(id, keyspace);
             }
+
             return result;
         });
     }
@@ -140,44 +135,30 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
 
     @Override
     public Iterable<?> getAllOf(Serializable keyspace) {
-        return doWithLock(readLock, (Callable<Iterable<?>>) () -> {
-            List<Object> list = Lists.newLinkedList();
-            entries(keyspace).forEachRemaining(entry -> list.add(entry.getValue()));
-            return list;
-        });
+        return doWithLock(readLock, (Callable<Iterable<?>>) () -> super.getAllOf(keyspace));
     }
 
     @Override
     public CloseableIterator<Map.Entry<Serializable, Object>> entries(Serializable keyspace) {
         return doWithLock(readLock, () -> {
             Map<Serializable, Object> map = Maps.newHashMap();
-            String dataKeyPrefix = KeyValueAdapterUtils.getKeyPrefix(keyspace);
+            levelDbAdapter.entries(keyspace).forEachRemaining(entry -> map.put(entry.getKey(), entry.getValue()));
 
-            levelDbAdapter.entries(keyspace).forEachRemaining(entry -> {
-                String key = String.valueOf(entry.getKey());
-                if (key.startsWith(dataKeyPrefix)) {
-                    map.put(key, entry.getValue());
-                }
-            });
             if (!isAutoCommit) {
-                writeBatch.copy().forEach(entry -> {
-                    String key = String.valueOf(entry.getKey());
-                    if (key.startsWith(dataKeyPrefix)) {
-                        map.put(key, entry.getValue());
-                    }
-                });
+                map.putAll(writeBatch.copy(keyspace));
             }
 
-            return new ForwardingCloseableIterator<>(map.entrySet().iterator());
+            Iterator<Map.Entry<Serializable, Object>> iterator = map.entrySet().stream()
+                    .filter(entry -> null != entry.getValue())
+                    .iterator();
+
+            return new ForwardingCloseableIterator<>(iterator);
         });
     }
 
     @Override
     public void deleteAllOf(Serializable keyspace) {
-        doWithLock(writeLock, () -> entries(keyspace).forEachRemaining(entry -> {
-            Serializable id = KeyValueAdapterUtils.getId(entry.getKey(), keyspace);
-            delete(id, keyspace);
-        }));
+        doWithLock(writeLock, () -> entries(keyspace).forEachRemaining(entry -> delete(entry.getKey(), keyspace)));
     }
 
     @Override
@@ -198,7 +179,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
      */
     @Override
     public long count(Serializable keyspace) {
-        return doWithLock(readLock, () -> levelDbAdapter.count(keyspace));
+        return doWithLock(readLock, () -> super.count(keyspace));
     }
 
     @Override
@@ -210,6 +191,11 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
             levelDbAdapter.destroy();
             return null;
         });
+    }
+
+    @Override
+    public void write(WriteBatch writeBatch) {
+        levelDbAdapter.write(writeBatch);
     }
 
     @Override
@@ -249,7 +235,7 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
         return doWithLock(readLock, () -> {
             Collection<Serializable> result = Sets.newHashSet();
             String indexKeyspace = KeyValueAdapterUtils.getIndexKeyspace(keyspace, indexName);
-            if (!isAutoCommit) {
+            if (!isAutoCommit && writeBatch.contains(index, indexKeyspace)) {
                 result = (Collection<Serializable>) writeBatch.get(index, indexKeyspace);
             }
 
@@ -299,6 +285,10 @@ public class TransactionAwareLevelDbAdapter extends BaseKeyValueAdapter implemen
 
     @Override
     protected Class<?> getEntityClass(Serializable keyspace) {
+        Class<?> entityClass = super.getEntityClass(keyspace);
+        if (null != entityClass) {
+            return entityClass;
+        }
         return levelDbAdapter.getEntityClass(keyspace);
     }
 }
