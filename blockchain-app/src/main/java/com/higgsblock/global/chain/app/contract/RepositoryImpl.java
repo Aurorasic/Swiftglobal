@@ -47,7 +47,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     List<UTXO> unspentUTXOCache = new ArrayList<>();
     List<UTXO> spentUTXOCache = new ArrayList<>();
-    private WriteCache.BytesKey<byte[]> cache;
+    private Source<byte[], byte[]> sourceWriter;
 
     public RepositoryImpl() {
 
@@ -56,21 +56,25 @@ public class RepositoryImpl implements Repository<UTXO> {
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
 
-        cache = new WriteCache.BytesKey<>(
-                new BatchSourceWriter<>(dbSource), WriteCache.CacheType.SIMPLE);
-        cache.setFlushSource(true);
+        sourceWriter = new BatchSourceWriter<>(dbSource);
+        //WriteCache.BytesKey<byte[]>  cache = new WriteCache.BytesKey<>(sourceWriter, WriteCache.CacheType.SIMPLE);
+        //cache.setFlushSource(true);
 
-        Source<byte[], byte[]> accounts = new XorDataSource<>(cache, HashUtil.sha3("account".getBytes()));
-        Source<byte[], byte[]> codes = new XorDataSource<>(cache, HashUtil.sha3("code".getBytes()));
-        Source<byte[], byte[]> storages = new XorDataSource<>(cache, HashUtil.sha3("storage".getBytes()));
+        Source<byte[], byte[]> accounts = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
+        //((XorDataSource<byte[]>) accounts).setFlushSource(true);
+        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
+        //((XorDataSource<byte[]>) codes).setFlushSource(true);
+        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
+        //((XorDataSource<byte[]>) storages).setFlushSource(true);
 
-        writeCaches.add(cache);
+        //writeCaches.add(cache);
 
         SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(accounts, Serializers.AccountStateSerializer);
         Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
-
+        ((ReadWriteCache.BytesKey<AccountState>) accountStateCache).setFlushSource(true);
 
         Source<byte[], byte[]> codeCache = new ReadWriteCache.BytesKey<>(codes, WriteCache.CacheType.SIMPLE);
+        ((ReadWriteCache.BytesKey<byte[]>) codeCache).setFlushSource(true);
 
         MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(storages) {
             @Override
@@ -78,6 +82,7 @@ public class RepositoryImpl implements Repository<UTXO> {
                 return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
             }
         };
+        storageCache.setFlushSource(true);
 
         init(accountStateCache, codeCache, storageCache);
     }
@@ -242,7 +247,7 @@ public class RepositoryImpl implements Repository<UTXO> {
         //flush codeCache
         //parent.codeCache.putAll(this.codeCache);
 
-        cache.flush();
+        sourceWriter.flush();
     }
 
     @Override
@@ -254,13 +259,18 @@ public class RepositoryImpl implements Repository<UTXO> {
     public synchronized RepositoryImpl startTracking() {
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
                 WriteCache.CacheType.SIMPLE);
+        ((WriteCache.BytesKey<AccountState>) trackAccountStateCache).setFlushSource(true);
+
         Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
+        ((WriteCache.BytesKey<byte[]>) trackCodeCache).setFlushSource(true);
+
         MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
                 return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
             }
         };
+        trackStorageCache.setFlushSource(true);
 
         RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
         ret.parent = this;
