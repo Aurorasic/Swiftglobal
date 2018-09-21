@@ -438,11 +438,11 @@ public class BlockService implements IBlockService {
             isValid = checkAll(block);
         } catch (NotExistPreBlockException e) {
             putAndRequestPreBlocks(block);
-            throw new BlockInvalidException("pre block donot exist:" + block.getSimpleInfo());
+            throw new BlockInvalidException("pre block does not exist:" + block.getSimpleInfo());
         }
 
         if (!isValid) {
-            throw new BlockInvalidException("block is not valid:" + block.getSimpleInfo());
+            throw new BlockInvalidException("the block is not valid:" + block.getSimpleInfo());
         }
 
         //Save block and index
@@ -486,7 +486,6 @@ public class BlockService implements IBlockService {
     @Transactional(rollbackFor = Exception.class)
     public Block saveBlockCompletely(Block block) {
         try {
-            //step 1
             saveBlock(block);
 
             boolean isFirst = isFirstBlockByHeight(block);
@@ -494,26 +493,22 @@ public class BlockService implements IBlockService {
             if (isFirst) {
                 newBestBlock = getToBeBestBlock(block);
                 blockChainInfoService.setMaxHeight(block.getHeight());
-            } else {
-                LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
             }
-            //step 2 whether this block can be confirmed pre N block
+            LOGGER.info("block:{} is the first?={}", block.getSimpleInfo(), isFirst);
+
             blockIndexService.addBlockIndex(block, newBestBlock);
 
             if (block.isGenesisBlock()) {
-                //step 3
-                scoreService.refreshMinersScore(block);
-                //step 4
+                scoreService.refreshMinersScore(block, block);
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
-                scoreService.refreshMinersScore(newBestBlock);
+                scoreService.refreshMinersScore(newBestBlock, block);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
                 scoreService.setSelectedDposScore(nextDposAddressList);
-                //step5
-                freshPeerMinerAddr(newBestBlock);
+                freshPeerMinerAddr(newBestBlock, block);
             }
             return newBestBlock;
         } catch (Exception e) {
@@ -566,7 +561,7 @@ public class BlockService implements IBlockService {
      *
      * @param toBeBestBlock
      */
-    private void freshPeerMinerAddr(Block toBeBestBlock) {
+    private void freshPeerMinerAddr(Block toBeBestBlock, Block newBlock) {
         List<String> dposGroupBySn = new LinkedList<>();
         long sn = dposService.calculateSn(toBeBestBlock.getHeight());
         List<String> dpos = dposService.getDposGroupBySn(sn);
@@ -578,6 +573,7 @@ public class BlockService implements IBlockService {
             dposGroupBySn.addAll(dpos);
         }
         peerManager.setMinerAddresses(dposGroupBySn);
+        LOGGER.debug("end freshPeerMinerAddr,bestBlock={},newBlock={}", toBeBestBlock.getSimpleInfo(), newBlock.getSimpleInfo());
     }
 
     public void broadBlockPersistedEvent(Block block, Block newBestBlock) {

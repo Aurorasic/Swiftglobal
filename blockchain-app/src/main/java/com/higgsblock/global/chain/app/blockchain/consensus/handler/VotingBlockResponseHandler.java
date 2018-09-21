@@ -61,6 +61,9 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
 
     @Override
     protected void process(IMessage<VotingBlockResponse> message) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            return;
+        }
         VotingBlockResponse votingBlockResponse = message.getData();
         Block block = votingBlockResponse.getBlock();
         String sourceId = message.getSourceId();
@@ -92,12 +95,7 @@ public class VotingBlockResponseHandler extends BaseMessageHandler<VotingBlockRe
             voteService.addOriginalBlockToCache(block);
             return;
         }
-        LOGGER.info("check the VotingBlockResponse success, height={}, hash={}", height, blockHash);
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(votingBlockResponse);
-            return;
-        }
-        LOGGER.info("add VotingBlockResponse height={}, hash={}", block.getHeight(), block.getHash());
+        LOGGER.info("check the VotingBlock success,add VotingBlock height={}, hash={}", height, blockHash);
         voteService.addVotingBlock(block);
         messageCenter.dispatchToWitnesses(votingBlockResponse);
     }

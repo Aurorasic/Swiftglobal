@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author HuangShengli
@@ -64,6 +65,17 @@ public interface IScoreService {
      */
     void put(String address, Integer score);
 
+
+    /**
+     * set score
+     *
+     * @param address
+     * @param score
+     * @param allScores
+     */
+    void put(String address, Integer score, Map<String, String> allScores);
+
+
     /**
      * batch update
      *
@@ -71,7 +83,7 @@ public interface IScoreService {
      * @param score
      * @return
      */
-    int updateBatch(List<String> addressList, int score);
+    int updateBatch(List<String> addressList, int score, Map<String, String> allScores);
 
     /**
      * Score all the records
@@ -80,7 +92,7 @@ public interface IScoreService {
      * @param score
      * @return
      */
-    int plusAll(Integer score);
+    int plusAll(Integer score, Map<String, String> allScores);
 
     /**
      * set score if not exist
@@ -111,7 +123,7 @@ public interface IScoreService {
      *
      * @param toBeBestBlock
      */
-    void refreshMinersScore(Block toBeBestBlock);
+    void refreshMinersScore(Block toBeBestBlock, Block newBlock);
 
     /**
      * list top 1000 by score range
