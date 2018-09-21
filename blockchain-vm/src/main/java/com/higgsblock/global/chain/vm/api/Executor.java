@@ -135,6 +135,7 @@ public class Executor {
             executionResult.setErrorMessage(e.getMessage());
         }
 
+        // after adjusting, remainGas contains gasRefund, gasUsed = gasLimit - (remainGas - gasRefund)
         long gasRefund = adjustRefund(programResult, executionResult.getRemainGas());
         executionResult.spendGas(convertToBigInteger(gasRefund).negate());
         executionResult.setGasRefund(convertToBigInteger(gasRefund));
@@ -274,5 +275,13 @@ public class Executor {
 
         return Math.min(programResult.getFutureRefund() + refundOfDeleteAccounts,
                 convertToBigInteger(gasLimit).subtract(remainGas).longValue() / 2);
+    }
+
+    public Repository getTransactionRepository() {
+        return transactionRepository;
+    }
+
+    public Repository getContractRepository() {
+        return contractRepository;
     }
 }
