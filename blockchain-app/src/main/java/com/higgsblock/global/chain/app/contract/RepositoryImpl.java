@@ -8,10 +8,7 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
-import com.higgsblock.global.chain.vm.util.ByteUtil;
-import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import com.higgsblock.global.chain.vm.util.HashUtil;
-import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import com.higgsblock.global.chain.vm.util.*;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -50,6 +47,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     List<UTXO> unspentUTXOCache = new ArrayList<>();
     List<UTXO> spentUTXOCache = new ArrayList<>();
+    private WriteCache.BytesKey<byte[]> cache;
 
     public RepositoryImpl() {
 
@@ -58,7 +56,7 @@ public class RepositoryImpl implements Repository<UTXO> {
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
 
-        WriteCache.BytesKey<byte[]> cache = new WriteCache.BytesKey<>(
+        cache = new WriteCache.BytesKey<>(
                 new BatchSourceWriter<>(dbSource), WriteCache.CacheType.SIMPLE);
         cache.setFlushSource(true);
 
@@ -68,8 +66,12 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         writeCaches.add(cache);
 
-        Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accounts, WriteCache.CacheType.SIMPLE);
+        SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(accounts, Serializers.AccountStateSerializer);
+        Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
+
+
         Source<byte[], byte[]> codeCache = new ReadWriteCache.BytesKey<>(codes, WriteCache.CacheType.SIMPLE);
+
         MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(storages) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
@@ -241,9 +243,7 @@ public class RepositoryImpl implements Repository<UTXO> {
         //flush codeCache
         //parent.codeCache.putAll(this.codeCache);
 
-        writeCaches.stream().forEach(writeCache->{
-            writeCache.flush();
-        });
+        cache.flush();
     }
 
     @Override
