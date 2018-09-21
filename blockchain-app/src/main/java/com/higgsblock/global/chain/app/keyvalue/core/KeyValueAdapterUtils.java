@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
@@ -12,68 +13,58 @@ import java.util.Collection;
  */
 public class KeyValueAdapterUtils {
 
-    public static final String DEFAULT_INDEX_NAME = "id";
-    public static final String ENTITY_CLASS_KEY_SPACE = "_EC";
+    private static final String SEPARATOR_KEYSPACE_ID = ".";
 
     private KeyValueAdapterUtils() {
-    }
-
-    public static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
-        return String.format("$index:%s|%s", keyspace, indexName);
-    }
-
-    public static String getRealKeyspace(Serializable internalKey) {
-        return StringUtils.substringBeforeLast(internalKey.toString(), "_");
-    }
-
-    public static String getRealKey(Serializable internalKey, Serializable keyspace) {
-        return StringUtils.substringAfter(String.valueOf(internalKey), String.format("%s_", keyspace));
-    }
-
-    public static String internalKey(Serializable keyspace, Serializable id) {
-        return String.format("%s_%s", keyspace, id);
-    }
-
-    public static String getId(Serializable key, Serializable keyspace) {
-        return getIndex(key, keyspace, DEFAULT_INDEX_NAME);
-    }
-
-    public static String getIndex(Serializable key, Serializable keyspace, String indexName) {
-        return StringUtils.substringAfter(String.valueOf(key), String.format("%s_%s_", keyspace, indexName));
-    }
-
-    public static String getFullKey(Serializable keyspace, Serializable id) {
-        return getFullKey(keyspace, DEFAULT_INDEX_NAME, id);
-    }
-
-    public static String getFullKey(Serializable keyspace, Serializable indexName, Serializable index) {
-        return String.format("%s_%s_%s", keyspace, indexName, index);
     }
 
     public static String toJsonString(Object value) {
         return JSON.toJSONString(value);
     }
 
-    public static <T> T parseJsonString(String value, Class<T> clazz) {
-        return JSON.parseObject(value, clazz);
+    public static <T> T parseJsonString(String value, Type type) {
+        return JSON.parseObject(value, type);
     }
 
     public static Collection parseJsonArrayString(String value, Class<? extends Serializable> clazz) {
         return JSON.parseArray(value, clazz);
     }
 
-    public static String getKeyPrefix(Serializable keyspace) {
-        return getKeyPrefix(keyspace, true);
+    public static boolean isInKeyspace(String internalKey, Serializable keyspace) {
+        return internalKey.startsWith(String.valueOf(keyspace) + SEPARATOR_KEYSPACE_ID);
     }
 
-    public static String getKeyPrefix(Serializable keyspace, boolean isId) {
-        if (isId) {
-            return getKeyPrefix(keyspace, DEFAULT_INDEX_NAME);
-        }
-        return String.format("%s_", keyspace);
+    public static boolean isIdStartWith(String internalKey, String idPrefix) {
+        String id = StringUtils.substringAfter(internalKey, SEPARATOR_KEYSPACE_ID);
+        return StringUtils.startsWith(id, idPrefix);
     }
 
-    public static String getKeyPrefix(Serializable keyspace, Serializable indexName) {
-        return String.format("%s_%s_", keyspace, indexName);
+    public static String parseId(String key) {
+        return StringUtils.substringAfter(key, SEPARATOR_KEYSPACE_ID);
     }
+
+    public static String parseKeyspace(String key) {
+        return StringUtils.substringBefore(key, SEPARATOR_KEYSPACE_ID);
+    }
+
+    public static String getInternalKey(Serializable keyspace, Serializable id) {
+        return String.format("%s.%s", keyspace, id);
+    }
+
+    public static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
+        return String.format("_%s#%s", keyspace, indexName);
+    }
+
+    public static String getIndexKey(Serializable keyspace, Serializable indexName, Serializable index) {
+        return getInternalKey(getIndexKeyspace(keyspace, indexName), index);
+    }
+
+    public static String getBatchKeyspace(Serializable keyspace, String batchNo) {
+        return String.format("%s.%s", batchNo, keyspace);
+    }
+
+    public static String getBatchKey(Serializable keyspace, Serializable id, String batchNo) {
+        return getInternalKey(getBatchKeyspace(keyspace, batchNo), id);
+    }
+
 }

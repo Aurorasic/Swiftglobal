@@ -62,7 +62,7 @@ public class SyncBlockInStartupService implements IEventBusListener {
      * 1 represents syncing block in init state
      * 2 represents syncing block in running state
      */
-    private int syncState = 1;
+    private int syncState;
     private Cache<BlockRequest, String> requestRecord = Caffeine.newBuilder().maximumSize(100)
             .expireAfterWrite(SYNC_BLOCK_EXPIRATION, TimeUnit.SECONDS)
             .removalListener((RemovalListener<BlockRequest, String>) (request, sourceId, cause) -> {
@@ -77,6 +77,7 @@ public class SyncBlockInStartupService implements IEventBusListener {
     }
 
     public void startSyncBlock() {
+        syncState = 1;
         /*
         1.At the beginning of synchronization, ask the nodes you have already connected to about their max height
          */

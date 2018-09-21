@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.blockchain.consensus.message;
 
 import com.alibaba.fastjson.annotation.JSONType;
 import com.google.common.collect.Maps;
+import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.consensus.vote.Vote;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
@@ -10,13 +11,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author yuanjiantao
@@ -36,8 +36,8 @@ public class VoteTable extends BaseSerializer {
 
     private Map<Integer, Map<String, Map<String, Vote>>> voteTable;
 
-    public VoteTable(Map<Integer, Map<String, Map<String, Vote>>> voteTable, long height) {
-        this.voteTable = voteTable;
+    public VoteTable(long height) {
+        this.voteTable = new ConcurrentHashMap<>();
         this.height = height;
     }
 
@@ -168,5 +168,36 @@ public class VoteTable extends BaseSerializer {
             }
         }
         return true;
+    }
+
+    public Vote getMatchVote(Block originalBlock, int maxVersion) {
+        if (originalBlock == null || originalBlock.getHeight() != this.height) {
+            return null;
+        }
+        String hash = originalBlock.getHash();
+        for (int version = maxVersion; version <= 1; version--) {
+            Map<String, Map<String, Vote>> voteMapOfPubKeyByVersion = this.getVoteMapOfPubKeyByVersion(version);
+            if (MapUtils.isEmpty(voteMapOfPubKeyByVersion)) {
+                continue;
+            }
+            Collection<Map<String, Vote>> voteMapList = voteMapOfPubKeyByVersion.values();
+            if (CollectionUtils.isEmpty(voteMapList)) {
+                continue;
+            }
+            Optional<Map<String, Vote>> optional = voteMapList.stream().findAny().filter((voteMap) -> {
+                if (MapUtils.isEmpty(voteMap)) {
+                    return false;
+                }
+                if (voteMap.size() != 1) {
+                    return false;
+                }
+                String voteHash = voteMap.keySet().iterator().next();
+                return StringUtils.equals(voteHash, hash);
+            });
+            if (optional.isPresent()) {
+                return optional.get().values().iterator().next();
+            }
+        }
+        return null;
     }
 }
