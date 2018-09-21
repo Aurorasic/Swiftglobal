@@ -30,19 +30,25 @@ import java.util.Set;
 public class ExecutorTest {
     private Executor executor;
     private Repository blockRepository;
+    Repository transactionRepository;
+    byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+    byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
 
     @Before
     public void setUp() {
         String transactionHash = "03e22f204d45f061a5b68847534b428a1277652677b6adff2d1f3381bbc4115c";
-        boolean isContractCreation = true;
-        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
-        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        boolean isContractCreation = false;
+
+
         byte[] gasPrice = BigInteger.valueOf(1_000_000_000L).toByteArray();
         byte[] gasLimit = BigInteger.valueOf(125000L).toByteArray();
         byte[] value = BigInteger.valueOf(0 * 1_000_000_000_000_000_000L).toByteArray();
 
         byte[] data = Hex.decode("608060405234801561001057600080fd5b5060fa8061001f6000396000f30060806040526004361060525763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663590e1ae38114605757806360fe47b114605f5780636d4ce63c146074575b600080fd5b605d6098565b005b348015606a57600080fd5b50605d60043560c3565b348015607f57600080fd5b50608660c8565b60408051918252519081900360200190f35b6040513390600090600a9082818181858883f1935050505015801560c0573d6000803e3d6000fd5b50565b600055565b600054905600a165627a7a723058207de1f57b6c05faf418f8f4a3566fc2e11137539e3d25b48512bc0e6b8ad176f90029");
-      //  data = Hex.decode("590e1ae3");
+//        "6d4ce63c": "get()",
+//                "590e1ae3": "refund()",
+//                "60fe47b1": "set(uint256)"
+        data = Hex.decode("6d4ce63c");
         //60806040526004361060525763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663590e1ae38114605757806360fe47b114605f5780636d4ce63c146074575b600080fd5b605d6098565b005b348015606a57600080fd5b50605d60043560c3565b348015607f57600080fd5b50608660c8565b60408051918252519081900360200190f35b6040513390600090600a9082818181858883f1935050505015801560c0573d6000803e3d6000fd5b50565b600055565b600054905600a165627a7a723058207de1f57b6c05faf418f8f4a3566fc2e11137539e3d25b48512bc0e6b8ad176f90029
         SystemProperties systemProperties = new SystemProperties() {
             @Override
@@ -134,9 +140,12 @@ public class ExecutorTest {
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
         blockRepository  = new RepositoryImpl();
-        Repository transactionRepository = blockRepository.startTracking();
+         transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);
+
+
+
     }
 
     @Test
@@ -150,8 +159,11 @@ public class ExecutorTest {
       //  Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
     //    Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
         System.out.println("部署合约代码"+Hex.toHexString(executionResult.getResult()));
-      //  Assert.assertNull();
+        transactionRepository.commit();
+        blockRepository.commit();
         blockRepository.flush();
+
+        System.out.println("部署合约代码"+Hex.toHexString(blockRepository.getCode(contractAddress)));
     }
 
     @After

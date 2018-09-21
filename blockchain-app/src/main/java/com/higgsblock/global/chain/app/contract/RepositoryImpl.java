@@ -283,7 +283,9 @@ public class RepositoryImpl implements Repository<UTXO> {
             accountStateCache.flush();
 
             //flush UTXO into parent cache
-            parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
+            if (parent != null) {
+                parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
+            }
             this.spentUTXOCache.clear();
             this.unspentUTXOCache.clear();
             this.accountStates.clear();
