@@ -6,7 +6,6 @@ import com.higgsblock.global.chain.vm.api.Executor;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
 import com.higgsblock.global.chain.vm.core.*;
-import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.Program;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,13 +28,6 @@ public class ExecutorTest {
 
     @Before
     public void setUp() {
-        String transactionHash = "03e22f204d45f061a5b68847534b428a1277652677b6adff2d1f3381bbc4115c";
-        boolean isContractCreation = true;
-        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
-        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
-        byte[] gasPrice = BigInteger.valueOf(1_000_000_000L).toByteArray();
-        byte[] gasLimit = BigInteger.valueOf(125000L).toByteArray();
-        byte[] value = BigInteger.valueOf(5 * 1_000_000_000_000_000_000L).toByteArray();
 //        pragma solidity ^0.4.11;
 //
 //        contract DataStorage {
@@ -49,11 +41,22 @@ public class ExecutorTest {
 //                return data;
 //            }
 //        }
-        byte[] data = Hex.decode("608060405234801561001057600080fd5b5060bf8061001f6000396000f30060806040526004361060485" +
-                "763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166360fe47b18114604d578" +
-                "0636d4ce63c146064575b600080fd5b348015605857600080fd5b5060626004356088565b005b348015606f57600080fd5b506" +
-                "076608d565b60408051918252519081900360200190f35b600055565b600054905600a165627a7a72305820e1d0b14af22a8bc" +
-                "992cb2f3788c2ae1d260f6c4ff559b49864d0e5577e20408f0029");
+        byte[] data = Hex.decode("608060405234801561001057600080fd5b5060bf8061001f6000396000f300608060405260043610604" +
+                "85763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166360fe47b18114604" +
+                "d5780636d4ce63c146064575b600080fd5b348015605857600080fd5b5060626004356088565b005b348015606f57600080f" +
+                "d5b506076608d565b60408051918252519081900360200190f35b600055565b600054905600a165627a7a72305820e1d0b14" +
+                "af22a8bc992cb2f3788c2ae1d260f6c4ff559b49864d0e5577e20408f0029");
+        byte[] value = BigInteger.valueOf(5 * 1_000_000_000_000_000_000L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
+    }
+
+    private void setExecutor(byte[] data, byte[] value, byte[] contractAddress, byte[] senderAddress) {
+        String transactionHash = "03e22f204d45f061a5b68847534b428a1277652677b6adff2d1f3381bbc4115c";
+        boolean isContractCreation = true;
+        byte[] gasPrice = BigInteger.valueOf(1_000_000_000L).toByteArray();
+        byte[] gasLimit = BigInteger.valueOf(125000L).toByteArray();
 
         SystemProperties systemProperties = new SystemProperties() {
             @Override
@@ -159,12 +162,14 @@ public class ExecutorTest {
 
             @Override
             public AccountState createAccount(byte[] addr) {
+                db.put(addr, new byte[0]);
+                System.out.println(db.get(addr) != null);
                 return null;
             }
 
             @Override
             public boolean isExist(byte[] addr) {
-                return false;
+                return db.get(addr) != null;
             }
 
             @Override
@@ -348,6 +353,169 @@ public class ExecutorTest {
         Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
         Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
     }
+
+    @Test
+    public void testExecute_Event01() {
+//        pragma solidity ^0.4.11;
+//
+//        contract DataStorage {
+//            event Sent(address from, uint amount);
+//
+//            constructor() public {
+//                emit Sent(msg.sender, 25);
+//            }
+//        }
+        byte[] data = Hex.decode("6080604052348015600f57600080fd5b50604080513381526019602082015281517f510ffb4dcab972a" +
+                "e9d2007a58e13f1b0881776d23cd8f5cc32f8c5be2dbf70d2929181900390910190a160358060586000396000f3fe6080604" +
+                "052600080fdfea165627a7a72305820bc81014d71063049e3c08c508a3b7d9858064985493544b42a014cf092b798750029");
+        byte[] value = BigInteger.valueOf(0L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
+
+
+        ExecutionResult executionResult = executor.execute();
+
+
+        System.out.println("executionResult:");
+        System.out.println(executionResult);
+        System.out.println();
+
+        Assert.assertEquals(1, executionResult.getLogInfoList().size());
+        Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(executionResult.getLogInfoList().get(0).getAddress()));
+        Assert.assertEquals("00000000000000000000000026004361060485763ffffffff7c0100000000000" +
+                        "0000000000000000000000000000000000000000000000000000000000000019",
+                Hex.toHexString(executionResult.getLogInfoList().get(0).getData()));
+        Assert.assertEquals(1, executionResult.getLogInfoList().get(0).getTopics().size());
+
+        System.out.println("topics[0]:");
+        //510ffb4dcab972ae9d2007a58e13f1b0881776d23cd8f5cc32f8c5be2dbf70d2
+        System.out.println(Hex.toHexString(executionResult.getLogInfoList().get(0).getTopics().get(0).getData()));
+        System.out.println();
+
+        Assert.assertTrue(executor.getContractRepository().isExist(contractAddress));
+    }
+
+    @Test
+    public void testExecute_Event02() {
+//        pragma solidity ^0.4.11;
+//
+//        contract DataStorage {
+//            event Sent(uint from, uint amount);
+//
+//            constructor() public {
+//                emit Sent(26, 25);
+//            }
+//        }
+        byte[] data = Hex.decode("6080604052348015600f57600080fd5b5060408051601a81526019602082015281517f233093300525c" +
+                "6ff5b81826dc17bf171773b9153d519576d21ee1e2989c1011f929181900390910190a160358060596000396000f3fe60806" +
+                "04052600080fdfea165627a7a723058202301acc2cdd1531510b64abffbfdf40a716d53c2d8bfe86631102c7b74194520002" +
+                "9");
+        byte[] value = BigInteger.valueOf(0L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
+
+
+        ExecutionResult executionResult = executor.execute();
+
+
+        System.out.println("executionResult:");
+        System.out.println(executionResult);
+        System.out.println();
+
+        Assert.assertEquals(1, executionResult.getLogInfoList().size());
+        Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(executionResult.getLogInfoList().get(0).getAddress()));
+        Assert.assertEquals("000000000000000000000000000000000000000000000000000000000000001a" +
+                        "0000000000000000000000000000000000000000000000000000000000000019",
+                Hex.toHexString(executionResult.getLogInfoList().get(0).getData()));
+        Assert.assertEquals(1, executionResult.getLogInfoList().get(0).getTopics().size());
+
+        System.out.println("topics[0]:");
+        //233093300525c6ff5b81826dc17bf171773b9153d519576d21ee1e2989c1011f
+        System.out.println(Hex.toHexString(executionResult.getLogInfoList().get(0).getTopics().get(0).getData()));
+        System.out.println();
+    }
+
+    @Test
+    public void testExecute_Event03() {
+//        pragma solidity ^0.4.11;
+//
+//        contract DataStorage {
+//            event Sent(address from, uint s, uint amount);
+//
+//            constructor() public {
+//                emit Sent(msg.sender, 26, 25);
+//            }
+//        }
+        byte[] data = Hex.decode("6080604052348015600f57600080fd5b5060408051338152601a602082015260198183015290517f635" +
+                "6739d963da01dc3533acba7203430fcc14f2175d48a8dd0973d7db49c785e9181900360600190a1603580605d6000396000f" +
+                "3fe6080604052600080fdfea165627a7a72305820411d5020ee0dae74120beea64fbc24faa9ecb10ed44be9f43b17b4e1f22" +
+                "cc0280029");
+        byte[] value = BigInteger.valueOf(0L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
+
+
+        ExecutionResult executionResult = executor.execute();
+
+
+        System.out.println("executionResult:");
+        System.out.println(executionResult);
+        System.out.println();
+
+        Assert.assertEquals(1, executionResult.getLogInfoList().size());
+        Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(executionResult.getLogInfoList().get(0).getAddress()));
+        Assert.assertEquals("00000000000000000000000026004361060485763ffffffff7c0100000000000" +
+                        "000000000000000000000000000000000000000000000000000000000000001a" +
+                        "0000000000000000000000000000000000000000000000000000000000000019",
+                Hex.toHexString(executionResult.getLogInfoList().get(0).getData()));
+        Assert.assertEquals(1, executionResult.getLogInfoList().get(0).getTopics().size());
+
+        System.out.println("topics[0]:");
+        //6356739d963da01dc3533acba7203430fcc14f2175d48a8dd0973d7db49c785e
+        System.out.println(Hex.toHexString(executionResult.getLogInfoList().get(0).getTopics().get(0).getData()));
+        System.out.println();
+    }
+
+    @Test
+    public void testExecute_Event04() {
+//        pragma solidity ^0.4.11;
+//
+//        contract DataStorage {
+//            constructor() public {
+//                selfdestruct(msg.sender);
+//            }
+//        }
+//        PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH1 0xF JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP CALLER SELFDESTRUCT INVALID
+        byte[] data = Hex.decode("6080604052348015600f57600080fd5b5033fffe");
+        byte[] value = BigInteger.valueOf(0L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
+
+
+        ExecutionResult executionResult = executor.execute();
+
+
+        System.out.println("executionResult:");
+        System.out.println(executionResult);
+        System.out.println();
+
+        Assert.assertEquals(1, executionResult.getDeleteAccounts().size());
+        DataWord account = new DataWord();
+        for (DataWord dataWord: executionResult.getDeleteAccounts()) {
+            account = dataWord;
+        }
+        Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(contractAddress), Hex.toHexString(account.getLast20Bytes()));
+        System.out.println();
+
+//        Assert.assertFalse(executor.getContractRepository().isExist(contractAddress));
+    }
+
+
+
 
     @After
     public void tearDown() {
