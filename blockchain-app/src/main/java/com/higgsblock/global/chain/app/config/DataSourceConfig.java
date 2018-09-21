@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.config;
 
 import com.higgsblock.global.chain.app.keyvalue.core.IndexedKeyValueAdapter;
 import com.higgsblock.global.chain.app.keyvalue.core.IndexedKeyValueTemplate;
-import com.higgsblock.global.chain.app.keyvalue.core.LevelDbKeyValueAdapter;
+import com.higgsblock.global.chain.app.keyvalue.core.MultiLevelDbKeyValueAdapter;
 import com.higgsblock.global.chain.app.keyvalue.core.TransactionAwareLevelDbAdapter;
 import com.higgsblock.global.chain.app.keyvalue.repository.config.EnableLevelDbRepositories;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class DataSourceConfig {
 
     @Bean
     public IndexedKeyValueAdapter keyValueAdapter(AppConfig config) {
-        LevelDbKeyValueAdapter adapter = new LevelDbKeyValueAdapter(config.getDataDir());
+        MultiLevelDbKeyValueAdapter adapter = new MultiLevelDbKeyValueAdapter(config.getDataDir());
         return new TransactionAwareLevelDbAdapter(adapter);
     }
 

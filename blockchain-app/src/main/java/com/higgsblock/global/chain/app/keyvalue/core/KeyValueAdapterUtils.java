@@ -1,19 +1,15 @@
 package com.higgsblock.global.chain.app.keyvalue.core;
 
 import com.alibaba.fastjson.JSON;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
-import java.util.Collection;
 
 /**
  * @author baizhengwen
  * @date 2018-08-29
  */
 public class KeyValueAdapterUtils {
-
-    private static final String SEPARATOR_KEYSPACE_ID = ".";
 
     private KeyValueAdapterUtils() {
     }
@@ -26,37 +22,12 @@ public class KeyValueAdapterUtils {
         return JSON.parseObject(value, type);
     }
 
-    public static Collection parseJsonArrayString(String value, Class<? extends Serializable> clazz) {
-        return JSON.parseArray(value, clazz);
-    }
-
-    protected static boolean isInKeyspace(String internalKey, Serializable keyspace) {
-        return internalKey.startsWith(String.valueOf(keyspace) + SEPARATOR_KEYSPACE_ID);
-    }
-
-    protected static boolean isIdStartWith(String internalKey, String idPrefix) {
-        String id = StringUtils.substringAfter(internalKey, SEPARATOR_KEYSPACE_ID);
-        return StringUtils.startsWith(id, idPrefix);
-    }
-
-    protected static String parseId(String key) {
-        return StringUtils.substringAfter(key, SEPARATOR_KEYSPACE_ID);
-    }
-
-    protected static String parseKeyspace(String key) {
-        return StringUtils.substringBefore(key, SEPARATOR_KEYSPACE_ID);
-    }
-
     protected static String getInternalKey(Serializable keyspace, Serializable id) {
         return String.format("%s.%s", keyspace, id);
     }
 
     protected static String getIndexKeyspace(Serializable keyspace, Serializable indexName) {
         return String.format("_%s#%s", keyspace, indexName);
-    }
-
-    public static String getIndexKey(Serializable keyspace, Serializable indexName, Serializable index) {
-        return getInternalKey(getIndexKeyspace(keyspace, indexName), index);
     }
 
     protected static String getBatchKeyspace(Serializable keyspace, String batchNo) {

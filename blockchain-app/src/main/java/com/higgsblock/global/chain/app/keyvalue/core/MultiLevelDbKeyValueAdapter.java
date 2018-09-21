@@ -26,7 +26,7 @@ import java.util.Map;
  * @date 2018-08-24
  */
 @Slf4j
-public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter {
+public class MultiLevelDbKeyValueAdapter extends BaseKeyValueAdapter {
 
     private static final String KEYSPACE_ENTITY_CLASS = "_EC";
 
@@ -41,7 +41,7 @@ public class LevelDbKeyValueAdapter extends BaseKeyValueAdapter {
     @Setter
     protected Map<Serializable, ILevelDb<String>> dbMap = Maps.newConcurrentMap();
 
-    public LevelDbKeyValueAdapter(String dataDir) {
+    public MultiLevelDbKeyValueAdapter(String dataDir) {
         super(new IndexedSpelQueryEngine());
 
         this.dataDir = dataDir;
