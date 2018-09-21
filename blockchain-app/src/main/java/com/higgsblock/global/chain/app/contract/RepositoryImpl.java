@@ -478,7 +478,10 @@ public class RepositoryImpl implements Repository<UTXO> {
         @Override
         public Map<DataWord, DataWord> getStorage() {
             Map<DataWord, DataWord> storage = new HashMap<>();
-
+            storageCache.getModified().stream().forEach(item->{
+                DataWord key = new DataWord(item);
+                storage.put(key, storageCache.get(address).get(key));
+            });
             return storage;
         }
     }
