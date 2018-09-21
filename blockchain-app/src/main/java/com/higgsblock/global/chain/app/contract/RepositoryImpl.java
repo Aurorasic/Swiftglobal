@@ -259,10 +259,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     public synchronized RepositoryImpl startTracking() {
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
                 WriteCache.CacheType.SIMPLE);
-        ((WriteCache.BytesKey<AccountState>) trackAccountStateCache).setFlushSource(true);
 
         Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
-        ((WriteCache.BytesKey<byte[]>) trackCodeCache).setFlushSource(true);
 
         MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {
             @Override
@@ -270,7 +268,6 @@ public class RepositoryImpl implements Repository<UTXO> {
                 return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
             }
         };
-        trackStorageCache.setFlushSource(true);
 
         RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
         ret.parent = this;
