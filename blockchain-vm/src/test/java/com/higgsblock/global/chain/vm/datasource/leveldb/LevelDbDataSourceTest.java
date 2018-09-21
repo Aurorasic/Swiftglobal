@@ -32,7 +32,7 @@ public class LevelDbDataSourceTest {
         dbSource.setName("contract1");
         dbSource.init(DbSettings.DEFAULT);
         BatchSourceWriter writer = new BatchSourceWriter<>(dbSource);
-        writer.setFlushSource(true);
+       // writer.setFlushSource(true);
 
         SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(writer, Serializers.AccountStateSerializer);
         accountStateCodec.setFlushSource(true);
@@ -48,30 +48,46 @@ public class LevelDbDataSourceTest {
         //合约缓存
         Source<byte[], AccountState> conAccountStateCache = new WriteCache.BytesKey(txAccountStateCache,
                 WriteCache.CacheType.SIMPLE);
-        ((WriteCache)conAccountStateCache).setFlushSource(true);
-        byte[] key = "hello1".getBytes();
+        //((WriteCache)conAccountStateCache).setFlushSource(true);
+        byte[] key = "f".getBytes();
         AccountState accountState = new AccountState(0, BigInteger.valueOf(10));
         conAccountStateCache.put(key,accountState);
 
         /**********END 账户缓存******************/
 
         /*************START code缓存*******************/
-        Source<byte[], byte[]> codeCache = new WriteCache.BytesKey<>(writer, WriteCache.CacheType.COUNTING);
-        ((WriteCache)codeCache).setFlushSource(true);
-        System.out.println(new String(codeCache.get("a".getBytes())));
-        codeCache.put("b".getBytes(),"2".getBytes());
-        codeCache.put("b".getBytes(),"3".getBytes());
-        codeCache.put("c".getBytes(),"4".getBytes());
+        //block
+        Source<byte[], byte[]> blCodeCache = new WriteCache.BytesKey<>(writer, WriteCache.CacheType.COUNTING);
+
+        //tx
+        Source<byte[], byte[]> txCodeCache = new WriteCache.BytesKey<>(blCodeCache, WriteCache.CacheType.COUNTING);
+
+
+        //con
+        Source<byte[], byte[]> conCodeCache = new WriteCache.BytesKey<>(txCodeCache, WriteCache.CacheType.COUNTING);
+        conCodeCache.put(key,"3".getBytes());
         /*************END code缓存*******************/
 
-        accountStateCache.flush();
-        Assert.assertNotNull(dbSource.get(key));
+       // accountStateCache.flush();
+        //Assert.assertNotNull(dbSource.get(key));
         //Assert.assertNull(dbSource.get("a".getBytes()));
 
-        codeCache.flush();
-        Assert.assertEquals(new String(dbSource.get("a".getBytes())),"1");
-        Assert.assertEquals(new String(dbSource.get("b".getBytes())),"3");
-        Assert.assertEquals(new String(dbSource.get("c".getBytes())),"4");
+        //合约cache只提交到交易
+        conCodeCache.flush();
+        Assert.assertEquals(new String(txCodeCache.get(key)),"3");
+        Assert.assertNull(blCodeCache.get(key));
+        //交易的
+        txCodeCache.flush();
+        //区块的
+        blCodeCache.flush();
+       // Assert.assertEquals(new String(writer.get("e".getBytes())),"3");
+        Assert.assertNull(dbSource.get(key));
+        //统一提交
+        writer.flush();
+
+        Assert.assertEquals(new String(dbSource.get(key)),"3");
+//        Assert.assertEquals(new String(dbSource.get("b".getBytes())),"3");
+//        Assert.assertEquals(new String(dbSource.get("c".getBytes())),"4");
     }
 
     @Test
