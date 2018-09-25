@@ -31,8 +31,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     private UTXOServiceProxy utxoServiceProxy;
 
 
-    private Source<byte[], AccountState> accountStateCache;
-    private Source<byte[], byte[]> codeCache;
+    protected Source<byte[], AccountState> accountStateCache;
+    protected Source<byte[], byte[]> codeCache;
 
     protected MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
 
@@ -47,45 +47,18 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     List<UTXO> unspentUTXOCache = new ArrayList<>();
     List<UTXO> spentUTXOCache = new ArrayList<>();
-    private Source<byte[], byte[]> sourceWriter;
 
-    public byte[] getInDB(byte[] key){
-       return sourceWriter.get(key);
+
+//    public byte[] getInDB(byte[] key){
+//       return sourceWriter.get(key);
+//    }
+
+    protected RepositoryImpl() {
+
+
     }
 
-    public RepositoryImpl() {
-
-        //Source dbSource = new HashMapDB<byte[]>();
-        DbSource<byte[]> dbSource = new LevelDbDataSource();
-        dbSource.setName("contract");
-        dbSource.init(DbSettings.DEFAULT);
-        sourceWriter = new BatchSourceWriter<>(dbSource);
-
-        Source<byte[], byte[]> accounts = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
-
-        Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
-
-        Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
-
-        SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(accounts, Serializers.AccountStateSerializer);
-        Source<byte[], AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
-        ((ReadWriteCache.BytesKey<AccountState>) accountStateCache).setFlushSource(true);
-
-        Source<byte[], byte[]> codeCache = new ReadWriteCache.BytesKey<>(codes, WriteCache.CacheType.SIMPLE);
-        ((ReadWriteCache.BytesKey<byte[]>) codeCache).setFlushSource(true);
-
-        MultiCache<CachedSource<DataWord, DataWord>> storageCache = new MultiCache(storages) {
-            @Override
-            protected CachedSource create(byte[] key, CachedSource srcCache) {
-                return new WriteCache<>(srcCache, WriteCache.CacheType.SIMPLE);
-            }
-        };
-        storageCache.setFlushSource(true);
-
-        init(accountStateCache, codeCache, storageCache);
-    }
-
-    public RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
+    protected RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
 
                           MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         init(accountStateCache, codeCache, storageCache);
@@ -227,7 +200,7 @@ public class RepositoryImpl implements Repository<UTXO> {
      */
     @Override
     public void flush() {
-        sourceWriter.flush();
+        //sourceWriter.flush();
     }
 
     @Override
@@ -475,6 +448,26 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         public ContractDetailsImpl(byte[] address) {
             this.address = address;
+        }
+
+        @Override
+        public void put(DataWord key, DataWord value) {
+            RepositoryImpl.this.addStorageRow(address, key, value);
+        }
+
+        @Override
+        public DataWord get(DataWord key) {
+            return RepositoryImpl.this.getStorageValue(address, key);
+        }
+
+        @Override
+        public byte[] getCode() {
+            return RepositoryImpl.this.getCode(address);
+        }
+
+        @Override
+        public void setCode(byte[] code) {
+            RepositoryImpl.this.saveCode(address, code);
         }
 
         @Override

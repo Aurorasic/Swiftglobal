@@ -406,6 +406,26 @@ public class RepositoryMockImpl implements Repository {
         }
 
         @Override
+        public void put(DataWord key, DataWord value) {
+
+        }
+
+        @Override
+        public DataWord get(DataWord key) {
+            return null;
+        }
+
+        @Override
+        public byte[] getCode() {
+            return new byte[0];
+        }
+
+        @Override
+        public void setCode(byte[] code) {
+
+        }
+
+        @Override
         public Map<DataWord, DataWord> getStorage() {
             Map<DataWord, DataWord> storage = new HashMap<>();
             

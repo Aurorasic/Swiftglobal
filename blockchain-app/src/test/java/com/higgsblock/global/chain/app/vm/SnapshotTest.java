@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.contract.RepositoryImpl;
+import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.utils.Money;
@@ -31,7 +32,7 @@ public class SnapshotTest {
 
 
         //一级缓存
-        Repository parent  = new RepositoryImpl();
+        Repository parent  = new RepositoryRoot();
         //二级缓存
         Repository txR = parent.startTracking();
         //三级缓存

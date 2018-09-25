@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.vm;
 
 import com.higgsblock.global.chain.app.contract.RepositoryImpl;
+import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.GasCost;
 import com.higgsblock.global.chain.vm.OpCode;
@@ -139,7 +140,7 @@ public class ExecutorTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-        blockRepository  = new RepositoryImpl();
+        blockRepository  = new RepositoryRoot();
          transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);
@@ -161,7 +162,7 @@ public class ExecutorTest {
         System.out.println("部署合约代码"+Hex.toHexString(executionResult.getResult()));
         transactionRepository.commit();
         blockRepository.commit();
-        blockRepository.flush();
+        //blockRepository.flush();
 
         System.out.println("部署合约代码"+Hex.toHexString(blockRepository.getCode(contractAddress)));
     }

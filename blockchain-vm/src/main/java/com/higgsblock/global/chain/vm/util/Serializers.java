@@ -17,6 +17,7 @@
  */
 package com.higgsblock.global.chain.vm.util;
 
+import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.AccountState;
 
 import org.springframework.util.SerializationUtils;
@@ -54,6 +55,38 @@ public class Serializers {
         @Override
         public AccountState deserialize(byte[] stream) {
             return stream == null || stream.length == 0 ? null : (AccountState)SerializationUtils.deserialize(stream);
+        }
+    };
+
+
+    /**
+     * Contract storage key serializer
+     */
+    public final static Serializer<DataWord, byte[]> StorageKeySerializer = new Serializer<DataWord, byte[]>() {
+        @Override
+        public byte[] serialize(DataWord object) {
+            return object.getData();
+        }
+
+        @Override
+        public DataWord deserialize(byte[] stream) {
+            return new DataWord(stream);
+        }
+    };
+
+    /**
+     * Contract storage value serializer (part of Ethereum spec)
+     */
+    public final static Serializer<DataWord, byte[]> StorageValueSerializer = new Serializer<DataWord, byte[]>() {
+        @Override
+        public byte[] serialize(DataWord object) {
+            return object.getNoLeadZeroesData();
+        }
+
+        @Override
+        public DataWord deserialize(byte[] stream) {
+            if (stream == null || stream.length == 0) return null;
+            return new DataWord(stream);
         }
     };
 
