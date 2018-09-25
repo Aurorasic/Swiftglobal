@@ -1320,6 +1320,7 @@ public class VM {
 
             vmCounter++;
         } catch (RuntimeException e) {
+            e.printStackTrace();
             logger.warn("VM halted: [{}]", e);
             program.spendAllGas();
             program.resetFutureRefund();

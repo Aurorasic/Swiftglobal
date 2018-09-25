@@ -68,7 +68,6 @@ public class RepositoryImpl implements Repository<UTXO> {
                         MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         this.accountStateCache = accountStateCache;
         this.codeCache = codeCache;
-
         this.storageCache = storageCache;
     }
 
@@ -167,8 +166,8 @@ public class RepositoryImpl implements Repository<UTXO> {
         if (accountState == null) {
             return null;
         } else {
-            Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
-            return contractStorage.get(key);
+            //Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
+            return storageCache.get(addr).get(key);
         }
     }
 
