@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.app.dao.entity.BlockChainInfoEntity;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.crypto.ECKey;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,14 +30,11 @@ public class WitnessService implements IWitnessService, InitializingBean {
 
     public final static List<String> WITNESS_ADDRESS_LIST = new ArrayList<>();
 
-    private static final String KEY_ALL_WITNESS = "allWitness";
-
     /**
      * The Witness repository.
      */
     @Autowired
-    private IWitnessRepository witnessRepository;
-
+    private IBlockChainInfoService blockChainInfoService;
     @Autowired
     private PeerManager peerManager;
 
@@ -52,17 +50,7 @@ public class WitnessService implements IWitnessService, InitializingBean {
 
     @Override
     public List<Peer> getAllWitnessPeer() {
-        BlockChainInfoEntity witnessInfoEntity = witnessRepository.findOne(KEY_ALL_WITNESS);
-        if (witnessInfoEntity == null ||
-                StringUtils.isEmpty(witnessInfoEntity.getValue())) {
-            return new ArrayList<>(0);
-        }
-        List<WitnessEntity> list = JSONObject.parseArray(witnessInfoEntity.getValue(), WitnessEntity.class);
-        List<Peer> peers = Lists.newArrayList();
-        list.forEach(witnessEntity -> {
-            peers.add(witnessEntity2Peer(witnessEntity));
-        });
-        return peers;
+        return blockChainInfoService.getAllWitness();
     }
 
     @Override
@@ -73,18 +61,6 @@ public class WitnessService implements IWitnessService, InitializingBean {
     @Override
     public int getWitnessSize() {
         return WITNESS_ADDRESS_LIST.size();
-    }
-
-    private static Peer witnessEntity2Peer(WitnessEntity witnessEntity) {
-        if (witnessEntity == null) {
-            return null;
-        }
-        Peer peer = new Peer();
-        peer.setIp(witnessEntity.getAddress());
-        peer.setSocketServerPort(witnessEntity.getSocketPort());
-        peer.setHttpServerPort(witnessEntity.getHttpPort());
-        peer.setPubKey(witnessEntity.getPubKey());
-        return peer;
     }
 
     private void loadWitnessFromDb(List<Peer> list) {

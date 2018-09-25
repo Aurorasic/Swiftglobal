@@ -2,15 +2,20 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.dao.IBlockChainInfoRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockChainInfoEntity;
+import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
+import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,13 +64,39 @@ public class BlockChainInfoService implements IBlockChainInfoService {
 
     @Override
     public void setAllWitness(String allWitnesss) {
-        String witness = JSON.toJSONString(allWitnesss);
-        BlockChainInfoEntity entity = new BlockChainInfoEntity(KEY_ALL_WITNESS, witness);
+        BlockChainInfoEntity entity = new BlockChainInfoEntity(KEY_ALL_WITNESS, allWitnesss);
         blockChainInfoRepository.save(entity);
     }
 
     @Override
     public void deleteAllScores() {
         blockChainInfoRepository.delete(KEY_ALL_SCORES);
+    }
+
+    @Override
+    public List<Peer> getAllWitness() {
+        BlockChainInfoEntity chainInfoEntity = blockChainInfoRepository.findOne(KEY_ALL_WITNESS);
+        if (chainInfoEntity == null ||
+                StringUtils.isEmpty(chainInfoEntity.getValue())) {
+            return new ArrayList<>(0);
+        }
+        List<WitnessEntity> list = JSONObject.parseArray(chainInfoEntity.getValue(), WitnessEntity.class);
+        List<Peer> peers = Lists.newArrayList();
+        list.forEach(witnessEntity -> {
+            peers.add(witnessEntity2Peer(witnessEntity));
+        });
+        return peers;
+    }
+
+    private static Peer witnessEntity2Peer(WitnessEntity witnessEntity) {
+        if (witnessEntity == null) {
+            return null;
+        }
+        Peer peer = new Peer();
+        peer.setIp(witnessEntity.getAddress());
+        peer.setSocketServerPort(witnessEntity.getSocketPort());
+        peer.setHttpServerPort(witnessEntity.getHttpPort());
+        peer.setPubKey(witnessEntity.getPubKey());
+        return peer;
     }
 }
