@@ -93,6 +93,8 @@ public class BlockService implements IBlockService {
     private IBlockChainService blockChainService;
     @Autowired
     private IBlockChainInfoService blockChainInfoService;
+    @Autowired
+    private IBalanceService balanceService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -450,6 +452,8 @@ public class BlockService implements IBlockService {
 
         //for get jdbc connect this mast be in this commit/connection
         utxoServiceProxy.addNewBlock(newBestBlock, block);
+
+        balanceService.save(newBestBlock);
 
         return newBestBlock;
     }

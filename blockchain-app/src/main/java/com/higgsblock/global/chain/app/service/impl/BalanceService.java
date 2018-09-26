@@ -1,14 +1,12 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IBalanceRepository;
 import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.service.IBalanceService;
-import com.higgsblock.global.chain.app.service.IBestUTXOService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -17,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The type Balance service.
@@ -31,9 +28,6 @@ public class BalanceService implements IBalanceService {
 
     @Autowired
     private IBalanceRepository balanceRepository;
-
-    @Autowired
-    private IBestUTXOService bestUTXOService;
 
     /**
      * Gets balance.
@@ -87,31 +81,28 @@ public class BalanceService implements IBalanceService {
             }
 
             Map<String, Money> minusCurrencyMap = minusMap.get(address);
+            Map<String, Money> dbCurrencyMap = get(address);
             entry.getValue().keySet().forEach(currency -> {
                 entry.getValue().compute(currency, (k1, v1) -> {
                     Money minusMoney = minusCurrencyMap.get(currency);
                     if (null != minusMoney) {
                         v1.subtract(minusMoney);
                     }
+
+                    if(MapUtils.isNotEmpty(dbCurrencyMap) && dbCurrencyMap.containsKey(currency)){
+                        v1.add(dbCurrencyMap.get(currency));
+                    }
+
                     return v1;
                 });
             });
-
-            Map<String, Money> currencyMap = get(address);
-            // TODO
         }
     }
 
     private Map<String, Map<String, Money>> getMinusMap(Block block) {
         Map<String, Map<String, Money>> minusMap = Maps.newHashMap();
         for (Transaction tx : block.getTransactions()) {
-            for (String spendUtxoKey : tx.getSpendUTXOKeys()) {
-                UTXO spendUtxo = bestUTXOService.getUTXOByKey(spendUtxoKey);
-                if (null == spendUtxo) {
-                    LOGGER.warn("cannot find utxo:{}", spendUtxoKey);
-                    continue;
-                }
-
+            for (UTXO spendUtxo : tx.getSpendUTXOs()) {
                 minusMap.compute(spendUtxo.getAddress(), (k, v) -> {
                     if (null == v) {
                         v = Maps.newHashMap();
