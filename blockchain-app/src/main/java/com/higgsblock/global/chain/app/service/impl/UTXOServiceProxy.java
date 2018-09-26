@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -29,6 +30,9 @@ public class UTXOServiceProxy {
 
     @Autowired
     private BestUTXOService bestUtxoService;
+
+    @Autowired
+    private IBalanceService balanceService;
 
     /**
      * key1: unconfirmed blockhash

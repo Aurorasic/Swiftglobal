@@ -35,4 +35,10 @@ public interface IBalanceService {
      * @param block the block
      */
     void save(Block block);
+
+    /**
+     * get balance on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
+     * from the max height first block
+     */
+    Money getUnionBalance(String preBlockHash, String address, String currency);
 }
