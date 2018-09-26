@@ -5,6 +5,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,7 +18,7 @@ import org.apache.commons.lang.StringUtils;
 @Setter
 @Getter
 @NoArgsConstructor
-@JSONType(includes = {"transactionHash", "index"})
+@JSONType(includes = {"transactionHash", "index", "output"})
 public class TransactionOutPoint extends BaseSerializer {
     /**
      * the hash of source transaction for spending
@@ -28,6 +29,8 @@ public class TransactionOutPoint extends BaseSerializer {
      * the index out of source transaction
      */
     private short index;
+
+    private TransactionOutput output;
 
     public String getHash() {
         HashFunction function = Hashing.sha256();
@@ -51,4 +54,15 @@ public class TransactionOutPoint extends BaseSerializer {
         return transactionHash + "_" + index;
     }
 
+    public String getCurrency() {
+        return output.getMoney().getCurrency();
+    }
+
+    public Money getMoney() {
+        return output.getMoney();
+    }
+
+    public String getAddress() {
+        return output.getLockScript().getAddress();
+    }
 }
