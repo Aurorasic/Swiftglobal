@@ -22,29 +22,24 @@ public class RepositoryRoot extends RepositoryImpl {
         dbSource.init(DbSettings.DEFAULT);
         sourceWriter = new BatchSourceWriter<>(dbSource);
 
-        //Source<byte[], byte[]> accounts = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
+        Source<byte[], byte[]> xorAccountState = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
+        Source<byte[], byte[]> xorCode = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
+        Source<byte[], byte[]> xorStorage = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
 
-        //Source<byte[], byte[]> codes = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
-
-        //Source<byte[], byte[]> storages = new XorDataSource<>(sourceWriter, HashUtil.sha3("storage".getBytes()));
-
-        SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(sourceWriter, Serializers.AccountStateSerializer);
+        SourceCodec.BytesKey<AccountState, byte[]> accountStateCodec = new SourceCodec.BytesKey<>(xorAccountState, Serializers.AccountStateSerializer);
         ReadWriteCache.BytesKey<AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
         accountStateCache.setFlushSource(true);
 
-        ReadWriteCache.BytesKey<byte[]> codeCache = new ReadWriteCache.BytesKey<>(sourceWriter, WriteCache.CacheType.SIMPLE);
+        ReadWriteCache.BytesKey<byte[]> codeCache = new ReadWriteCache.BytesKey<>(xorCode, WriteCache.CacheType.SIMPLE);
         codeCache.setFlushSource(true);
 
-        storageCache = new WriteCache.BytesKey<>(sourceWriter, WriteCache.CacheType.COUNTING);
-        ((WriteCache.BytesKey<byte[]>) storageCache).setFlushSource(true);
-
+        storageCache = new WriteCache.BytesKey<>(xorStorage, WriteCache.CacheType.COUNTING);
         MultiCache<CachedSource<DataWord, DataWord>> tempStorageCache = new MultiCache(null) {
             @Override
             protected CachedSource create(byte[] key, CachedSource srcCache) {
 
                 Serializer<byte[], byte[]> keyCompositor = new NodeKeyCompositor(key);
                 Source<byte[], byte[]> composingSrc = new SourceCodec.KeyOnly<>(storageCache, keyCompositor);
-
                 SourceCodec  sourceCodec = new SourceCodec<>(composingSrc, Serializers.StorageKeySerializer, Serializers.StorageValueSerializer);
 
                 return new WriteCache<>(sourceCodec, WriteCache.CacheType.SIMPLE);
