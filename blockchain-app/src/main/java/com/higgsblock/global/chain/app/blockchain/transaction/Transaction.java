@@ -168,6 +168,21 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
+    public List<UTXO> getSpendUTXOs() {
+        List<UTXO> result = new LinkedList();
+        if (!isEmptyInputs()) {
+            for (TransactionInput input : inputs) {
+                TransactionOutPoint prevOutPoint = input.getPrevOut();
+                TransactionOutput output = prevOutPoint.getOutput();
+                UTXO spendUtxo = new UTXO(prevOutPoint.getTransactionHash(),
+                        prevOutPoint.getIndex(), output);
+                result.add(spendUtxo);
+            }
+        }
+
+        return result;
+    }
+
     public List<UTXO> getAddedUTXOs() {
         List result = new LinkedList();
         if (CollectionUtils.isNotEmpty(outputs)) {

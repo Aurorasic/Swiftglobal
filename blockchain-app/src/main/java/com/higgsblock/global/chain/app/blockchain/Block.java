@@ -185,6 +185,15 @@ public class Block extends BaseSerializer {
         return result;
     }
 
+    public List<UTXO> getSpendUTXOs() {
+        List result = new LinkedList();
+        for (Transaction tx : transactions) {
+            result.addAll(tx.getSpendUTXOs());
+        }
+
+        return result;
+    }
+
     public List<UTXO> getAddedUTXOs() {
         List result = new LinkedList();
         for (Transaction tx : transactions) {
