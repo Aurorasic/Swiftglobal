@@ -2,17 +2,21 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IBalanceRepository;
 import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.service.IBalanceService;
+import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +33,12 @@ public class BalanceService implements IBalanceService {
 
     @Autowired
     private IBalanceRepository balanceRepository;
+
+    @Autowired
+    private UTXOServiceProxy utxoServiceProxy;
+
+    @Autowired
+    private IBlockIndexService blockIndexService;
 
     /**
      * Gets balance.
@@ -122,5 +132,45 @@ public class BalanceService implements IBalanceService {
         }
 
         return map;
+    }
+
+    /**
+     * get balance on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
+     * from the max height first block
+     *
+     * @param preBlockHash
+     * @param address
+     * @param currency
+     * @return
+     */
+    @Override
+    public Money getUnionBalance(String preBlockHash, String address, String currency) {
+        if (StringUtils.isEmpty(preBlockHash)) {
+            BlockIndex lastBlockIndex = blockIndexService.getLastBlockIndex();
+            String firstBlockHash = lastBlockIndex.getFirstBlockHash();
+            if (StringUtils.isEmpty(firstBlockHash)) {
+                throw new RuntimeException("error lastBlockIndex " + lastBlockIndex);
+            }
+            preBlockHash = firstBlockHash;
+        }
+
+        //get confirmed chain balance
+        Money balanceMoney = getBalanceOnBest(address, currency);
+
+        //get no confirmed chain balance
+        Money unconfirmedBalanceMoney = utxoServiceProxy.getUnconfirmedBalance(preBlockHash, address, currency);
+
+        List<Money> allAddedBalanceList = new LinkedList<>();
+        allAddedBalanceList.add(balanceMoney);
+        allAddedBalanceList.add(unconfirmedBalanceMoney);
+
+        Money result = new Money("0");
+        for (Money money : allAddedBalanceList) {
+            if (StringUtils.isNotEmpty(currency) && !StringUtils.equals(currency, money.getCurrency())) {
+                continue;
+            }
+            result.add(money);
+        }
+        return null;
     }
 }
