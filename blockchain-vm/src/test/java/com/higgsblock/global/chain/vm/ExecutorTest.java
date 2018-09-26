@@ -7,10 +7,7 @@ import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.program.Program;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -56,7 +53,7 @@ public class ExecutorTest {
         String transactionHash = "03e22f204d45f061a5b68847534b428a1277652677b6adff2d1f3381bbc4115c";
         boolean isContractCreation = true;
         byte[] gasPrice = BigInteger.valueOf(1_000_000_000L).toByteArray();
-        byte[] gasLimit = BigInteger.valueOf(125000L).toByteArray();
+        byte[] gasLimit = BigInteger.valueOf(10000125000L).toByteArray();
 
         SystemProperties systemProperties = new SystemProperties() {
             @Override
@@ -480,7 +477,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void testExecute_Event04() {
+    public void testExecute_Suicide() {
 //        pragma solidity ^0.4.11;
 //
 //        contract DataStorage {
@@ -514,8 +511,61 @@ public class ExecutorTest {
 //        Assert.assertFalse(executor.getContractRepository().isExist(contractAddress));
     }
 
+    @Ignore
+    @Test
+    public void testExecute_CreateAndCall() {
+//        pragma solidity ^0.4.11;
+//
+//        contract Math {
+//            function safeAdd(uint256 _x, uint256 _y) public view returns (uint256) {
+//            return  _x + _y;
+//            }
+//        }
+//
+//        contract DataStorage {
+//            event Add(uint256 result);
+//
+//            constructor() public {
+//                uint256 result = new Math().safeAdd(3, 5);
+//                emit Add(result);
+//            }
+//        }
+        byte[] data = Hex.decode("608060405234801561001057600080fd5b50600061001b61012a565b604051809103906000f08015801" +
+                "5610037573d6000803e3d6000fd5b5073ffffffffffffffffffffffffffffffffffffffff1663e6cb9013600360056040518" +
+                "363ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401808381526020018" +
+                "2815260200192505050602060405180830381600087803b1580156100b057600080fd5b505af11580156100c4573d6000803" +
+                "e3d6000fd5b505050506040513d60208110156100da57600080fd5b810190808051906020019092919050505090507f90f1f" +
+                "758f0e2b40929b1fd48df7ebe10afc272a362e1f0d63a90b8b4715d799f81604051808281526020019150506040518091039" +
+                "0a150610139565b60405160e48061017c83390190565b6035806101476000396000f3006080604052600080fd00a165627a7" +
+                "a7230582076f41c44e043cb9ff180649a250f2a859c94484bc2c5b3b2d131afb3dd3f6b68002960806040523480156100105" +
+                "7600080fd5b5060c58061001f6000396000f300608060405260043610603f576000357c01000000000000000000000000000" +
+                "00000000000000000000000000000900463ffffffff168063e6cb9013146044575b600080fd5b348015604f57600080fd5b5" +
+                "060766004803603810190808035906020019092919080359060200190929190505050608c565b60405180828152602001915" +
+                "05060405180910390f35b60008183019050929150505600a165627a7a7230582047699b26d403c90fd64109b16d39300047f" +
+                "185da132723cb4100bc1a10975d4c0029");
+        byte[] value = BigInteger.valueOf(0L).toByteArray();
+        byte[] contractAddress = Hex.decode("534b428a1277652677b6adff2d1f3381bbc4115c");
+        byte[] senderAddress = Hex.decode("26004361060485763ffffffff7c0100000000000");
+        setExecutor(data, value, contractAddress, senderAddress);
 
 
+        ExecutionResult executionResult = executor.execute();
+
+
+        System.out.println("executionResult:");
+        System.out.println(executionResult);
+        System.out.println();
+
+        Assert.assertEquals(1, executionResult.getDeleteAccounts().size());
+        DataWord account = new DataWord();
+        for (DataWord dataWord: executionResult.getDeleteAccounts()) {
+            account = dataWord;
+        }
+        Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(contractAddress), Hex.toHexString(account.getLast20Bytes()));
+        System.out.println();
+
+//        Assert.assertFalse(executor.getContractRepository().isExist(contractAddress));
+    }
 
     @After
     public void tearDown() {
