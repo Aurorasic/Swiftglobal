@@ -79,31 +79,26 @@ public class BalanceService implements IBalanceService {
     public void save(Block block) {
         Map<String, Map<String, Money>> minusMap = getMinusMap(block);
         Map<String, Map<String, Money>> plusMap = getPlusMap(block);
-        plusMap.forEach((k, v) -> {
-            if (minusMap.containsKey(k)) {
-                Map<String, Money> minusCurrencyMap = minusMap.get(k);
-                v.keySet().forEach(currency -> {
-                    v.compute(currency, (k1, v1) -> {
-                        Money minusMoney = minusCurrencyMap.get(currency);
 
-                        return v1;
-                    });
+        for (Map.Entry<String, Map<String, Money>> entry : plusMap.entrySet()) {
+            String address = entry.getKey();
+            if (!minusMap.containsKey(address)) {
+                continue;
+            }
+
+            Map<String, Money> minusCurrencyMap = minusMap.get(address);
+            entry.getValue().keySet().forEach(currency -> {
+                entry.getValue().compute(currency, (k1, v1) -> {
+                    Money minusMoney = minusCurrencyMap.get(currency);
+                    if (null != minusMoney) {
+                        v1.subtract(minusMoney);
+                    }
+                    return v1;
                 });
-            }
-        });
+            });
 
-
-        Set<String> addresses = Sets.newLinkedHashSet(minusMap.keySet());
-        addresses.addAll(plusMap.keySet());
-
-        Map<String, Map<String, Money>> map = Maps.newHashMap();
-        for (String address : addresses) {
             Map<String, Money> currencyMap = get(address);
-            if (MapUtils.isEmpty(currencyMap)) {
-                map.put(address, plusMap.get(address));
-            } else {
-
-            }
+            // TODO
         }
     }
 
@@ -122,7 +117,8 @@ public class BalanceService implements IBalanceService {
                         v = Maps.newHashMap();
                     }
 
-                    v.put(spendUtxo.getOutput().getMoney().getCurrency(), spendUtxo.getOutput().getMoney());
+                    Money money = spendUtxo.getOutput().getMoney();
+                    v.put(money.getCurrency(), new Money(money.getCurrency(), money.getValue()));
                     return v;
                 });
             }
@@ -141,7 +137,7 @@ public class BalanceService implements IBalanceService {
                     }
 
                     Money money = addUtxo.getOutput().getMoney();
-                    v.put(money.getCurrency(), money);
+                    v.put(money.getCurrency(), new Money(money.getCurrency(), money.getValue()));
                     return v;
                 });
             }
