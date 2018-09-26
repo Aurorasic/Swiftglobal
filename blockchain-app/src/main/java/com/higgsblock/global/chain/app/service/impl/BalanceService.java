@@ -91,16 +91,12 @@ public class BalanceService implements IBalanceService {
 
         for (Map.Entry<String, Map<String, Money>> entry : plusMap.entrySet()) {
             String address = entry.getKey();
-            if (!minusMap.containsKey(address)) {
-                continue;
-            }
-
             Map<String, Money> minusCurrencyMap = minusMap.get(address);
             Map<String, Money> dbCurrencyMap = get(address);
             entry.getValue().keySet().forEach(currency -> {
                 entry.getValue().compute(currency, (k1, v1) -> {
-                    Money minusMoney = minusCurrencyMap.get(currency);
-                    if (null != minusMoney) {
+                    if(MapUtils.isNotEmpty(minusCurrencyMap) && minusCurrencyMap.containsKey(currency)) {
+                        Money minusMoney = minusCurrencyMap.get(currency);
                         v1.subtract(minusMoney);
                     }
 
