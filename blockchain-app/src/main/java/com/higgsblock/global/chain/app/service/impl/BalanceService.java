@@ -116,7 +116,7 @@ public class BalanceService implements IBalanceService {
                 }
 
                 Money money = utxo.getOutput().getMoney();
-                v.put(money.getCurrency(), new Money(money.getCurrency(), money.getValue()));
+                v.put(money.getCurrency(), new Money(money.getValue(), money.getCurrency()));
                 return v;
             });
         }
