@@ -403,7 +403,7 @@ public class Program {
 
         if (FastByteComparisons.compareTo(owner, 0, 20, obtainer, 0, 20) == 0) {
             // if owner == obtainer just zeroing account according to Yellow Paper
-          //  getStorage().addBalance(owner, balance.negate());
+            getStorage().addBalance(owner, balance.negate());
         } else {
             transfer(getStorage(), owner, obtainer, balance);
         }

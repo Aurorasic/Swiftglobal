@@ -32,7 +32,7 @@ public class NodeKeyCompositor implements Serializer<byte[], byte[]> {
 
     @Override
     public byte[] serialize(byte[] key) {
-        return composeInner(key, addrHash);
+        return composeInner(sha3(key), addrHash);
     }
 
     @Override
