@@ -72,6 +72,10 @@ public class BalanceService implements IBalanceService {
      */
     @Override
     public void save(Block block) {
+        if (null == block) {
+            return;
+        }
+
         Map<String, Map<String, Money>> minusMap = getBalanceMap(block.getSpendUTXOs());
         Map<String, Map<String, Money>> plusMap = getBalanceMap(block.getAddedUTXOs());
 
