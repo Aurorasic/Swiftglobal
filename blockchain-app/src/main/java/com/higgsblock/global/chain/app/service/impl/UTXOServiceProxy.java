@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,35 @@ public class UTXOServiceProxy {
      */
     private Map<String, String> blockHashChainMap = new HashMap<>(16);
 
+    public Money getUnconfirmedBalance(String preBlockHash, String address, String currency) {
+        if (StringUtils.isEmpty(preBlockHash)) {
+            throw new RuntimeException("error preBlockHash for getUnconfirmedBalance");
+        }
+
+        Money result = new Money(0, currency);
+        Map<String, UTXO> unconfirmedSpentUtxos = Maps.newHashMap();
+        Map<String, UTXO> unconfirmedAddedUtxos = Maps.newHashMap();
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
+        getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
+
+        Collection<UTXO> addedUtxos = unconfirmedAddedUtxos.values();
+        for (UTXO utxo : addedUtxos) {
+            if (StringUtils.equals(utxo.getAddress(), address) &&
+                    StringUtils.equals(utxo.getCurrency(), currency)) {
+                result.add(utxo.getOutput().getMoney());
+            }
+        }
+
+        Collection<UTXO> spentUtxos = unconfirmedSpentUtxos.values();
+        for (UTXO utxo : spentUtxos) {
+            if (StringUtils.equals(utxo.getAddress(), address) &&
+                    StringUtils.equals(utxo.getCurrency(), currency)) {
+                result.subtract(utxo.getOutput().getMoney());
+            }
+        }
+
+        return result;
+    }
 
     /**
      * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
@@ -159,8 +189,8 @@ public class UTXOServiceProxy {
             UTXO utxo = utxoMap.get(key);
             if (isToGetAdded && utxo != null) {
                 result.put(key, utxo);
-            } else if (!isToGetAdded && utxo == null) {
-                result.put(key, null);
+            } else if (!isToGetAdded && utxo != null && utxo instanceof SpendUTXO) {
+                result.put(key, utxo);
             }
         }
 
@@ -224,10 +254,10 @@ public class UTXOServiceProxy {
 
     private Map buildUTXOMap(Block block) {
         Map utxoMap = new HashMap<>(32);
-        List<String> spendUTXOKeys = block.getSpendUTXOKeys();
+        List<UTXO> spendUTXOs = block.getSpendUTXOs();
         List<UTXO> addedUTXOs = block.getAddedUTXOs();
-        for (String spendUTXOKey : spendUTXOKeys) {
-            utxoMap.put(spendUTXOKey, null);
+        for (UTXO spendUTXO : spendUTXOs) {
+            utxoMap.put(spendUTXO.getKey(), new SpendUTXO(spendUTXO));
         }
         for (UTXO newUTXO : addedUTXOs) {
             utxoMap.put(newUTXO.getKey(), newUTXO);
@@ -243,5 +273,14 @@ public class UTXOServiceProxy {
     private void remove(String blockHash) {
         blockHashChainMap.remove(blockHash);
         unconfirmedUtxoMaps.remove(blockHash);
+    }
+
+    public class SpendUTXO extends UTXO {
+        public SpendUTXO(UTXO utxo) {
+            this.setHash(utxo.getHash());
+            this.setIndex(utxo.getIndex());
+            this.setOutput(utxo.getOutput());
+            this.setAddress(utxo.getOutput().getLockScript().getAddress());
+        }
     }
 }
