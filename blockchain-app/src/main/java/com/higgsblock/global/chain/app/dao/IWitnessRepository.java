@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
-import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 
@@ -13,7 +12,6 @@ import java.util.List;
 public interface IWitnessRepository extends IKeyValueRepository<WitnessEntity, Integer> {
 
     @Override
-    @Cacheable(value = "Witness", unless = "#result == null")
     List<WitnessEntity> findAll();
 
 }

@@ -3,10 +3,12 @@ package com.higgsblock.global.chain.app.impl;
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -44,9 +46,15 @@ public class BlockDaoImplTest extends BaseTest {
     @Test
     public void saveAndSelectBlock() {
         Block block = new Block();
-        block.setHeight(999999);
-        block.setHash("abc");
-        blockService.saveBlock(block);
+        block.setVersion((short) 1);
+        block.setBlockTime(System.currentTimeMillis());
+        block.setPrevBlockHash(null);
+        block.setTransactions(new LinkedList<>());
+        block.setHeight(1);
+        block.setMinerPubKey("02ca7d48b0a27f7d996839cbc4b0efa4722a1c61331061de691c3bcbbb74c2fa7d");
+        String sig = ECKey.signMessage(block.getHash(), "e45a782fb642f355772c4b6b4a93c008c4fbf2202c56ef46c208f87f22a11a98");
+        block.setMinerSignature(sig);
+        blockService.saveBlockCompletely(block);
         blockService.getBlockByHash("abc");
         blockService.getBlockByHash("abc");
         blockService.getBlockByHash("abce");

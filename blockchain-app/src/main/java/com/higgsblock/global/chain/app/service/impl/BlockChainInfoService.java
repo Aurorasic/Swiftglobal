@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.dao.IBlockChainInfoRepository;
+import com.higgsblock.global.chain.app.dao.IWitnessRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockChainInfoEntity;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import com.higgsblock.global.chain.app.net.peer.Peer;
@@ -31,6 +32,12 @@ public class BlockChainInfoService implements IBlockChainInfoService {
 
     @Autowired
     private IBlockChainInfoRepository blockChainInfoRepository;
+
+    @Autowired
+    private IWitnessRepository witnessRepository;
+
+    @Autowired
+    private IBlockChainInfoService blockChainInfoService;
 
     @Override
     public long getMaxHeight() {
@@ -76,8 +83,7 @@ public class BlockChainInfoService implements IBlockChainInfoService {
     @Override
     public List<Peer> getAllWitness() {
         BlockChainInfoEntity chainInfoEntity = blockChainInfoRepository.findOne(KEY_ALL_WITNESS);
-        if (chainInfoEntity == null ||
-                StringUtils.isEmpty(chainInfoEntity.getValue())) {
+        if (chainInfoEntity == null || StringUtils.isEmpty(chainInfoEntity.getValue())) {
             return new ArrayList<>(0);
         }
         List<WitnessEntity> list = JSONObject.parseArray(chainInfoEntity.getValue(), WitnessEntity.class);
