@@ -33,7 +33,6 @@ public class BalanceTest extends BaseTest {
         Map<String,Money> maps = balanceService.get("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
 
         List<Block> blocks = blockService.getBlocksByHeight(1);
-        balanceService.save(blocks.get(0));
 
         Map<String,Money> maps2 = balanceService.get("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
 

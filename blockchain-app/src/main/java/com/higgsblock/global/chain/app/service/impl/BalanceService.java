@@ -1,9 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IBalanceRepository;
@@ -13,6 +10,7 @@ import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,12 +30,21 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BalanceService implements IBalanceService {
 
+    /**
+     * The Balance repository.
+     */
     @Autowired
     private IBalanceRepository balanceRepository;
 
+    /**
+     * The Utxo service proxy.
+     */
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
+    /**
+     * The Block index service.
+     */
     @Autowired
     private IBlockIndexService blockIndexService;
 
@@ -79,83 +85,53 @@ public class BalanceService implements IBalanceService {
     }
 
     /**
-     * Save.
+     * Plus balance.
      *
-     * @param block the block
+     * @param utxo the utxo
      */
     @Override
-    public void save(Block block) {
-        if (null == block) {
-            return;
-        }
-
-        Map<String, Map<String, Money>> minusMap = getBalanceMap(block.getSpendUTXOs());
-        Map<String, Map<String, Money>> plusMap = getBalanceMap(block.getAddedUTXOs());
-
-        // compute balance
-        Set<String> addressSet = Sets.newHashSet(minusMap.keySet());
-        addressSet.addAll(plusMap.keySet());
-        Map<String, Map<String, Money>> resultMap = Maps.newHashMap();
-        for (String address : addressSet) {
-            if (!resultMap.containsKey(address)) {
-                Map<String, Money> dbCurrencyMap = get(address);
-                resultMap.put(address, dbCurrencyMap);
+    public void plusBalance(UTXO utxo) {
+        Map<String, Money> balanceMap = get(utxo.getAddress());
+        balanceMap.compute(utxo.getCurrency(), (currency, money) -> {
+            if (null == money) {
+                money = new Money(0, utxo.getCurrency());
             }
 
-            Map<String, Money> resultCurrencyMap = resultMap.get(address);
-            Map<String, Money> minusCurrencyMap = minusMap.getOrDefault(address, Maps.newHashMap());
-            Map<String, Money> plusCurrencyMap = plusMap.getOrDefault(address, Maps.newHashMap());
-            LOGGER.debug("save balance,{}:address={},dbMoney={},minusMoney={},plusMoney={}", block.getSimpleInfo(), address, JSON.toJSONString(resultCurrencyMap), JSON.toJSONString(minusCurrencyMap), JSON.toJSONString(plusCurrencyMap));
-            // plus balance
-            plusCurrencyMap.forEach((currency, plusValue) -> {
-                resultCurrencyMap.compute(currency, (k1, dbValue) -> {
-                    if (null == dbValue) {
-                        dbValue = new Money(0, currency);
-                    }
-
-                    dbValue = dbValue.add(plusValue);
-                    return dbValue;
-                });
-            });
-
-            // minus balance
-            minusCurrencyMap.forEach((currency, minusValue) -> {
-                resultCurrencyMap.compute(currency, (k1, dbValue) -> dbValue.subtract(minusValue));
-            });
-        }
-
-        LOGGER.debug("save balance,{},resultMap={}", block.getSimpleInfo(), JSON.toJSONString(resultMap));
-        // save balance
-        resultMap.forEach((k, v) -> {
-            BalanceEntity entity = new BalanceEntity(k, v.values().stream().collect(Collectors.toList()));
-            balanceRepository.save(entity);
+            money.add(utxo.getOutput().getMoney());
+            return money;
         });
-        LOGGER.debug("save balance success,{}", block.getSimpleInfo());
+        save(utxo.getAddress(), balanceMap);
     }
 
-    private Map<String, Map<String, Money>> getBalanceMap(List<UTXO> utxos) {
-        Map<String, Map<String, Money>> map = Maps.newHashMap();
-        for (UTXO utxo : utxos) {
-            map.compute(utxo.getAddress(), (k, v) -> {
-                if (null == v) {
-                    v = Maps.newHashMap();
-                }
-
-                Money money = utxo.getOutput().getMoney();
-                v.compute(money.getCurrency(), (k1, v1) -> {
-                    if (null == v1) {
-                        v1 = money;
-                    } else {
-                        v1.add(money);
-                    }
-
-                    return v1;
-                });
-                return v;
-            });
+    /**
+     * Minus balance.
+     *
+     * @param utxo the utxo
+     */
+    @Override
+    public void minusBalance(UTXO utxo) {
+        Map<String, Money> balanceMap = get(utxo.getAddress());
+        if (MapUtils.isEmpty(balanceMap)) {
+            throw new IllegalStateException("can't find address balance:" + utxo.getAddress());
         }
 
-        return map;
+        if (!balanceMap.containsKey(utxo.getCurrency())) {
+            throw new IllegalStateException("can't find currency balance:" + utxo.getCurrency());
+        }
+
+        balanceMap.compute(utxo.getCurrency(), (currency, money) -> money.subtract(utxo.getOutput().getMoney()));
+        save(utxo.getAddress(), balanceMap);
+    }
+
+    /**
+     * Save.
+     *
+     * @param address    the address
+     * @param balanceMap the balance map
+     */
+    private void save(String address, Map<String, Money> balanceMap) {
+        BalanceEntity entity = new BalanceEntity(address, balanceMap.values().stream().collect(Collectors.toList()));
+        balanceRepository.save(entity);
     }
 
     /**

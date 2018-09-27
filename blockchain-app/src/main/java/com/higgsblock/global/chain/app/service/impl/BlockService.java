@@ -93,8 +93,6 @@ public class BlockService implements IBlockService {
     private IBlockChainService blockChainService;
     @Autowired
     private IBlockChainInfoService blockChainInfoService;
-    @Autowired
-    private IBalanceService balanceService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -500,8 +498,6 @@ public class BlockService implements IBlockService {
 
             blockIndexService.addBlockIndex(block, newBestBlock);
 
-            //Save balance
-            balanceService.save(block);
             if (block.isGenesisBlock()) {
                 scoreService.refreshMinersScore(block, block);
                 dposService.calcNextDposNodes(block, block.getHeight());

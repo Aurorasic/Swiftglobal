@@ -5,6 +5,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.app.service.ITransactionIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -35,6 +36,9 @@ public class TransactionIndexService implements ITransactionIndexService {
      */
     @Autowired
     private ITransactionIndexRepository transactionIndexRepository;
+
+    @Autowired
+    private IBalanceService balanceService;
 
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {
@@ -70,6 +74,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     bestUtxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
+                    balanceService.minusBalance(new UTXO(spentTxHash, spentTxOutIndex, outPoint.getOutput()));
                 }
             }
 
@@ -81,6 +86,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     TransactionOutput output = outputs.get(i);
                     UTXO utxo = new UTXO(tx, (short) i, output);
                     bestUtxoService.saveUTXO(utxo);
+                    balanceService.plusBalance(utxo);
                 }
             }
         }
