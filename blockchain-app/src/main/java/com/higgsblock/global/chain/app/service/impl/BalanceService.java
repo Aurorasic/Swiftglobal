@@ -168,6 +168,6 @@ public class BalanceService implements IBalanceService {
             }
             result.add(money);
         }
-        return null;
+        return result;
     }
 }
