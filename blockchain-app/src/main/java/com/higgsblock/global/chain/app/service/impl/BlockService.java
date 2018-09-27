@@ -453,9 +453,6 @@ public class BlockService implements IBlockService {
         //for get jdbc connect this mast be in this commit/connection
         utxoServiceProxy.addNewBlock(newBestBlock, block);
 
-        //Save balance
-        balanceService.save(newBestBlock);
-
         return newBestBlock;
     }
 
@@ -503,6 +500,8 @@ public class BlockService implements IBlockService {
 
             blockIndexService.addBlockIndex(block, newBestBlock);
 
+            //Save balance
+            balanceService.save(newBestBlock);
             if (block.isGenesisBlock()) {
                 scoreService.refreshMinersScore(block, block);
                 dposService.calcNextDposNodes(block, block.getHeight());
