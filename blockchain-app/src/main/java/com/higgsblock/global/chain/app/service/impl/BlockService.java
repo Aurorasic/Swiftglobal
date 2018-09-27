@@ -501,7 +501,7 @@ public class BlockService implements IBlockService {
             blockIndexService.addBlockIndex(block, newBestBlock);
 
             //Save balance
-            balanceService.save(newBestBlock);
+            balanceService.save(block);
             if (block.isGenesisBlock()) {
                 scoreService.refreshMinersScore(block, block);
                 dposService.calcNextDposNodes(block, block.getHeight());

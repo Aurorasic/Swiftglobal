@@ -144,9 +144,9 @@ public class BalanceService implements IBalanceService {
                 Money money = utxo.getOutput().getMoney();
                 v.compute(money.getCurrency(), (k1, v1) -> {
                     if (null == v1) {
-                        v1 = new Money(money.getValue(), money.getCurrency());
+                        v1 = money;
                     } else {
-                        v1.add(new Money(money.getValue(), money.getCurrency()));
+                        v1.add(money);
                     }
 
                     return v1;
