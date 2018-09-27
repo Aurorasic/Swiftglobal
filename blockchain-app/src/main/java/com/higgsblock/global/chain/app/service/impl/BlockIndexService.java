@@ -33,18 +33,11 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
-        //modify by Huangshengli 2018-07-02
+        // if block is genesis block, block == toBeBestBlock
         insertBlockIndex(block);
         if (toBeBestBlock != null) {
             updateBestBlockIndex(toBeBestBlock);
-        }
-
-        if (block.isGenesisBlock()) {
-            transactionIndexService.addTxIndexAndUtxo(block, block.getHash());
-        } else {
-            if (toBeBestBlock != null) {
-                transactionIndexService.addTxIndexAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
-            }
+            transactionIndexService.addTxIndexAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
         }
     }
 
@@ -58,7 +51,7 @@ public class BlockIndexService implements IBlockIndexService {
         BlockIndexEntity blockIndexDO = new BlockIndexEntity();
         blockIndexDO.setBlockHash(block.getHash());
         blockIndexDO.setHeight(block.getHeight());
-        blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
+        blockIndexDO.setIsBest(-1);
         blockIndexDO.setMinerAddress(block.getMinerSigPair().getAddress());
         blockIndexRepository.save(blockIndexDO);
         LOGGER.info("persisted block index: {}", blockIndexDO);
