@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
@@ -11,15 +12,14 @@ import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -91,28 +91,49 @@ public class BalanceService implements IBalanceService {
         Map<String, Map<String, Money>> minusMap = getBalanceMap(block.getSpendUTXOs());
         Map<String, Map<String, Money>> plusMap = getBalanceMap(block.getAddedUTXOs());
 
-        for (Map.Entry<String, Map<String, Money>> entry : plusMap.entrySet()) {
-            String address = entry.getKey();
-            Map<String, Money> minusCurrencyMap = minusMap.get(address);
-            Map<String, Money> dbCurrencyMap = get(address);
-            entry.getValue().keySet().forEach(currency -> {
-                entry.getValue().compute(currency, (k1, v1) -> {
-                    if(MapUtils.isNotEmpty(minusCurrencyMap) && minusCurrencyMap.containsKey(currency)) {
-                        Money minusMoney = minusCurrencyMap.get(currency);
-                        v1.subtract(minusMoney);
+        // compute balance
+        Set<String> addressSet = Sets.newHashSet(minusMap.keySet());
+        addressSet.addAll(plusMap.keySet());
+        Map<String, Map<String, Money>> resultMap = Maps.newHashMap();
+        for (String address : addressSet) {
+            if (!resultMap.containsKey(address)) {
+                Map<String, Money> dbCurrencyMap = get(address);
+                resultMap.put(address, dbCurrencyMap);
+            }
+
+            Map<String, Money> resultCurrencyMap = resultMap.get(address);
+            Map<String, Money> minusCurrencyMap = minusMap.getOrDefault(address, Maps.newHashMap());
+            Map<String, Money> plusCurrencyMap = plusMap.getOrDefault(address, Maps.newHashMap());
+
+            // minus balance
+            minusCurrencyMap.forEach((currency, minusValue) -> {
+                resultCurrencyMap.compute(currency, (k1, dbValue) -> {
+                    if (null == dbValue) {
+                        dbValue = new Money(0, currency);
                     }
 
-                    if (MapUtils.isNotEmpty(dbCurrencyMap) && dbCurrencyMap.containsKey(currency)) {
-                        v1.add(dbCurrencyMap.get(currency));
-                    }
-
-                    return v1;
+                    dbValue = dbValue.subtract(minusValue);
+                    return dbValue;
                 });
             });
+            // plus balance
+            plusCurrencyMap.forEach((currency, plusValue) -> {
+                resultCurrencyMap.compute(currency, (k1, dbValue) -> {
+                    if (null == dbValue) {
+                        dbValue = new Money(0, currency);
+                    }
 
-            BalanceEntity entity = new BalanceEntity(address, entry.getValue().values().stream().collect(Collectors.toList()));
-            balanceRepository.save(entity);
+                    dbValue = dbValue.add(plusValue);
+                    return dbValue;
+                });
+            });
         }
+
+        // save balance
+        resultMap.forEach((k, v) -> {
+            BalanceEntity entity = new BalanceEntity(k, v.values().stream().collect(Collectors.toList()));
+            balanceRepository.save(entity);
+        });
     }
 
     private Map<String, Map<String, Money>> getBalanceMap(List<UTXO> utxos) {
