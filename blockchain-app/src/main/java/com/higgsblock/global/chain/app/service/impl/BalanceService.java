@@ -161,7 +161,7 @@ public class BalanceService implements IBalanceService {
         allAddedBalanceList.add(balanceMoney);
         allAddedBalanceList.add(unconfirmedBalanceMoney);
 
-        Money result = new Money("0");
+        Money result = new Money(0, currency);
         for (Money money : allAddedBalanceList) {
             if (StringUtils.isNotEmpty(currency) && !StringUtils.equals(currency, money.getCurrency())) {
                 continue;
