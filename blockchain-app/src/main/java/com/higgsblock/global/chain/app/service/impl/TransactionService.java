@@ -129,7 +129,7 @@ public class TransactionService implements ITransactionService {
     }
 
     @Override
-    public boolean hasStake(String address, SystemCurrencyEnum currency) {
+    public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
         Money balanceMoney = balanceService.getBalanceOnBest(address, currency.getCurrency());
         return getBalanceCurrency(balanceMoney, currency);
     }
@@ -172,7 +172,7 @@ public class TransactionService implements ITransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (!hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -198,7 +198,7 @@ public class TransactionService implements ITransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }

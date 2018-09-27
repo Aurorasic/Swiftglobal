@@ -80,11 +80,11 @@ public class BlockChainServiceTest extends BaseMockTest {
     @Test
     public void isMinerOnBest() {
         String miner = "isMinser";
-        PowerMockito.when(transactionService.hasStake(miner, SystemCurrencyEnum.MINER)).thenReturn(true);
+        PowerMockito.when(transactionService.hasStakeOnBest(miner, SystemCurrencyEnum.MINER)).thenReturn(true);
         Assert.assertTrue(blockChainService.isMinerOnBest(miner));
 
         miner = "isNotMiner";
-        PowerMockito.when(transactionService.hasStake(miner, SystemCurrencyEnum.MINER)).thenReturn(false);
+        PowerMockito.when(transactionService.hasStakeOnBest(miner, SystemCurrencyEnum.MINER)).thenReturn(false);
         Assert.assertFalse(blockChainService.isMinerOnBest(miner));
     }
 

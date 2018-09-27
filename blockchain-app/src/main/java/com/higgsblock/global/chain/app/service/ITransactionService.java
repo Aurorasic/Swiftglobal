@@ -37,7 +37,7 @@ public interface ITransactionService {
      * @param currency the currency
      * @return the boolean
      */
-    boolean hasStake(String address, SystemCurrencyEnum currency);
+    boolean hasStakeOnBest(String address, SystemCurrencyEnum currency);
 
     /**
      * Has stake boolean.

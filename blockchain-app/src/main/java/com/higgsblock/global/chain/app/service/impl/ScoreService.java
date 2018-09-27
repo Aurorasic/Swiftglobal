@@ -203,7 +203,7 @@ public class ScoreService implements IScoreService {
         SignaturePair minerPKSig = toBeBestBlock.getMinerSigPair();
         Map<String, String> allScores = blockChainInfoService.getAllScores();
         //if the block is only mined by  miner, set score
-        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+        if (transactionService.hasStakeOnBest(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
             put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE, allScores);
         } else {
             //mined by backup peer node

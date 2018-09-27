@@ -53,7 +53,7 @@ public class BlockChainService implements IBlockChainService {
     @Override
     public boolean isMinerOnBest(String address) {
         //check whether this miner has the MINER cash stake
-        return transactionService.hasStake(address, SystemCurrencyEnum.MINER);
+        return transactionService.hasStakeOnBest(address, SystemCurrencyEnum.MINER);
     }
 
     @Override
