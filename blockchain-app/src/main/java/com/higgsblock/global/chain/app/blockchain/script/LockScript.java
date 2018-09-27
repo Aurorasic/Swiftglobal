@@ -25,6 +25,9 @@ import org.apache.commons.lang.StringUtils;
 public class LockScript extends BaseSerializer {
     /**
      * lock script type such as P2PKH or P2SH
+     *
+     * 11: create, indicates that address is a new contract.
+     * 12: call, indicates that address is a existed contract.
      */
     private short type;
     private String address;
