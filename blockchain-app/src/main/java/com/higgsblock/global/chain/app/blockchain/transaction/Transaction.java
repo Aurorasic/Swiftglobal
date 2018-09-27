@@ -11,6 +11,9 @@ import com.higgsblock.global.chain.app.contract.ContractParameters;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.crypto.utils.CryptoUtils;
+import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
+import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,7 +35,7 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
-@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime"})
+@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "contractParameters", "contractExecutionResult"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -73,6 +79,80 @@ public class Transaction extends BaseSerializer {
      * Records status after contract being executed
      */
     private ContractExecutionResult contractExecutionResult;
+
+    /**
+     * Validates contract execution conditions.
+     *
+     * @param sizeLimit       remain size allowed for this transaction.
+     * @param subTxsSizeLimit size allowed for sub transaction list.
+     * @param gasLimit        remain gas allowed for this transaction.
+     * @return if contract is fitted to be executed.
+     */
+    public boolean validForExecution(long sizeLimit, long subTxsSizeLimit, BigInteger gasLimit) {
+        long size = getSize();
+        if (sizeLimit - size < subTxsSizeLimit) {
+            return false;
+        }
+
+        if (BigInteger.valueOf(contractParameters.getGasLimit()).compareTo(gasLimit) > 0) {
+            return false;
+        }
+
+        BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
+        if (sizeGas.compareTo(BigInteger.valueOf(contractParameters.getGasLimit())) > 0) {
+            return false;
+        }
+
+        if (contractParameters.getBytecode() == null || contractParameters.getBytecode().length == 0) {
+            return false;
+        }
+
+        try {
+            if (outputs.get(0).getLockScript().getType() == 11 && Arrays.equals(outputs.get(0).getLockScript().getAddress().getBytes("UTF-8"), getContractAddress())) {
+                return false;
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        if (outputs.get(0).getLockScript().getType() == 11 || outputs.get(0).getLockScript().getType() == 12) {
+            if (!outputs.get(0).getMoney().getCurrency().equals("CAS") && !outputs.get(0).getMoney().getValue().equals("0")) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public byte[] getContractAddress() {
+        HashFunction function = Hashing.sha256();
+        StringBuilder builder = new StringBuilder();
+        builder.append(function.hashLong(transactionTime));
+        builder.append(function.hashBytes(contractParameters.getBytecode()));
+        builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
+        return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
+    }
+
+    public byte[] getSender() {
+        //TODO: chenjiawei get sender or senders of this transaction.
+        return null;
+    }
+
+    public void fillExecutionEnvironment(ExecutionEnvironment executionEnvironment) {
+        executionEnvironment.setTransactionHash(hash);
+        executionEnvironment.setContractCreation(outputs.get(0).getLockScript().getType() == 11);
+        try {
+            executionEnvironment.setContractAddress(outputs.get(0).getLockScript().getAddress().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        executionEnvironment.setSenderAddress(getSender());
+        executionEnvironment.setGasPrice(contractParameters.getGasPrice().toByteArray());
+        executionEnvironment.setGasLimit(BigInteger.valueOf(contractParameters.getGasLimit()).toByteArray());
+        executionEnvironment.setValue(BigInteger.valueOf(Long.valueOf(outputs.get(0).getMoney().getValue())).toByteArray());
+        executionEnvironment.setData(contractParameters.getBytecode());
+    }
 
     public boolean valid() {
 
@@ -149,6 +229,16 @@ public class Transaction extends BaseSerializer {
             return null;
         }
         return outputs.get(index);
+    }
+
+    /**
+     * Gets size of this transaction.
+     *
+     * @return size of this transaction.
+     */
+    public long getSize() {
+        ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
+        return sizeCounter.calculateSize(this);
     }
 
     public boolean sizeAllowed() {
