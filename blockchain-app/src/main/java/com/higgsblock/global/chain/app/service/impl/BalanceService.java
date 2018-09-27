@@ -101,6 +101,9 @@ public class BalanceService implements IBalanceService {
             return money;
         });
         save(utxo.getAddress(), balanceMap);
+        if(utxo.getAddress().equals("1Gr8SDA9eSkc48TtxtfYU8fLosA4jxyEck")){
+            LOGGER.debug("plus balance:currency={},amount={}",utxo.getAddress(),utxo.getOutput().getMoney().getValue());
+        }
     }
 
     /**
@@ -121,6 +124,9 @@ public class BalanceService implements IBalanceService {
 
         balanceMap.compute(utxo.getCurrency(), (currency, money) -> money.subtract(utxo.getOutput().getMoney()));
         save(utxo.getAddress(), balanceMap);
+        if(utxo.getAddress().equals("1Gr8SDA9eSkc48TtxtfYU8fLosA4jxyEck")){
+            LOGGER.debug("minus balance:currency={},amount={}",utxo.getAddress(),utxo.getOutput().getMoney().getValue());
+        }
     }
 
     /**
