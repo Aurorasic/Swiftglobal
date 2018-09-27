@@ -51,7 +51,7 @@ public class ExecutorTest {
 //                "590e1ae3": "refund()",
 //                "60fe47b1": "set(uint256)",
 //                "191347df": "setStr(string)"
-        data = Hex.decode("b8c9e4ed");
+        data = Hex.decode("6d4ce63c");
         SystemProperties systemProperties = new SystemProperties() {
             @Override
             public boolean vmTrace() {
