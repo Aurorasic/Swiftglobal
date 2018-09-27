@@ -191,9 +191,9 @@ public class UTXOServiceProxy {
         Set<String> keySet = utxoMap.keySet();
         for (String key : keySet) {
             UTXO utxo = utxoMap.get(key);
-            if (isToGetAdded && utxo != null) {
+            if (isToGetAdded && !(utxo instanceof SpendUTXO)) {
                 result.put(key, utxo);
-            } else if (!isToGetAdded && utxo != null && utxo instanceof SpendUTXO) {
+            } else if (!isToGetAdded && (utxo instanceof SpendUTXO)) {
                 result.put(key, utxo);
             }
         }
