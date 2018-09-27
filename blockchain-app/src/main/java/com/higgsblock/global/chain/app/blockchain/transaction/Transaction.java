@@ -6,6 +6,8 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
+import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
+import com.higgsblock.global.chain.app.contract.ContractParameters;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -61,6 +63,16 @@ public class Transaction extends BaseSerializer {
      * the timestamp of this transaction created
      */
     private long transactionTime = System.currentTimeMillis();
+
+    /**
+     * Parameters container for contract creation or contract call
+     */
+    private ContractParameters contractParameters;
+
+    /**
+     * Records status after contract being executed
+     */
+    private ContractExecutionResult contractExecutionResult;
 
     public boolean valid() {
 
