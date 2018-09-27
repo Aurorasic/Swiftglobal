@@ -51,11 +51,11 @@ public class BalanceService implements IBalanceService {
     @Override
     public Money getBalanceOnBest(String address, String currency) {
         Map<String, Money> map = get(address);
-        if (MapUtils.isNotEmpty(map) && map.containsKey(currency)) {
-            return new Money("0");
+        Money result = map.get(currency);
+        if (result == null) {
+            return new Money(0, currency);
         }
-
-        return map.get(currency);
+        return result;
     }
 
     /**
