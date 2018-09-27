@@ -55,6 +55,7 @@ public class BalanceService implements IBalanceService {
         if (result == null) {
             return new Money(0, currency);
         }
+
         return result;
     }
 
@@ -68,7 +69,7 @@ public class BalanceService implements IBalanceService {
     public Map<String, Money> get(String address) {
         BalanceEntity entity = balanceRepository.findOne(address);
         if (null == entity || CollectionUtils.isEmpty(entity.getBalances())) {
-            return new HashMap<String, Money>();
+            return Maps.newHashMap();
         }
 
         Map<String, Money> maps = Maps.newHashMapWithExpectedSize(entity.getBalances().size());
