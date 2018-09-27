@@ -1,5 +1,8 @@
 package com.higgsblock.global.chain.app.contract;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import java.math.BigInteger;
 
 /**
@@ -8,6 +11,8 @@ import java.math.BigInteger;
  * @author Chen Jiawei
  * @date 2018-09-27
  */
+@Data
+@AllArgsConstructor
 public class ContractParameters {
     /**
      * Version of virtual machine.
@@ -28,44 +33,5 @@ public class ContractParameters {
 
     public ContractParameters(BigInteger gasPrice, long gasLimit, byte[] bytecode) {
         this((short) 0, gasPrice, gasLimit, bytecode);
-    }
-
-    public ContractParameters(short vmVersion, BigInteger gasPrice, long gasLimit, byte[] bytecode) {
-        this.vmVersion = vmVersion;
-        this.gasPrice = gasPrice;
-        this.gasLimit = gasLimit;
-        this.bytecode = bytecode;
-    }
-
-    public short getVmVersion() {
-        return vmVersion;
-    }
-
-    public void setVmVersion(short vmVersion) {
-        this.vmVersion = vmVersion;
-    }
-
-    public BigInteger getGasPrice() {
-        return gasPrice;
-    }
-
-    public void setGasPrice(BigInteger gasPrice) {
-        this.gasPrice = gasPrice;
-    }
-
-    public long getGasLimit() {
-        return gasLimit;
-    }
-
-    public void setGasLimit(long gasLimit) {
-        this.gasLimit = gasLimit;
-    }
-
-    public byte[] getBytecode() {
-        return bytecode;
-    }
-
-    public void setBytecode(byte[] bytecode) {
-        this.bytecode = bytecode;
     }
 }
