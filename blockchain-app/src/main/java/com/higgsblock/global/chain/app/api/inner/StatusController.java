@@ -6,18 +6,24 @@ import com.higgsblock.global.chain.app.api.vo.PeerVO;
 import com.higgsblock.global.chain.app.api.vo.SimpleBlockVO;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
+import com.higgsblock.global.chain.app.dao.IBalanceRepository;
+import com.higgsblock.global.chain.app.dao.entity.BalanceEntity;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -44,6 +50,10 @@ public class StatusController {
     private BlockService blockService;
     @Autowired
     private SystemStatusManager systemStatusManager;
+    @Autowired
+    private IBalanceService balanceService;
+    @Autowired
+    private IBalanceRepository balanceRepository;
 
     /**
      * query state
@@ -140,6 +150,15 @@ public class StatusController {
         return vo;
     }
 
+    @RequestMapping("/balance")
+    public Map<String, Money> getBalance(String address) {
+        return balanceService.get(address);
+    }
+
+    @RequestMapping("/allBalance")
+    public List<BalanceEntity> getAllBalance() {
+        return balanceRepository.findAll();
+    }
 
     private DposGroupVO buildDposGroup(Block block) {
         long sn = dposService.calculateSn(block.getHeight());
