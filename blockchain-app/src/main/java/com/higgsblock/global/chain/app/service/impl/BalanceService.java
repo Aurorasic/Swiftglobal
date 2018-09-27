@@ -106,17 +106,6 @@ public class BalanceService implements IBalanceService {
             Map<String, Money> minusCurrencyMap = minusMap.getOrDefault(address, Maps.newHashMap());
             Map<String, Money> plusCurrencyMap = plusMap.getOrDefault(address, Maps.newHashMap());
             LOGGER.debug("save balance,{}:address={},dbMoney={},minusMoney={},plusMoney={}", block.getSimpleInfo(), address, JSON.toJSONString(resultCurrencyMap), JSON.toJSONString(minusCurrencyMap), JSON.toJSONString(plusCurrencyMap));
-            // minus balance
-            minusCurrencyMap.forEach((currency, minusValue) -> {
-                resultCurrencyMap.compute(currency, (k1, dbValue) -> {
-                    if (null == dbValue) {
-                        dbValue = new Money(0, currency);
-                    }
-
-                    dbValue = dbValue.subtract(minusValue);
-                    return dbValue;
-                });
-            });
             // plus balance
             plusCurrencyMap.forEach((currency, plusValue) -> {
                 resultCurrencyMap.compute(currency, (k1, dbValue) -> {
@@ -128,6 +117,11 @@ public class BalanceService implements IBalanceService {
                     return dbValue;
                 });
             });
+
+            // minus balance
+            minusCurrencyMap.forEach((currency, minusValue) -> {
+                resultCurrencyMap.compute(currency, (k1, dbValue) -> dbValue.subtract(minusValue));
+            });
         }
 
         LOGGER.debug("save balance,{},resultMap={}", block.getSimpleInfo(), JSON.toJSONString(resultMap));
@@ -136,7 +130,7 @@ public class BalanceService implements IBalanceService {
             BalanceEntity entity = new BalanceEntity(k, v.values().stream().collect(Collectors.toList()));
             balanceRepository.save(entity);
         });
-        LOGGER.debug("save blance success,{}", block.getSimpleInfo());
+        LOGGER.debug("save balance success,{}", block.getSimpleInfo());
     }
 
     private Map<String, Map<String, Money>> getBalanceMap(List<UTXO> utxos) {
@@ -148,7 +142,15 @@ public class BalanceService implements IBalanceService {
                 }
 
                 Money money = utxo.getOutput().getMoney();
-                v.put(money.getCurrency(), new Money(money.getValue(), money.getCurrency()));
+                v.compute(money.getCurrency(), (k1, v1) -> {
+                    if (null == v1) {
+                        v1 = new Money(money.getValue(), money.getCurrency());
+                    } else {
+                        v1.add(new Money(money.getValue(), money.getCurrency()));
+                    }
+
+                    return v1;
+                });
                 return v;
             });
         }
