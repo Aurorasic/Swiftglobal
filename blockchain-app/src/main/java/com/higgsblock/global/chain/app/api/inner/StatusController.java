@@ -158,7 +158,7 @@ public class StatusController {
         Map<String, Money> maps = Maps.newHashMap();
         for (SystemCurrencyEnum item : SystemCurrencyEnum.values()) {
             Money money = balanceService.getUnionBalance("", address, item.getCurrency());
-            if (null != money) {
+            if (null != money && !money.equals(0)) {
                 maps.put(item.getCurrency(), money);
             }
         }
