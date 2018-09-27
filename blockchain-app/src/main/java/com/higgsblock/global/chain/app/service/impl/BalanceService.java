@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.higgsblock.global.chain.app.blockchain.Block;
@@ -104,7 +105,7 @@ public class BalanceService implements IBalanceService {
             Map<String, Money> resultCurrencyMap = resultMap.get(address);
             Map<String, Money> minusCurrencyMap = minusMap.getOrDefault(address, Maps.newHashMap());
             Map<String, Money> plusCurrencyMap = plusMap.getOrDefault(address, Maps.newHashMap());
-
+            LOGGER.debug("save balance,{}:address={},dbMoney={},minusMoney={},plusMoney={}", block.getSimpleInfo(), address, JSON.toJSONString(resultCurrencyMap), JSON.toJSONString(minusCurrencyMap), JSON.toJSONString(plusCurrencyMap));
             // minus balance
             minusCurrencyMap.forEach((currency, minusValue) -> {
                 resultCurrencyMap.compute(currency, (k1, dbValue) -> {
@@ -129,11 +130,13 @@ public class BalanceService implements IBalanceService {
             });
         }
 
+        LOGGER.debug("save balance,{},resultMap={}", block.getSimpleInfo(), JSON.toJSONString(resultMap));
         // save balance
         resultMap.forEach((k, v) -> {
             BalanceEntity entity = new BalanceEntity(k, v.values().stream().collect(Collectors.toList()));
             balanceRepository.save(entity);
         });
+        LOGGER.debug("save blance success,{}", block.getSimpleInfo());
     }
 
     private Map<String, Map<String, Money>> getBalanceMap(List<UTXO> utxos) {
