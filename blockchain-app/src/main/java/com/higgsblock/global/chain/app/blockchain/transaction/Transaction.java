@@ -35,7 +35,8 @@ import java.util.List;
 @Slf4j
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
-@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "contractParameters", "contractExecutionResult"})
+@JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "gasPrice", "gasLimit",
+        "contractParameters", "contractExecutionResult"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -71,6 +72,15 @@ public class Transaction extends BaseSerializer {
     private long transactionTime = System.currentTimeMillis();
 
     /**
+     * Gas price of a unit transaction creator is willing to pay.
+     */
+    private BigInteger gasPrice;
+    /**
+     * Maximum of gas amount for transaction being accepted.
+     */
+    private long gasLimit;
+
+    /**
      * Parameters container for contract creation or contract call
      */
     private ContractParameters contractParameters;
@@ -83,23 +93,23 @@ public class Transaction extends BaseSerializer {
     /**
      * Validates contract execution conditions.
      *
-     * @param sizeLimit       remain size allowed for this transaction.
+     * @param sizeLimitAllowed       remain size allowed for this transaction.
      * @param subTxsSizeLimit size allowed for sub transaction list.
-     * @param gasLimit        remain gas allowed for this transaction.
+     * @param gasLimitAllowed        remain gas allowed for this transaction.
      * @return if contract is fitted to be executed.
      */
-    public boolean validForExecution(long sizeLimit, long subTxsSizeLimit, BigInteger gasLimit) {
+    public boolean validForExecution(long sizeLimitAllowed, long subTxsSizeLimit, BigInteger gasLimitAllowed) {
         long size = getSize();
-        if (sizeLimit - size < subTxsSizeLimit) {
+        if (sizeLimitAllowed - size < subTxsSizeLimit) {
             return false;
         }
 
-        if (BigInteger.valueOf(contractParameters.getGasLimit()).compareTo(gasLimit) > 0) {
+        if (BigInteger.valueOf(gasLimit).compareTo(gasLimitAllowed) > 0) {
             return false;
         }
 
         BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
-        if (sizeGas.compareTo(BigInteger.valueOf(contractParameters.getGasLimit())) > 0) {
+        if (sizeGas.compareTo(BigInteger.valueOf(gasLimit)) > 0) {
             return false;
         }
 
@@ -139,21 +149,6 @@ public class Transaction extends BaseSerializer {
         return null;
     }
 
-    public void fillExecutionEnvironment(ExecutionEnvironment executionEnvironment) {
-        executionEnvironment.setTransactionHash(hash);
-        executionEnvironment.setContractCreation(outputs.get(0).getLockScript().getType() == 11);
-        try {
-            executionEnvironment.setContractAddress(outputs.get(0).getLockScript().getAddress().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        executionEnvironment.setSenderAddress(getSender());
-        executionEnvironment.setGasPrice(contractParameters.getGasPrice().toByteArray());
-        executionEnvironment.setGasLimit(BigInteger.valueOf(contractParameters.getGasLimit()).toByteArray());
-        executionEnvironment.setValue(BigInteger.valueOf(Long.valueOf(outputs.get(0).getMoney().getValue())).toByteArray());
-        executionEnvironment.setData(contractParameters.getBytecode());
-    }
-
     public boolean valid() {
 
         if (version < INIT_VERSION) {
@@ -164,21 +159,38 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isNotEmpty(inputs)) {
-            for (TransactionInput input : inputs) {
-                if (!input.valid()) {
-                    return false;
-                }
+        if (gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
+            return false;
+        }
+
+        if (gasLimit < 0) {
+            return false;
+        }
+
+        if (contractParameters != null && !contractParameters.valid()) {
+            return false;
+        }
+
+        if (CollectionUtils.isEmpty(inputs)) {
+            return false;
+        }
+
+        if (CollectionUtils.isEmpty(outputs)) {
+            return false;
+        }
+
+        for (TransactionInput input : inputs) {
+            if (!input.valid()) {
+                return false;
             }
         }
 
-        if (CollectionUtils.isNotEmpty(outputs)) {
-            for (TransactionOutput out : outputs) {
-                if (!out.valid()) {
-                    return false;
-                }
+        for (TransactionOutput out : outputs) {
+            if (!out.valid()) {
+                return false;
             }
         }
+
         return true;
     }
 
@@ -192,6 +204,9 @@ public class Transaction extends BaseSerializer {
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
             builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
             builder.append(function.hashString(getOutputsHash(), Charsets.UTF_8));
+            builder.append(function.hashBytes(gasPrice.toByteArray()));
+            builder.append(function.hashLong(gasLimit));
+            builder.append(function.hashString(getContractParametersHash(), Charsets.UTF_8));
             hash = function.hashString(builder, Charsets.UTF_8).toString();
         }
         return hash;
@@ -220,6 +235,18 @@ public class Transaction extends BaseSerializer {
         outputs.forEach(output -> builder
                 .append(output.getHash())
         );
+        return function.hashString(builder, Charsets.UTF_8).toString();
+    }
+
+    private String getContractParametersHash() {
+        HashFunction function = Hashing.sha256();
+        if (contractParameters == null) {
+            return function.hashInt(0).toString();
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(function.hashInt(contractParameters.getVmVersion()));
+        builder.append(function.hashBytes(contractParameters.getBytecode()));
         return function.hashString(builder, Charsets.UTF_8).toString();
     }
 

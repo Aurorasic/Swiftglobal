@@ -26,6 +26,7 @@ import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -564,6 +567,21 @@ public class BlockService implements IBlockService {
                 }
             }
         }
+    }
+
+    public void fillExecutionEnvironment(Transaction transaction, ExecutionEnvironment executionEnvironment) {
+        executionEnvironment.setTransactionHash(transaction.getHash());
+        executionEnvironment.setContractCreation(transaction.getOutputs().get(0).getLockScript().getType() == 11);
+        try {
+            executionEnvironment.setContractAddress(transaction.getOutputs().get(0).getLockScript().getAddress().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        executionEnvironment.setSenderAddress(transaction.getSender());
+        executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
+        executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
+        executionEnvironment.setValue(BigInteger.valueOf(Long.valueOf(transaction.getOutputs().get(0).getMoney().getValue())).toByteArray());
+        executionEnvironment.setData(transaction.getContractParameters().getBytecode());
     }
 
     /**

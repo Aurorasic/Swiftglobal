@@ -3,8 +3,6 @@ package com.higgsblock.global.chain.app.contract;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.math.BigInteger;
-
 /**
  * Parameters container for contract creation or contract call.
  *
@@ -19,19 +17,23 @@ public class ContractParameters {
      */
     private short vmVersion;
     /**
-     * Gas price of a unit transaction creator is willing to pay.
-     */
-    private BigInteger gasPrice;
-    /**
-     * Maximum of gas amount for transaction being accepted.
-     */
-    private long gasLimit;
-    /**
      * Byte code of contract creation or contract call.
      */
     private byte[] bytecode;
 
-    public ContractParameters(BigInteger gasPrice, long gasLimit, byte[] bytecode) {
-        this((short) 0, gasPrice, gasLimit, bytecode);
+    public ContractParameters(byte[] bytecode) {
+        this((short) 0, bytecode);
+    }
+
+    public boolean valid() {
+        if (vmVersion < 0) {
+            return false;
+        }
+
+        if (bytecode == null || bytecode.length == 0) {
+            return false;
+        }
+
+        return true;
     }
 }
