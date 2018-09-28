@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
+@JSONType(includes = {"vmVersion", "bytecode"})
 public class ContractParameters {
     /**
      * Version of virtual machine.
