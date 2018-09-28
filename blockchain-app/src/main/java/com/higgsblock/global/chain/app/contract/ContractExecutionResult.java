@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.alibaba.fastjson.annotation.JSONType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ import java.util.List;
  */
 @Data
 @AllArgsConstructor
+@JSONType(includes = {"resultHash", "subTransactionList", "minerSignature"})
 public class ContractExecutionResult {
     /**
      * Hash of global difference after contract being executed.

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -146,7 +147,7 @@ public class Transaction extends BaseSerializer {
 
     public byte[] getSender() {
         //TODO: chenjiawei get sender or senders of this transaction.
-        return null;
+        return Hex.decode("26004361060485763ffffffff7c0100000000000");
     }
 
     public boolean valid() {
