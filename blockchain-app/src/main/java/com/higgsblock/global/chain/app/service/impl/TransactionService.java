@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -327,7 +329,9 @@ public class TransactionService implements ITransactionService {
                 //input >= out + feeOfSize+gas*gasLimit
                 curMoney.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()),
                         SystemCurrencyEnum.CAS.getCurrency()));
-               // curMoney.add(tx.getga)
+                //TODO tangKun  gas should be  GE  tx.getGasPrice() 2018-09-28
+                BigInteger gas = tx.getGasPrice().subtract(BigInteger.valueOf(tx.getGasLimit()));
+                curMoney.add(BalanceUtil.convertGasToMoney(gas,SystemCurrencyEnum.CAS.getCurrency()));
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
