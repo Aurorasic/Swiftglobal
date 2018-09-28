@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
@@ -15,6 +16,7 @@ import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -321,7 +323,11 @@ public class TransactionService implements ITransactionService {
 
             //if verify receivedTransaction, block is null so curMoney add tx fee
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
-                curMoney.add(transactionFeeService.getCurrencyFee(tx));
+              //  curMoney.add(transactionFeeService.getCurrencyFee(tx));
+                //input >= out + feeOfSize+gas*gasLimit
+                curMoney.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()),
+                        SystemCurrencyEnum.CAS.getCurrency()));
+               // curMoney.add(tx.getga)
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
