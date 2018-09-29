@@ -205,7 +205,8 @@ public class Transaction extends BaseSerializer {
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
             builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
             builder.append(function.hashString(getOutputsHash(), Charsets.UTF_8));
-            builder.append(function.hashBytes(gasPrice.toByteArray()));
+//            builder.append(function.hashBytes(gasPrice.toByteArray()));
+            builder.append(function.hashBytes(gasPrice != null ? gasPrice.toByteArray(): new byte[0]));
             builder.append(function.hashLong(gasLimit));
             builder.append(function.hashString(getContractParametersHash(), Charsets.UTF_8));
             hash = function.hashString(builder, Charsets.UTF_8).toString();
