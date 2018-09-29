@@ -15,7 +15,7 @@ import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockExce
 import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
-import com.higgsblock.global.chain.app.blockchain.transaction.handler.TransactionHandler;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
@@ -26,6 +26,7 @@ import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -35,6 +36,7 @@ import com.higgsblock.global.chain.vm.api.Executor;
 import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
 import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +46,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -402,12 +403,9 @@ public class BlockService implements IBlockService {
     }
 
     private ExecutionResult executeContract(Transaction transaction, Block block) {
-        if (transaction == null || transaction.getOutputs() == null) {
-            return null;
-        }
-
-        short type = transaction.getOutputs().get(0).getLockScript().getType();
-        if (type != 11 && type != 12) {
+        if (transaction == null
+                || transaction.getOutputs() == null
+                || !transaction.isContractTrasaction()) {
             return null;
         }
 
@@ -419,7 +417,7 @@ public class BlockService implements IBlockService {
         executionEnvironment.setTimestamp(block.getBlockTime());
         executionEnvironment.setNumber(block.getHeight());
         executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
-        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.GAS_LIMIT).toByteArray());
+        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
         executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress())).toByteArray());
 
         executionEnvironment.setSystemProperties(systemProperties);
@@ -442,6 +440,47 @@ public class BlockService implements IBlockService {
      */
     private long getBalance(byte[] address) {
         return 0;
+    }
+
+    /**
+     * Validates contract execution conditions.
+     *
+     * @param sizeLimitAllowed       remain size allowed for this transaction.
+     * @param gasLimitAllowed        remain gas allowed for this transaction.
+     * @return if contract is fitted to be executed.
+     */
+    public boolean validForExecution(Transaction transaction, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
+        long size = transaction.getSize();
+        if (sizeLimitAllowed - size < Block.LIMITED_SUB_TRANSACTION_SIZE) {
+            return false;
+        }
+
+        if (BigInteger.valueOf(transaction.getGasLimit()).compareTo(gasLimitAllowed) > 0) {
+            return false;
+        }
+
+        BigInteger sizeGas = FeeUtil.getSizeGas(size);
+        if (sizeGas.compareTo(BigInteger.valueOf(transaction.getGasLimit())) > 0) {
+            return false;
+        }
+
+        if (transaction.getContractParameters().getBytecode() == null || transaction.getContractParameters().getBytecode().length == 0) {
+            return false;
+        }
+
+        List<TransactionOutput> outputs = transaction.getOutputs();
+
+        if (transaction.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), transaction.getContractAddress())) {
+            return false;
+        }
+
+        if (transaction.isContractTrasaction()) {
+            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -628,7 +667,7 @@ public class BlockService implements IBlockService {
 
     public void fillExecutionEnvironment(Transaction transaction, ExecutionEnvironment executionEnvironment) {
         executionEnvironment.setTransactionHash(transaction.getHash());
-        executionEnvironment.setContractCreation(transaction.getOutputs().get(0).getLockScript().getType() == 11);
+        executionEnvironment.setContractCreation(transaction.isContractCreation());
         executionEnvironment.setContractAddress(transaction.getContractAddress());
         executionEnvironment.setSenderAddress(transaction.getSender());
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());

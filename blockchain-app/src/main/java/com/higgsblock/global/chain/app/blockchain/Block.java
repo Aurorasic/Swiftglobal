@@ -34,8 +34,9 @@ import java.util.List;
 @Slf4j
 @JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair", "witnessSigPairs", "voteVersion"})
 public class Block extends BaseSerializer {
-    private static final int LIMITED_SIZE = 1024 * 1024 * 1;
-    public static final long GAS_LIMIT = 10_000_1000L;
+    public static final int LIMITED_SIZE = 1024 * 1024;
+    public static final long LIMITED_GAS = 10_000_1000L;
+    public static final int LIMITED_SUB_TRANSACTION_SIZE = LIMITED_SIZE;
 
     private int version;
 
