@@ -36,7 +36,8 @@ public class TransactionOutPoint extends BaseSerializer {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder()
                 .append(function.hashString(null == transactionHash ? StringUtils.EMPTY : transactionHash, Charsets.UTF_8))
-                .append(function.hashInt(index));
+                .append(function.hashInt(index))
+                .append(function.hashString(output.getHash(),Charsets.UTF_8));
         return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
