@@ -38,7 +38,7 @@ public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, String>
      * @param lockScript
      * @return
      */
-    @IndexQuery("lockScript")
+    @Deprecated
     List<UTXOEntity> findByLockScript(String lockScript);
 
     /**
@@ -48,7 +48,7 @@ public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, String>
      * @param currency
      * @return
      */
-    @IndexQuery("lockScript")
+    @Deprecated
     List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency);
 
 }

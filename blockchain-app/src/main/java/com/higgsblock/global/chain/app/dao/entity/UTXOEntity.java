@@ -30,7 +30,6 @@ public class UTXOEntity {
 
     private int scriptType;
 
-    @Index
     private String lockScript;
 }
 
