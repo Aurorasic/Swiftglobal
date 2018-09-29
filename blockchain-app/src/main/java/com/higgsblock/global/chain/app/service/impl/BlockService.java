@@ -15,7 +15,7 @@ import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockExce
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.blockchain.transaction.handler.TransactionHandler;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
@@ -46,7 +46,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -378,7 +377,7 @@ public class BlockService implements IBlockService {
         block.setTransactions(packTransaction);
         if (lastBlockIndex.getHeight() >= 1) {
             Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, fee, nextBestBlockHeight);
-            //æŠŠcoinBaseè¿½åŠ ä¸ºç¬¬ä¸€ç¬”äº¤æ˜“
+            //°ÑcoinBase×·¼ÓÎªµÚÒ»±Ê½»Ò×
             block.getTransactions().add(0,coinBaseTx);
         }
 
@@ -390,13 +389,14 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    private ExecutionResult executeContract(Transaction transaction, Block block,Repository transactionRepository) {
-        if (transaction == null || transaction.getOutputs() == null) {
+    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
+        if (transaction == null
+                || transaction.getOutputs() == null
+                || !transaction.isContractTrasaction()) {
             return null;
         }
 
-        short type = transaction.getOutputs().get(0).getLockScript().getType();
-        if (type != 11 && type != 12) {
+        if (!validForExecution(transaction, sizeLimitAllowed, gasLimitAllowed)) {
             return null;
         }
 
@@ -408,7 +408,7 @@ public class BlockService implements IBlockService {
         executionEnvironment.setTimestamp(block.getBlockTime());
         executionEnvironment.setNumber(block.getHeight());
         executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
-        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.GAS_LIMIT).toByteArray());
+        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
         executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress())).toByteArray());
 
         executionEnvironment.setSystemProperties(systemProperties);
@@ -446,8 +446,8 @@ public class BlockService implements IBlockService {
                 txRepository = blockRepository.startTracking();
                 //invoke contract transaction
                 ExecutionResult executionResult = executeContract(tx, block,txRepository);
-                //æˆåŠŸä¸”ï¼ˆæœ‰è½¬è´¦è®°å½•æˆ–è€…é€€Gasï¼‰éœ€è¦ç”Ÿæˆå­äº¤æ˜“
-                //TODO tangKun é€€gaså¾…å¤„ç† 2018-09-29
+                //³É¹¦ÇÒ£¨ÓĞ×ªÕË¼ÇÂ¼»òÕßÍËGas£©ĞèÒªÉú³É×Ó½»Ò×
+                //TODO tangKun ÍËgas´ı´¦Àí 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
                         executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
@@ -461,12 +461,12 @@ public class BlockService implements IBlockService {
                             ,SystemCurrencyEnum.CAS.getCurrency()));
                 }
 
-                //å¤±è´¥ä¸”æœ‰äº¤æ˜“æœ‰è¾“å…¥moneyåˆ°åˆçº¦éœ€è¦ç”Ÿæˆå­äº¤æ˜“,é€€æ¬¾äº¤æ˜“
+                //Ê§°ÜÇÒÓĞ½»Ò×ÓĞÊäÈëmoneyµ½ºÏÔ¼ĞèÒªÉú³É×Ó½»Ò×,ÍË¿î½»Ò×
                 Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
                         new Money(BigDecimal.ZERO.toPlainString()) :  tx.getOutputs().get(0).getMoney();
                 if(!success ) {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0){
-                        //ç”Ÿæˆé€€æ¬¾æ–¹å‘äº¤æ˜“å¹¶è¿½åŠ åˆ°åŒºå—åŒ…å«äº¤æ˜“ä¸­
+                        //Éú³ÉÍË¿î·½Ïò½»Ò×²¢×·¼Óµ½Çø¿é°üº¬½»Ò×ÖĞ
                         ContractTransaction refundTx = new ContractTransaction();
                     TransactionInput input = new TransactionInput();
                     TransactionOutPoint top = new TransactionOutPoint();
@@ -515,6 +515,47 @@ public class BlockService implements IBlockService {
      */
     private long getBalance(byte[] address) {
         return 0;
+    }
+
+    /**
+     * Validates contract execution conditions.
+     *
+     * @param sizeLimitAllowed       remain size allowed for this transaction.
+     * @param gasLimitAllowed        remain gas allowed for this transaction.
+     * @return if contract is fitted to be executed.
+     */
+    public boolean validForExecution(Transaction transaction, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
+        long size = transaction.getSize();
+        if (sizeLimitAllowed - size < Block.LIMITED_SUB_TRANSACTION_SIZE) {
+            return false;
+        }
+
+        if (BigInteger.valueOf(transaction.getGasLimit()).compareTo(gasLimitAllowed) > 0) {
+            return false;
+        }
+
+        BigInteger sizeGas = FeeUtil.getSizeGas(size);
+        if (sizeGas.compareTo(BigInteger.valueOf(transaction.getGasLimit())) > 0) {
+            return false;
+        }
+
+        if (transaction.getContractParameters().getBytecode() == null || transaction.getContractParameters().getBytecode().length == 0) {
+            return false;
+        }
+
+        List<TransactionOutput> outputs = transaction.getOutputs();
+
+        if (transaction.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), transaction.getContractAddress())) {
+            return false;
+        }
+
+        if (transaction.isContractTrasaction()) {
+            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -701,7 +742,7 @@ public class BlockService implements IBlockService {
 
     public void fillExecutionEnvironment(Transaction transaction, ExecutionEnvironment executionEnvironment) {
         executionEnvironment.setTransactionHash(transaction.getHash());
-        executionEnvironment.setContractCreation(transaction.getOutputs().get(0).getLockScript().getType() == 11);
+        executionEnvironment.setContractCreation(transaction.isContractCreation());
         executionEnvironment.setContractAddress(transaction.getContractAddress());
         executionEnvironment.setSenderAddress(transaction.getSender());
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
