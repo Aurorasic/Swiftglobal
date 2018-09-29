@@ -79,12 +79,13 @@ public class Transaction extends BaseSerializer {
                 }
             }
         }
-
-        if (CollectionUtils.isNotEmpty(outputs)) {
-            for (TransactionOutput out : outputs) {
-                if (!out.valid()) {
-                    return false;
-                }
+        if (CollectionUtils.isEmpty(outputs)) {
+            return false;
+        }
+        
+        for (TransactionOutput out : outputs) {
+            if (!out.valid()) {
+                return false;
             }
         }
         return true;
