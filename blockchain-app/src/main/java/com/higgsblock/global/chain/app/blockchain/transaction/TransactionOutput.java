@@ -34,6 +34,9 @@ public class TransactionOutput extends BaseSerializer {
     private LockScript lockScript;
 
     public boolean valid() {
+        if (money == null) {
+            return false;
+        }
         if (!money.checkRange()) {
             return false;
         }

@@ -63,13 +63,10 @@ public class UnLockScript extends BaseSerializer {
         if (CollectionUtils.isEmpty(pkList) || CollectionUtils.isEmpty(sigList)) {
             return false;
         }
-        if (sigList.size() < 1) {
-            return false;
-        }
         if (sigList.size() > pkList.size()) {
             return false;
         }
-        if (sigList.size() > MAX_NUM) {
+        if (pkList.size() > MAX_NUM) {
             return false;
         }
         return true;
