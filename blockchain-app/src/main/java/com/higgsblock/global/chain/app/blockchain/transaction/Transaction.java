@@ -8,9 +8,11 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.ContractParameters;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.crypto.utils.CryptoUtils;
 import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
@@ -23,6 +25,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -118,17 +121,12 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        try {
-            if (outputs.get(0).getLockScript().getType() == 11 && Arrays.equals(outputs.get(0).getLockScript().getAddress().getBytes("UTF-8"), getContractAddress())) {
-                return false;
-            }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        if (outputs.get(0).getLockScript().getType() == 11 && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), getContractAddress())) {
             return false;
         }
 
         if (outputs.get(0).getLockScript().getType() == 11 || outputs.get(0).getLockScript().getType() == 12) {
-            if (!outputs.get(0).getMoney().getCurrency().equals("CAS") && !outputs.get(0).getMoney().getValue().equals("0")) {
+            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
                 return false;
             }
         }
