@@ -35,6 +35,7 @@ import java.util.List;
 @JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair", "witnessSigPairs", "voteVersion"})
 public class Block extends BaseSerializer {
     private static final int LIMITED_SIZE = 1024 * 1024 * 1;
+    public static final long GAS_LIMIT = 10_000_1000L;
 
     private int version;
 

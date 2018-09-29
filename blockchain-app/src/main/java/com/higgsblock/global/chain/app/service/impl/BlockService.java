@@ -15,10 +15,12 @@ import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockExce
 import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.blockchain.transaction.handler.TransactionHandler;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
+import com.higgsblock.global.chain.app.contract.RepositoryImplTest;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
@@ -28,10 +30,16 @@ import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
+import com.higgsblock.global.chain.vm.api.ExecutionResult;
+import com.higgsblock.global.chain.vm.api.Executor;
+import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
+import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
+import com.higgsblock.global.chain.vm.core.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +105,10 @@ public class BlockService implements IBlockService {
     private IBlockChainService blockChainService;
     @Autowired
     private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
+    @Autowired
+    private ByzantiumConfig blockchainConfig;
+    @Autowired
+    private DefaultSystemProperties systemProperties;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -387,6 +399,49 @@ public class BlockService implements IBlockService {
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
+    }
+
+    private ExecutionResult executeContract(Transaction transaction, Block block) {
+        if (transaction == null || transaction.getOutputs() == null) {
+            return null;
+        }
+
+        short type = transaction.getOutputs().get(0).getLockScript().getType();
+        if (type != 11 && type != 12) {
+            return null;
+        }
+
+        ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
+        fillExecutionEnvironment(transaction, executionEnvironment);
+
+        executionEnvironment.setParentHash(Hex.decode(block.getPrevBlockHash()));
+        executionEnvironment.setCoinbase(AddrUtil.toContractAddr(block.getMinerSigPair().getAddress()));
+        executionEnvironment.setTimestamp(block.getBlockTime());
+        executionEnvironment.setNumber(block.getHeight());
+        executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
+        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.GAS_LIMIT).toByteArray());
+        executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress())).toByteArray());
+
+        executionEnvironment.setSystemProperties(systemProperties);
+        executionEnvironment.setBlockchainConfig(blockchainConfig);
+
+        Repository transactionRepository = new RepositoryImplTest();
+
+        Executor executor = new Executor(transactionRepository, executionEnvironment);
+        ExecutionResult executionResult = executor.execute();
+
+        LOGGER.info(executionResult.toString());
+        return executionResult;
+    }
+
+    /**
+     * Gets balance of contract.
+     *
+     * @param address address of contract.
+     * @return balance of contract.
+     */
+    private long getBalance(byte[] address) {
+        return 0;
     }
 
     /**

@@ -4,7 +4,9 @@ import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.GasCost;
 import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.program.Program;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ByzantiumConfig implements BlockchainConfig {
 
     private static final GasCost GAS_COST = new GasCost();
