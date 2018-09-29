@@ -11,6 +11,16 @@ public class ByzantiumConfig implements BlockchainConfig {
 
     private static final GasCost GAS_COST = new GasCost();
 
+    /**
+     * block transactions limit exclude coinBase
+     */
+    private static final int LIMITED_SIZE = 1024 * 1000 * 1;
+
+    /**
+     * contract transactions limit exclude coinBase
+     */
+    private static final int CONTRACT_LIMITED_SIZE = 1024 * 1000 * 1;
+
     @Override
     public GasCost getGasCost() {
         return GAS_COST;
@@ -68,5 +78,25 @@ public class ByzantiumConfig implements BlockchainConfig {
     @Override
     public boolean eip658() {
         return true;
+    }
+
+    /**
+     * block limit size
+     *
+     * @return limit size
+     */
+    @Override
+    public int getLimitedSize() {
+        return LIMITED_SIZE;
+    }
+
+    /**
+     * contract limit size
+     *
+     * @return limit size
+     */
+    @Override
+    public int getContractLimitedSize() {
+        return CONTRACT_LIMITED_SIZE;
     }
 }

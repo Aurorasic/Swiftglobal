@@ -66,4 +66,18 @@ public interface BlockchainConfig {
      * @throws Program.OutOfGasException If passed args doesn't conform to limitations
      */
     DataWord getCallGas(OpCode op, DataWord requestedGas, DataWord availableGas) throws Program.OutOfGasException;
+
+    /**
+     * block limit size
+     * @return limit size
+     */
+    int getLimitedSize();
+
+    /**
+     * contract limit size
+     * @return limit size
+     */
+    int getContractLimitedSize();
+
+
 }
