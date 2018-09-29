@@ -23,6 +23,7 @@ import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -572,15 +574,11 @@ public class BlockService implements IBlockService {
     public void fillExecutionEnvironment(Transaction transaction, ExecutionEnvironment executionEnvironment) {
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.getOutputs().get(0).getLockScript().getType() == 11);
-        try {
-            executionEnvironment.setContractAddress(transaction.getOutputs().get(0).getLockScript().getAddress().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        executionEnvironment.setContractAddress(transaction.getContractAddress());
         executionEnvironment.setSenderAddress(transaction.getSender());
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
-        executionEnvironment.setValue(BigInteger.valueOf(Long.valueOf(transaction.getOutputs().get(0).getMoney().getValue())).toByteArray());
+        executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue()).toBigInteger().toByteArray());
         executionEnvironment.setData(transaction.getContractParameters().getBytecode());
     }
 
