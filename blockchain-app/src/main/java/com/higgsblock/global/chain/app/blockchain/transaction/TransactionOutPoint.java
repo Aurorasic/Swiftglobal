@@ -48,7 +48,11 @@ public class TransactionOutPoint extends BaseSerializer {
         if (index < 0) {
             return false;
         }
-        return true;
+        if (null == output){
+            return false;
+        }
+
+        return output.valid();
     }
 
     public String getKey() {
