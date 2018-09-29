@@ -402,10 +402,14 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    private ExecutionResult executeContract(Transaction transaction, Block block) {
+    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
         if (transaction == null
                 || transaction.getOutputs() == null
                 || !transaction.isContractTrasaction()) {
+            return null;
+        }
+
+        if (!validForExecution(transaction, sizeLimitAllowed, gasLimitAllowed)) {
             return null;
         }
 
