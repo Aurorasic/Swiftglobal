@@ -41,6 +41,9 @@ public class BlockHandler extends BaseMessageHandler<Block> {
     @Override
     protected boolean valid(IMessage<Block> message) {
         Block block = message.getData();
+        if (block == null) {
+            return false;
+        }
         //1. check: isGenesisBlock
         boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
         if (isGenesisBlock) {
