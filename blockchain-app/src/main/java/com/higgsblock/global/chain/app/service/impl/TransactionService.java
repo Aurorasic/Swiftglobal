@@ -13,6 +13,7 @@ import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -23,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -124,9 +124,17 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the transaction is not valid hash={}", hash);
             return;
         }
-
+        setContractAddress(tx);
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
+    }
+
+    private void setContractAddress(Transaction tx) {
+        if (!tx.isContractCreation()) {
+            return;
+        }
+        byte[] address = tx.getContractAddress();
+        tx.getOutputs().get(0).getLockScript().setAddress(AddrUtil.toTransactionAddr(address));
     }
 
     @Override
@@ -263,6 +271,10 @@ public class TransactionService implements ITransactionService {
         String hash = tx.getHash();
         if (!tx.sizeAllowed()) {
             LOGGER.info("Size of the transaction is illegal.");
+            return false;
+        }
+        if (!tx.validContractPart()) {
+            LOGGER.info("Contract format is incorrect.");
             return false;
         }
 

@@ -52,6 +52,12 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
             LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
             return false;
         }
+
+        if (!tx.validContractPart()) {
+            LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+            return false;
+        }
+
         return true;
     }
 

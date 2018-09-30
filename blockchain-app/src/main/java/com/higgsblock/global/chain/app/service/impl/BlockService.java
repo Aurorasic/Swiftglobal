@@ -535,25 +535,13 @@ public class BlockService implements IBlockService {
             return false;
         }
 
-        BigInteger sizeGas = FeeUtil.getSizeGas(size);
-        if (sizeGas.compareTo(BigInteger.valueOf(transaction.getGasLimit())) > 0) {
-            return false;
-        }
-
-        if (transaction.getContractParameters().getBytecode() == null || transaction.getContractParameters().getBytecode().length == 0) {
+        if (!transaction.validContractPart()){
             return false;
         }
 
         List<TransactionOutput> outputs = transaction.getOutputs();
-
         if (transaction.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), transaction.getContractAddress())) {
             return false;
-        }
-
-        if (transaction.isContractTrasaction()) {
-            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
-                return false;
-            }
         }
 
         return true;
