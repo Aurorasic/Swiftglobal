@@ -42,6 +42,7 @@ public class Executor {
     private BlockchainConfig blockchainConfig;
     private byte[] senderAddress;
     private List<TransferInfo> transferInfoList;
+    private long sizeGas;
 
     public Executor(Repository transactionRepository, ExecutionEnvironment executionEnvironment) {
         this.transactionRepository = transactionRepository;
@@ -62,6 +63,7 @@ public class Executor {
         blockchainConfig = executionEnvironment.getBlockchainConfig();
         senderAddress = executionEnvironment.getSenderAddress();
         transferInfoList = new ArrayList<>();
+        sizeGas = executionEnvironment.getSizeGas();
     }
 
     public ExecutionResult execute() {
@@ -90,6 +92,7 @@ public class Executor {
         VM vm = new VM(systemProperties);
         Program program = new Program(data, programInvoke, transaction, systemProperties);
         program.setTransferInfoList(transferInfoList);
+        program.spendGas(sizeGas, "size gas");
         if (systemProperties.playVM()) {
             vm.play(program);
         }
@@ -171,6 +174,7 @@ public class Executor {
         Program program = new Program(transactionRepository.getCodeHash(contractAddress),
                 transactionRepository.getCode(contractAddress), programInvoke, transaction, systemProperties);
         program.setTransferInfoList(transferInfoList);
+        program.spendGas(sizeGas, "size gas");
         if (systemProperties.playVM()) {
             vm.play(program);
         }
@@ -251,6 +255,7 @@ public class Executor {
             return executionResult;
         }
 
+        executionResult.spendGas(BigInteger.valueOf(sizeGas));
         executionResult.spendGas(executionFee);
         executionResult.setResult(out.getRight());
 

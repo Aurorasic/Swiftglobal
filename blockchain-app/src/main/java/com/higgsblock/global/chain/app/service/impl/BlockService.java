@@ -738,6 +738,7 @@ public class BlockService implements IBlockService {
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue()).toBigInteger().toByteArray());
         executionEnvironment.setData(transaction.getContractParameters().getBytecode());
+        executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
     }
 
     /**
