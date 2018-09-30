@@ -377,7 +377,7 @@ public class BlockService implements IBlockService {
         block.setTransactions(packTransaction);
         if (lastBlockIndex.getHeight() >= 1) {
             Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, fee, nextBestBlockHeight);
-            //°ÑcoinBase×·¼ÓÎªµÚÒ»±Ê½»Ò×
+            //ï¿½ï¿½coinBase×·ï¿½ï¿½Îªï¿½ï¿½Ò»ï¿½Ê½ï¿½ï¿½ï¿½
             block.getTransactions().add(0,coinBaseTx);
         }
 
@@ -389,7 +389,8 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
+    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed,
+                                            BigInteger gasLimitAllowed,Repository txRepository) {
         if (transaction == null
                 || transaction.getOutputs() == null
                 || !transaction.isContractTrasaction()) {
@@ -414,7 +415,7 @@ public class BlockService implements IBlockService {
         executionEnvironment.setSystemProperties(systemProperties);
         executionEnvironment.setBlockchainConfig(blockchainConfig);
 
-        Executor executor = new Executor(transactionRepository, executionEnvironment);
+        Executor executor = new Executor(txRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();
 
         LOGGER.info(executionResult.toString());
@@ -445,9 +446,9 @@ public class BlockService implements IBlockService {
                         SystemCurrencyEnum.CAS.getCurrency()));
                 txRepository = blockRepository.startTracking();
                 //invoke contract transaction
-                ExecutionResult executionResult = executeContract(tx, block,txRepository);
-                //³É¹¦ÇÒ£¨ÓÐ×ªÕË¼ÇÂ¼»òÕßÍËGas£©ÐèÒªÉú³É×Ó½»Ò×
-                //TODO tangKun ÍËgas´ý´¦Àí 2018-09-29
+                ExecutionResult executionResult = executeContract(tx, block,0L,BigInteger.ZERO,txRepository);
+                //ï¿½É¹ï¿½ï¿½Ò£ï¿½ï¿½ï¿½×ªï¿½Ë¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Gasï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Ó½ï¿½ï¿½ï¿½
+                //TODO tangKun ï¿½ï¿½gasï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
                         executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
@@ -461,12 +462,12 @@ public class BlockService implements IBlockService {
                             ,SystemCurrencyEnum.CAS.getCurrency()));
                 }
 
-                //Ê§°ÜÇÒÓÐ½»Ò×ÓÐÊäÈëmoneyµ½ºÏÔ¼ÐèÒªÉú³É×Ó½»Ò×,ÍË¿î½»Ò×
+                //Ê§ï¿½ï¿½ï¿½ï¿½ï¿½Ð½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½moneyï¿½ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½Ó½ï¿½ï¿½ï¿½,ï¿½Ë¿î½»ï¿½ï¿½
                 Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
                         new Money(BigDecimal.ZERO.toPlainString()) :  tx.getOutputs().get(0).getMoney();
                 if(!success ) {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0){
-                        //Éú³ÉÍË¿î·½Ïò½»Ò×²¢×·¼Óµ½Çø¿é°üº¬½»Ò×ÖÐ
+                        //ï¿½ï¿½ï¿½ï¿½ï¿½Ë¿î·½ï¿½ï¿½ï¿½×²ï¿½×·ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                         ContractTransaction refundTx = new ContractTransaction();
                     TransactionInput input = new TransactionInput();
                     TransactionOutPoint top = new TransactionOutPoint();
