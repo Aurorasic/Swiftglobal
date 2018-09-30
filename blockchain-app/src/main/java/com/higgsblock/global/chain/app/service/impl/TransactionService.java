@@ -448,8 +448,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        //TODO tangKun get fee by gas 2018-09-06
-        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(new Money(), block.getHeight());
+        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(block.getTransactionsFee(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
