@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
 import com.higgsblock.global.chain.vm.util.*;
+import lombok.Setter;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  * @author tangkun
  * @date 2018-09-06
  */
+@Setter
 public class RepositoryImpl implements Repository<UTXO> {
 
     protected RepositoryImpl parent;
@@ -50,11 +52,14 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     List<UTXO> spentUTXOCache = new ArrayList<>();
 
+    private String preBlockHash;
+
     protected RepositoryImpl() {}
 
     protected RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
 
-                          MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
+                          MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache,String preBlockHash) {
+        this.preBlockHash = preBlockHash;
         init(accountStateCache, codeCache, storageCache);
     }
 
@@ -215,7 +220,7 @@ public class RepositoryImpl implements Repository<UTXO> {
             }
         };
 
-        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
+        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache,this.preBlockHash);
         ret.parent = this;
         return ret;
     }

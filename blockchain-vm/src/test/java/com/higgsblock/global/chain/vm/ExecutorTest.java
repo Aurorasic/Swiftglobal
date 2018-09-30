@@ -130,6 +130,26 @@ public class ExecutorTest {
                 }
                 return requestedGas.clone();
             }
+
+            /**
+             * block limit size
+             *
+             * @return limit size
+             */
+            @Override
+            public int getLimitedSize() {
+                return 0;
+            }
+
+            /**
+             * contract limit size
+             *
+             * @return limit size
+             */
+            @Override
+            public int getContractLimitedSize() {
+                return 0;
+            }
         };
 
         byte[] parentHash = Hex.decode("34801561001057600080fd5b5060bf8061001f6000396000f300608060405260");

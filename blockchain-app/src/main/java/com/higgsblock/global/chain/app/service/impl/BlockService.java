@@ -427,7 +427,7 @@ public class BlockService implements IBlockService {
         List<Transaction> transactions = new ArrayList<>();
         int subSize = 0;
         //block cache
-        RepositoryRoot blockRepository  = new RepositoryRoot();
+        RepositoryRoot blockRepository  = new RepositoryRoot(block.getPrevBlockHash());
         //transaction cache
         Repository txRepository;
 

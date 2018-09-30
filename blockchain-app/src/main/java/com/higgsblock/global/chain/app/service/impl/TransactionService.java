@@ -448,8 +448,8 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        //TODO tangKun get fee by gas 2018-09-06
+        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(new Money(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());
