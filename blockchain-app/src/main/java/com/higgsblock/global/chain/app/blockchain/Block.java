@@ -196,7 +196,7 @@ public class Block extends BaseSerializer {
                     .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8))
                     .append(function.hashLong(gasUsed))
                     .append(function.hashString(null == contractStateHash ? Strings.EMPTY : contractStateHash, Charsets.UTF_8))
-                    .append(function.hashString(transactionsFee.toString(), Charsets.UTF_8));
+                    .append(function.hashString(transactionsFee == null ? Strings.EMPTY : transactionsFee.toString(), Charsets.UTF_8));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
         return hash;
