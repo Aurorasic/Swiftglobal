@@ -13,6 +13,7 @@ import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -122,9 +123,19 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the transaction is not valid hash={}", hash);
             return;
         }
-
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
+    }
+
+    private boolean validContractAddress(Transaction tx) {
+        if (!tx.isContractCreation()) {
+            return true;
+        }
+
+        String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
+        byte[] calculateAddress = tx.getContractAddress();
+
+        return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
     }
 
     @Override
@@ -263,6 +274,10 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("Size of the transaction is illegal.");
             return false;
         }
+        if (!tx.validContractPart()) {
+            LOGGER.info("Contract format is incorrect.");
+            return false;
+        }
 
         String blockHash = block != null ? block.getHash() : null;
         String preBlockHash = block != null ? block.getPrevBlockHash() : null;
@@ -334,6 +349,11 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        if(!validContractAddress(tx)) {
+            LOGGER.info("Contract address is incorrect.");
+            return false;
+        }
+
         return verifyInputs(inputs, hash, preBlockHash);
     }
 
@@ -390,7 +410,7 @@ public class TransactionService implements ITransactionService {
      * @param input tx input
      * @return tx input ref output
      */
-    private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
+    public TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
             LOGGER.info("preOutKey is empty,input={}", input.toJson());

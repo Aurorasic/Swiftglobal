@@ -50,6 +50,10 @@ public class ExecutionEnvironment {
      * Payload, simple to say is byte code.
      */
     private byte[] data;
+    /**
+     * Size gas.
+     */
+    private long sizeGas;
 
     /**
      * Behave configuration of system.
