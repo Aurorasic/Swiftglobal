@@ -31,6 +31,13 @@ public class UTXO extends BaseSerializer {
 
     private String address;
 
+    public UTXO(String txHash, short outIndex, TransactionOutput output) {
+        this.hash = txHash;
+        this.index = outIndex;
+        this.output = output;
+        this.address = output.getLockScript().getAddress();
+    }
+
     public UTXO(Transaction tx, short outIndex, TransactionOutput output) {
         this.hash = tx.getHash();
         this.index = outIndex;

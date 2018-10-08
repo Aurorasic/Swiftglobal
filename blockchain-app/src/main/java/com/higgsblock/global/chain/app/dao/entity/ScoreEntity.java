@@ -3,12 +3,8 @@ package com.higgsblock.global.chain.app.dao.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
 /**
  * @author yuanjiantao
@@ -17,24 +13,12 @@ import javax.persistence.Table;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "t_score")
+@KeySpace("Score")
 public class ScoreEntity {
 
-    public ScoreEntity(String address, Integer score) {
-        this.address = address;
-        this.score = score;
-    }
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
-    private Long id;
-
-    @Column(name = "address", columnDefinition = "VARCHAR", length = 34, nullable = false)
     private String address;
 
-    @Column(name = "score", columnDefinition = "INTEGER", nullable = false)
     private Integer score;
 }
 

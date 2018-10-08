@@ -29,6 +29,9 @@ public class BlockChainService implements IBlockChainService {
     private IBlockIndexService blockIndexService;
 
     @Autowired
+    private IBlockChainInfoService blockChainInfoService;
+
+    @Autowired
     private ITransactionService transactionService;
 
     @Autowired
@@ -40,9 +43,6 @@ public class BlockChainService implements IBlockChainService {
     @Autowired
     private WitnessTimer witnessTimer;
 
-    @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
-
     @Override
     public boolean isDposMiner(String address, String preBlockHash) {
         // get dpos miners address at branch which the preblock belonged to
@@ -53,7 +53,7 @@ public class BlockChainService implements IBlockChainService {
     @Override
     public boolean isMinerOnBest(String address) {
         //check whether this miner has the MINER cash stake
-        return transactionService.hasStake(address, SystemCurrencyEnum.MINER);
+        return transactionService.hasStakeOnBest(address, SystemCurrencyEnum.MINER);
     }
 
     @Override
@@ -126,8 +126,7 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public long getMaxHeight() {
-        long height = blockMaxHeightCacheManager.getMaxHeight();
-        return height;
+        return blockChainInfoService.getMaxHeight();
     }
 
     @Override

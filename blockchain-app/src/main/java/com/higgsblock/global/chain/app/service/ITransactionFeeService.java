@@ -21,21 +21,7 @@ public interface ITransactionFeeService {
 
     public Money getCurrencyFee(Transaction tx);
 
-    Rewards countMinerAndWitnessRewards(Money fee, long height);
+    public Rewards countMinerAndWitnessRewards(Map<String, Money> feeMap, long height);
 
-    Transaction buildCoinBaseTx(long lockTime, short version, Money fee, long height);
-
-    /**
-     * choose from sortedTransaction  if transaction is contract transaction
-     * @param sortedTransaction sorted transactions
-     * @return block include transaction
-     */
-    List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction);
-
-    /**
-     * sort by transaction gasPrice
-     * @param transactions wait sort
-     * @return sorted transaction by gasPrice
-     */
-    void sortByGasPrice(List<Transaction> transactions);
+    public Transaction buildCoinBaseTx(long lockTime, short version, Map<String, Money> feeMap, long height);
 }

@@ -1,9 +1,8 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import com.higgsblock.global.chain.app.keyvalue.annotation.IndexQuery;
+import com.higgsblock.global.chain.app.keyvalue.repository.IKeyValueRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.List;
  * @author yangshenghong
  * @date 2018-07-12
  */
-public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
+public interface IUTXORepository extends IKeyValueRepository<UTXOEntity, String> {
 
     /**
      * find by txHash and outIndex
@@ -21,6 +20,7 @@ public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
      * @param outIndex
      * @return
      */
+    @IndexQuery("transactionHash")
     UTXOEntity findByTransactionHashAndOutIndex(String transactionHash, short outIndex);
 
     /**
@@ -29,8 +29,7 @@ public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
      * @param transactionHash
      * @param outIndex
      */
-    @Query(value = "delete from UTXOEntity where transactionHash=:transactionHash and outIndex=:outIndex", nativeQuery = false)
-    @Modifying
+    @IndexQuery("transactionHash")
     void deleteByTransactionHashAndOutIndex(@Param("transactionHash") String transactionHash, @Param("outIndex") short outIndex);
 
     /**
@@ -39,6 +38,7 @@ public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
      * @param lockScript
      * @return
      */
+    @Deprecated
     List<UTXOEntity> findByLockScript(String lockScript);
 
     /**
@@ -48,6 +48,7 @@ public interface IUTXORepository extends JpaRepository<UTXOEntity, Long> {
      * @param currency
      * @return
      */
+    @Deprecated
     List<UTXOEntity> findByLockScriptAndCurrency(String lockScript, String currency);
 
 }

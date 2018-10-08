@@ -3,15 +3,15 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
-import com.higgsblock.global.chain.app.blockchain.BlockMaxHeightCacheManager;
 import com.higgsblock.global.chain.app.dao.IBlockIndexRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,22 +29,15 @@ public class BlockIndexService implements IBlockIndexService {
     private TransactionIndexService transactionIndexService;
 
     @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
+    private IBlockChainInfoService blockChainInfoService;
 
     @Override
     public void addBlockIndex(Block block, Block toBeBestBlock) {
-        //modify by Huangshengli 2018-07-02
+        // if block is genesis block, block == toBeBestBlock
         insertBlockIndex(block);
         if (toBeBestBlock != null) {
             updateBestBlockIndex(toBeBestBlock);
-        }
-
-        if (block.isGenesisBlock()) {
-            transactionIndexService.addTxIndexAndUtxo(block, block.getHash());
-        } else {
-            if (toBeBestBlock != null) {
-                transactionIndexService.addTxIndexAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
-            }
+            transactionIndexService.addTxIndexAndUtxo(toBeBestBlock, toBeBestBlock.getHash());
         }
     }
 
@@ -54,16 +47,11 @@ public class BlockIndexService implements IBlockIndexService {
         return blockIndexRepository.deleteByHeight(height);
     }
 
-    @Override
-    public long getMaxHeight() {
-        return blockIndexRepository.queryMaxHeight();
-    }
-
     private void insertBlockIndex(Block block) {
         BlockIndexEntity blockIndexDO = new BlockIndexEntity();
         blockIndexDO.setBlockHash(block.getHash());
         blockIndexDO.setHeight(block.getHeight());
-        blockIndexDO.setIsBest(block.isGenesisBlock() ? 0 : -1);
+        blockIndexDO.setIsBest(-1);
         blockIndexDO.setMinerAddress(block.getMinerSigPair().getAddress());
         blockIndexRepository.save(blockIndexDO);
         LOGGER.info("persisted block index: {}", blockIndexDO);
@@ -113,7 +101,7 @@ public class BlockIndexService implements IBlockIndexService {
 
     @Override
     public BlockIndex getLastBlockIndex() {
-        long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
+        long maxHeight = blockChainInfoService.getMaxHeight();
         return getBlockIndexByHeight(maxHeight);
     }
 

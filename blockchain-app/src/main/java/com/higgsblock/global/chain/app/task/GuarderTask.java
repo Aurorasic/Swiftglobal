@@ -60,7 +60,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
         currHeight = blockChainService.getMaxHeight();
         if (curSec >= WAIT_MINER_TIME) {
             LOGGER.info("guarder begin doming curSec={} currHeight={}", curSec, currHeight);
-            doMing();
+            doMining();
         }
     }
 
@@ -75,7 +75,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
     }
 
 
-    private void doMing() {
+    private void doMining() {
         long expectHeight = currHeight + 1;
         try {
             BlockIndex maxBlockIndex = blockIndexService.getBlockIndexByHeight(currHeight);
@@ -108,7 +108,7 @@ public class GuarderTask extends BaseTask implements IEventBusListener {
                 originalBlockProcessor.sendOriginBlockToWitness(block);
             }
         } catch (Exception e) {
-            LOGGER.error("doming exception,height={}", expectHeight, e);
+            LOGGER.error("doMining exception,height={}", expectHeight, e);
         }
         LOGGER.info("guarder produce a new block,height={}", expectHeight);
     }

@@ -4,11 +4,11 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.dao.IDposRepository;
-import com.higgsblock.global.chain.app.dao.IScoreRepository;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IBlockIndexService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.IBlockService;
 import com.higgsblock.global.chain.app.sync.SyncBlockInStartupService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,16 +29,16 @@ public class DataErrorService {
     private SystemStatusManager systemStatusManager;
 
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
 
     @Autowired
     private IBlockIndexService blockIndexService;
 
     @Autowired
-    private IDposRepository dposRepository;
+    private IBlockChainInfoService blockChainInfoService;
 
     @Autowired
-    private IScoreRepository scoreRepository;
+    private IDposRepository dposRepository;
 
     @Autowired
     private IUTXORepository utxoRepository;
@@ -57,13 +57,13 @@ public class DataErrorService {
      */
     private void deleteData() {
         dposRepository.deleteAll();
-        scoreRepository.deleteAll();
+        blockChainInfoService.deleteAllScores();
         utxoRepository.deleteAll();
         transactionIndexRepository.deleteAll();
     }
 
     private void reimportData() {
-        long maxHeight = blockIndexService.getMaxHeight();
+        long maxHeight = blockChainInfoService.getMaxHeight();
         long startDeleteHeight = 2L;
         for (long height = 2L; height < maxHeight; height += 1L) {
             List<Block> list = blockService.getBlocksByHeight(height);

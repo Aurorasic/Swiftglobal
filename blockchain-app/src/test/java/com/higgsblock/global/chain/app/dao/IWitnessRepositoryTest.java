@@ -5,8 +5,6 @@ import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
 /**
  * @author yangshenghong
  * @date 2018-07-12
@@ -18,8 +16,7 @@ public class IWitnessRepositoryTest extends BaseTest {
 
     @Test
     public void findAll() {
-        List<WitnessEntity> all = witnessRepository.findAll();
-        for (WitnessEntity witnessEntity : all) {
+        for (WitnessEntity witnessEntity : witnessRepository.findAll()) {
             System.err.println(witnessEntity);
         }
     }

@@ -3,8 +3,8 @@ package com.higgsblock.global.chain.app.dao.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.keyvalue.annotation.KeySpace;
 
 /**
  * @author yuanjiantao
@@ -13,24 +13,12 @@ import javax.persistence.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "t_dpos")
+@KeySpace("DPOS")
 public class DposEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
-    private Long id;
-
-    @Column(name = "sn", columnDefinition = "INTEGER", nullable = false)
     private long sn;
 
-    @Column(name = "addresses", nullable = false, length = 100, columnDefinition = "VARCHAR")
     private String addresses;
-
-    public DposEntity(long sn, String addresses) {
-        this.sn = sn;
-        this.addresses = addresses;
-    }
 
 }

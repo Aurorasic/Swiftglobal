@@ -2,10 +2,10 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.BlockIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -50,12 +50,6 @@ public class BlockIndexRepositoryTest extends BaseTest {
     public void testQueryAllByHeight() {
         List<BlockIndexEntity> indexEntities = blockIndexRepository.findByHeight(12);
         LOGGER.info("query all by height size : {}", indexEntities.size());
-    }
-
-    @Test
-    public void testQueryMaxHeight() {
-        long maxHeight = blockIndexRepository.queryMaxHeight();
-        LOGGER.info("query max height result : {}", maxHeight);
     }
 
 }

@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 /**
  * @author baizhengwen
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @Slf4j
 @EnableCaching
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableAutoConfiguration
 @ComponentScan({"com.higgsblock.global.chain"})
 public class Application {

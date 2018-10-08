@@ -6,6 +6,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IUTXORepository;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import com.higgsblock.global.chain.app.service.IBestUTXOService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,13 +33,13 @@ public class BestUTXOService implements IBestUTXOService {
     public void saveUTXO(UTXO utxo) {
         UTXOEntity entity = new UTXOEntity();
         TransactionOutput output = utxo.getOutput();
-
         entity.setAmount(output.getMoney().getValue());
         entity.setScriptType(output.getLockScript().getType());
         entity.setTransactionHash(utxo.getHash());
         entity.setOutIndex(utxo.getIndex());
         entity.setCurrency(output.getMoney().getCurrency());
         entity.setLockScript(output.getLockScript().getAddress());
+        entity.setId(entity.getTransactionHash() + entity.getOutIndex());
 
         utxoRepository.save(entity);
     }

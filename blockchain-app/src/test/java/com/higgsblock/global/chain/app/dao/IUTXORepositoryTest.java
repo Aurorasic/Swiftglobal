@@ -2,10 +2,10 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.api.inner;
 
+import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.api.vo.ConnectionVO;
 import com.higgsblock.global.chain.app.api.vo.DposGroupVO;
 import com.higgsblock.global.chain.app.api.vo.PeerVO;
@@ -9,15 +10,16 @@ import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.net.connection.ConnectionManager;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
-import com.higgsblock.global.chain.app.service.IDposService;
-import com.higgsblock.global.chain.app.service.IScoreService;
-import com.higgsblock.global.chain.app.service.impl.BlockService;
+import com.higgsblock.global.chain.app.service.*;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -41,9 +43,15 @@ public class StatusController {
     @Autowired
     private PeerManager peerManager;
     @Autowired
-    private BlockService blockService;
+    private IBlockService blockService;
     @Autowired
     private SystemStatusManager systemStatusManager;
+    @Autowired
+    private IBalanceService balanceService;
+    @Autowired
+    private IBlockChainInfoService blockChainInfoService;
+    @Autowired
+    private IBlockIndexService blockIndexService;
 
     /**
      * query state
@@ -140,6 +148,23 @@ public class StatusController {
         return vo;
     }
 
+    @RequestMapping("/balanceOnBest")
+    public Map<String, Money> getBalanceOnBest(String address) {
+        return balanceService.get(address);
+    }
+
+    @RequestMapping("/balance")
+    public Map<String, Money> getBalance(String address) {
+        Map<String, Money> maps = Maps.newHashMap();
+        for (SystemCurrencyEnum item : SystemCurrencyEnum.values()) {
+            Money money = balanceService.getUnionBalance("", address, item.getCurrency());
+            if (null != money && !money.equals(0)) {
+                maps.put(item.getCurrency(), money);
+            }
+        }
+
+        return maps;
+    }
 
     private DposGroupVO buildDposGroup(Block block) {
         long sn = dposService.calculateSn(block.getHeight());
