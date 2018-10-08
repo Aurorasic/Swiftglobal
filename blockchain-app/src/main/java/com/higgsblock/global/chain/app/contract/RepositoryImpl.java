@@ -111,6 +111,17 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized void delete(byte[] addr) {
+        AccountState ret = accountStateCache.get(addr);
+        if (ret != null) {
+            Set<byte[]> keys = ret.getKeys();
+            Source<DataWord, DataWord> contractStorage = storageCache.getChild(addr);
+
+            for (byte[] key: keys) {
+                contractStorage.delete(new DataWord(key));
+                contractStorage.flush();
+            }
+        }
+
         accountStateCache.delete(addr);
         storageCache.delete(addr);
     }
@@ -153,10 +164,22 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     @Override
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
-        getOrCreateAccountState(addr);
+        AccountState accountState = getOrCreateAccountState(addr);
+        accountStateCache.put(addr, accountState.withStorageKey(key.getData()));
 
         Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
         contractStorage.put(key, value.isZero() ? null : value);
+
+        System.out.println("address: " + Arrays.toString(addr));
+
+        System.out.println("key key: " + Arrays.toString(key.getData()));
+
+        storageCache.getModified().stream().forEach(item->{
+            System.out.println("item key: " + Arrays.toString(item));
+
+            DataWord childKey = new DataWord(item);
+            System.out.println("item value: "+contractStorage.get(childKey));
+        });
     }
 
     @Override
@@ -358,7 +381,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         AccountState ret = accountStateCache.get(address);
         if (ret == null) {
-            AccountState accountState = new AccountState(0, balance, address, currency);
+            AccountState accountState = new AccountState(0, balance, address, currency, new HashSet<>());
             accountStateCache.put(address, accountState);
             return accountState;
         }

@@ -15,9 +15,11 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private Source<byte[], byte[]> storageCache;
 
+    private DbSource<byte[]> dbSource;
+
     public RepositoryRoot() {
         //Source dbSource = new HashMapDB<byte[]>();
-        DbSource<byte[]> dbSource = new LevelDbDataSource();
+        dbSource = new LevelDbDataSource();
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
         sourceWriter = new BatchSourceWriter<>(dbSource);
@@ -30,7 +32,7 @@ public class RepositoryRoot extends RepositoryImpl {
         ReadWriteCache.BytesKey<AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
         accountStateCache.setFlushSource(true);
 
-        ReadWriteCache.BytesKey<byte[]> codeCache = new ReadWriteCache.BytesKey<>(xorCode, WriteCache.CacheType.SIMPLE);
+        WriteCache.BytesKey<byte[]> codeCache = new WriteCache.BytesKey<>(xorCode, WriteCache.CacheType.COUNTING);
         codeCache.setFlushSource(true);
 
         storageCache = new WriteCache.BytesKey<>(xorStorage, WriteCache.CacheType.COUNTING);
@@ -60,5 +62,9 @@ public class RepositoryRoot extends RepositoryImpl {
     @Override
     public void flush() {
         commit();
+    }
+
+    public DbSource<byte[]> getDbSource() {
+        return dbSource;
     }
 }

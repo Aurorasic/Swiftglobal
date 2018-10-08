@@ -78,6 +78,10 @@ public abstract class MultiCache<V extends CachedSource> extends ReadWriteCache.
         return ret;
     }
 
+    public V getChild(byte[] key) {
+        return super.get(key);
+    }
+
     /**
      * Is invoked to flush child cache if it has backing Source
      * Some additional tasks may be performed by subclasses here

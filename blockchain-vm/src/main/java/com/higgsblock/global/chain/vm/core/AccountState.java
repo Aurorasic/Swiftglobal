@@ -1,9 +1,15 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.higgsblock.global.chain.vm.util.HashUtil.EMPTY_DATA_HASH;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
@@ -12,36 +18,46 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  * @author tangkun
  * @date 2018-09-06
  */
-public class AccountState implements Serializable{
+public class AccountState implements Serializable {
 
     /* A value equal to the number of transactions sent
      * from this address, or, in the case of contract accounts,
      * the number of contract-creations made by this account */
     private long nonce;
 
-    private  BigInteger balance;
+    private BigInteger balance;
 
-    private  byte[] codeHash;
+    private byte[] codeHash;
 
     private String currency;
 
-    public AccountState(long nonce, BigInteger balance,byte[] codeHash,String currency){
+    private Set<byte[]> keys;
+
+    public AccountState(long nonce, BigInteger balance, byte[] codeHash, String currency, Set<byte[]> keys) {
         this.nonce = nonce;
         this.balance = balance;
         this.codeHash = codeHash;
         this.currency = currency;
+        this.keys = keys;
     }
 
-    public AccountState(long nonce, BigInteger balance){
-        this(nonce, balance, EMPTY_DATA_HASH, "");
+//    public AccountState(long nonce, BigInteger balance, byte[] codeHash, String currency) {
+//        this.nonce = nonce;
+//        this.balance = balance;
+//        this.codeHash = codeHash;
+//        this.currency = currency;
+//    }
+
+    public AccountState(long nonce, BigInteger balance) {
+        this(nonce, balance, EMPTY_DATA_HASH, "", new HashSet<>());
     }
 
     public AccountState withIncrementedNonce() {
-        return new AccountState(nonce+=1, balance, codeHash, currency);
+        return new AccountState(nonce += 1, balance, codeHash, currency, keys);
     }
 
     public AccountState withCodeHash(byte[] codeHash) {
-        return new AccountState(nonce, balance,  codeHash,currency);
+        return new AccountState(nonce, balance, codeHash, currency, keys);
     }
 
     public long getNonce() {
@@ -56,14 +72,25 @@ public class AccountState implements Serializable{
         return codeHash;
     }
 
+    public Set<byte[]> getKeys() {
+        return keys;
+    }
+
     public AccountState withBalanceIncrement(BigInteger value) {
-        this.balance=balance.add(value);
-        return new AccountState(nonce, balance.add(value),  codeHash,currency);
+        this.balance = balance.add(value);
+        return new AccountState(nonce, balance.add(value), codeHash, currency, keys);
     }
+
     public AccountState withBalanceDecrement(BigInteger value) {
-        this.balance=balance.subtract(value);
-        return new AccountState(nonce, balance.add(value),  codeHash,currency);
+        this.balance = balance.subtract(value);
+        return new AccountState(nonce, balance.add(value), codeHash, currency, keys);
     }
+
+    public AccountState withStorageKey(byte[] value) {
+        this.keys.add(value);
+        return new AccountState(nonce, balance, codeHash, currency, keys);
+    }
+
     public String getCurrency() {
         return currency;
     }
@@ -82,7 +109,7 @@ public class AccountState implements Serializable{
     }
 
     private int compareTo(byte[] buffer1, int offset1, int length1,
-                         byte[] buffer2, int offset2, int length2) {
+                          byte[] buffer2, int offset2, int length2) {
         // Short circuit equal case
         if (buffer1 == buffer2 &&
                 offset1 == offset2 &&
@@ -104,5 +131,16 @@ public class AccountState implements Serializable{
     public boolean isContractExist() {
         return !FastByteComparisons.equal(codeHash, EMPTY_DATA_HASH) ||
                 nonce != 0;
+    }
+
+    @Override
+    public String toString() {
+        return "AccountState{" +
+                "nonce=" + nonce +
+                ", balance=" + balance +
+                ", codeHash=" + Arrays.toString(codeHash) +
+                ", currency='" + currency + '\'' +
+                ", keys=" + keys.stream().map(item->Arrays.toString(item)).collect(Collectors.joining(" ")) +
+                '}';
     }
 }

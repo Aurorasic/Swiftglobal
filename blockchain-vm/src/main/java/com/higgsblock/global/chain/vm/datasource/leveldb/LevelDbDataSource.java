@@ -238,6 +238,8 @@ public class LevelDbDataSource implements DbSource<byte[]> {
                 Set<byte[]> result = new HashSet<>();
                 for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
                     result.add(iterator.peekNext().getKey());
+
+                    System.out.println("value: " + Hex.toHexString(db.get(iterator.peekNext().getKey())));
                 }
                 if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());
                 return result;
@@ -252,7 +254,6 @@ public class LevelDbDataSource implements DbSource<byte[]> {
 
     private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
         try (WriteBatch batch = db.createWriteBatch()) {
-            System.out.println();
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
                 if (entry.getValue() == null) {
                     batch.delete(entry.getKey());
