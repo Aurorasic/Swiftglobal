@@ -106,8 +106,6 @@ public class BlockService implements IBlockService {
     @Autowired
     private IBlockChainService blockChainService;
     @Autowired
-    private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
-    @Autowired
     private ByzantiumConfig blockchainConfig;
     @Autowired
     private DefaultSystemProperties systemProperties;
@@ -676,14 +674,14 @@ public class BlockService implements IBlockService {
 
             if (block.isGenesisBlock()) {
                 //step 3
-                scoreService.refreshMinersScore(block);
+                scoreService.refreshMinersScore(block, block);
                 //step 4
                 dposService.calcNextDposNodes(block, block.getHeight());
                 return newBestBlock;
             }
             if (isFirst && newBestBlock != null) {
                 LOGGER.info("to be confirmed best block:{}", newBestBlock.getSimpleInfo());
-                scoreService.refreshMinersScore(newBestBlock);
+                scoreService.refreshMinersScore(newBestBlock, block);
                 List<String> nextDposAddressList = dposService.calcNextDposNodes(newBestBlock, block.getHeight());
                 scoreService.setSelectedDposScore(nextDposAddressList);
                 //step5
@@ -717,11 +715,6 @@ public class BlockService implements IBlockService {
      */
     private void refreshCache(Block block) {
         LOGGER.info("refresh block caches,{}", block.getSimpleInfo());
-
-        Long maxHeight = blockMaxHeightCacheManager.getMaxHeight();
-        if (block.getHeight() > maxHeight) {
-            blockMaxHeightCacheManager.updateMaxHeight(block.getHeight());
-        }
 
         block.getTransactions().stream().forEach(tx -> {
             txCacheManager.remove(tx.getHash());

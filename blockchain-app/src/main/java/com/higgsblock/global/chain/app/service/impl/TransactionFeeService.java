@@ -162,7 +162,7 @@ public class TransactionFeeService implements ITransactionFeeService {
     /**
      * @param lockTime lock time
      * @param version  transaction version
-     * @param feeMap   fee map
+     * @param fee   fee map
      * @return return coin base transaction
      */
     @Override

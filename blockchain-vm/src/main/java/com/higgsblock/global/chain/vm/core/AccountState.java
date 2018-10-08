@@ -1,8 +1,6 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.math.BigInteger;
