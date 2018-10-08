@@ -8,7 +8,9 @@ import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
 import com.higgsblock.global.chain.vm.util.Serializer;
 import com.higgsblock.global.chain.vm.util.Serializers;
+import lombok.Setter;
 
+@Setter
 public class RepositoryRoot extends RepositoryImpl {
 
     private Source<byte[], byte[]> sourceWriter;
@@ -17,9 +19,14 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private DbSource<byte[]> dbSource;
 
-    public RepositoryRoot() {
+
+    private String preBlockHash;
+
+    public RepositoryRoot(String preBlockHash) {
         //Source dbSource = new HashMapDB<byte[]>();
+        this.preBlockHash = preBlockHash;
         dbSource = new LevelDbDataSource();
+
         dbSource.setName("contract");
         dbSource.init(DbSettings.DEFAULT);
         sourceWriter = new BatchSourceWriter<>(dbSource);

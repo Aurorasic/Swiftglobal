@@ -12,28 +12,43 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockException;
-import com.higgsblock.global.chain.app.blockchain.transaction.SortResult;
-import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
-import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
+import com.higgsblock.global.chain.app.blockchain.script.LockScript;
+import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
+import com.higgsblock.global.chain.app.contract.BalanceUtil;
+import com.higgsblock.global.chain.app.contract.ContractTransaction;
+import com.higgsblock.global.chain.app.contract.Helpers;
+import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
+import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
+import com.higgsblock.global.chain.vm.api.ExecutionResult;
+import com.higgsblock.global.chain.vm.api.Executor;
+import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
+import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,6 +107,10 @@ public class BlockService implements IBlockService {
     private IBlockChainService blockChainService;
     @Autowired
     private BlockMaxHeightCacheManager blockMaxHeightCacheManager;
+    @Autowired
+    private ByzantiumConfig blockchainConfig;
+    @Autowired
+    private DefaultSystemProperties systemProperties;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -346,35 +365,23 @@ public class BlockService implements IBlockService {
         }
 
         long nextBestBlockHeight = lastBlockIndex.getHeight() + 1;
-        List<Transaction> transactions = Lists.newLinkedList();
-
-        //added by tangKun: order transaction by fee weight
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos);
-        List<Transaction> canPackageTransactionsOfBlock = txOfUnSpentUtxos;
-        Map<String, Money> feeTempMap = sortResult.getFeeMap();
-        // if sort result overrun is true so do sub cache transaction
-        if (sortResult.isOverrun()) {
-            canPackageTransactionsOfBlock = transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos);
-            feeTempMap = new HashMap<>(canPackageTransactionsOfBlock.size());
-            for (Transaction tx : canPackageTransactionsOfBlock) {
-                feeTempMap.put(tx.getHash(), sortResult.getFeeMap().get(tx.getHash()));
-            }
-        }
-
-        if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, feeTempMap, nextBestBlockHeight);
-            transactions.add(coinBaseTx);
-        }
-
-        transactions.addAll(canPackageTransactionsOfBlock);
-
         Block block = new Block();
         block.setVersion((short) 1);
         block.setBlockTime(System.currentTimeMillis());
         block.setPrevBlockHash(preBlockHash);
-        block.setTransactions(transactions);
         block.setHeight(nextBestBlockHeight);
         block.setMinerPubKey(keyPair.getPubKey());
+
+        transactionFeeService.sortByGasPrice(txOfUnSpentUtxos);
+        Money fee = new Money();
+        List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos,block);
+        block.setTransactions(packTransaction);
+        if (lastBlockIndex.getHeight() >= 1) {
+            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, block.getTransactionsFee(),
+                    nextBestBlockHeight);
+            //coinBase
+            block.getTransactions().add(0,coinBaseTx);
+        }
 
         //Before collecting signs from witnesses just cache the block firstly.
         String sig = ECKey.signMessage(block.getHash(), keyPair.getPriKey());
@@ -382,6 +389,186 @@ public class BlockService implements IBlockService {
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
         return block;
+    }
+
+    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed,
+                                            BigInteger gasLimitAllowed,Repository txRepository) {
+        if (transaction == null
+                || transaction.getOutputs() == null
+                || !transaction.isContractTrasaction()) {
+            return null;
+        }
+
+        if (!validForExecution(transaction, sizeLimitAllowed, gasLimitAllowed)) {
+            return null;
+        }
+
+        ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
+        fillExecutionEnvironment(transaction, executionEnvironment);
+
+        executionEnvironment.setParentHash(Hex.decode(block.getPrevBlockHash()));
+        executionEnvironment.setCoinbase(AddrUtil.toContractAddr(block.getMinerSigPair().getAddress()));
+        executionEnvironment.setTimestamp(block.getBlockTime());
+        executionEnvironment.setNumber(block.getHeight());
+        executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
+        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
+        executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress())).toByteArray());
+
+        executionEnvironment.setSystemProperties(systemProperties);
+        executionEnvironment.setBlockchainConfig(blockchainConfig);
+
+        Executor executor = new Executor(txRepository, executionEnvironment);
+        ExecutionResult executionResult = executor.execute();
+
+        LOGGER.info(executionResult.toString());
+        return executionResult;
+    }
+
+    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction,Block block){
+
+        List<Transaction> transactions = new ArrayList<>();
+        int subSize = 0;
+        //block cache
+        RepositoryRoot blockRepository  = new RepositoryRoot(block.getPrevBlockHash());
+        //transaction cache
+        Repository txRepository;
+        //total used gas
+        long usedGas = 0;
+        //total transactions fee
+        Money fee = new Money();
+        for (Transaction tx:sortedTransaction){
+
+            if((subSize += tx.getSize()) > blockchainConfig.getLimitedSize()){
+                break;
+            }
+            //is contract transaction
+            if(tx.getOutputs().get(0).getLockScript().getType() == 1){
+                if((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()){
+                    break;
+                }
+                transactions.add(tx);
+                fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
+                        SystemCurrencyEnum.CAS.getCurrency()));
+                txRepository = blockRepository.startTracking();
+                //invoke contract transaction
+                ExecutionResult executionResult = executeContract(tx, block,0L,BigInteger.ZERO,txRepository);
+                //result state hash
+                HashFunction function = Hashing.sha256();
+                block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
+                        executionResult.toString()),Charsets.UTF_8).toString());
+                //TODO tangKun refund gas 2018-09-29
+                boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
+                boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
+                        executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+                if ( success && transferFlag ){
+                    List<UTXO> unSpendAsset = txRepository.getUnSpendAsset(tx.getContractAddress());
+                    ContractTransaction contractTx =  Helpers.buildContractTransaction(unSpendAsset,
+                            txRepository.getAccountState(tx.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
+                            txRepository.getAccountDetails());
+                    transactions.add(contractTx);
+                    fee = fee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(tx.getGasPrice())
+                            ,SystemCurrencyEnum.CAS.getCurrency()));
+                    usedGas += executionResult.getGasUsed().longValue();
+                }
+
+
+                Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
+                        new Money(BigDecimal.ZERO.toPlainString()) :  tx.getOutputs().get(0).getMoney();
+                if(!success ) {
+                    if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0){
+
+                        ContractTransaction refundTx = new ContractTransaction();
+                    TransactionInput input = new TransactionInput();
+                    TransactionOutPoint top = new TransactionOutPoint();
+                    top.setTransactionHash(tx.getHash());
+                    top.setIndex((short) 1);
+                    input.setPrevOut(top);
+                    refundTx.getInputs().add(input);
+
+                    TransactionOutput out = new TransactionOutput();
+                    out.setMoney(transferMoney);
+                    LockScript lockScript = new LockScript();
+                    UTXO utxo = utxoServiceProxy.getUnionUTXO(block.getPrevBlockHash(), tx.getInputs().get(0).getPrevOut().getKey());
+                    lockScript.setAddress(utxo.getAddress());
+                    lockScript.setType(ScriptTypeEnum.P2PK.getType());
+                    out.setLockScript(lockScript);
+                    refundTx.getOutputs().add(out);
+
+                    refundTx.setVersion(tx.getVersion());
+                    refundTx.setLockTime(tx.getLockTime());
+                    refundTx.setTransactionTime(System.currentTimeMillis());
+
+                    transactions.add(refundTx);
+                }
+                    fee = fee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice())
+                            ,SystemCurrencyEnum.CAS.getCurrency()));
+                    usedGas += tx.getGasLimit();
+                }
+
+                txRepository.commit();
+            }else {
+                transactions.add(tx);
+                fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
+                        SystemCurrencyEnum.CAS.getCurrency()));
+                usedGas += FeeUtil.getSizeGas(tx.getSize()).longValue();
+            }
+        }
+        blockRepository.commit();
+        block.setTransactionsFee(fee);
+        block.setGasUsed(usedGas);
+        return  transactions;
+    }
+
+
+    /**
+     * Gets balance of contract.
+     *
+     * @param address address of contract.
+     * @return balance of contract.
+     */
+    private long getBalance(byte[] address) {
+        return 0;
+    }
+
+    /**
+     * Validates contract execution conditions.
+     *
+     * @param sizeLimitAllowed       remain size allowed for this transaction.
+     * @param gasLimitAllowed        remain gas allowed for this transaction.
+     * @return if contract is fitted to be executed.
+     */
+    public boolean validForExecution(Transaction transaction, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
+        long size = transaction.getSize();
+        if (sizeLimitAllowed - size < Block.LIMITED_SUB_TRANSACTION_SIZE) {
+            return false;
+        }
+
+        if (BigInteger.valueOf(transaction.getGasLimit()).compareTo(gasLimitAllowed) > 0) {
+            return false;
+        }
+
+        BigInteger sizeGas = FeeUtil.getSizeGas(size);
+        if (sizeGas.compareTo(BigInteger.valueOf(transaction.getGasLimit())) > 0) {
+            return false;
+        }
+
+        if (transaction.getContractParameters().getBytecode() == null || transaction.getContractParameters().getBytecode().length == 0) {
+            return false;
+        }
+
+        List<TransactionOutput> outputs = transaction.getOutputs();
+
+        if (transaction.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), transaction.getContractAddress())) {
+            return false;
+        }
+
+        if (transaction.isContractTrasaction()) {
+            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -564,6 +751,17 @@ public class BlockService implements IBlockService {
                 }
             }
         }
+    }
+
+    public void fillExecutionEnvironment(Transaction transaction, ExecutionEnvironment executionEnvironment) {
+        executionEnvironment.setTransactionHash(transaction.getHash());
+        executionEnvironment.setContractCreation(transaction.isContractCreation());
+        executionEnvironment.setContractAddress(transaction.getContractAddress());
+        executionEnvironment.setSenderAddress(transaction.getSender());
+        executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
+        executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
+        executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue()).toBigInteger().toByteArray());
+        executionEnvironment.setData(transaction.getContractParameters().getBytecode());
     }
 
     /**

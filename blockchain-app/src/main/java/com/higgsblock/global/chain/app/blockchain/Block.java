@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,9 +33,12 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Slf4j
-@JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair", "witnessSigPairs", "voteVersion"})
+@JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair",
+        "witnessSigPairs", "voteVersion", "gasUsed", "contractStateHash", "transactionsFee"})
 public class Block extends BaseSerializer {
-    private static final int LIMITED_SIZE = 1024 * 1024 * 1;
+    public static final int LIMITED_SIZE = 1024 * 1024;
+    public static final long LIMITED_GAS = 10_000_1000L;
+    public static final int LIMITED_SUB_TRANSACTION_SIZE = LIMITED_SIZE;
 
     private int version;
 
@@ -74,6 +78,21 @@ public class Block extends BaseSerializer {
     private List<SignaturePair> witnessSigPairs = new ArrayList<>();
 
     private int voteVersion;
+
+    /**
+     *  A scalar value equal to the total gas used in transactions in this block
+     */
+    private long gasUsed;
+
+    /**
+     * transactions contract result hash
+     */
+    private String contractStateHash;
+
+    /**
+     * transactions fee
+     */
+    Money transactionsFee;
 
     public boolean valid() {
         if (version < 0) {
@@ -117,6 +136,10 @@ public class Block extends BaseSerializer {
         }
         if (!sizeAllowed()) {
             return false;
+        }
+
+        if(gasUsed > LIMITED_GAS){
+            return  false;
         }
         return true;
     }
@@ -170,7 +193,10 @@ public class Block extends BaseSerializer {
                     .append(function.hashLong(blockTime))
                     .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
                     .append(getTransactionsHash())
-                    .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8));
+                    .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8))
+                    .append(function.hashLong(gasUsed))
+                    .append(function.hashString(null == contractStateHash ? Strings.EMPTY : contractStateHash, Charsets.UTF_8))
+                    .append(function.hashString(transactionsFee == null ? Strings.EMPTY : transactionsFee.toString(), Charsets.UTF_8));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
         return hash;

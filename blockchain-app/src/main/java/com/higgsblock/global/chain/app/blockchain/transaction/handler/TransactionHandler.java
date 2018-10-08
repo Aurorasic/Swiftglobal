@@ -3,10 +3,28 @@ package com.higgsblock.global.chain.app.blockchain.transaction.handler;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
 import com.higgsblock.global.chain.app.service.ITransactionService;
+import com.higgsblock.global.chain.app.service.impl.BlockService;
 import com.higgsblock.global.chain.network.socket.message.IMessage;
+import com.higgsblock.global.chain.vm.DataWord;
+import com.higgsblock.global.chain.vm.GasCost;
+import com.higgsblock.global.chain.vm.OpCode;
+import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
+import com.higgsblock.global.chain.vm.api.ExecutionResult;
+import com.higgsblock.global.chain.vm.api.Executor;
+import com.higgsblock.global.chain.vm.config.BlockchainConfig;
+import com.higgsblock.global.chain.vm.config.Constants;
+import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.program.Program;
 import lombok.extern.slf4j.Slf4j;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author yangyi
@@ -40,5 +58,6 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     @Override
     protected void process(IMessage<Transaction> message) {
         transactionService.receivedTransaction(message.getData());
+
     }
 }

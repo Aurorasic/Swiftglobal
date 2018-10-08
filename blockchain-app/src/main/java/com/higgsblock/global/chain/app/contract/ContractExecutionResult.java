@@ -1,5 +1,9 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.alibaba.fastjson.annotation.JSONType;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import java.util.List;
 
 /**
@@ -8,6 +12,9 @@ import java.util.List;
  * @author Chen Jiawei
  * @date 2018-09-27
  */
+@Data
+@AllArgsConstructor
+@JSONType(includes = {"resultHash", "subTransactionList", "minerSignature"})
 public class ContractExecutionResult {
     /**
      * Hash of global difference after contract being executed.
@@ -21,34 +28,4 @@ public class ContractExecutionResult {
      * signature signed by miner after contract being executed.
      */
     private String minerSignature;
-
-    public ContractExecutionResult(String resultHash, List<String> subTransactionList, String minerSignature) {
-        this.resultHash = resultHash;
-        this.subTransactionList = subTransactionList;
-        this.minerSignature = minerSignature;
-    }
-
-    public String getResultHash() {
-        return resultHash;
-    }
-
-    public void setResultHash(String resultHash) {
-        this.resultHash = resultHash;
-    }
-
-    public List<String> getSubTransactionList() {
-        return subTransactionList;
-    }
-
-    public void setSubTransactionList(List<String> subTransactionList) {
-        this.subTransactionList = subTransactionList;
-    }
-
-    public String getMinerSignature() {
-        return minerSignature;
-    }
-
-    public void setMinerSignature(String minerSignature) {
-        this.minerSignature = minerSignature;
-    }
 }

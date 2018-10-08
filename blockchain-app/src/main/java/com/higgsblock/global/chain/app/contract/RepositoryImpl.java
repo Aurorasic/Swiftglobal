@@ -3,12 +3,14 @@ package com.higgsblock.global.chain.app.contract;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
 import com.higgsblock.global.chain.vm.util.*;
+import lombok.Setter;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  * @author tangkun
  * @date 2018-09-06
  */
+@Setter
 public class RepositoryImpl implements Repository<UTXO> {
 
     protected RepositoryImpl parent;
@@ -30,8 +33,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
-
     protected Source<byte[], AccountState> accountStateCache;
+
     protected Source<byte[], byte[]> codeCache;
 
     protected MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
@@ -46,21 +49,17 @@ public class RepositoryImpl implements Repository<UTXO> {
     List<AccountDetail> accountDetails = new ArrayList<>();
 
     List<UTXO> unspentUTXOCache = new ArrayList<>();
+
     List<UTXO> spentUTXOCache = new ArrayList<>();
 
+    private String preBlockHash;
 
-//    public byte[] getInDB(byte[] key){
-//       return sourceWriter.get(key);
-//    }
-
-    protected RepositoryImpl() {
-
-
-    }
+    protected RepositoryImpl() {}
 
     protected RepositoryImpl(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
 
-                          MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
+                          MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache,String preBlockHash) {
+        this.preBlockHash = preBlockHash;
         init(accountStateCache, codeCache, storageCache);
     }
 
@@ -189,7 +188,6 @@ public class RepositoryImpl implements Repository<UTXO> {
         if (accountState == null) {
             return null;
         } else {
-            //Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
             return storageCache.get(addr).get(key);
         }
     }
@@ -245,7 +243,7 @@ public class RepositoryImpl implements Repository<UTXO> {
             }
         };
 
-        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache);
+        RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache,this.preBlockHash);
         ret.parent = this;
         return ret;
     }
@@ -342,7 +340,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     public void transfer(byte[] from, byte[] address, BigInteger amount, String currency) {
         AccountState contractAccount = this.getAccountState(from, currency);
         if(StringUtils.isEmpty(currency)){
-            currency = "cas";
+            currency = SystemCurrencyEnum.CAS.getCurrency();
         }
         BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(String.valueOf(amount), currency));
         if (contractAccount.getBalance().compareTo(gasAmount) < 0) {
@@ -434,7 +432,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     public AccountState getAccountState(byte[] address, String currency) {
 
         if(StringUtils.isEmpty(currency)){
-            currency = "cas";
+            currency = SystemCurrencyEnum.CAS.getCurrency();
         }
         AccountState accountState = accountStateCache.get(address);
         if (accountState != null) {
@@ -449,8 +447,8 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         // first cache
         accountState = createAccountState(address, BigInteger.ZERO, currency);
-        List<UTXO> chainUTXO = Helpers.buildTestUTXO(AddrUtil.toTransactionAddr(address));
-        //utxoServiceProxy.getUnionUTXO("preBlockHash",address,currency);
+       // List<UTXO> chainUTXO = Helpers.buildTestUTXO(AddrUtil.toTransactionAddr(address));
+        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash",AddrUtil.toTransactionAddr(address),currency);
         if (chainUTXO != null && chainUTXO.size() != 0) {
             unspentUTXOCache.addAll(chainUTXO);
         }

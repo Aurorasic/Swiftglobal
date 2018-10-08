@@ -18,16 +18,46 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ExecutionEnvironment {
+    /**
+     * Hash of transaction which contains the contract.
+     */
     private String transactionHash;
+    /**
+     * If the transaction contains contract.
+     */
     private boolean isContractCreation;
+    /**
+     * Contract address.
+     */
     private byte[] contractAddress;
+    /**
+     * Address of sender(s) who emits the transaction.
+     */
     private byte[] senderAddress;
+    /**
+     * Gas price sender is willing pay.
+     */
     private byte[] gasPrice;
+    /**
+     * Maximum gas amount sender is willing pay.
+     */
     private byte[] gasLimit;
+    /**
+     * Money transferred to contract.
+     */
     private byte[] value;
+    /**
+     * Payload, simple to say is byte code.
+     */
     private byte[] data;
 
+    /**
+     * Behave configuration of system.
+     */
     private SystemProperties systemProperties;
+    /**
+     * onfiguration of this block.
+     */
     private BlockchainConfig blockchainConfig;
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 

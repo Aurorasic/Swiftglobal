@@ -127,8 +127,8 @@ public class AppContext implements IEventBusListener {
     public void start() throws Exception {
         LOGGER.info("Application starting ...");
 
-        checkAndRecoveryBlockData();
-        LOGGER.info("1 Step: Application startup detection is completed ==>>");
+//        checkAndRecoveryBlockData();
+//        LOGGER.info("1 Step: Application startup detection is completed ==>>");
 
         startFirstStepHandlers();
         LOGGER.info("2 Step: StartFirstStepHandlers is completed ==>>");
@@ -144,6 +144,8 @@ public class AppContext implements IEventBusListener {
 
         syncBlocks();
         LOGGER.info("6 Step: SyncBlocks is completed ==>>");
+
+        startHandlersAfterSyncedBlocks();
 
         LOGGER.info("Application service started successfully.");
     }

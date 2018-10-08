@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
 import com.higgsblock.global.chain.app.service.ITransactionService;
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -321,7 +323,10 @@ public class TransactionService implements ITransactionService {
 
             //if verify receivedTransaction, block is null so curMoney add tx fee
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
-                curMoney.add(transactionFeeService.getCurrencyFee(tx));
+                //input >= out + gas*gasLimit
+                //TODO tangKun  gas should be  GE  tx.getGasPrice() 2018-09-28
+                BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
+                curMoney.add(BalanceUtil.convertGasToMoney(gas,SystemCurrencyEnum.CAS.getCurrency()));
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
@@ -438,8 +443,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
-        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
+        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(block.getTransactionsFee(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());

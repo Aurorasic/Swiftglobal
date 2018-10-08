@@ -66,20 +66,16 @@ public class TransactionFeeService implements ITransactionFeeService {
     /**
      * count Miner and Witness Rewards
      *
-     * @param feeMap fee map
+     * @param totalFee fee transactions
      * @return minerRewards, witnessRewards
      */
     @Override
-    public Rewards countMinerAndWitnessRewards(Map<String, Money> feeMap, long height) {
+    public Rewards countMinerAndWitnessRewards(Money totalFee, long height) {
 
         Money minerTotal;
 
         LOGGER.debug("miner rewards ration：{} ", MINER_REWARDS_RATION.getValue());
-        Money totalFee = new Money("0");
-        for (Map.Entry<String, Money> entry : feeMap.entrySet()) {
-            Money fee = entry.getValue();
-            totalFee.add(fee);
-        }
+
         Money totalMoney = new Money(BLOCK_REWARDS.getValue());
         totalMoney.add(totalFee);
 
@@ -170,10 +166,10 @@ public class TransactionFeeService implements ITransactionFeeService {
      * @return return coin base transaction
      */
     @Override
-    public Transaction buildCoinBaseTx(long lockTime, short version, Map<String, Money> feeMap, long height) {
+    public Transaction buildCoinBaseTx(long lockTime, short version, Money fee, long height) {
         LOGGER.debug("begin to build coinBase transaction");
 
-        Rewards rewards = countMinerAndWitnessRewards(feeMap, height);
+        Rewards rewards = countMinerAndWitnessRewards(fee, height);
         Transaction transaction = new Transaction();
         transaction.setVersion(version);
         transaction.setLockTime(lockTime);
@@ -327,4 +323,39 @@ public class TransactionFeeService implements ITransactionFeeService {
         return countMoney.compareTo(totalRewardsMoney) == 0;
     }
 
+    @Override
+    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction){
+
+        List<Transaction> transactions = new ArrayList<>();
+        int subSize = 0;
+       for (Transaction tx:sortedTransaction){
+
+           if((subSize += tx.getSize()) > LIMITED_SIZE){
+                break;
+           }
+           //is contract transaction
+            if(tx.getOutputs().get(0).getLockScript().getType() == 1){
+                if((subSize += 1024*100) > LIMITED_SIZE){
+                    break;
+                }
+
+                //invoke contract transaction
+
+            }
+            transactions.add(tx);
+       }
+
+        return  transactions;
+    }
+
+    /**
+     * sort by transaction gasPrice
+     *
+     * @param transactions wait sort
+     * @return sorted transaction by gasPrice
+     */
+    @Override
+    public void sortByGasPrice(List<Transaction> transactions) {
+        transactions.sort((tx1, tx2) -> tx2.getGasPrice().compareTo(tx1.getGasPrice()));
+    }
 }
