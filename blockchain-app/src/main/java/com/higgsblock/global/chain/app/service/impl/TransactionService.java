@@ -124,17 +124,19 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the transaction is not valid hash={}", hash);
             return;
         }
-        setContractAddress(tx);
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
     }
 
-    private void setContractAddress(Transaction tx) {
+    private boolean validContractAddress(Transaction tx) {
         if (!tx.isContractCreation()) {
-            return;
+            return true;
         }
-        byte[] address = tx.getContractAddress();
-        tx.getOutputs().get(0).getLockScript().setAddress(AddrUtil.toTransactionAddr(address));
+
+        String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
+        byte[] calculateAddress = tx.getContractAddress();
+
+        return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
     }
 
     @Override
@@ -351,6 +353,11 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        if(!validContractAddress(tx)) {
+            LOGGER.info("Contract address is incorrect.");
+            return false;
+        }
+
         return verifyInputs(inputs, hash, preBlockHash);
     }
 
@@ -407,7 +414,7 @@ public class TransactionService implements ITransactionService {
      * @param input tx input
      * @return tx input ref output
      */
-    private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
+    public TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
             LOGGER.info("preOutKey is empty,input={}", input.toJson());

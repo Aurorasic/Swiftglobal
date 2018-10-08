@@ -13,7 +13,6 @@ import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockException;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
@@ -110,6 +109,8 @@ public class BlockService implements IBlockService {
     private ByzantiumConfig blockchainConfig;
     @Autowired
     private DefaultSystemProperties systemProperties;
+    @Autowired
+    private TransactionService transactionService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -404,6 +405,7 @@ public class BlockService implements IBlockService {
 
         ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
         fillExecutionEnvironment(transaction, executionEnvironment);
+        executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
 
         executionEnvironment.setParentHash(Hex.decode(block.getPrevBlockHash()));
         executionEnvironment.setCoinbase(AddrUtil.toContractAddr(block.getMinerSigPair().getAddress()));
@@ -744,12 +746,20 @@ public class BlockService implements IBlockService {
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.isContractCreation());
         executionEnvironment.setContractAddress(transaction.getContractAddress());
-        executionEnvironment.setSenderAddress(transaction.getSender());
+//        executionEnvironment.setSenderAddress(transaction.getSender());
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue()).toBigInteger().toByteArray());
         executionEnvironment.setData(transaction.getContractParameters().getBytecode());
         executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
+    }
+
+    private byte[] getSender(Transaction transaction, String prevBlockHash) {
+//        //TODO: chenjiawei get sender or senders of this transaction.
+//        return Hex.decode("26004361060485763ffffffff7c0100000000000");
+
+        return AddrUtil.toContractAddr(
+                transactionService.getPreOutput(prevBlockHash, transaction.getInputs().get(0)).getLockScript().getAddress());
     }
 
     /**

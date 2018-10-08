@@ -101,11 +101,6 @@ public class Transaction extends BaseSerializer {
         return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
     }
 
-    public byte[] getSender() {
-        //TODO: chenjiawei get sender or senders of this transaction.
-        return Hex.decode("26004361060485763ffffffff7c0100000000000");
-    }
-
     public boolean valid() {
         if (version < INIT_VERSION) {
             return false;
@@ -162,7 +157,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (contractParameters.getBytecode() == null || contractParameters.getBytecode().length == 0) {
+        if (!contractParameters.valid()) {
             return false;
         }
 
