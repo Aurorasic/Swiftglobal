@@ -373,11 +373,12 @@ public class BlockService implements IBlockService {
 
         transactionFeeService.sortByGasPrice(txOfUnSpentUtxos);
         Money fee = new Money();
-        List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos,block,fee);
+        List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos,block);
         block.setTransactions(packTransaction);
         if (lastBlockIndex.getHeight() >= 1) {
-            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, fee, nextBestBlockHeight);
-            //��coinBase׷��Ϊ��һ�ʽ���
+            Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, block.getTransactionsFee(),
+                    nextBestBlockHeight);
+            //coinBase
             block.getTransactions().add(0,coinBaseTx);
         }
 
@@ -422,7 +423,7 @@ public class BlockService implements IBlockService {
         return executionResult;
     }
 
-    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction,Block block,Money fee){
+    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction,Block block){
 
         List<Transaction> transactions = new ArrayList<>();
         int subSize = 0;
@@ -430,7 +431,10 @@ public class BlockService implements IBlockService {
         RepositoryRoot blockRepository  = new RepositoryRoot(block.getPrevBlockHash());
         //transaction cache
         Repository txRepository;
-
+        //total used gas
+        long usedGas = 0;
+        //total transactions fee
+        Money fee = new Money();
         for (Transaction tx:sortedTransaction){
 
             if((subSize += tx.getSize()) > blockchainConfig.getLimitedSize()){
@@ -447,8 +451,11 @@ public class BlockService implements IBlockService {
                 txRepository = blockRepository.startTracking();
                 //invoke contract transaction
                 ExecutionResult executionResult = executeContract(tx, block,0L,BigInteger.ZERO,txRepository);
-                //�ɹ��ң���ת�˼�¼������Gas����Ҫ�����ӽ���
-                //TODO tangKun ��gas������ 2018-09-29
+                //result state hash
+                HashFunction function = Hashing.sha256();
+                block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
+                        executionResult.toString()),Charsets.UTF_8).toString());
+                //TODO tangKun refund gas 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
                         executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
@@ -460,14 +467,15 @@ public class BlockService implements IBlockService {
                     transactions.add(contractTx);
                     fee = fee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(tx.getGasPrice())
                             ,SystemCurrencyEnum.CAS.getCurrency()));
+                    usedGas += executionResult.getGasUsed().longValue();
                 }
 
-                //ʧ�����н���������money����Լ��Ҫ�����ӽ���,�˿��
+
                 Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
                         new Money(BigDecimal.ZERO.toPlainString()) :  tx.getOutputs().get(0).getMoney();
                 if(!success ) {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0){
-                        //�����˿���ײ�׷�ӵ��������������
+
                         ContractTransaction refundTx = new ContractTransaction();
                     TransactionInput input = new TransactionInput();
                     TransactionOutPoint top = new TransactionOutPoint();
@@ -493,6 +501,7 @@ public class BlockService implements IBlockService {
                 }
                     fee = fee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice())
                             ,SystemCurrencyEnum.CAS.getCurrency()));
+                    usedGas += tx.getGasLimit();
                 }
 
                 txRepository.commit();
@@ -500,10 +509,12 @@ public class BlockService implements IBlockService {
                 transactions.add(tx);
                 fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
                         SystemCurrencyEnum.CAS.getCurrency()));
+                usedGas += FeeUtil.getSizeGas(tx.getSize()).longValue();
             }
         }
         blockRepository.commit();
-
+        block.setTransactionsFee(fee);
+        block.setGasUsed(usedGas);
         return  transactions;
     }
 
