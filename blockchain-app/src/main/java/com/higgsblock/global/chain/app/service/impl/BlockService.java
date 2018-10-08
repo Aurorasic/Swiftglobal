@@ -111,6 +111,8 @@ public class BlockService implements IBlockService {
     private ByzantiumConfig blockchainConfig;
     @Autowired
     private DefaultSystemProperties systemProperties;
+    @Autowired
+    private TransactionService transactionService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -405,6 +407,7 @@ public class BlockService implements IBlockService {
 
         ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
         fillExecutionEnvironment(transaction, executionEnvironment);
+        executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
 
         executionEnvironment.setParentHash(Hex.decode(block.getPrevBlockHash()));
         executionEnvironment.setCoinbase(AddrUtil.toContractAddr(block.getMinerSigPair().getAddress()));
@@ -442,11 +445,12 @@ public class BlockService implements IBlockService {
                 break;
             }
             //is contract transaction
-            if(tx.getOutputs().get(0).getLockScript().getType() == 1){
+            if(tx.isContractCreation()){
                 if((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()){
                     break;
                 }
                 transactions.add(tx);
+
                 fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
                         SystemCurrencyEnum.CAS.getCurrency()));
                 txRepository = blockRepository.startTracking();
@@ -547,25 +551,13 @@ public class BlockService implements IBlockService {
             return false;
         }
 
-        BigInteger sizeGas = FeeUtil.getSizeGas(size);
-        if (sizeGas.compareTo(BigInteger.valueOf(transaction.getGasLimit())) > 0) {
-            return false;
-        }
-
-        if (transaction.getContractParameters().getBytecode() == null || transaction.getContractParameters().getBytecode().length == 0) {
+        if (!transaction.validContractPart()){
             return false;
         }
 
         List<TransactionOutput> outputs = transaction.getOutputs();
-
         if (transaction.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), transaction.getContractAddress())) {
             return false;
-        }
-
-        if (transaction.isContractTrasaction()) {
-            if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency()) && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
-                return false;
-            }
         }
 
         return true;
@@ -757,11 +749,20 @@ public class BlockService implements IBlockService {
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.isContractCreation());
         executionEnvironment.setContractAddress(transaction.getContractAddress());
-        executionEnvironment.setSenderAddress(transaction.getSender());
+//        executionEnvironment.setSenderAddress(transaction.getSender());
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue()).toBigInteger().toByteArray());
         executionEnvironment.setData(transaction.getContractParameters().getBytecode());
+        executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
+    }
+
+    private byte[] getSender(Transaction transaction, String prevBlockHash) {
+//        //TODO: chenjiawei get sender or senders of this transaction.
+//        return Hex.decode("26004361060485763ffffffff7c0100000000000");
+
+        return AddrUtil.toContractAddr(
+                transactionService.getPreOutput(prevBlockHash, transaction.getInputs().get(0)).getLockScript().getAddress());
     }
 
     /**

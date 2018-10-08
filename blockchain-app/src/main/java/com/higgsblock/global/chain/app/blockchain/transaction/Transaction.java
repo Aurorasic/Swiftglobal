@@ -8,13 +8,11 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.ContractParameters;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.crypto.utils.CryptoUtils;
-import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,10 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -105,13 +101,7 @@ public class Transaction extends BaseSerializer {
         return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
     }
 
-    public byte[] getSender() {
-        //TODO: chenjiawei get sender or senders of this transaction.
-        return Hex.decode("26004361060485763ffffffff7c0100000000000");
-    }
-
     public boolean valid() {
-
         if (version < INIT_VERSION) {
             return false;
         }
@@ -120,11 +110,11 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (gasPrice ==null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
+        if (gasLimit < 0) {
             return false;
         }
 
-        if (gasLimit < 0) {
+        if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
             return false;
         }
 
@@ -132,17 +122,15 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isEmpty(inputs)) {
-            return false;
-        }
-
         if (CollectionUtils.isEmpty(outputs)) {
             return false;
         }
 
-        for (TransactionInput input : inputs) {
-            if (!input.valid()) {
-                return false;
+        if (CollectionUtils.isNotEmpty(inputs)) {
+            for (TransactionInput input : inputs) {
+                if (!input.valid()) {
+                    return false;
+                }
             }
         }
 
@@ -150,6 +138,32 @@ public class Transaction extends BaseSerializer {
             if (!out.valid()) {
                 return false;
             }
+        }
+
+        BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
+        if (sizeGas.compareTo(BigInteger.valueOf(gasLimit)) > 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean validContractPart() {
+        try {
+            if (!isContractTrasaction()) {
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        if (!contractParameters.valid()) {
+            return false;
+        }
+
+        if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())
+                && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
+            return false;
         }
 
         return true;
@@ -165,7 +179,7 @@ public class Transaction extends BaseSerializer {
             builder.append(function.hashString(null == extra ? Strings.EMPTY : extra, Charsets.UTF_8));
             builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
             builder.append(function.hashString(getOutputsHash(), Charsets.UTF_8));
-            builder.append(function.hashBytes(gasPrice != null ? gasPrice.toByteArray(): new byte[0]));
+            builder.append(function.hashBytes(gasPrice != null ? gasPrice.toByteArray() : new byte[0]));
             builder.append(function.hashLong(gasLimit));
             builder.append(function.hashString(getContractParametersHash(), Charsets.UTF_8));
             hash = function.hashString(builder, Charsets.UTF_8).toString();
