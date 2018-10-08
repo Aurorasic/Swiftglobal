@@ -32,9 +32,12 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Slf4j
-@JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair", "witnessSigPairs", "voteVersion"})
+@JSONType(includes = {"version", "height", "blockTime", "prevBlockHash", "transactions", "minerSigPair",
+        "witnessSigPairs", "voteVersion", "gasUsed", "contractStateHash", "transactionsFee"})
 public class Block extends BaseSerializer {
-    private static final int LIMITED_SIZE = 1024 * 1024 * 1;
+    public static final int LIMITED_SIZE = 1024 * 1024;
+    public static final long LIMITED_GAS = 10_000_000L;
+    public static final int LIMITED_SUB_TRANSACTION_SIZE = LIMITED_SIZE;
 
     private int version;
 
@@ -188,7 +191,10 @@ public class Block extends BaseSerializer {
                     .append(function.hashLong(blockTime))
                     .append(function.hashString(null == prevBlockHash ? Strings.EMPTY : prevBlockHash, Charsets.UTF_8))
                     .append(getTransactionsHash())
-                    .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8));
+                    .append(function.hashString(null == getPubKey() ? Strings.EMPTY : getPubKey(), Charsets.UTF_8))
+                    .append(function.hashLong(gasUsed))
+                    .append(function.hashString(null == contractStateHash ? Strings.EMPTY : contractStateHash, Charsets.UTF_8))
+                    .append(function.hashString(transactionsFee == null ? Strings.EMPTY : transactionsFee.toString(), Charsets.UTF_8));
             hash = function.hashString(builder.toString(), Charsets.UTF_8).toString();
         }
         return hash;

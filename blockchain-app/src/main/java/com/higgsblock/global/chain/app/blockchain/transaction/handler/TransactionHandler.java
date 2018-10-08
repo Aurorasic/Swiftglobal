@@ -23,21 +23,23 @@ public class TransactionHandler extends BaseMessageHandler<Transaction> {
     @Override
     protected boolean valid(IMessage<Transaction> message) {
         Transaction tx = message.getData();
-        //step1 check transaction data
-        if (tx == null) {
-            LOGGER.info("transaction is null ");
-            return false;
-        }
-        //step2 check transaction baseinfo
+
+        //step1 check transaction baseinfo
         if (!tx.valid()) {
             LOGGER.info("transaction is invalid:{}", tx.getHash());
             return false;
         }
-        //step3 check transaction size
+        //step2 check transaction size
         if (!tx.sizeAllowed()) {
             LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
             return false;
         }
+
+        if (!tx.validContractPart()) {
+            LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+            return false;
+        }
+
         return true;
     }
 
