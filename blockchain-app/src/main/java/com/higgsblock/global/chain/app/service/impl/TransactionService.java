@@ -16,14 +16,12 @@ import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
-import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -325,12 +323,9 @@ public class TransactionService implements ITransactionService {
 
             //if verify receivedTransaction, block is null so curMoney add tx fee
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
-              //  curMoney.add(transactionFeeService.getCurrencyFee(tx));
-                //input >= out + feeOfSize+gas*gasLimit
-                curMoney.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()),
-                        SystemCurrencyEnum.CAS.getCurrency()));
+                //input >= out + gas*gasLimit
                 //TODO tangKun  gas should be  GE  tx.getGasPrice() 2018-09-28
-                BigInteger gas = tx.getGasPrice().subtract(BigInteger.valueOf(tx.getGasLimit()));
+                BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
                 curMoney.add(BalanceUtil.convertGasToMoney(gas,SystemCurrencyEnum.CAS.getCurrency()));
             }
             if (preMoney.compareTo(curMoney) < 0) {

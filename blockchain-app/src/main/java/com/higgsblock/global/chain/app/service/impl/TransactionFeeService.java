@@ -66,7 +66,7 @@ public class TransactionFeeService implements ITransactionFeeService {
     /**
      * count Miner and Witness Rewards
      *
-     * @param feeMap fee map
+     * @param totalFee fee transactions
      * @return minerRewards, witnessRewards
      */
     @Override
