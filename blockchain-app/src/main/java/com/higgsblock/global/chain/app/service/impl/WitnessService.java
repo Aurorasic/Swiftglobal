@@ -1,13 +1,17 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.dao.IWitnessRepository;
+import com.higgsblock.global.chain.app.dao.entity.BlockChainInfoEntity;
 import com.higgsblock.global.chain.app.dao.entity.WitnessEntity;
-import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.app.net.peer.Peer;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
+import com.higgsblock.global.chain.app.service.IWitnessService;
+import com.higgsblock.global.chain.crypto.ECKey;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,8 +34,7 @@ public class WitnessService implements IWitnessService, InitializingBean {
      * The Witness repository.
      */
     @Autowired
-    private IWitnessRepository witnessRepository;
-
+    private IBlockChainInfoService blockChainInfoService;
     @Autowired
     private PeerManager peerManager;
 
@@ -47,16 +50,7 @@ public class WitnessService implements IWitnessService, InitializingBean {
 
     @Override
     public List<Peer> getAllWitnessPeer() {
-        List<WitnessEntity> list = witnessRepository.findAll();
-        if (CollectionUtils.isEmpty(list)) {
-            return new ArrayList<>(0);
-        }
-
-        List<Peer> peers = Lists.newArrayList();
-        list.forEach(witnessEntity -> {
-            peers.add(witnessEntity2Peer(witnessEntity));
-        });
-        return peers;
+        return blockChainInfoService.getAllWitness();
     }
 
     @Override
@@ -67,18 +61,6 @@ public class WitnessService implements IWitnessService, InitializingBean {
     @Override
     public int getWitnessSize() {
         return WITNESS_ADDRESS_LIST.size();
-    }
-
-    private static Peer witnessEntity2Peer(WitnessEntity witnessEntity) {
-        if (witnessEntity == null) {
-            return null;
-        }
-        Peer peer = new Peer();
-        peer.setIp(witnessEntity.getAddress());
-        peer.setSocketServerPort(witnessEntity.getSocketPort());
-        peer.setHttpServerPort(witnessEntity.getHttpPort());
-        peer.setPubKey(witnessEntity.getPubKey());
-        return peer;
     }
 
     private void loadWitnessFromDb(List<Peer> list) {

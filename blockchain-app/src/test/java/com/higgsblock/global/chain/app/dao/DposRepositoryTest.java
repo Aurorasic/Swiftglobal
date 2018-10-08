@@ -2,10 +2,10 @@ package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.dao.entity.DposEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author wangxiangyi

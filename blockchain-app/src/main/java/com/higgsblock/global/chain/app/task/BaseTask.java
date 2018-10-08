@@ -27,7 +27,7 @@ public abstract class BaseTask {
         if (null == executorService) {
             executorService = ExecutorServices.newScheduledThreadPool(getClass().getName(), 1);
             executorService.scheduleWithFixedDelay(this::doTask, 0, getPeriodMs(), TimeUnit.MILLISECONDS);
-            LOGGER.info("{} started", getClass().getName());
+            LOGGER.debug("{} started", getClass().getName());
         }
     }
 
@@ -38,6 +38,7 @@ public abstract class BaseTask {
         if (null != executorService) {
             executorService.shutdown();
             executorService = null;
+            LOGGER.debug("{} stopped", getClass().getName());
         }
     }
 
@@ -45,13 +46,13 @@ public abstract class BaseTask {
      * Do task.
      */
     private void doTask() {
-        LOGGER.info("task of {} start", getClass().getName());
+        LOGGER.debug("task of {} start", getClass().getName());
         try {
             task();
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
-        LOGGER.info("task of {} end", getClass().getName());
+        LOGGER.debug("task of {} end", getClass().getName());
     }
 
     /**

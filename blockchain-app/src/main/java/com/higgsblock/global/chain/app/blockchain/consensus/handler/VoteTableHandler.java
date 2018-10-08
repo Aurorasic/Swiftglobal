@@ -61,6 +61,12 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
     protected void process(IMessage<VoteTable> message) {
         String sourceId = message.getSourceId();
         VoteTable data = message.getData();
+        //check if this is witness
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(message.getData());
+            LOGGER.info(" dispatch to witnesses");
+            return;
+        }
         //step2:check witness
         if (!checkVersion1Witness(data)) {
             LOGGER.info("valid witness info , false");
@@ -71,6 +77,10 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
         //step3: check height
         if (voteHeight < localHeight) {
             LOGGER.info("the height is lower than local,voteHeight={},localHeight={}", voteHeight, localHeight);
+            return;
+        }
+        if (voteHeight > localHeight + 1) {
+            LOGGER.info("the height is more than local+1,voteHeight={},localHeight={}", voteHeight, localHeight);
             return;
         }
         //step4:if height > my vote height, sync block
@@ -85,12 +95,7 @@ public class VoteTableHandler extends BaseMessageHandler<VoteTable> {
             LOGGER.info("check original block failed,height={}", voteHeight);
             return;
         }
-        //check if this is witness
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(message.getData());
-            LOGGER.info(" dispatch to witnesses");
-            return;
-        }
+
         voteService.dealVoteTable(message.getData());
     }
 

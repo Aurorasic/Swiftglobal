@@ -1,6 +1,5 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.Rewards;
@@ -8,12 +7,10 @@ import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.dao.entity.UTXOEntity;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
@@ -23,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -69,6 +65,10 @@ public class TransactionService implements ITransactionService {
 
     @Autowired
     private IWitnessService witnessService;
+
+    @Autowired
+    private IBalanceService balanceService;
+
 
     @Override
     public boolean validTransactions(Block block) {
@@ -123,6 +123,7 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the transaction is not valid hash={}", hash);
             return;
         }
+
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
     }
@@ -139,15 +140,15 @@ public class TransactionService implements ITransactionService {
     }
 
     @Override
-    public boolean hasStake(String address, SystemCurrencyEnum currency) {
-        List<UTXO> result = getBestUTXOList(address, currency.getCurrency());
-        return getUTXOCurrency(result, currency);
+    public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
+        Money balanceMoney = balanceService.getBalanceOnBest(address, currency.getCurrency());
+        return getBalanceCurrency(balanceMoney, currency);
     }
 
     @Override
     public boolean hasStake(String preBlockHash, String address, SystemCurrencyEnum currency) {
-        List<UTXO> result = utxoServiceProxy.getUnionUTXO(preBlockHash, address, currency.getCurrency());
-        return getUTXOCurrency(result, currency);
+        Money balanceMoney = balanceService.getUnionBalance(preBlockHash, address, currency.getCurrency());
+        return getBalanceCurrency(balanceMoney, currency);
     }
 
     @Override
@@ -182,7 +183,7 @@ public class TransactionService implements ITransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (!hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (!hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -208,7 +209,7 @@ public class TransactionService implements ITransactionService {
             if (result.contains(address)) {
                 continue;
             }
-            if (hasStake(address, SystemCurrencyEnum.MINER)) {
+            if (hasStakeOnBest(address, SystemCurrencyEnum.MINER)) {
                 result.add(address);
             }
         }
@@ -216,38 +217,9 @@ public class TransactionService implements ITransactionService {
     }
 
 
-    public boolean getUTXOCurrency(List<UTXO> result, SystemCurrencyEnum currency) {
+    public boolean getBalanceCurrency(Money balanceMoney, SystemCurrencyEnum currency) {
         Money stakeMinMoney = new Money("1", currency.getCurrency());
-        Money money = new Money("0", currency.getCurrency());
-        for (UTXO utxo : result) {
-            money.add(utxo.getOutput().getMoney());
-            if (money.compareTo(stakeMinMoney) >= 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<UTXO> getBestUTXOList(String address, String currency) {
-        List<UTXOEntity> utxoEntities = bestUtxoService.findByLockScriptAndCurrency(address, currency);
-        List<UTXO> utxos = Lists.newArrayList();
-        utxoEntities.forEach(entity -> {
-            Money money = new Money(entity.getAmount(), entity.getCurrency());
-            LockScript lockScript = new LockScript();
-            lockScript.setAddress(entity.getLockScript());
-            lockScript.setType((short) entity.getScriptType());
-            TransactionOutput output = new TransactionOutput();
-            output.setMoney(money);
-            output.setLockScript(lockScript);
-
-            UTXO utxo = new UTXO();
-            utxo.setHash(entity.getTransactionHash());
-            utxo.setIndex(entity.getOutIndex());
-            utxo.setAddress(entity.getLockScript());
-            utxo.setOutput(output);
-            utxos.add(utxo);
-        });
-        return utxos;
+        return balanceMoney.compareTo(stakeMinMoney) >= 0;
     }
 
     /**
@@ -409,7 +381,7 @@ public class TransactionService implements ITransactionService {
      * @param input tx input
      * @return tx input ref output
      */
-    public TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
+    private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
         String preOutKey = input.getPrevOut().getKey();
         if (StringUtils.isEmpty(preOutKey)) {
             LOGGER.info("preOutKey is empty,input={}", input.toJson());
@@ -462,7 +434,8 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(block.getTransactionsFee(), block.getHeight());
+        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
+        Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(sortResult.getFeeMap(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
             LOGGER.info("verify miner coin base add witness not == total money totalMoney:{}", rewards.getTotalMoney());

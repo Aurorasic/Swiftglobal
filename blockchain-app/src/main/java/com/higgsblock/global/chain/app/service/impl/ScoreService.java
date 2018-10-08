@@ -1,13 +1,11 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
-import com.higgsblock.global.chain.app.dao.IScoreRepository;
-import com.higgsblock.global.chain.app.dao.entity.ScoreEntity;
+import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
@@ -15,13 +13,9 @@ import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +29,7 @@ import java.util.Set;
 public class ScoreService implements IScoreService {
 
     @Autowired
-    private IScoreRepository scoreRepository;
+    private IBlockChainInfoService blockChainInfoService;
     @Autowired
     private ITransactionService transactionService;
     @Autowired
@@ -49,8 +43,9 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public Integer get(String address) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        return null == scoreEntity ? null : scoreEntity.getScore();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String score = allScores.get(address);
+        return score == null ? null : Integer.valueOf(score);
     }
 
     /**
@@ -61,26 +56,41 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void put(String address, Integer score) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        if (null != scoreEntity) {
-            scoreEntity.setScore(score);
-            scoreRepository.save(scoreEntity);
-        } else {
-            ScoreEntity saveEntity = new ScoreEntity(address, score);
-            scoreRepository.save(saveEntity);
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        allScores.put(address, String.valueOf(score));
+        blockChainInfoService.setAllScores(allScores);
+    }
+
+    @Override
+    public void put(String address, Integer score, Map<String, String> allScores) {
+        allScores.put(address, String.valueOf(score));
+        blockChainInfoService.setAllScores(allScores);
+    }
+
+    @Override
+    public int updateBatch(List<String> addressList, int score, Map<String, String> allScores) {
+        for (String address : addressList) {
+            put(address, score, allScores);
         }
+        return 1;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int updateBatch(List<String> addressList, int score) {
-        return scoreRepository.updateByAddress(addressList, score);
-    }
+    public int plusAll(Integer plusScore, Map<String, String> allScores) {
+        if (allScores.isEmpty()) {
+            return 1;
+        }
+        Set<String> keySet = allScores.keySet();
+        Iterator<String> iterator = keySet.iterator();
+        while (iterator.hasNext()) {
+            String key = iterator.next();
+            String oldScoreStr = allScores.get(key);
+            Integer oldScore = Integer.valueOf(oldScoreStr);
+            allScores.put(key, String.valueOf(oldScore + plusScore));
+        }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int plusAll(Integer score) {
-        return scoreRepository.plusAll(score);
+        blockChainInfoService.setAllScores(allScores);
+        return 1;
     }
 
     /**
@@ -92,9 +102,11 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void putIfAbsent(String address, Integer score) {
-        ScoreEntity scoreEntity = scoreRepository.findByAddress(address);
-        if (scoreEntity == null) {
-            scoreRepository.save(new ScoreEntity(address, score));
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String value = allScores.get(address);
+        if (value == null) {
+            allScores.put(address, String.valueOf(score));
+            blockChainInfoService.setAllScores(allScores);
         }
     }
 
@@ -105,24 +117,12 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public void remove(String address) {
-        scoreRepository.deleteByAddress(address);
-    }
-
-    /**
-     * query all score
-     *
-     * @return
-     */
-    @Override
-    public Map<String, Integer> loadAll() {
-        Map<String, Integer> map = Maps.newHashMap();
-        scoreRepository.findAll().forEach(e -> map.put(e.getAddress(), e.getScore()));
-        return map;
-    }
-
-    @Override
-    public List<ScoreEntity> all() {
-        return scoreRepository.findAll();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        String value = allScores.get(address);
+        if (value != null) {
+            allScores.remove(address);
+            blockChainInfoService.setAllScores(allScores);
+        }
     }
 
     /**
@@ -135,7 +135,8 @@ public class ScoreService implements IScoreService {
         if (CollectionUtils.isEmpty(addressList)) {
             return;
         }
-        updateBatch(addressList, SELECTED_DPOS_SET_SCORE);
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        updateBatch(addressList, SELECTED_DPOS_SET_SCORE, allScores);
     }
 
     /**
@@ -144,13 +145,14 @@ public class ScoreService implements IScoreService {
      * @param toBeBestBlock
      */
     @Override
-    public void refreshMinersScore(Block toBeBestBlock) {
+    public void refreshMinersScore(Block toBeBestBlock, Block newBlock) {
+        LOGGER.info("start refreshMinersScore, block={}", newBlock.getSimpleInfo());
         updateScores(toBeBestBlock);
 
         //handle joined miner and removed miner
+        LOGGER.info("start handle joined miner and removed miner, block={}", newBlock.getSimpleInfo());
         List<Transaction> transactions = toBeBestBlock.getTransactions();
         for (Transaction tx : transactions) {
-            LOGGER.info("calc removing and adding miner currency,tx={}", tx.getHash());
             Set<String> removedMiners = transactionService.getRemovedMiners(tx);
             for (String removedMiner : removedMiners) {
                 remove(removedMiner);
@@ -161,7 +163,8 @@ public class ScoreService implements IScoreService {
                 putIfAbsent(addedMiner, INIT_SCORE);
             }
         }
-        LOGGER.info("end to handle joined miner and removed miner,bestBlock={}", toBeBestBlock.getHash());
+        LOGGER.info("end refreshMinersScore,bestBlock={},newBlock={}",
+                toBeBestBlock.getHash(), newBlock.getSimpleInfo());
     }
 
     /**
@@ -173,35 +176,43 @@ public class ScoreService implements IScoreService {
      */
     @Override
     public List<String> queryAddresses(ScoreRangeEnum scoreRange, List<String> exculdeAddresses) {
-        Pageable pageable = new PageRequest(0, SCORE_LIMIT_NUM, Sort.Direction.DESC, SCORE_ORDERBY_FIELD, ADDRESS_ORDERBY_FIELD);
-        List<String> placeList = new ArrayList<>();
-        placeList.add("");
-        List<ScoreEntity> scores = scoreRepository.queryTopScoreByRange(
-                scoreRange.getMinScore(),
-                scoreRange.getMaxScore(),
-                CollectionUtils.isEmpty(exculdeAddresses) ? placeList : exculdeAddresses,
-                pageable);
-        if (scores == null) {
-            return Lists.newLinkedList();
+        List<String> result = Lists.newLinkedList();
+        //todo yuguojia find all, then sort
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
+        Set<Map.Entry<String, String>> entries = allScores.entrySet();
+        for (Map.Entry<String, String> entry : entries) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            Integer score = Integer.valueOf(value);
+            if (score < scoreRange.getMinScore() ||
+                    score >= scoreRange.getMaxScore()) {
+                //only in [minScore,maxScore)
+                continue;
+            }
+            if (result.size() == SCORE_LIMIT_NUM) {
+                break;
+            }
+            if (!exculdeAddresses.contains(key)) {
+                result.add(key);
+            }
         }
-        List<String> addresses = Lists.newLinkedList();
-        scores.forEach(scoreEntity -> addresses.add(scoreEntity.getAddress()));
-        return addresses;
+        return result;
     }
 
     private void updateScores(Block toBeBestBlock) {
         SignaturePair minerPKSig = toBeBestBlock.getMinerSigPair();
+        Map<String, String> allScores = blockChainInfoService.getAllScores();
         //if the block is only mined by  miner, set score
-        if (transactionService.hasStake(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
-            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE);
+        if (transactionService.hasStakeOnBest(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
+            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE, allScores);
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
             List<String> dposAddressList = dposService.getRestDposMinersByPreHash(prevBlockHash);
             if (CollectionUtils.isNotEmpty(dposAddressList)) {
-                updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE);
+                updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE, allScores);
             }
         }
-        plusAll(ONE_BLOCK_ADD_SCORE);
+        plusAll(ONE_BLOCK_ADD_SCORE, allScores);
     }
 }

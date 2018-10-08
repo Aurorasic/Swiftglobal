@@ -7,6 +7,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.common.constants.RespCodeEnum;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,14 +32,28 @@ public class TransactionApi {
     @Autowired
     private MessageCenter messageCenter;
 
+    @RequestMapping("/sends")
+    public ResponseData<Boolean> sendTxs(@RequestBody List<Transaction> txs) {
+        boolean result = true;
+        if (CollectionUtils.isEmpty(txs)) {
+            return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
+        }
+        txs.forEach(transaction -> {
+            messageCenter.dispatch(transaction);
+            LOGGER.info("receive transaction from browser api, hash={}", transaction.getHash());
+        });
+
+        return result ? ResponseData.success(null) : ResponseData.failure(RespCodeEnum.FAILED);
+    }
+
     @RequestMapping("/send")
     public ResponseData<Boolean> sendTx(@RequestBody Transaction tx) {
         if (null == tx) {
             return ResponseData.failure(RespCodeEnum.PARAM_INVALID);
         }
-
         boolean result = messageCenter.dispatch(tx);
         LOGGER.info("receive transaction from browser api, hash={}", tx.getHash());
+
         return result ? ResponseData.success(null) : ResponseData.failure(RespCodeEnum.FAILED);
     }
 

@@ -3,14 +3,14 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.dao.ITransactionIndexRepository;
-import com.higgsblock.global.chain.app.dao.entity.SpentTransactionOutIndexEntity;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
+import com.higgsblock.global.chain.app.keyvalue.annotation.Transactional;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.app.service.ITransactionIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -36,6 +36,9 @@ public class TransactionIndexService implements ITransactionIndexService {
      */
     @Autowired
     private ITransactionIndexRepository transactionIndexRepository;
+
+    @Autowired
+    private IBalanceService balanceService;
 
     @Override
     public TransactionIndexEntity findByTransactionHash(String txHash) {
@@ -65,17 +68,13 @@ public class TransactionIndexService implements ITransactionIndexService {
                     if (txIndex == null) {
                         throw new IllegalStateException("Spent tx not exits: " + spentTxHash + toBeBestBlock.getSimpleInfoSuffix());
                     }
-                    //update the pre-transaction state
-                    SpentTransactionOutIndexEntity spentTxOutIndexEntity = new SpentTransactionOutIndexEntity();
-                    spentTxOutIndexEntity.setPreTransactionHash(spentTxHash);
-                    spentTxOutIndexEntity.setOutIndex(spentTxOutIndex);
-                    spentTxOutIndexEntity.setNowTransactionHash(tx.getHash());
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {
                         throw new IllegalStateException("UTXO not exists : " + utxoKey + toBeBestBlock.getSimpleInfoSuffix());
                     }
                     bestUtxoService.deleteByTransactionHashAndOutIndex(spentTxHash, spentTxOutIndex);
+                    balanceService.minusBalance(new UTXO(spentTxHash, spentTxOutIndex, outPoint.getOutput()));
                 }
             }
 
@@ -87,6 +86,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                     TransactionOutput output = outputs.get(i);
                     UTXO utxo = new UTXO(tx, (short) i, output);
                     bestUtxoService.saveUTXO(utxo);
+                    balanceService.plusBalance(utxo);
                 }
             }
         }

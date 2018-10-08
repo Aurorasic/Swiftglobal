@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -29,6 +30,9 @@ public class UTXOServiceProxy {
 
     @Autowired
     private BestUTXOService bestUtxoService;
+
+    @Autowired
+    private IBalanceService balanceService;
 
     /**
      * key1: unconfirmed blockhash
@@ -187,10 +191,10 @@ public class UTXOServiceProxy {
         Set<String> keySet = utxoMap.keySet();
         for (String key : keySet) {
             UTXO utxo = utxoMap.get(key);
-            if (isToGetAdded && utxo != null) {
+            if (isToGetAdded && !(utxo instanceof SpendUTXO)) {
                 result.put(key, utxo);
-            } else if (!isToGetAdded && utxo == null) {
-                result.put(key, null);
+            } else if (!isToGetAdded && (utxo instanceof SpendUTXO)) {
+                result.put(key, utxo);
             }
         }
 
@@ -254,10 +258,10 @@ public class UTXOServiceProxy {
 
     private Map buildUTXOMap(Block block) {
         Map utxoMap = new HashMap<>(32);
-        List<String> spendUTXOKeys = block.getSpendUTXOKeys();
+        List<UTXO> spendUTXOs = block.getSpendUTXOs();
         List<UTXO> addedUTXOs = block.getAddedUTXOs();
-        for (String spendUTXOKey : spendUTXOKeys) {
-            utxoMap.put(spendUTXOKey, null);
+        for (UTXO spendUTXO : spendUTXOs) {
+            utxoMap.put(spendUTXO.getKey(), new SpendUTXO(spendUTXO));
         }
         for (UTXO newUTXO : addedUTXOs) {
             utxoMap.put(newUTXO.getKey(), newUTXO);
@@ -273,5 +277,14 @@ public class UTXOServiceProxy {
     private void remove(String blockHash) {
         blockHashChainMap.remove(blockHash);
         unconfirmedUtxoMaps.remove(blockHash);
+    }
+
+    public class SpendUTXO extends UTXO {
+        public SpendUTXO(UTXO utxo) {
+            this.setHash(utxo.getHash());
+            this.setIndex(utxo.getIndex());
+            this.setOutput(utxo.getOutput());
+            this.setAddress(utxo.getOutput().getLockScript().getAddress());
+        }
     }
 }

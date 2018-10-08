@@ -91,7 +91,6 @@ public class Connection {
         }
         this.type = type;
         this.createdTime = System.currentTimeMillis();
-        this.connectionLevel = ConnectionLevelEnum.L3;
         this.sendQueue = Queues.newLinkedBlockingQueue();
     }
 

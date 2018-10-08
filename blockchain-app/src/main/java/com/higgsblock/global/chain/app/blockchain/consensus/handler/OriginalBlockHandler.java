@@ -62,6 +62,11 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
 
     @Override
     protected void process(IMessage<OriginalBlock> message) {
+        if (!witnessService.isWitness(keyPair.getAddress())) {
+            messageCenter.dispatchToWitnesses(message.getData());
+            LOGGER.info(" dispatch to witnesses");
+            return;
+        }
         OriginalBlock originalBlock = message.getData();
         Block block = originalBlock.getBlock();
         String sourceId = message.getSourceId();
@@ -93,12 +98,7 @@ public class OriginalBlockHandler extends BaseMessageHandler<OriginalBlock> {
             voteService.addOriginalBlockToCache(block);
             return;
         }
-        LOGGER.info("check the OriginalBlock success, height={}, hash={}", height, blockHash);
-        if (!witnessService.isWitness(keyPair.getAddress())) {
-            messageCenter.dispatchToWitnesses(originalBlock);
-            return;
-        }
-        LOGGER.info("add OriginalBlock height={}, hash={}", block.getHeight(), block.getHash());
+        LOGGER.info("check the OriginalBlock success,add OriginalBlock height={}, hash={}", height, blockHash);
         voteService.addOriginalBlock(block);
         messageCenter.dispatchToWitnesses(originalBlock);
     }
