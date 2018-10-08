@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
+import com.higgsblock.global.chain.common.utils.Money;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,35 @@ public class UTXOServiceProxy {
      */
     private Map<String, String> blockHashChainMap = new HashMap<>(16);
 
+    public Money getUnconfirmedBalance(String preBlockHash, String address, String currency) {
+        if (StringUtils.isEmpty(preBlockHash)) {
+            throw new RuntimeException("error preBlockHash for getUnconfirmedBalance");
+        }
+
+        Money result = new Money(0, currency);
+        Map<String, UTXO> unconfirmedSpentUtxos = Maps.newHashMap();
+        Map<String, UTXO> unconfirmedAddedUtxos = Maps.newHashMap();
+        getUnionUTXOsRecurse(unconfirmedSpentUtxos, preBlockHash, false);
+        getUnionUTXOsRecurse(unconfirmedAddedUtxos, preBlockHash, true);
+
+        Collection<UTXO> addedUtxos = unconfirmedAddedUtxos.values();
+        for (UTXO utxo : addedUtxos) {
+            if (StringUtils.equals(utxo.getAddress(), address) &&
+                    StringUtils.equals(utxo.getCurrency(), currency)) {
+                result.add(utxo.getOutput().getMoney());
+            }
+        }
+
+        Collection<UTXO> spentUtxos = unconfirmedSpentUtxos.values();
+        for (UTXO utxo : spentUtxos) {
+            if (StringUtils.equals(utxo.getAddress(), address) &&
+                    StringUtils.equals(utxo.getCurrency(), currency)) {
+                result.subtract(utxo.getOutput().getMoney());
+            }
+        }
+
+        return result;
+    }
 
     /**
      * get utxo on confirm block chain and unconfirmed block chain(from the preBlockHash to best block)
