@@ -339,7 +339,6 @@ public class TransactionService implements ITransactionService {
             //if verify receivedTransaction, block is null so curMoney add tx fee
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
                 //input >= out + gas*gasLimit
-                //TODO tangKun  gas should be  GE  tx.getGasPrice() 2018-09-28
                 BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
                 curMoney.add(BalanceUtil.convertGasToMoney(gas,SystemCurrencyEnum.CAS.getCurrency()));
             }
