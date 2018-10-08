@@ -443,11 +443,12 @@ public class BlockService implements IBlockService {
                 break;
             }
             //is contract transaction
-            if(tx.getOutputs().get(0).getLockScript().getType() == 1){
+            if(tx.isContractCreation()){
                 if((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()){
                     break;
                 }
                 transactions.add(tx);
+
                 fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
                         SystemCurrencyEnum.CAS.getCurrency()));
                 txRepository = blockRepository.startTracking();
