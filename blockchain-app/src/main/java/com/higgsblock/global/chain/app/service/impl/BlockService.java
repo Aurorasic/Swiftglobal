@@ -393,15 +393,15 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    private ExecutionResult executeContract(Transaction transaction, Block block, long sizeLimitAllowed,
-                                            BigInteger gasLimitAllowed,Repository txRepository) {
+    private ExecutionResult executeContract(Transaction transaction, Block block,
+                                            BigInteger gasLimitAllowed, Repository txRepository) {
         if (transaction == null
                 || transaction.getOutputs() == null
                 || !transaction.isContractTrasaction()) {
             return null;
         }
 
-        if (!validForExecution(transaction, sizeLimitAllowed, gasLimitAllowed)) {
+        if (!validForExecution(transaction, gasLimitAllowed)) {
             return null;
         }
 
@@ -445,7 +445,7 @@ public class BlockService implements IBlockService {
                 break;
             }
             //is contract transaction
-            if(tx.isContractCreation()){
+            if (tx.isContractTrasaction()) {
                 if((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()){
                     break;
                 }
@@ -455,7 +455,7 @@ public class BlockService implements IBlockService {
                         SystemCurrencyEnum.CAS.getCurrency()));
                 txRepository = blockRepository.startTracking();
                 //invoke contract transaction
-                ExecutionResult executionResult = executeContract(tx, block,0L,BigInteger.ZERO,txRepository);
+                ExecutionResult executionResult = executeContract(tx, block, BigInteger.ZERO, txRepository);
                 //result state hash
                 HashFunction function = Hashing.sha256();
                 block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
@@ -537,15 +537,10 @@ public class BlockService implements IBlockService {
     /**
      * Validates contract execution conditions.
      *
-     * @param sizeLimitAllowed       remain size allowed for this transaction.
      * @param gasLimitAllowed        remain gas allowed for this transaction.
      * @return if contract is fitted to be executed.
      */
-    public boolean validForExecution(Transaction transaction, long sizeLimitAllowed, BigInteger gasLimitAllowed) {
-        long size = transaction.getSize();
-        if (sizeLimitAllowed - size < Block.LIMITED_SUB_TRANSACTION_SIZE) {
-            return false;
-        }
+    public boolean validForExecution(Transaction transaction, BigInteger gasLimitAllowed) {
 
         if (BigInteger.valueOf(transaction.getGasLimit()).compareTo(gasLimitAllowed) > 0) {
             return false;
