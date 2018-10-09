@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.ContractParameters;
+import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
@@ -20,10 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -92,13 +92,21 @@ public class Transaction extends BaseSerializer {
      */
     private ContractExecutionResult contractExecutionResult;
 
-    public byte[] getContractAddress() {
+    public byte[] calculateContractAddress() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(transactionTime));
         builder.append(function.hashBytes(contractParameters.getBytecode()));
         builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
         return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
+    }
+
+    public byte[] getContractAddress() {
+        if (!isContractTrasaction()) {
+            throw new IllegalArgumentException("There is no contract address because transaction does not contain a contract.");
+        }
+
+        return AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress());
     }
 
     public boolean valid() {
@@ -164,8 +172,11 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())
-                && new BigDecimal(outputs.get(0).getMoney().getValue()).toBigInteger().intValue() != 0) {
+        if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())) {
+            return false;
+        }
+
+        if (Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), calculateContractAddress())) {
             return false;
         }
 
