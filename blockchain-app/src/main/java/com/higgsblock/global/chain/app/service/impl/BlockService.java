@@ -114,6 +114,8 @@ public class BlockService implements IBlockService {
     private DefaultSystemProperties systemProperties;
     @Autowired
     private TransactionService transactionService;
+    @Autowired
+    private IBlockChainInfoService blockChainInfoService;
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -702,6 +704,7 @@ public class BlockService implements IBlockService {
             Block newBestBlock = null;
             if (isFirst) {
                 newBestBlock = getToBeBestBlock(block);
+                blockChainInfoService.setMaxHeight(block.getHeight());
             } else {
                 LOGGER.info("block:{} is not first at height :{}", block.getHash(), block.getHeight());
             }

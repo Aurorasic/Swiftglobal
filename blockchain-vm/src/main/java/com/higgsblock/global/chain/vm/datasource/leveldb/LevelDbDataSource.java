@@ -239,6 +239,7 @@ public class LevelDbDataSource implements DbSource<byte[]> {
                 for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
                     result.add(iterator.peekNext().getKey());
 
+                    System.out.println("key: " + Hex.toHexString(iterator.peekNext().getKey()));
                     System.out.println("value: " + Hex.toHexString(db.get(iterator.peekNext().getKey())));
                 }
                 if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());

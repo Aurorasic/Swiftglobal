@@ -113,16 +113,19 @@ public class RepositoryImpl implements Repository<UTXO> {
         AccountState ret = accountStateCache.get(addr);
         if (ret != null) {
             Set<byte[]> keys = ret.getKeys();
-            Source<DataWord, DataWord> contractStorage = storageCache.getChild(addr);
+            Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
 
             for (byte[] key: keys) {
-                contractStorage.delete(new DataWord(key));
-                contractStorage.flush();
+                contractStorage.put(new DataWord(key), null);
             }
+
+            byte[] codeHash = ret.getCodeHash();
+            byte[] key = codeKey(codeHash, addr);
+            codeCache.delete(key);
         }
 
         accountStateCache.delete(addr);
-        storageCache.delete(addr);
+        //storageCache.delete(addr);
     }
 
     @Override
@@ -168,17 +171,6 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
         contractStorage.put(key, value.isZero() ? null : value);
-
-        System.out.println("address: " + Arrays.toString(addr));
-
-        System.out.println("key key: " + Arrays.toString(key.getData()));
-
-        storageCache.getModified().stream().forEach(item->{
-            System.out.println("item key: " + Arrays.toString(item));
-
-            DataWord childKey = new DataWord(item);
-            System.out.println("item value: "+contractStorage.get(childKey));
-        });
     }
 
     @Override
@@ -231,9 +223,7 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized RepositoryImpl startTracking() {
 
-        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache,
-                WriteCache.CacheType.SIMPLE);
-
+        Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache, WriteCache.CacheType.SIMPLE);
         Source<byte[], byte[]> trackCodeCache = new WriteCache.BytesKey<>(codeCache, WriteCache.CacheType.SIMPLE);
 
         MultiCache<CachedSource<DataWord, DataWord>> trackStorageCache = new MultiCache(storageCache) {

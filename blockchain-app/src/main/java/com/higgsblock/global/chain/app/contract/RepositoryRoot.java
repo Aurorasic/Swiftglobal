@@ -39,7 +39,7 @@ public class RepositoryRoot extends RepositoryImpl {
         ReadWriteCache.BytesKey<AccountState> accountStateCache = new ReadWriteCache.BytesKey(accountStateCodec, WriteCache.CacheType.SIMPLE);
         accountStateCache.setFlushSource(true);
 
-        WriteCache.BytesKey<byte[]> codeCache = new WriteCache.BytesKey<>(xorCode, WriteCache.CacheType.COUNTING);
+        ReadWriteCache.BytesKey<byte[]> codeCache = new ReadWriteCache.BytesKey<>(xorCode, WriteCache.CacheType.SIMPLE);
         codeCache.setFlushSource(true);
 
         storageCache = new WriteCache.BytesKey<>(xorStorage, WriteCache.CacheType.COUNTING);
