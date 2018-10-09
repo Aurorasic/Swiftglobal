@@ -14,7 +14,6 @@ import java.util.List;
  * @date 2018-09-27
  */
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @NoArgsConstructor
 @JSONType(includes = {"resultHash", "subTransactionList", "minerSignature"})
