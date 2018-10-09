@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.contract;
 import com.alibaba.fastjson.annotation.JSONType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
  * @date 2018-09-27
  */
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @JSONType(includes = {"resultHash", "subTransactionList", "minerSignature"})
 public class ContractExecutionResult {
