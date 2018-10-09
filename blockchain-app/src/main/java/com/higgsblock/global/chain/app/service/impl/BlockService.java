@@ -209,7 +209,7 @@ public class BlockService implements IBlockService {
     @Override
     public Block getToBeBestBlock(Block block) {
         if (block.isGenesisBlock()) {
-            return null;
+            return block;
         }
         if (block.getHeight() - DposService.CONFIRM_BEST_BLOCK_MIN_NUM < MAIN_CHAIN_START_HEIGHT) {
             return null;
