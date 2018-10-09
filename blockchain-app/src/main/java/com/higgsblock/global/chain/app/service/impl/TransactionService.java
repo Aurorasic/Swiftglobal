@@ -254,10 +254,6 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        if (tx.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), tx.calculateContractAddress())) {
-            return false;
-        }
-
         String blockHash = block != null ? block.getHash() : null;
         String preBlockHash = block != null ? block.getPrevBlockHash() : null;
         Map<String, Money> preMoneyMap = new HashMap<>(8);

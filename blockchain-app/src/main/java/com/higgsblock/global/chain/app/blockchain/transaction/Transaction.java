@@ -21,10 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -174,6 +173,10 @@ public class Transaction extends BaseSerializer {
         }
 
         if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())) {
+            return false;
+        }
+
+        if (Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), calculateContractAddress())) {
             return false;
         }
 

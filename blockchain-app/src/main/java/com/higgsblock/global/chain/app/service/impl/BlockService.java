@@ -495,10 +495,10 @@ public class BlockService implements IBlockService {
     /**
      * Executes contract.
      *
-     * @param transaction original transaction containing the contract.
-     * @param block current block.
+     * @param transaction     original transaction containing the contract.
+     * @param block           current block.
      * @param gasLimitAllowed remaining gas can be used for the transaction in block.
-     * @param txRepository snapshot of db before the transaction is executed.
+     * @param txRepository    snapshot of db before the transaction is executed.
      * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
      */
     private ExecutionResult executeContract(Transaction transaction,
@@ -522,8 +522,8 @@ public class BlockService implements IBlockService {
     /**
      * Creates an environment in which the contract can be executed.
      *
-     * @param transaction original transaction containing a contract.
-     * @param block block original transaction is to be packaged into.
+     * @param transaction      original transaction containing a contract.
+     * @param block            block original transaction is to be packaged into.
      * @param systemProperties configuration of system behaviour.
      * @param blockchainConfig configuration of current block.
      * @return environment for contract execution.
@@ -567,7 +567,7 @@ public class BlockService implements IBlockService {
      * Gets sender of the contract in specific transaction.
      *
      * @param transaction transaction containing the target contract.
-     * @param block current block.
+     * @param block       current block.
      * @return sender of contract.
      */
     private byte[] getSender(Transaction transaction, Block block) {
@@ -579,7 +579,7 @@ public class BlockService implements IBlockService {
      * Gets balance of specific address.
      *
      * @param address target address.
-     * @param block current block.
+     * @param block   current block.
      * @return balance of the address.
      */
     private long getBalance(byte[] address, Block block) {
@@ -587,7 +587,7 @@ public class BlockService implements IBlockService {
                 block.getPrevBlockHash(), AddrUtil.toTransactionAddr(address), SystemCurrencyEnum.CAS.getCurrency());
 
         Money balance = new Money(0L);
-        for (UTXO utxo: utxoList) {
+        for (UTXO utxo : utxoList) {
             balance.add(utxo.getOutput().getMoney());
         }
 
