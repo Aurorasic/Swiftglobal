@@ -323,11 +323,6 @@ public class TransactionService implements ITransactionService {
             }
         }
 
-        if(!validContractAddress(tx)) {
-            LOGGER.info("Contract address is incorrect.");
-            return false;
-        }
-
         return verifyInputs(inputs, hash, preBlockHash);
     }
 

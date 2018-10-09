@@ -19,7 +19,7 @@ public class ByzantiumConfig implements BlockchainConfig {
     /**
      * contract transactions limit exclude coinBase
      */
-    private static final int CONTRACT_LIMITED_SIZE = 1024 * 1000 * 1;
+    private static final int CONTRACT_LIMITED_SIZE = 1024 * 10 * 1;
 
     @Override
     public GasCost getGasCost() {
