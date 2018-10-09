@@ -137,7 +137,7 @@ public class TransactionService implements ITransactionService {
         }
 
         String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
-        byte[] calculateAddress = tx.getContractAddress();
+        byte[] calculateAddress = tx.calculateContractAddress();
 
         return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
     }
@@ -251,6 +251,10 @@ public class TransactionService implements ITransactionService {
         }
         if (!tx.validContractPart()) {
             LOGGER.info("Contract format is incorrect.");
+            return false;
+        }
+
+        if (tx.isContractTrasaction() && Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), tx.calculateContractAddress())) {
             return false;
         }
 

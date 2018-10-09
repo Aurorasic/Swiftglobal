@@ -23,7 +23,7 @@ public class ExecutionEnvironment {
      */
     private String transactionHash;
     /**
-     * If the transaction contains contract.
+     * If the transaction contains contract creation.
      */
     private boolean isContractCreation;
     /**
