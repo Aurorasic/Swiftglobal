@@ -16,6 +16,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @JSONType(includes = {"resultHash", "subTransactionList", "minerSignature"})
 public class ContractExecutionResult {
     /**
