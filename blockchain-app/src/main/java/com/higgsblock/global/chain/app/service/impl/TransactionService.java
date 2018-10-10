@@ -156,7 +156,11 @@ public class TransactionService implements ITransactionService {
             if (transactionIndex == null) {
                 continue;
             }
-            String address = input.getPrevOut().getOutput().getLockScript().getAddress();
+            TransactionOutput preOutput = prevOutPoint.getOutput();
+            if (null == preOutput || !preOutput.isMinerCurrency()) {
+                continue;
+            }
+            String address = preOutput.getLockScript().getAddress();
             if (result.contains(address)) {
                 continue;
             }
@@ -208,32 +212,30 @@ public class TransactionService implements ITransactionService {
      */
 
     public boolean verifyTransaction(Transaction tx, Block block) {
-        if (null == tx) {
-            LOGGER.info("transaction is null");
-            return false;
-        }
-        if (!tx.valid()) {
-            LOGGER.info("transaction is valid error");
-            return false;
+        if (block != null) {
+            if (null == tx) {
+                LOGGER.info("transaction is null");
+                return false;
+            }
+            if (!tx.valid()) {
+                LOGGER.info("transaction is valid error");
+                return false;
+            }
+            if (!tx.sizeAllowed()) {
+                LOGGER.info("Size of the transaction is illegal.");
+                return false;
+            }
         }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
-        if (!tx.sizeAllowed()) {
-            LOGGER.info("Size of the transaction is illegal.");
-            return false;
-        }
 
         String blockHash = block != null ? block.getHash() : null;
-        String preBlockHash = block != null ? block.getPrevBlockHash() : null;
         Map<String, Money> preMoneyMap = new HashMap<>(8);
         HashSet<String> prevOutKey = new HashSet<>();
         for (TransactionInput input : inputs) {
-            if (!input.valid()) {
-                LOGGER.info("input is invalid");
-                return false;
-            }
-            String key = input.getPrevOut().getKey();
+            TransactionOutPoint prevOut = input.getPrevOut();
+            String key = prevOut.getKey();
             boolean notContains = prevOutKey.add(key);
             if (!notContains) {
                 LOGGER.info("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
@@ -241,12 +243,8 @@ public class TransactionService implements ITransactionService {
                         , blockHash);
                 return false;
             }
-            TransactionOutput preOutput = getPreOutput(preBlockHash, input);
-            if (preOutput == null) {
-                LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
-                return false;
-            }
 
+            TransactionOutput preOutput = prevOut.getOutput();
             String currency = preOutput.getMoney().getCurrency();
             if (!preMoneyMap.containsKey(currency)) {
                 preMoneyMap.put(currency, new Money("0", currency).add(preOutput.getMoney()));
@@ -257,11 +255,6 @@ public class TransactionService implements ITransactionService {
 
         Map<String, Money> curMoneyMap = new HashMap<>(8);
         for (TransactionOutput output : outputs) {
-            if (!output.valid()) {
-                LOGGER.info("Current output is invalid");
-                return false;
-            }
-
             String currency = output.getMoney().getCurrency();
             if (!curMoneyMap.containsKey(currency)) {
                 curMoneyMap.put(currency, new Money("0", currency).add(output.getMoney()));
@@ -270,6 +263,13 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        int inputCurrencyTypeNum = preMoneyMap.size();
+        int outPutCurrencyTypeNum = curMoneyMap.size();
+        if (inputCurrencyTypeNum != outPutCurrencyTypeNum) {
+            LOGGER.info("The number of input currency types is not equal to the number of output currency types." +
+                    " inputCurrencyTypeNum ={}, outPutCurrencyTypeNum = {}", inputCurrencyTypeNum, outPutCurrencyTypeNum);
+            return false;
+        }
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
@@ -290,7 +290,7 @@ public class TransactionService implements ITransactionService {
                 return false;
             }
         }
-
+        String preBlockHash = block != null ? block.getPrevBlockHash() : null;
         return verifyInputs(inputs, hash, preBlockHash);
     }
 
@@ -306,17 +306,11 @@ public class TransactionService implements ITransactionService {
         int size = inputs.size();
         TransactionInput input = null;
         UnLockScript unLockScript = null;
+        List<String> sigList = null;
+        List<String> pkList = null;
         for (int i = 0; i < size; i++) {
             input = inputs.get(i);
-            if (null == input) {
-                LOGGER.info("the input is empty {}", i);
-                return false;
-            }
             unLockScript = input.getUnLockScript();
-            if (null == unLockScript) {
-                LOGGER.info("the unLockScript is empty {}", i);
-                return false;
-            }
 
             String preUTXOKey = input.getPreUTXOKey();
             UTXO utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preUTXOKey);
@@ -324,12 +318,9 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("there is no such utxokey={},preBlockHash={}", preUTXOKey, preBlockHash);
                 return false;
             }
+            sigList = unLockScript.getSigList();
+            pkList = unLockScript.getPkList();
 
-            List<String> sigList = unLockScript.getSigList();
-            List<String> pkList = unLockScript.getPkList();
-            if (CollectionUtils.isEmpty(sigList) || CollectionUtils.isEmpty(pkList)) {
-                return false;
-            }
             for (String sig : sigList) {
                 boolean result = pkList.parallelStream().anyMatch(pubKey -> ECKey.verifySign(hash, sig, pubKey));
                 if (!result) {
@@ -339,30 +330,6 @@ public class TransactionService implements ITransactionService {
             }
         }
         return true;
-    }
-
-    /**
-     * get input utxo
-     *
-     * @param input tx input
-     * @return tx input ref output
-     */
-    private TransactionOutput getPreOutput(String preBlockHash, TransactionInput input) {
-        String preOutKey = input.getPrevOut().getKey();
-        if (StringUtils.isEmpty(preOutKey)) {
-            LOGGER.info("preOutKey is empty,input={}", input.toJson());
-            return null;
-        }
-
-        UTXO utxo;
-        utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
-
-        if (utxo == null) {
-            LOGGER.info("UTXO is empty,input={},preOutKey={}", input.toJson(), preOutKey);
-            return null;
-        }
-        TransactionOutput output = utxo.getOutput();
-        return output;
     }
 
     /**
@@ -550,10 +517,10 @@ public class TransactionService implements ITransactionService {
                 rewardIsRight = outputs.get(i).getMoney().compareTo(reward.getTopTenSingleWitnessMoney()) == 0;
             }
             if (!rewardIsRight) {
-                return rewardIsRight;
+                return false;
             }
         }
-        return rewardIsRight;
+        return true;
     }
 
     /**
@@ -564,11 +531,6 @@ public class TransactionService implements ITransactionService {
      * @return if coin base producer output money == count producer reward money return true else false
      */
     private boolean validateProducerReward(TransactionOutput output, Money totalReward) {
-        if (!totalReward.checkRange()) {
-            LOGGER.debug("Producer coinbase transaction: totalReward is error,totalReward={}", totalReward);
-            return false;
-        }
-
         return output.getMoney().compareTo(totalReward) == 0;
     }
 
