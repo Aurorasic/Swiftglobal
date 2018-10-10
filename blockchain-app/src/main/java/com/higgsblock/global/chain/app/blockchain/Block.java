@@ -104,6 +104,10 @@ public class Block extends BaseSerializer {
         }
 
         for (Transaction transaction : transactions) {
+            if (transaction == null) {
+                LOGGER.error("transaction is null, hash={}", transaction.getHash());
+                return false;
+            }
             if (!transaction.valid()) {
                 LOGGER.error("transaction is error, hash={}", transaction.getHash());
                 return false;

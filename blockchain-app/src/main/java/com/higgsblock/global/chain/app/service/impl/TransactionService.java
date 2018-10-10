@@ -390,12 +390,6 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("Validate witness reward failed");
             return false;
         }
-        //verify reward count
-        if (!validateRewards(rewards)) {
-            LOGGER.info("Validate witness reward failed");
-            return false;
-        }
-
         return true;
     }
 
