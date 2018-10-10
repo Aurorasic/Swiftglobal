@@ -37,7 +37,7 @@ public class TransactionOutPoint extends BaseSerializer {
         StringBuilder builder = new StringBuilder()
                 .append(function.hashString(null == transactionHash ? StringUtils.EMPTY : transactionHash, Charsets.UTF_8))
                 .append(function.hashInt(index))
-                .append(function.hashString(output.getHash(),Charsets.UTF_8));
+                .append(function.hashString(null == output ? StringUtils.EMPTY : output.getHash(), Charsets.UTF_8));
         return function.hashString(builder, Charsets.UTF_8).toString();
     }
 
@@ -48,7 +48,7 @@ public class TransactionOutPoint extends BaseSerializer {
         if (index < 0) {
             return false;
         }
-        if (null == output){
+        if (null == output) {
             return false;
         }
 
