@@ -165,7 +165,7 @@ public class ExecutorTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-        blockRepository  = new RepositoryRoot("");
+        blockRepository  = new RepositoryRoot(null, "");
          transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);
