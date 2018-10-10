@@ -525,21 +525,6 @@ public class TransactionService implements ITransactionService {
         return output.getMoney().compareTo(totalReward) == 0;
     }
 
-
-    /**
-     * validate witness rewards
-     *
-     * @param rewards
-     * @return if count outputs money == （topTenSingleWitnessMoney*10+lastWitnessMoney） return true else false
-     */
-    private boolean validateRewards(Rewards rewards) {
-        Money minerAndWitnessTotalMoney = new Money("0");
-        Money countWitnessMoney = new Money(rewards.getTopTenSingleWitnessMoney().getValue()).multiply(witnessService.getWitnessSize() - 1).add(rewards.getLastWitnessMoney());
-        minerAndWitnessTotalMoney = countWitnessMoney.add(rewards.getMinerTotal());
-
-        return minerAndWitnessTotalMoney.compareTo(rewards.getTotalMoney()) == 0;
-    }
-
     /**
      * received transaction if validate success and board
      *

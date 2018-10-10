@@ -363,7 +363,6 @@ public class TransactionServiceTest extends BaseMockTest {
         rewards.setMinerTotal(new Money(3));
         Mockito.doReturn(true).when(spyTxService).
                 validateWitnessOutput(outputs.subList(1, outputs.size()), rewards, block.getHeight());
-        PowerMockito.when(witnessService.getWitnessSize()).thenReturn(11);
         Assert.assertTrue(spyTxService.verifyCoinBaseTx(coinBaseTx, block));
     }
 
@@ -438,18 +437,10 @@ public class TransactionServiceTest extends BaseMockTest {
         //topTenSingleWitnessMoney and getLastWitnessMoney valid success
         rewards.setTopTenSingleWitnessMoney(new Money(1));
         rewards.setLastWitnessMoney(new Money(2));
-        rewards.setMinerTotal(new Money(3));
         //Validate witness reward failed
         Mockito.doReturn(false).when(spyTxService).
                 validateWitnessOutput(outputs.subList(1, outputs.size()), rewards, block.getHeight());
         Assert.assertFalse(spyTxService.verifyCoinBaseTx(coinBaseTx, block));
-
-        //Validate reward failed
-        Mockito.doReturn(true).when(spyTxService).
-                validateWitnessOutput(outputs.subList(1, outputs.size()), rewards, block.getHeight());
-        PowerMockito.when(witnessService.getWitnessSize()).thenReturn(10);
-        Assert.assertFalse(spyTxService.verifyCoinBaseTx(coinBaseTx, block));
-
     }
 
     @Test
