@@ -32,7 +32,7 @@ public class SnapshotTest {
 
 
         //一级缓存
-        Repository parent  = new RepositoryRoot("");
+        Repository parent  = new RepositoryRoot(null, "");
         //二级缓存
         Repository txR = parent.startTracking();
         //三级缓存

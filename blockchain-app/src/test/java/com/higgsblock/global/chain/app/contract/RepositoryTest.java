@@ -13,7 +13,7 @@ public class RepositoryTest {
     @Test
     public void test4() {
 
-        RepositoryRoot repository = new RepositoryRoot("");
+        RepositoryRoot repository = new RepositoryRoot(null, "");
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");

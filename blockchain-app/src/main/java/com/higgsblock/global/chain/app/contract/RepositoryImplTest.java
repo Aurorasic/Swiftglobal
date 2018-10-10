@@ -202,4 +202,9 @@ public class RepositoryImplTest implements Repository {
     public boolean addUTXO(Object o) {
         return false;
     }
+
+    @Override
+    public String getHash() {
+        return null;
+    }
 }

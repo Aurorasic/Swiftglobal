@@ -1,14 +1,19 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.datasource.*;
-import com.higgsblock.global.chain.vm.datasource.leveldb.LevelDbDataSource;
 import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
 import com.higgsblock.global.chain.vm.util.Serializer;
 import com.higgsblock.global.chain.vm.util.Serializers;
 import lombok.Setter;
+
+/**
+ * @author zhao xiaogang
+ * @date 2018-09-20
+ */
 
 @Setter
 public class RepositoryRoot extends RepositoryImpl {
@@ -19,17 +24,12 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private DbSource<byte[]> dbSource;
 
-
     private String preBlockHash;
 
-    public RepositoryRoot(String preBlockHash) {
-        //Source dbSource = new HashMapDB<byte[]>();
+    public RepositoryRoot(IContractRepository repository, String preBlockHash) {
         this.preBlockHash = preBlockHash;
-        dbSource = new LevelDbDataSource();
-
-        dbSource.setName("contract");
-        dbSource.init(DbSettings.DEFAULT);
-        sourceWriter = new BatchSourceWriter<>(dbSource);
+        this.dbSource = new ContractDataSource(repository);
+        this.sourceWriter = new BatchSourceWriter<>(dbSource);
 
         Source<byte[], byte[]> xorAccountState = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
         Source<byte[], byte[]> xorCode = new XorDataSource<>(sourceWriter, HashUtil.sha3("code".getBytes()));
@@ -49,7 +49,7 @@ public class RepositoryRoot extends RepositoryImpl {
 
                 Serializer<byte[], byte[]> keyCompositor = new NodeKeyCompositor(key);
                 Source<byte[], byte[]> composingSrc = new SourceCodec.KeyOnly<>(storageCache, keyCompositor);
-                SourceCodec  sourceCodec = new SourceCodec<>(composingSrc, Serializers.StorageKeySerializer, Serializers.StorageValueSerializer);
+                SourceCodec sourceCodec = new SourceCodec<>(composingSrc, Serializers.StorageKeySerializer, Serializers.StorageValueSerializer);
 
                 return new WriteCache<>(sourceCodec, WriteCache.CacheType.SIMPLE);
             }
@@ -71,7 +71,10 @@ public class RepositoryRoot extends RepositoryImpl {
         commit();
     }
 
-    public DbSource<byte[]> getDbSource() {
-        return dbSource;
+
+    public String getStateHash() {
+        super.commit();
+        storageCache.flush();
+        return sourceWriter.getStateHash();
     }
 }

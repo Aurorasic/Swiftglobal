@@ -353,6 +353,16 @@ public class ExecutorTest {
             public boolean addUTXO(Object o) {
                 return false;
             }
+
+            /**
+             * get hash
+             *
+             * @return hash
+             */
+            @Override
+            public String getHash() {
+                return null;
+            }
         }
 
         Repository transactionRepository = new RepositoryImplTest();
@@ -522,7 +532,7 @@ public class ExecutorTest {
 
         Assert.assertEquals(1, executionResult.getDeleteAccounts().size());
         DataWord account = new DataWord();
-        for (DataWord dataWord: executionResult.getDeleteAccounts()) {
+        for (DataWord dataWord : executionResult.getDeleteAccounts()) {
             account = dataWord;
         }
         Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(contractAddress), Hex.toHexString(account.getLast20Bytes()));
@@ -578,7 +588,7 @@ public class ExecutorTest {
 
         Assert.assertEquals(1, executionResult.getDeleteAccounts().size());
         DataWord account = new DataWord();
-        for (DataWord dataWord: executionResult.getDeleteAccounts()) {
+        for (DataWord dataWord : executionResult.getDeleteAccounts()) {
             account = dataWord;
         }
         Assert.assertEquals(Hex.toHexString(contractAddress), Hex.toHexString(contractAddress), Hex.toHexString(account.getLast20Bytes()));

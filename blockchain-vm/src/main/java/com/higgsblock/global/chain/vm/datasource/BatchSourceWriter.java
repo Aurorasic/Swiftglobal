@@ -17,12 +17,17 @@
  */
 package com.higgsblock.global.chain.vm.datasource;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import org.spongycastle.util.encoders.Hex;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Clue class between Source and BatchSource
- *
+ * <p>
  * Created by Anton Nashatyrev on 29.11.2016.
  */
 public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Value, Key, Value> {
@@ -62,4 +67,22 @@ public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Va
             return false;
         }
     }
+
+    /**
+     * return cache hash
+     * hash=hash(key1=value1&key2=value2)
+     *
+     * @return
+     */
+    @Override
+    public String getStateHash() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Key, Value> entry : buf.entrySet()) {
+            sb.append(Hex.toHexString((byte[]) entry.getKey())).append("=")
+                    .append(Hex.toHexString((byte[]) entry.getValue())).append("&");
+        }
+        HashFunction function = Hashing.sha256();
+        return function.hashString(sb.toString(), Charsets.UTF_8).toString();
+    }
+
 }

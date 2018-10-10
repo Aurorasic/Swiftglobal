@@ -245,14 +245,6 @@ public class TransactionService implements ITransactionService {
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
-        if (!tx.sizeAllowed()) {
-            LOGGER.info("Size of the transaction is illegal.");
-            return false;
-        }
-        if (!tx.validContractPart()) {
-            LOGGER.info("Contract format is incorrect.");
-            return false;
-        }
 
         String blockHash = block != null ? block.getHash() : null;
         String preBlockHash = block != null ? block.getPrevBlockHash() : null;
@@ -315,7 +307,7 @@ public class TransactionService implements ITransactionService {
             if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
                 //input >= out + gas*gasLimit
                 BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
-                curMoney.add(BalanceUtil.convertGasToMoney(gas,SystemCurrencyEnum.CAS.getCurrency()));
+                curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
