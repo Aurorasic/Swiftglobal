@@ -20,6 +20,7 @@ package com.higgsblock.global.chain.vm.datasource;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,7 +78,8 @@ public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Va
     public String getStateHash() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Key, Value> entry : buf.entrySet()) {
-            sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+            sb.append(Hex.toHexString((byte[]) entry.getKey())).append("=")
+                    .append(Hex.toHexString((byte[]) entry.getValue())).append("&");
         }
         HashFunction function = Hashing.sha256();
         return function.hashString(sb.toString(), Charsets.UTF_8).toString();
