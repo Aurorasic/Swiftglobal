@@ -464,6 +464,7 @@ public class BlockService implements IBlockService {
                         TransactionOutPoint top = new TransactionOutPoint();
                         top.setTransactionHash(tx.getHash());
                         top.setIndex((short) 1);
+                        top.setOutput(tx.getOutputs().get(0));
                         input.setPrevOut(top);
                         refundTx.getInputs().add(input);
 
@@ -472,7 +473,7 @@ public class BlockService implements IBlockService {
                         LockScript lockScript = new LockScript();
                         UTXO utxo = utxoServiceProxy.getUnionUTXO(block.getPrevBlockHash(), tx.getInputs().get(0).getPrevOut().getKey());
                         lockScript.setAddress(utxo.getAddress());
-                        lockScript.setType(ScriptTypeEnum.P2PK.getType());
+                        lockScript.setType(ScriptTypeEnum.P2PKH.getType());
                         out.setLockScript(lockScript);
                         refundTx.getOutputs().add(out);
 
