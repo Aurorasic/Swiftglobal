@@ -28,18 +28,18 @@ import java.util.Map;
 
 /**
  * Collects changes and propagate them to the backing Source when flush() is called
- *
+ * <p>
  * The WriteCache can be of two types: Simple and Counting
- *
+ * <p>
  * Simple acts as regular Map: single and double adding of the same entry has the same effect
  * Source entries (key/value pairs) may have arbitrary nature
- *
+ * <p>
  * Counting counts the resulting number of inserts (+1) and deletes (-1) and when flushed
  * does the resulting number of inserts (if sum > 0) or deletes (if sum < 0)
  * Counting Source acts like {@link HashedKeySource} and makes sense only for data
  * where a single key always corresponds to a single value
  * Counting cache normally used as backing store for Trie data structure
- *
+ * <p>
  * Created by Anton Nashatyrev on 11.11.2016.
  */
 public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
@@ -63,7 +63,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
         COUNTING
     }
 
-    private static abstract class CacheEntry<V> implements Entry<V>{
+    private static abstract class CacheEntry<V> implements Entry<V> {
         // dedicated value instance which indicates that the entry was deleted
         // (ref counter decremented) but we don't know actual value behind it
         static final Object UNKNOWN_VALUE = new Object();
@@ -152,7 +152,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
 
     @Override
     public Collection<Key> getModified() {
-        try (ALock l = readLock.lock()){
+        try (ALock l = readLock.lock()) {
             return cache.keySet();
         }
     }
@@ -173,13 +173,13 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     @Override
     public void put(Key key, Value val) {
         checkByteArrKey(key);
-        if (val == null)  {
+        if (val == null) {
             delete(key);
             return;
         }
 
 
-        try (ALock l = writeLock.lock()){
+        try (ALock l = writeLock.lock()) {
             CacheEntry<Value> curVal = cache.get(key);
             if (curVal == null) {
                 curVal = createCacheEntry(val);
@@ -199,7 +199,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     @Override
     public Value get(Key key) {
         checkByteArrKey(key);
-        try (ALock l = readLock.lock()){
+        try (ALock l = readLock.lock()) {
             CacheEntry<Value> curVal = cache.get(key);
             if (curVal == null) {
                 return getSource() == null ? null : getSource().get(key);
@@ -217,7 +217,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     @Override
     public void delete(Key key) {
         checkByteArrKey(key);
-        try (ALock l = writeLock.lock()){
+        try (ALock l = writeLock.lock()) {
             CacheEntry<Value> curVal = cache.get(key);
             if (curVal == null) {
                 curVal = createCacheEntry(getSource() == null ? null : unknownValue());
@@ -234,7 +234,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     @Override
     public boolean flush() {
         boolean ret = false;
-        try (ALock l = updateLock.lock()){
+        try (ALock l = updateLock.lock()) {
             for (Map.Entry<Key, CacheEntry<Value>> entry : cache.entrySet()) {
                 if (entry.getValue().counter > 0) {
                     for (int i = 0; i < entry.getValue().counter; i++) {
@@ -251,7 +251,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
             if (flushSource) {
                 getSource().flush();
             }
-            try (ALock l1 = writeLock.lock()){
+            try (ALock l1 = writeLock.lock()) {
                 cache.clear();
                 cacheCleared();
             }
@@ -269,11 +269,11 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     }
 
     public Entry<Value> getCached(Key key) {
-        try (ALock l = readLock.lock()){
+        try (ALock l = readLock.lock()) {
             CacheEntry<Value> entry = cache.get(key);
             if (entry == null || entry.value == unknownValue()) {
                 return null;
-            }else {
+            } else {
                 return entry;
             }
         }
@@ -301,6 +301,7 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
         }
         return ret;
     }
+
 
     /**
      * Shortcut for WriteCache with byte[] keys. Also prevents accidental

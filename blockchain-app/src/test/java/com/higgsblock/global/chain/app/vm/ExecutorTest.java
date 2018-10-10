@@ -18,6 +18,7 @@ import com.higgsblock.global.chain.vm.solidity.CallTransaction;
 import com.higgsblock.global.chain.vm.solidity.SolidityCallResult;
 import com.higgsblock.global.chain.vm.solidity.SolidityContractImpl;
 import com.higgsblock.global.chain.vm.solidity.SolidityType;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,6 +36,7 @@ import java.util.Set;
  * @author Chen Jiawei
  * @date 2018-09-18
  */
+@Slf4j
 public class ExecutorTest extends BaseTest {
 
     @Autowired
@@ -49,7 +51,7 @@ public class ExecutorTest extends BaseTest {
     @Before
     public void setUp() {
         String transactionHash = "03e22f204d45f061a5b68847534b428a1277652677b6adff2d1f3381bbc4115c";
-        boolean isContractCreation = false;
+        boolean isContractCreation = true;
 
 
         byte[] gasPrice = BigInteger.valueOf(1_000_000_000L).toByteArray();
@@ -62,7 +64,7 @@ public class ExecutorTest extends BaseTest {
 //                "590e1ae3": "refund()",
 //                "60fe47b1": "set(uint256)",
 //                "191347df": "setStr(string)"
-        data = Hex.decode("41c0e1b5");
+        //data = Hex.decode("41c0e1b5");
         SystemProperties systemProperties = new SystemProperties() {
             @Override
             public boolean vmTrace() {
@@ -265,20 +267,22 @@ public class ExecutorTest extends BaseTest {
         transactionRepository.commit();
         blockRepository.commit();
         //blockRepository.flush();
-        System.out.println("GAS: " + executionResult.getGasUsed());
+        LOGGER.info("GAS: " + executionResult.getGasUsed());
 
         SolidityCallResult result = new SolidityContractImpl(abi).callFunction("get");
         result.setExecutionResult(executionResult.getResult());
         //System.out.println("执行结果: "+ result.getReturnValue());
-        System.out.println("执行结果: "+ Hex.toHexString(executionResult.getResult()));
+        LOGGER.info("执行结果: "+ Hex.toHexString(executionResult.getResult()));
 
-        System.out.println("部署合约代码"+Hex.toHexString(blockRepository.getCode(contractAddress)));
+        LOGGER.info("部署合约代码"+Hex.toHexString(blockRepository.getCode(contractAddress)));
 
         AccountState accountState = blockRepository.getAccountState(contractAddress);
 
-        System.out.println("accountState: "+accountState);
+        LOGGER.info("accountState: "+accountState);
 
-        ((RepositoryRoot)blockRepository).getDbSource().keys();
+        LOGGER.info("all : "+ contractRepository.findAll());
+
+
     }
 
     @After

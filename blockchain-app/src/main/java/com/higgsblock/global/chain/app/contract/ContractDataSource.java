@@ -10,6 +10,11 @@ import org.spongycastle.util.encoders.Hex;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @author zhao xiaogang
+ * @date 2018-10-10
+ */
+
 @Slf4j
 public class ContractDataSource implements DbSource<byte[]> {
     private IContractRepository contractRepository;
@@ -64,14 +69,14 @@ public class ContractDataSource implements DbSource<byte[]> {
     }
 
 
-    private void updateBatchInternal(Map<byte[], byte[]> rows)  {
+    private void updateBatchInternal(Map<byte[], byte[]> rows) {
         LOGGER.info("==updateBatchInternal=====");
         for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
             if (entry.getValue() == null) {
                 String strKey = Hex.toHexString(entry.getKey());
                 contractRepository.delete(strKey);
             } else {
-                System.out.println("key===" + Hex.toHexString(entry.getKey()) +
+                LOGGER.info("key===" + Hex.toHexString(entry.getKey()) +
                         "--- value : " + Hex.toHexString(entry.getValue()));
                 String strKey = Hex.toHexString(entry.getKey());
                 String strValue = Hex.toHexString(entry.getValue());
@@ -111,5 +116,15 @@ public class ContractDataSource implements DbSource<byte[]> {
     @Override
     public boolean flush() {
         return false;
+    }
+
+    /**
+     * get state hash
+     *
+     * @return hash
+     */
+    @Override
+    public String getStateHash() {
+        return null;
     }
 }

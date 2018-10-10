@@ -18,7 +18,6 @@
 package com.higgsblock.global.chain.vm.datasource;
 
 
-
 import com.higgsblock.global.chain.vm.util.ALock;
 import com.higgsblock.global.chain.vm.util.ByteArrayMap;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
@@ -77,8 +76,19 @@ public class HashMapDB<V> implements DbSource<V> {
         return true;
     }
 
+    /**
+     * get state hash
+     *
+     * @return hash
+     */
     @Override
-    public void setName(String name) {}
+    public String getStateHash() {
+        return null;
+    }
+
+    @Override
+    public void setName(String name) {
+    }
 
     @Override
     public String getName() {
@@ -86,10 +96,12 @@ public class HashMapDB<V> implements DbSource<V> {
     }
 
     @Override
-    public void init() {}
+    public void init() {
+    }
 
     @Override
-    public void init(DbSettings settings) {}
+    public void init(DbSettings settings) {
+    }
 
     @Override
     public boolean isAlive() {
@@ -97,7 +109,8 @@ public class HashMapDB<V> implements DbSource<V> {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     @Override
     public Set<byte[]> keys() {
