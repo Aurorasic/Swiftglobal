@@ -424,11 +424,13 @@ public class BlockService implements IBlockService {
                         SystemCurrencyEnum.CAS.getCurrency()));
                 txRepository = blockRepository.startTracking();
                 //invoke contract transaction
-                ExecutionResult executionResult = executeContract(tx, block, BigInteger.ZERO, txRepository);
+                ExecutionResult executionResult = executeContract(tx, block, txRepository);
                 //result state hash
                 HashFunction function = Hashing.sha256();
-                block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
+                String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
+                block.setContractStateHash(function.hashString(String.join(preHash,
                         executionResult.toString()),Charsets.UTF_8).toString());
+
                 //TODO tangKun refund gas 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
@@ -497,20 +499,11 @@ public class BlockService implements IBlockService {
      *
      * @param transaction     original transaction containing the contract.
      * @param block           current block.
-     * @param gasLimitAllowed remaining gas can be used for the transaction in block.
      * @param txRepository    snapshot of db before the transaction is executed.
      * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
      */
     private ExecutionResult executeContract(Transaction transaction,
-                                            Block block, BigInteger gasLimitAllowed, Repository txRepository) {
-        if (transaction == null || transaction.getOutputs() == null || !transaction.isContractTrasaction()) {
-            return null;
-        }
-
-        if (BigInteger.valueOf(transaction.getGasLimit()).compareTo(gasLimitAllowed) > 0) {
-            return null;
-        }
-
+                                            Block block,  Repository txRepository) {
         ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
         Executor executor = new Executor(txRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();
