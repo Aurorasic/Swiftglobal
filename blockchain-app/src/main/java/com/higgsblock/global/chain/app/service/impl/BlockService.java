@@ -23,6 +23,7 @@ import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
+import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
@@ -116,6 +117,9 @@ public class BlockService implements IBlockService {
     private TransactionService transactionService;
     @Autowired
     private IBlockChainInfoService blockChainInfoService;
+    @Autowired
+    private IContractRepository contractRepository;
+
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
 
@@ -401,7 +405,8 @@ public class BlockService implements IBlockService {
         List<Transaction> transactions = new ArrayList<>();
         int subSize = 0;
         //block cache
-        RepositoryRoot blockRepository = new RepositoryRoot(block.getPrevBlockHash());
+
+        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
         //transaction cache
         Repository txRepository;
         //total used gas
@@ -453,6 +458,8 @@ public class BlockService implements IBlockService {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
 
                         ContractTransaction refundTx = new ContractTransaction();
+                        refundTx.setInputs(Lists.newLinkedList());
+                        refundTx.setOutputs(Lists.newLinkedList());
                         TransactionInput input = new TransactionInput();
                         TransactionOutPoint top = new TransactionOutPoint();
                         top.setTransactionHash(tx.getHash());
