@@ -49,9 +49,6 @@ public class TransactionService implements ITransactionService {
     private BlockService blockService;
 
     @Autowired
-    private BestUTXOService bestUtxoService;
-
-    @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
     @Autowired

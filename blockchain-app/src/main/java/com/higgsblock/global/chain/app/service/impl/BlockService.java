@@ -433,7 +433,7 @@ public class BlockService implements IBlockService {
     public Block persistBlockAndIndex(Block block) {
 
         //check block all biz infos
-        boolean isValid = false;
+        boolean isValid;
         try {
             isValid = checkAll(block);
         } catch (NotExistPreBlockException e) {
