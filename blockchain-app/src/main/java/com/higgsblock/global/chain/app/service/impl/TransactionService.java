@@ -156,19 +156,7 @@ public class TransactionService implements ITransactionService {
             if (transactionIndex == null) {
                 continue;
             }
-
-            String blockHash = transactionIndex.getBlockHash();
-            Block block = blockService.getBlockByHash(blockHash);
-            Transaction transactionByHash = block.getTransactionByHash(txHash);
-            short index = prevOutPoint.getIndex();
-            TransactionOutput preOutput = null;
-            if (transactionByHash != null) {
-                preOutput = transactionByHash.getTransactionOutputByIndex(index);
-            }
-            if (preOutput == null || !preOutput.isMinerCurrency()) {
-                continue;
-            }
-            String address = preOutput.getLockScript().getAddress();
+            String address = input.getPrevOut().getOutput().getLockScript().getAddress();
             if (result.contains(address)) {
                 continue;
             }
@@ -538,6 +526,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
         long lastReward = height % WITNESS_NUM;
+        boolean rewardIsRight = true;
         for (int i = 0; i < outputs.size(); i++) {
             LockScript script = outputs.get(i).getLockScript();
             if (script == null) {
@@ -556,12 +545,15 @@ public class TransactionService implements ITransactionService {
             }
 
             if (lastReward == i) {
-                return outputs.get(i).getMoney().compareTo(reward.getLastWitnessMoney()) == 0;
+                rewardIsRight = outputs.get(i).getMoney().compareTo(reward.getLastWitnessMoney()) == 0;
             } else {
-                return outputs.get(i).getMoney().compareTo(reward.getTopTenSingleWitnessMoney()) == 0;
+                rewardIsRight = outputs.get(i).getMoney().compareTo(reward.getTopTenSingleWitnessMoney()) == 0;
+            }
+            if (!rewardIsRight) {
+                return rewardIsRight;
             }
         }
-        return false;
+        return rewardIsRight;
     }
 
     /**
