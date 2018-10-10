@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.vm.core;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.util.*;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
@@ -20,13 +19,13 @@ public class RepositoryMockImpl implements Repository {
 
     private Source<byte[], AccountState> accountStateCache;
     private Source<byte[], byte[]> codeCache;
-    private MultiCache<? extends CachedSource<DataWord,DataWord>> storageCache;
+    private MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
     private Map<ByteArrayWrapper, Set<ByteArrayWrapper>> addrKeys = new HashMap<>();
 
     /**
      * utxo cache
      */
-    protected Map<String,List<UTXOBO>> utxoCache;
+    protected Map<String, List<UTXOBO>> utxoCache;
 
 
     @Autowired
@@ -67,7 +66,7 @@ public class RepositoryMockImpl implements Repository {
     }
 
     private void init(Source<byte[], AccountState> accountStateCache, Source<byte[], byte[]> codeCache,
-                        MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
+                      MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache) {
         this.accountStateCache = accountStateCache;
         this.codeCache = codeCache;
 
@@ -132,7 +131,7 @@ public class RepositoryMockImpl implements Repository {
     @Override
     public synchronized void saveCode(byte[] addr, byte[] code) {
         byte[] codeHash = HashUtil.sha3(code);
-        byte[] key =codeKey(codeHash, addr);
+        byte[] key = codeKey(codeHash, addr);
         codeCache.put(key, code);
         AccountState accountState = getOrCreateAccountState(addr);
         accountStateCache.put(addr, accountState.withCodeHash(codeHash));
@@ -145,7 +144,6 @@ public class RepositoryMockImpl implements Repository {
         return FastByteComparisons.equal(codeHash, HashUtil.EMPTY_DATA_HASH) ?
                 ByteUtil.EMPTY_BYTE_ARRAY : codeCache.get(key);
     }
-
 
 
     @Override
@@ -165,7 +163,7 @@ public class RepositoryMockImpl implements Repository {
         if (keys == null) {
             addrKeys.put(new ByteArrayWrapper(addr), new HashSet<>());
         } else {
-            keys.add(new ByteArrayWrapper(value.isZero() ? null : value.getData()) );
+            keys.add(new ByteArrayWrapper(value.isZero() ? null : value.getData()));
         }
     }
 
@@ -174,7 +172,7 @@ public class RepositoryMockImpl implements Repository {
         AccountState accountState = getAccountState(addr);
 
         if (accountState == null) {
-            return  null;
+            return null;
         } else {
             Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
             return contractStorage.get(key);
@@ -242,7 +240,6 @@ public class RepositoryMockImpl implements Repository {
     }
 
 
-
     @Override
     public String getBlockHashByNumber(long blockNumber, String branchBlockHash) {
         return null;
@@ -258,7 +255,7 @@ public class RepositoryMockImpl implements Repository {
      */
     @Override
     public void transfer(byte[] from, byte[] address, BigInteger amount, String currency) {
-        
+
     }
 
     /**
@@ -322,6 +319,16 @@ public class RepositoryMockImpl implements Repository {
         return false;
     }
 
+    /**
+     * get hash
+     *
+     * @return hash
+     */
+    @Override
+    public String getHash() {
+        return null;
+    }
+
     @Override
     public synchronized void commit() {
         Repository parentSync = parent == null ? this : parent;
@@ -379,7 +386,7 @@ public class RepositoryMockImpl implements Repository {
 
         //if parent utxo include child utxo and child's utxo is spent
         Map<String, List<UTXOBO>> utxoCache = childRepository.getUtxoCache();
-        for (Map.Entry<String, List<UTXOBO>> en:utxoCache.entrySet()){
+        for (Map.Entry<String, List<UTXOBO>> en : utxoCache.entrySet()) {
             List<UTXOBO> cList = en.getValue();
             List<UTXOBO> pList = this.utxoCache.get(en.getKey());
 
@@ -397,7 +404,7 @@ public class RepositoryMockImpl implements Repository {
     }
 
 
-    class ContractDetailsMockImpl implements ContractDetails{
+    class ContractDetailsMockImpl implements ContractDetails {
 
         private byte[] address;
 
@@ -428,8 +435,8 @@ public class RepositoryMockImpl implements Repository {
         @Override
         public Map<DataWord, DataWord> getStorage() {
             Map<DataWord, DataWord> storage = new HashMap<>();
-            
-            addrKeys.get(address).stream().forEach(item-> {
+
+            addrKeys.get(address).stream().forEach(item -> {
                 DataWord key = new DataWord(item.getData());
                 DataWord value = storageCache.get(address).get(key);
                 storage.put(key, value);

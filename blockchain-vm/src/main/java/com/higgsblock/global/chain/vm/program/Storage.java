@@ -19,15 +19,12 @@ package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
-import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListener;
 import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class Storage implements Repository, ProgramListenerAware {
@@ -284,6 +281,16 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public boolean addUTXO(Object o) {
         return false;
+    }
+
+    /**
+     * get hash
+     *
+     * @return hash
+     */
+    @Override
+    public String getHash() {
+        return null;
     }
 
 

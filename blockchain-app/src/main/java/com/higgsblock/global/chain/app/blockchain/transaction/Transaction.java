@@ -176,7 +176,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), calculateContractAddress())) {
+        if (!Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), calculateContractAddress())) {
             return false;
         }
 
