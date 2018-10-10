@@ -53,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -400,103 +401,94 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction, Block block) {
-
-        List<Transaction> transactions = new ArrayList<>();
-        int subSize = 0;
-        //block cache
-
+    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
+        List<Transaction> packagedTransactionList = new ArrayList<>();
         RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
-        //transaction cache
-        Repository txRepository;
-        //total used gas
-        long usedGas = 0;
-        //total transactions fee
-        Money fee = new Money();
-        for (Transaction tx : sortedTransaction) {
+        Repository transactionRepository;
+        int totalUsedSize = 0;
+        long totalUsedGas = 0;
+        Money totalFee = new Money();
 
-            if ((subSize += tx.getSize()) > blockchainConfig.getLimitedSize()) {
+        for (Transaction transaction : sortedTransactionList) {
+            if (totalUsedSize + transaction.getSize() > blockchainConfig.getLimitedSize()) {
                 break;
             }
-            //is contract transaction
-            if (tx.isContractTrasaction()) {
-                if ((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()) {
+
+            if (!transaction.isContractTrasaction()) {
+                packagedTransactionList.add(transaction);
+                totalUsedSize += transaction.getSize();
+                totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
+                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
+            } else {
+
+                if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize() > blockchainConfig.getLimitedSize()) {
                     break;
                 }
-                transactions.add(tx);
+                packagedTransactionList.add(transaction);
+                totalUsedSize += transaction.getSize();
+                transactionRepository = blockRepository.startTracking();
 
-                fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
-                        SystemCurrencyEnum.CAS.getCurrency()));
-                txRepository = blockRepository.startTracking();
-                //invoke contract transaction
-                ExecutionResult executionResult = executeContract(tx, block, txRepository);
-                //result state hash
-                HashFunction function = Hashing.sha256();
-                String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
-                block.setContractStateHash(function.hashString(String.join(preHash,
-                        executionResult.toString()), Charsets.UTF_8).toString());
+
+                ExecutionResult executionResult = executeContract(transaction, block, transactionRepository);
+                updateBlockHash(block, executionResult);
 
                 //TODO tangKun refund gas 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-                boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
-                        executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
-                if (success && transferFlag) {
-                    List<UTXO> unSpendAsset = txRepository.getUnSpendAsset(tx.calculateContractAddress());
-                    ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                            txRepository.getAccountState(tx.calculateContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                            txRepository.getAccountDetails());
-                    transactions.add(contractTx);
-                    fee = fee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(tx.getGasPrice())
-                            , SystemCurrencyEnum.CAS.getCurrency()));
-                    usedGas += executionResult.getGasUsed().longValue();
-                }
-
-
-                Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
-                        new Money(BigDecimal.ZERO.toPlainString()) : tx.getOutputs().get(0).getMoney();
                 if (!success) {
+                    Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
+                            new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
+
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
 
                         ContractTransaction refundTx = new ContractTransaction();
-                        refundTx.setTransactionTime(tx.getTransactionTime());
-                        refundTx.setInputs(Lists.newLinkedList());
-                        refundTx.setOutputs(Lists.newLinkedList());
                         TransactionInput input = new TransactionInput();
                         TransactionOutPoint top = new TransactionOutPoint();
-                        top.setTransactionHash(tx.getHash());
-                        top.setIndex((short) 1);
-                        top.setOutput(tx.getOutputs().get(0));
+                        top.setTransactionHash(transaction.getHash());
+                        top.setIndex((short) 0);
+
                         input.setPrevOut(top);
                         refundTx.getInputs().add(input);
 
                         TransactionOutput out = new TransactionOutput();
                         out.setMoney(transferMoney);
                         LockScript lockScript = new LockScript();
-                        UTXO utxo = utxoServiceProxy.getUnionUTXO(block.getPrevBlockHash(), tx.getInputs().get(0).getPrevOut().getKey());
-                        lockScript.setAddress(utxo.getAddress());
-                        lockScript.setType(ScriptTypeEnum.P2PKH.getType());
+
+                        lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, block)));
+                        lockScript.setType(ScriptTypeEnum.P2PK.getType());
                         out.setLockScript(lockScript);
                         refundTx.getOutputs().add(out);
 
-                        refundTx.setVersion(tx.getVersion());
-                        refundTx.setLockTime(tx.getLockTime());
+                        refundTx.setVersion(transaction.getVersion());
+                        refundTx.setLockTime(transaction.getLockTime());
                         refundTx.setTransactionTime(System.currentTimeMillis());
 
-                        transactions.add(refundTx);
+                        packagedTransactionList.add(refundTx);
+                        totalUsedSize += transaction.getSize();
                     }
-                    fee = fee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice())
+                    totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit()).multiply(transaction.getGasPrice())
                             , SystemCurrencyEnum.CAS.getCurrency()));
-                    usedGas += tx.getGasLimit();
-                }
+                    totalUsedGas += transaction.getGasLimit();
 
-                txRepository.commit();
-            } else {
-                transactions.add(tx);
-                fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
-                        SystemCurrencyEnum.CAS.getCurrency()));
-                usedGas += FeeUtil.getSizeGas(tx.getSize()).longValue();
+                } else {
+                    boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+                    if (transferFlag) {
+                        List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
+                        ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
+                                transactionRepository.getAccountState(transaction.calculateContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
+                                transactionRepository.getAccountDetails());
+                        packagedTransactionList.add(contractTx);
+                        totalUsedSize += transaction.getSize();
+                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(transaction.getGasPrice())
+                                , SystemCurrencyEnum.CAS.getCurrency()));
+                        totalUsedGas += executionResult.getGasUsed().longValue();
+                    }
+
+                }
+                transactionRepository.commit();
             }
         }
+
         //append state hash
         if (StringUtils.isNotEmpty(block.getContractStateHash())) {
             HashFunction function = Hashing.sha256();
@@ -507,9 +499,33 @@ public class BlockService implements IBlockService {
             }
         }
 
-        block.setTransactionsFee(fee);
-        block.setGasUsed(usedGas);
-        return transactions;
+        block.setTransactionsFee(totalFee);
+        block.setGasUsed(totalUsedGas);
+        return packagedTransactionList;
+    }
+
+    /**
+     * Updates block hash.
+     *
+     * @param block           target block.
+     * @param executionResult result related to contract execution procedure.
+     */
+    private void updateBlockHash(Block block, ExecutionResult executionResult) {
+        HashFunction function = Hashing.sha256();
+        String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
+        block.setContractStateHash(function.hashString(
+                String.join(preHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString());
+    }
+
+    /**
+     * Calculates hash of result related to contract execution procedure.
+     *
+     * @param executionResult result related to contract execution procedure.
+     * @return result hash.
+     */
+    private String calculateExecutionHash(ExecutionResult executionResult) {
+        HashFunction function = Hashing.sha256();
+        return function.hashString(executionResult.toString(), Charsets.UTF_8).toString();
     }
 
     /**
