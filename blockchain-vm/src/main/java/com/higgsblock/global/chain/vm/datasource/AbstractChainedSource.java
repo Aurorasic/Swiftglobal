@@ -21,7 +21,7 @@ package com.higgsblock.global.chain.vm.datasource;
  * Abstract Source implementation with underlying backing Source
  * The class has control whether the backing Source should be flushed
  * in 'cascade' manner
- *
+ * <p>
  * Created by Anton Nashatyrev on 06.12.2016.
  */
 public abstract class AbstractChainedSource<Key, Value, SourceKey, SourceValue> implements Source<Key, Value> {
@@ -57,6 +57,7 @@ public abstract class AbstractChainedSource<Key, Value, SourceKey, SourceValue> 
 
     /**
      * Invokes {@link #flushImpl()} and does backing Source flush if required
+     *
      * @return true if this or source flush did any changes
      */
     @Override
@@ -72,4 +73,9 @@ public abstract class AbstractChainedSource<Key, Value, SourceKey, SourceValue> 
      * Should be overridden to do actual source flush
      */
     protected abstract boolean flushImpl();
+
+    @Override
+    public String getStateHash() {
+        return null;
+    }
 }

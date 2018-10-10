@@ -49,7 +49,7 @@ public class RepositoryRoot extends RepositoryImpl {
 
                 Serializer<byte[], byte[]> keyCompositor = new NodeKeyCompositor(key);
                 Source<byte[], byte[]> composingSrc = new SourceCodec.KeyOnly<>(storageCache, keyCompositor);
-                SourceCodec  sourceCodec = new SourceCodec<>(composingSrc, Serializers.StorageKeySerializer, Serializers.StorageValueSerializer);
+                SourceCodec sourceCodec = new SourceCodec<>(composingSrc, Serializers.StorageKeySerializer, Serializers.StorageValueSerializer);
 
                 return new WriteCache<>(sourceCodec, WriteCache.CacheType.SIMPLE);
             }
@@ -73,5 +73,11 @@ public class RepositoryRoot extends RepositoryImpl {
 
     public DbSource<byte[]> getDbSource() {
         return dbSource;
+    }
+
+    public String getStateHash() {
+        super.commit();
+        storageCache.flush();
+        return sourceWriter.getStateHash();
     }
 }
