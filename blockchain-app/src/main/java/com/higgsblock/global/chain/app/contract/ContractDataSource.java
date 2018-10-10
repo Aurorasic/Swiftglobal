@@ -117,4 +117,14 @@ public class ContractDataSource implements DbSource<byte[]> {
     public boolean flush() {
         return false;
     }
+
+    /**
+     * get state hash
+     *
+     * @return hash
+     */
+    @Override
+    public String getStateHash() {
+        return null;
+    }
 }
