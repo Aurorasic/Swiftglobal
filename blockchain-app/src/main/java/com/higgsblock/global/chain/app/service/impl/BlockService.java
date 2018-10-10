@@ -379,13 +379,13 @@ public class BlockService implements IBlockService {
 
         transactionFeeService.sortByGasPrice(txOfUnSpentUtxos);
         Money fee = new Money();
-        List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos,block);
+        List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos, block);
         block.setTransactions(packTransaction);
         if (lastBlockIndex.getHeight() >= 1) {
             Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, block.getTransactionsFee(),
                     nextBestBlockHeight);
             //coinBase
-            block.getTransactions().add(0,coinBaseTx);
+            block.getTransactions().add(0, coinBaseTx);
         }
 
         //Before collecting signs from witnesses just cache the block firstly.
@@ -396,26 +396,26 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction,Block block){
+    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction, Block block) {
 
         List<Transaction> transactions = new ArrayList<>();
         int subSize = 0;
         //block cache
-        RepositoryRoot blockRepository  = new RepositoryRoot(block.getPrevBlockHash());
+        RepositoryRoot blockRepository = new RepositoryRoot(block.getPrevBlockHash());
         //transaction cache
         Repository txRepository;
         //total used gas
         long usedGas = 0;
         //total transactions fee
         Money fee = new Money();
-        for (Transaction tx:sortedTransaction){
+        for (Transaction tx : sortedTransaction) {
 
-            if((subSize += tx.getSize()) > blockchainConfig.getLimitedSize()){
+            if ((subSize += tx.getSize()) > blockchainConfig.getLimitedSize()) {
                 break;
             }
             //is contract transaction
             if (tx.isContractTrasaction()) {
-                if((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()){
+                if ((subSize += blockchainConfig.getContractLimitedSize()) > blockchainConfig.getLimitedSize()) {
                     break;
                 }
                 transactions.add(tx);
@@ -429,59 +429,61 @@ public class BlockService implements IBlockService {
                 HashFunction function = Hashing.sha256();
                 String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
                 block.setContractStateHash(function.hashString(String.join(preHash,
-                        executionResult.toString()),Charsets.UTF_8).toString());
+                        executionResult.toString()), Charsets.UTF_8).toString());
 
                 //TODO tangKun refund gas 2018-09-29
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 boolean transferFlag = txRepository.getAccountDetails().size() > 0 ||
                         executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
-                if ( success && transferFlag ){
+                if (success && transferFlag) {
                     List<UTXO> unSpendAsset = txRepository.getUnSpendAsset(tx.calculateContractAddress());
-                    ContractTransaction contractTx =  Helpers.buildContractTransaction(unSpendAsset,
+                    ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
                             txRepository.getAccountState(tx.calculateContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
                             txRepository.getAccountDetails());
                     transactions.add(contractTx);
                     fee = fee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(tx.getGasPrice())
-                            ,SystemCurrencyEnum.CAS.getCurrency()));
+                            , SystemCurrencyEnum.CAS.getCurrency()));
                     usedGas += executionResult.getGasUsed().longValue();
                 }
 
 
                 Money transferMoney = tx.getOutputs().get(0).getMoney() == null ?
-                        new Money(BigDecimal.ZERO.toPlainString()) :  tx.getOutputs().get(0).getMoney();
-                if(!success ) {
-                    if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0){
+                        new Money(BigDecimal.ZERO.toPlainString()) : tx.getOutputs().get(0).getMoney();
+                if (!success) {
+                    if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
 
                         ContractTransaction refundTx = new ContractTransaction();
-                    TransactionInput input = new TransactionInput();
-                    TransactionOutPoint top = new TransactionOutPoint();
-                    top.setTransactionHash(tx.getHash());
-                    top.setIndex((short) 1);
-                    input.setPrevOut(top);
-                    refundTx.getInputs().add(input);
+                        refundTx.setInputs(Lists.newLinkedList());
+                        refundTx.setOutputs(Lists.newLinkedList());
+                        TransactionInput input = new TransactionInput();
+                        TransactionOutPoint top = new TransactionOutPoint();
+                        top.setTransactionHash(tx.getHash());
+                        top.setIndex((short) 1);
+                        input.setPrevOut(top);
+                        refundTx.getInputs().add(input);
 
-                    TransactionOutput out = new TransactionOutput();
-                    out.setMoney(transferMoney);
-                    LockScript lockScript = new LockScript();
-                    UTXO utxo = utxoServiceProxy.getUnionUTXO(block.getPrevBlockHash(), tx.getInputs().get(0).getPrevOut().getKey());
-                    lockScript.setAddress(utxo.getAddress());
-                    lockScript.setType(ScriptTypeEnum.P2PK.getType());
-                    out.setLockScript(lockScript);
-                    refundTx.getOutputs().add(out);
+                        TransactionOutput out = new TransactionOutput();
+                        out.setMoney(transferMoney);
+                        LockScript lockScript = new LockScript();
+                        UTXO utxo = utxoServiceProxy.getUnionUTXO(block.getPrevBlockHash(), tx.getInputs().get(0).getPrevOut().getKey());
+                        lockScript.setAddress(utxo.getAddress());
+                        lockScript.setType(ScriptTypeEnum.P2PK.getType());
+                        out.setLockScript(lockScript);
+                        refundTx.getOutputs().add(out);
 
-                    refundTx.setVersion(tx.getVersion());
-                    refundTx.setLockTime(tx.getLockTime());
-                    refundTx.setTransactionTime(System.currentTimeMillis());
+                        refundTx.setVersion(tx.getVersion());
+                        refundTx.setLockTime(tx.getLockTime());
+                        refundTx.setTransactionTime(System.currentTimeMillis());
 
-                    transactions.add(refundTx);
-                }
+                        transactions.add(refundTx);
+                    }
                     fee = fee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice())
-                            ,SystemCurrencyEnum.CAS.getCurrency()));
+                            , SystemCurrencyEnum.CAS.getCurrency()));
                     usedGas += tx.getGasLimit();
                 }
 
                 txRepository.commit();
-            }else {
+            } else {
                 transactions.add(tx);
                 fee = fee.add(BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(tx.getSize()).multiply(tx.getGasPrice()),
                         SystemCurrencyEnum.CAS.getCurrency()));
@@ -491,19 +493,19 @@ public class BlockService implements IBlockService {
         blockRepository.commit();
         block.setTransactionsFee(fee);
         block.setGasUsed(usedGas);
-        return  transactions;
+        return transactions;
     }
 
     /**
      * Executes contract.
      *
-     * @param transaction     original transaction containing the contract.
-     * @param block           current block.
-     * @param txRepository    snapshot of db before the transaction is executed.
+     * @param transaction  original transaction containing the contract.
+     * @param block        current block.
+     * @param txRepository snapshot of db before the transaction is executed.
      * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
      */
     private ExecutionResult executeContract(Transaction transaction,
-                                            Block block,  Repository txRepository) {
+                                            Block block, Repository txRepository) {
         ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
         Executor executor = new Executor(txRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();
