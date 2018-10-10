@@ -391,7 +391,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
         //verify reward count
-        if (!validateRewards(outputs, rewards)) {
+        if (!validateRewards(rewards)) {
             LOGGER.info("Validate witness reward failed");
             return false;
         }
@@ -538,20 +538,15 @@ public class TransactionService implements ITransactionService {
     /**
      * validate witness rewards
      *
-     * @param outputs witness reward  outputs
      * @param rewards
      * @return if count outputs money == （topTenSingleWitnessMoney*10+lastWitnessMoney） return true else false
      */
-    private boolean validateRewards(List<TransactionOutput> outputs, Rewards rewards) {
-        Money outputsTotalMoney = new Money("0");
-        outputs.forEach(output -> {
-            outputsTotalMoney.add(output.getMoney());
-        });
+    private boolean validateRewards(Rewards rewards) {
         Money minerAndWitnessTotalMoney = new Money("0");
         Money countWitnessMoney = new Money(rewards.getTopTenSingleWitnessMoney().getValue()).multiply(witnessService.getWitnessSize() - 1).add(rewards.getLastWitnessMoney());
         minerAndWitnessTotalMoney = countWitnessMoney.add(rewards.getMinerTotal());
 
-        return minerAndWitnessTotalMoney.compareTo(outputsTotalMoney) == 0;
+        return minerAndWitnessTotalMoney.compareTo(rewards.getTotalMoney()) == 0;
     }
 
     /**
