@@ -92,18 +92,18 @@ public class TransactionService implements ITransactionService {
         }
 
         //step3 verify info
-        for (int index = 0; index < txNumber; index++) {
-            boolean isCoinBaseTx = index == 0 ? true : false;
-            //step1 verify tx isCoinBase
-            if (isCoinBaseTx) {
-                if (!verifyCoinBaseTx(transactions.get(index), block)) {
-                    LOGGER.info("Invalidate Coinbase transaction");
-                    return false;
+        List<Transaction> contractTransactionList = new LinkedList<>();
+        for (int index = 1; index < txNumber; index++) {
+            Transaction transaction = transactions.get(index);
+            if (contractTransactionList.size() > 0) {
+                Transaction contractTransaction = contractTransactionList.remove(0);
+                if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
+                    continue;
                 }
-                continue;
+                return false;
             }
             //step2 verify tx business info
-            if (!verifyTransaction(transactions.get(index), block)) {
+            if (!verifyTransactionForVoting(transaction, block, contractTransactionList)) {
                 return false;
             }
         }
@@ -224,6 +224,90 @@ public class TransactionService implements ITransactionService {
         Money stakeMinMoney = new Money("1", currency.getCurrency());
         return balanceMoney.compareTo(stakeMinMoney) >= 0;
     }
+
+    public boolean verifyTransactionForVoting(Transaction tx, Block block, List<Transaction> contractTransactionList) {
+        if (null == tx) {
+            LOGGER.info("transaction is null");
+            return false;
+        }
+        if (!tx.valid()) {
+            LOGGER.info("transaction is valid error");
+            return false;
+        }
+        List<TransactionInput> inputs = tx.getInputs();
+        List<TransactionOutput> outputs = tx.getOutputs();
+        String hash = tx.getHash();
+
+        String blockHash = block != null ? block.getHash() : null;
+        String preBlockHash = block != null ? block.getPrevBlockHash() : null;
+        Map<String, Money> preMoneyMap = new HashMap<>(8);
+        HashSet<String> prevOutKey = new HashSet<>();
+        for (TransactionInput input : inputs) {
+            String key = input.getPrevOut().getKey();
+            boolean notContains = prevOutKey.add(key);
+            if (!notContains) {
+                LOGGER.info("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
+                        , tx.getHash()
+                        , blockHash);
+                return false;
+            }
+            TransactionOutput preOutput = getPreOutput(preBlockHash, input);
+            if (preOutput == null) {
+                LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
+                return false;
+            }
+
+            String currency = preOutput.getMoney().getCurrency();
+            if (!preMoneyMap.containsKey(currency)) {
+                preMoneyMap.put(currency, new Money("0", currency).add(preOutput.getMoney()));
+            } else {
+                preMoneyMap.put(currency, preMoneyMap.get(currency).add(preOutput.getMoney()));
+            }
+        }
+
+        Map<String, Money> curMoneyMap = new HashMap<>(8);
+        for (TransactionOutput output : outputs) {
+            String currency = output.getMoney().getCurrency();
+            if (!curMoneyMap.containsKey(currency)) {
+                curMoneyMap.put(currency, new Money("0", currency).add(output.getMoney()));
+            } else {
+                curMoneyMap.put(currency, curMoneyMap.get(currency).add(output.getMoney()));
+            }
+        }
+
+
+        for (String key : curMoneyMap.keySet()) {
+            Money preMoney = preMoneyMap.get(key);
+            Money curMoney = curMoneyMap.get(key);
+
+            if (preMoney == null) {
+                LOGGER.info("Pre-output currency is null {}", key);
+                return false;
+            }
+            LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
+
+            //if verify receivedTransaction, block is null so curMoney add tx fee
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
+                //input >= out + gas*gasLimit
+                BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
+                curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
+            }
+            if (preMoney.compareTo(curMoney) < 0) {
+                LOGGER.info("Not enough fees, currency type:{}", key);
+                return false;
+            }
+        }
+
+        boolean verifyInputs = verifyInputs(inputs, hash, preBlockHash);
+        if (!verifyInputs) {
+            return false;
+        }
+        if (tx.isContractTrasaction()) {
+            //todo yangyi check invoke result;
+        }
+        return true;
+    }
+
 
     /**
      * validate tx
