@@ -1,7 +1,9 @@
 package com.higgsblock.global.chain.app.vm;
 
+import com.higgsblock.global.chain.app.BaseTest;
 import com.higgsblock.global.chain.app.contract.RepositoryImpl;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
+import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.GasCost;
 import com.higgsblock.global.chain.vm.OpCode;
@@ -21,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -32,7 +35,11 @@ import java.util.Set;
  * @author Chen Jiawei
  * @date 2018-09-18
  */
-public class ExecutorTest {
+public class ExecutorTest extends BaseTest {
+
+    @Autowired
+    private IContractRepository contractRepository;
+
     private Executor executor;
     private Repository blockRepository;
     Repository transactionRepository;
@@ -165,7 +172,7 @@ public class ExecutorTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-        blockRepository  = new RepositoryRoot("");
+        blockRepository  = new RepositoryRoot(contractRepository, "");
          transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);

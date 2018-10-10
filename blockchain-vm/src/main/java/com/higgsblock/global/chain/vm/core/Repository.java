@@ -270,4 +270,10 @@ public interface Repository<ASSET> {
      * @return
      */
     boolean addUTXO(ASSET asset);
+
+    /**
+     * get hash
+     * @return hash
+     */
+    String getHash();
 }

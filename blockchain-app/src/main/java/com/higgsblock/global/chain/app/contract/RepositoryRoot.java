@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.datasource.*;
@@ -22,13 +23,13 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private String preBlockHash;
 
-    public RepositoryRoot(String preBlockHash) {
+    public RepositoryRoot(IContractRepository repository, String preBlockHash) {
         //Source dbSource = new HashMapDB<byte[]>();
         this.preBlockHash = preBlockHash;
-        dbSource = new LevelDbDataSource();
+        dbSource = new ContractDataSource(repository);
 
-        dbSource.setName("contract");
-        dbSource.init(DbSettings.DEFAULT);
+        //dbSource.setName("contract");
+        //dbSource.init(DbSettings.DEFAULT);
         sourceWriter = new BatchSourceWriter<>(dbSource);
 
         Source<byte[], byte[]> xorAccountState = new XorDataSource<>(sourceWriter, HashUtil.sha3("account".getBytes()));
