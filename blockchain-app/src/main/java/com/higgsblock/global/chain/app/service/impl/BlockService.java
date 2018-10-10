@@ -406,7 +406,7 @@ public class BlockService implements IBlockService {
         int subSize = 0;
         //block cache
 
-        RepositoryRoot blockRepository  = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
+        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
         //transaction cache
         Repository txRepository;
         //total used gas
@@ -458,6 +458,8 @@ public class BlockService implements IBlockService {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
 
                         ContractTransaction refundTx = new ContractTransaction();
+                        refundTx.setInputs(Lists.newLinkedList());
+                        refundTx.setOutputs(Lists.newLinkedList());
                         TransactionInput input = new TransactionInput();
                         TransactionOutPoint top = new TransactionOutPoint();
                         top.setTransactionHash(tx.getHash());
