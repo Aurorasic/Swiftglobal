@@ -458,6 +458,7 @@ public class BlockService implements IBlockService {
                     if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
 
                         ContractTransaction refundTx = new ContractTransaction();
+                        refundTx.setTransactionTime(tx.getTransactionTime());
                         refundTx.setInputs(Lists.newLinkedList());
                         refundTx.setOutputs(Lists.newLinkedList());
                         TransactionInput input = new TransactionInput();

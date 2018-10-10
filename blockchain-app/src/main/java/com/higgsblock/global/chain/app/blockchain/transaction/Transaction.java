@@ -92,13 +92,19 @@ public class Transaction extends BaseSerializer {
      */
     private ContractExecutionResult contractExecutionResult;
 
+    private byte[] contractAddress;
+
     public byte[] calculateContractAddress() {
+        if (contractAddress != null) {
+            return contractAddress;
+        }
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(transactionTime));
         builder.append(function.hashBytes(contractParameters.getBytecode()));
         builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
-        return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
+        contractAddress = CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
+        return contractAddress;
     }
 
     public byte[] getContractAddress() {
@@ -144,7 +150,7 @@ public class Transaction extends BaseSerializer {
         if (CollectionUtils.isEmpty(outputs)) {
             return false;
         }
-        
+
         for (TransactionOutput out : outputs) {
             if (!out.valid()) {
                 return false;
