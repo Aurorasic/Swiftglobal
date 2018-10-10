@@ -497,7 +497,16 @@ public class BlockService implements IBlockService {
                 usedGas += FeeUtil.getSizeGas(tx.getSize()).longValue();
             }
         }
-        blockRepository.commit();
+        //append state hash
+        if (StringUtils.isNotEmpty(block.getContractStateHash())) {
+            HashFunction function = Hashing.sha256();
+            String stateHash = blockRepository.getStateHash();
+            if (StringUtils.isNotEmpty(stateHash)) {
+                block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
+                        stateHash), Charsets.UTF_8).toString());
+            }
+        }
+
         block.setTransactionsFee(fee);
         block.setGasUsed(usedGas);
         return transactions;
