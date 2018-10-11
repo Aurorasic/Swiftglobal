@@ -763,4 +763,35 @@ public class TransactionService implements ITransactionService {
         messageCenter.broadcast(tx);
         LOGGER.info("broadcast transaction hash={}", tx.getHash());
     }
+
+    /**
+     * calculation ordinary transaction fee
+     *
+     * @param tx Ordinary Transaction
+     * @return cas fee
+     */
+    @Override
+    public Money calculationOrdinaryTransactionFee(Transaction tx) {
+
+        if (tx.isContractTrasaction()) {
+            throw new RuntimeException("tx is Contract Transaction");
+        }
+
+        final HashMap<String, Money> feeMap = new HashMap<>(1);
+        tx.getInputs().stream().filter(ti -> ti.getPrevOut().getMoney().getCurrency().
+                equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
+            Money txFee = feeMap.getOrDefault("txFee", new Money());
+            txFee = txFee.add(ti.getPrevOut().getMoney());
+            feeMap.put("txFee", txFee);
+        });
+
+        tx.getOutputs().stream().filter(ti -> ti.getMoney().getCurrency().
+                equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
+            Money txFee = feeMap.getOrDefault("txFee", new Money());
+            txFee = txFee.add(ti.getMoney());
+            feeMap.put("txFee", txFee);
+        });
+
+        return feeMap.get("txFee");
+    }
 }
