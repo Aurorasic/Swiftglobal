@@ -15,17 +15,13 @@ import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.service.IBalanceService;
-import com.higgsblock.global.chain.app.service.IContractService;
-import com.higgsblock.global.chain.app.service.IIcoService;
-import com.higgsblock.global.chain.app.service.ITransactionService;
-import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
+import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
 import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
@@ -63,12 +59,6 @@ public class TransactionService implements ITransactionService {
     private BlockService blockService;
 
     @Autowired
-    private BestUTXOService bestUtxoService;
-
-    @Autowired
-    private UTXOServiceProxy utxoServiceProxy;
-
-    @Autowired
     private TransactionIndexService transactionIndexService;
 
     @Autowired
@@ -90,6 +80,8 @@ public class TransactionService implements ITransactionService {
     private IContractRepository contractRepository;
     @Autowired
     private IIcoService icoService;
+    @Autowired
+    private UTXOServiceProxy utxoServiceProxy;
 
     @Override
     public boolean validTransactions(Block block) {
@@ -111,7 +103,7 @@ public class TransactionService implements ITransactionService {
 
         //step3 verify info
         List<Transaction> contractTransactionList = new LinkedList<>();
-        Repository blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
+        Repository blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
         Money blockFee = new Money(0);
         String stateHash = StringUtils.EMPTY;
         for (int index = 1; index < txNumber; index++) {
