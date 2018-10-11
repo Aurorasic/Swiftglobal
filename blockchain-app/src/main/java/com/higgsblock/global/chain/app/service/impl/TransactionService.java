@@ -111,8 +111,6 @@ public class TransactionService implements ITransactionService {
             if (contractTransactionList.size() > 0) {
                 Transaction contractTransaction = contractTransactionList.remove(0);
                 if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
-                    Money fee = calculationOrdinaryTransactionFee(contractTransaction);
-                    blockFee = blockFee.add(fee);
                     continue;
                 }
                 return false;
