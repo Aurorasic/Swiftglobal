@@ -475,7 +475,7 @@ public class BlockService implements IBlockService {
      * @param executionResult result related to contract execution procedure.
      * @return result hash.
      */
-    private String calculateExecutionHash(ExecutionResult executionResult) {
+    public String calculateExecutionHash(ExecutionResult executionResult) {
         HashFunction function = Hashing.sha256();
         return function.hashString(executionResult.toString(), Charsets.UTF_8).toString();
     }
