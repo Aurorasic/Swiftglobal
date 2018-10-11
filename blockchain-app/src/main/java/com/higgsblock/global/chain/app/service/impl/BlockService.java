@@ -255,6 +255,7 @@ public class BlockService implements IBlockService {
         if (CollectionUtils.isEmpty(witnessSigPKS) || witnessSigPKS.size() < MIN_WITNESS) {
             int signatureSize = CollectionUtils.isEmpty(witnessSigPKS) ? 0 : witnessSigPKS.size();
             LOGGER.warn("The witness signatures is empty or the signature number is not enough,current size={},{}", signatureSize, blockLogInfo);
+            return false;
         }
 
         Set<String> pkSet = Sets.newHashSet();

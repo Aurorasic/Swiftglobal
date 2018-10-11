@@ -144,10 +144,6 @@ public class DposService implements IDposService {
     @Override
     public boolean checkProducer(Block block) {
         SignaturePair minerPKSig = block.getMinerSigPair();
-        if (minerPKSig == null || !minerPKSig.valid()) {
-            LOGGER.warn("the miner signature is invalid:{}", block.getSimpleInfo());
-            return false;
-        }
 
         String address = minerPKSig.getAddress();
         List<String> currentGroup = getRestDposMinersByPreHash(block.getPrevBlockHash());

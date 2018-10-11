@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.sync.handler;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.IBlockChainService;
-import com.higgsblock.global.chain.app.blockchain.OrphanBlockCacheManager;
 import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.listener.MessageCenter;
 import com.higgsblock.global.chain.app.common.handler.BaseMessageHandler;
@@ -42,24 +41,19 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
     @Autowired
     private MessageCenter messageCenter;
 
-    @Autowired
-    private OrphanBlockCacheManager orphanBlockCacheManager;
-
     @Override
     protected boolean valid(IMessage<BlockResponse> message) {
         BlockResponse blockResponse = message.getData();
         if (null == blockResponse) {
             return false;
         }
-        List<Block> list = blockResponse.getBlocks();
-        long height = blockResponse.getHeight();
-        if (CollectionUtils.isEmpty(list)) {
+
+        if (!blockResponse.valid()){
             return false;
         }
+
+        List<Block> list = blockResponse.getBlocks();
         return list.stream().allMatch(block -> {
-            if (height != block.getHeight()) {
-                return false;
-            }
             //1. check: isGenesisBlock
             boolean isGenesisBlock = blockChainService.isGenesisBlock(block);
             if (isGenesisBlock) {
@@ -78,7 +72,6 @@ public class BlockResponseHandler extends BaseMessageHandler<BlockResponse> {
 
     @Override
     protected void process(IMessage<BlockResponse> message) {
-        long height = message.getData().getHeight();
         String sourceId = message.getSourceId();
         boolean isBroadcast = false;
         Block newBestBlock = null;

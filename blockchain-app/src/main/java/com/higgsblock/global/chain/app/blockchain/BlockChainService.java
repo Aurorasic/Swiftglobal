@@ -69,9 +69,6 @@ public class BlockChainService implements IBlockChainService {
 
     @Override
     public boolean isGenesisBlock(Block block) {
-        if (block == null) {
-            return false;
-        }
         if (block.getHeight() == 1 &&
                 block.getPrevBlockHash() == null &&
                 StringUtils.equals(config.getGenesisBlockHash(), block.getHash())) {
