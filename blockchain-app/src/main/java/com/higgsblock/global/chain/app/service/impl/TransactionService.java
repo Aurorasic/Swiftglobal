@@ -311,9 +311,19 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("transaction is null");
             return false;
         }
-        if (!tx.valid()) {
-            LOGGER.info("transaction is valid error");
-            return false;
+        if (block != null) {
+            if (!tx.valid()) {
+                LOGGER.info("transaction is valid error");
+                return false;
+            }
+            if (!tx.sizeAllowed()) {
+                LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
+                return false;
+            }
+            if (!tx.validContractPart()) {
+                LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+                return false;
+            }
         }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
