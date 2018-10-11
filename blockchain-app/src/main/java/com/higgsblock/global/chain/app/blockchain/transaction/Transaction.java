@@ -175,11 +175,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (!outputs.get(0).getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())) {
-            return false;
-        }
-
-        if (!Arrays.equals(getContractAddress(), calculateContractAddress())) {
+        if (isContractCreation() && !Arrays.equals(getContractAddress(), calculateContractAddress())) {
             return false;
         }
 

@@ -10,6 +10,7 @@ import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.service.IBalanceService;
+import com.higgsblock.global.chain.app.service.IIcoService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
@@ -72,6 +73,8 @@ public class TransactionService implements ITransactionService {
     @Autowired
     private IBalanceService balanceService;
 
+    @Autowired
+    private IIcoService icoService;
 
     @Override
     public boolean validTransactions(Block block) {
@@ -375,6 +378,11 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        // for contract, currency must be cas or of ico.
+        if (tx.isContractTrasaction()
+                && !icoService.getContractCurrencies().contains(outputs.get(0).getMoney().getCurrency())) {
+            return false;
+        }
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
