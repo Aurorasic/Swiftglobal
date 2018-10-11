@@ -1,8 +1,10 @@
 package com.higgsblock.global.chain.app.contract;
 
 import com.higgsblock.global.chain.app.dao.IContractRepository;
+import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
@@ -24,10 +26,12 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private DbSource<byte[]> dbSource;
 
-    private String preBlockHash;
 
-    public RepositoryRoot(IContractRepository repository, String preBlockHash) {
-        this.preBlockHash = preBlockHash;
+    public RepositoryRoot(IContractRepository repository, String preBlockHash, UTXOServiceProxy utxoServiceProxy, SystemProperties config) {
+        super.setPreBlockHash(preBlockHash);
+        super.setUtxoServiceProxy(utxoServiceProxy);
+        super.setConfig(config);
+
         this.dbSource = new ContractDataSource(repository);
         this.sourceWriter = new BatchSourceWriter<>(dbSource);
 

@@ -12,8 +12,8 @@ import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 import com.higgsblock.global.chain.vm.util.HashUtil;
 import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
  * @date 2018-09-06
  */
 @Setter
+@Getter
 public class RepositoryImpl implements Repository<UTXO> {
 
     protected RepositoryImpl parent;
 
-    @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
     protected Source<byte[], AccountState> accountStateCache;
@@ -39,8 +39,7 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     protected MultiCache<? extends CachedSource<DataWord, DataWord>> storageCache;
 
-    @Autowired
-    protected SystemProperties config = SystemProperties.getDefault();
+    private SystemProperties config;
 
     List<AbstractCachedSource<byte[], ?>> writeCaches = new ArrayList<>();
 
@@ -235,6 +234,8 @@ public class RepositoryImpl implements Repository<UTXO> {
         };
 
         RepositoryImpl ret = new RepositoryImpl(trackAccountStateCache, trackCodeCache, trackStorageCache, this.preBlockHash);
+        ret.setUtxoServiceProxy(this.utxoServiceProxy);
+        ret.setConfig(this.config);
         ret.parent = this;
         return ret;
     }
@@ -448,8 +449,8 @@ public class RepositoryImpl implements Repository<UTXO> {
 
         // first cache
         accountState = createAccountState(address, BigInteger.ZERO, currency);
-        // List<UTXO> chainUTXO = Helpers.buildTestUTXO(AddrUtil.toTransactionAddr(address));
-        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO("preBlockHash", AddrUtil.toTransactionAddr(address), currency);
+
+        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO(preBlockHash, AddrUtil.toTransactionAddr(address), currency);
         if (chainUTXO != null && chainUTXO.size() != 0) {
             unspentUTXOCache.addAll(chainUTXO);
         }

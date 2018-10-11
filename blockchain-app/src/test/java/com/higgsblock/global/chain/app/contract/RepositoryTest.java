@@ -2,7 +2,7 @@ package com.higgsblock.global.chain.app.contract;
 
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.Repository;
-import com.higgsblock.global.chain.vm.datasource.HashMapDB;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
@@ -13,7 +13,7 @@ public class RepositoryTest {
     @Test
     public void test4() {
 
-        RepositoryRoot repository = new RepositoryRoot(null, "");
+        RepositoryRoot repository = new RepositoryRoot(null, "", null, SystemProperties.getDefault());
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");

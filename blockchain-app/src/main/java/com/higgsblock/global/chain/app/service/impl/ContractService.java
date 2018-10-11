@@ -6,7 +6,6 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
-import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.service.IContractService;
@@ -31,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,6 +41,7 @@ import java.util.List;
  * @date 2018-10-10
  */
 @Slf4j
+@Service
 public class ContractService implements IContractService {
 
     @Autowired
@@ -66,92 +67,60 @@ public class ContractService implements IContractService {
     }
 
     @Override
-    public InvokePO invoke(Block block, Transaction transaction, Repository blockRepository, int totalUsedSize, long totalUsedGas, Money totalFee) {
-        {
-            if (totalUsedSize + transaction.getSize() > blockchainConfig.getLimitedSize()) {
-                return null;
+    public InvokePO invoke(Block block, Transaction transaction, Repository blockRepository) {
+
+        Repository transactionRepository = blockRepository.startTracking();
+        ExecutionResult executionResult = executeContract(transaction, block, transactionRepository);
+        InvokePO invokePO = new InvokePO();
+
+        //TODO tangKun refund gas 2018-09-29
+        boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
+        if (!success) {
+            Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
+                    new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
+
+            if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
+
+                ContractTransaction refundTx = new ContractTransaction();
+                TransactionInput input = new TransactionInput();
+                TransactionOutPoint top = new TransactionOutPoint();
+                top.setTransactionHash(transaction.getHash());
+                top.setIndex((short) 0);
+
+                input.setPrevOut(top);
+                refundTx.getInputs().add(input);
+
+                TransactionOutput out = new TransactionOutput();
+                out.setMoney(transferMoney);
+                LockScript lockScript = new LockScript();
+
+                lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, block)));
+                lockScript.setType(ScriptTypeEnum.P2PK.getType());
+                out.setLockScript(lockScript);
+                refundTx.getOutputs().add(out);
+
+                refundTx.setVersion(transaction.getVersion());
+                refundTx.setLockTime(transaction.getLockTime());
+                refundTx.setTransactionTime(System.currentTimeMillis());
+
+                invokePO.setContractTransaction(refundTx);
+            }
+        } else {
+            boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+            if (transferFlag) {
+                List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
+                ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
+                        transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
+                        transactionRepository.getAccountDetails());
+                invokePO.setContractTransaction(contractTx);
             }
 
-            if (!transaction.isContractTrasaction()) {
-
-                totalUsedSize += transaction.getSize();
-                totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
-                totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
-            } else {
-
-                if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize() > blockchainConfig.getLimitedSize()) {
-                    return null;
-                }
-
-                totalUsedSize += transaction.getSize();
-                Repository transactionRepository = blockRepository.startTracking();
-
-
-                ExecutionResult executionResult = executeContract(transaction, block, transactionRepository);
-                InvokePO invokePO = new InvokePO();
-
-                //TODO tangKun refund gas 2018-09-29
-                boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-                if (!success) {
-                    Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
-                            new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
-
-                    if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-
-                        ContractTransaction refundTx = new ContractTransaction();
-                        TransactionInput input = new TransactionInput();
-                        TransactionOutPoint top = new TransactionOutPoint();
-                        top.setTransactionHash(transaction.getHash());
-                        top.setIndex((short) 0);
-
-                        input.setPrevOut(top);
-                        refundTx.getInputs().add(input);
-
-                        TransactionOutput out = new TransactionOutput();
-                        out.setMoney(transferMoney);
-                        LockScript lockScript = new LockScript();
-
-                        lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, block)));
-                        lockScript.setType(ScriptTypeEnum.P2PK.getType());
-                        out.setLockScript(lockScript);
-                        refundTx.getOutputs().add(out);
-
-                        refundTx.setVersion(transaction.getVersion());
-                        refundTx.setLockTime(transaction.getLockTime());
-                        refundTx.setTransactionTime(System.currentTimeMillis());
-
-                        invokePO.setContractTransaction(refundTx);
-                        totalUsedSize += transaction.getSize();
-                    }
-                    totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit()).multiply(transaction.getGasPrice())
-                            , SystemCurrencyEnum.CAS.getCurrency()));
-                    totalUsedGas += transaction.getGasLimit();
-
-                } else {
-                    boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
-                    if (transferFlag) {
-                        List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
-                        ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                                transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                                transactionRepository.getAccountDetails());
-                        invokePO.setContractTransaction(contractTx);
-
-                        totalUsedSize += transaction.getSize();
-                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(transaction.getGasPrice())
-                                , SystemCurrencyEnum.CAS.getCurrency()));
-                        totalUsedGas += executionResult.getGasUsed().longValue();
-                    }
-
-                }
-                invokePO.setExecutionResult(executionResult);
-                invokePO.setStateHash(calculateExecutionHash(executionResult));
-                transactionRepository.commit();
-
-                return invokePO;
-            }
-            return null;
         }
+        invokePO.setExecutionResult(executionResult);
+        invokePO.setStateHash(calculateExecutionHash(executionResult));
+        transactionRepository.commit();
+
+        return invokePO;
     }
 
     /**
@@ -282,6 +251,11 @@ public class ContractService implements IContractService {
         return output;
     }
 
+    @Override
+    public String appendStorageHash(String blockContractStateHash, String storageHash) {
+        HashFunction function = Hashing.sha256();
+        return function.hashString(String.join(blockContractStateHash, storageHash), Charsets.UTF_8).toString();
+    }
 }
 
 
