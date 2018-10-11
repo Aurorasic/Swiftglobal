@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -40,6 +41,7 @@ import java.util.List;
  * @date 2018-10-10
  */
 @Slf4j
+@Service
 public class ContractService implements IContractService {
 
     @Autowired
