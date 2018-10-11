@@ -1,5 +1,8 @@
 package com.higgsblock.global.chain.app.service.impl;
 
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.Rewards;
@@ -8,16 +11,20 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
+import com.higgsblock.global.chain.app.contract.ContractTransaction;
+import com.higgsblock.global.chain.app.contract.RepositoryRoot;
+import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
-import com.higgsblock.global.chain.app.service.IBalanceService;
-import com.higgsblock.global.chain.app.service.ITransactionService;
-import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
+import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
+import com.higgsblock.global.chain.vm.api.ExecutionResult;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,12 +59,6 @@ public class TransactionService implements ITransactionService {
     private BlockService blockService;
 
     @Autowired
-    private BestUTXOService bestUtxoService;
-
-    @Autowired
-    private UTXOServiceProxy utxoServiceProxy;
-
-    @Autowired
     private TransactionIndexService transactionIndexService;
 
     @Autowired
@@ -72,6 +73,15 @@ public class TransactionService implements ITransactionService {
     @Autowired
     private IBalanceService balanceService;
 
+    @Autowired
+    private IContractService contractService;
+
+    @Autowired
+    private IContractRepository contractRepository;
+    @Autowired
+    private IIcoService icoService;
+    @Autowired
+    private UTXOServiceProxy utxoServiceProxy;
 
     @Override
     public boolean validTransactions(Block block) {
@@ -93,20 +103,46 @@ public class TransactionService implements ITransactionService {
 
         //step3 verify info
         List<Transaction> contractTransactionList = new LinkedList<>();
+        Repository blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
+        Money blockFee = new Money(0);
+        String stateHash = StringUtils.EMPTY;
         for (int index = 1; index < txNumber; index++) {
             Transaction transaction = transactions.get(index);
             if (contractTransactionList.size() > 0) {
                 Transaction contractTransaction = contractTransactionList.remove(0);
                 if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
+
                     continue;
                 }
                 return false;
             }
             //step2 verify tx business info
-            if (!verifyTransactionForVoting(transaction, block, contractTransactionList)) {
+
+            try {
+                Map<String, Object> validResult = verifyTransactionForVoting(transaction, block, contractTransactionList, blockRepository);
+                Money fee = (Money) validResult.get("fee");
+                blockFee = blockFee.add(fee);
+                Object contractStateHash = validResult.get("contractStateHash");
+                if (contractStateHash != null) {
+                    HashFunction function = Hashing.sha256();
+                    stateHash = function.hashString(String.join(stateHash, contractStateHash.toString()), Charsets.UTF_8).toString();
+                }
+            } catch (Exception e) {
                 return false;
             }
         }
+        Money transactionsFee = block.getTransactionsFee();
+        if (!transactionsFee.equals(blockFee)) {
+            LOGGER.info("the transactionsFee is not wright {}", block.getHash());
+            return false;
+        }
+        String contractStateHash = block.getContractStateHash();
+        contractStateHash = contractStateHash == null ? StringUtils.EMPTY : contractStateHash;
+        if (!StringUtils.equals(contractStateHash, stateHash)) {
+            LOGGER.info("the contractStateHash is not wright {}", block.getHash());
+            return false;
+        }
+        verifyCoinBaseTx(transactions.get(0), block);
         LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }
@@ -129,17 +165,6 @@ public class TransactionService implements ITransactionService {
 
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
-    }
-
-    private boolean validContractAddress(Transaction tx) {
-        if (!tx.isContractCreation()) {
-            return true;
-        }
-
-        String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
-        byte[] calculateAddress = tx.calculateContractAddress();
-
-        return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
     }
 
     @Override
@@ -225,15 +250,17 @@ public class TransactionService implements ITransactionService {
         return balanceMoney.compareTo(stakeMinMoney) >= 0;
     }
 
-    public boolean verifyTransactionForVoting(Transaction tx, Block block, List<Transaction> contractTransactionList) {
+    public Map<String, Object> verifyTransactionForVoting(Transaction tx, Block
+            block, List<Transaction> contractTransactionList, Repository blockRepository) {
         if (null == tx) {
             LOGGER.info("transaction is null");
-            return false;
+            throw new RuntimeException();
         }
         if (!tx.valid()) {
             LOGGER.info("transaction is valid error");
-            return false;
+            throw new RuntimeException();
         }
+        Map<String, Object> validResult = new HashedMap();
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
@@ -249,12 +276,12 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("the input has been spend in this transaction or in the other transaction in the block,tx hash {}, the block hash {}"
                         , tx.getHash()
                         , blockHash);
-                return false;
+                throw new RuntimeException();
             }
             TransactionOutput preOutput = getPreOutput(preBlockHash, input);
             if (preOutput == null) {
                 LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
-                return false;
+                throw new RuntimeException();
             }
 
             String currency = preOutput.getMoney().getCurrency();
@@ -275,6 +302,7 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        Money surplus = new Money(0);
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
@@ -282,7 +310,7 @@ public class TransactionService implements ITransactionService {
 
             if (preMoney == null) {
                 LOGGER.info("Pre-output currency is null {}", key);
-                return false;
+                throw new RuntimeException();
             }
             LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
 
@@ -291,21 +319,36 @@ public class TransactionService implements ITransactionService {
                 //input >= out + gas*gasLimit
                 BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
                 curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
+                surplus = preMoney.subtract(curMoney);
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
-                return false;
+                throw new RuntimeException();
             }
         }
 
         boolean verifyInputs = verifyInputs(inputs, hash, preBlockHash);
         if (!verifyInputs) {
-            return false;
+            throw new RuntimeException();
         }
+        BigInteger totalGas;
         if (tx.isContractTrasaction()) {
-            //todo yangyi check invoke result;
+            ContractService.InvokePO invokeResult = contractService.invoke(block, tx, blockRepository);
+            ExecutionResult executionResult = invokeResult.getExecutionResult();
+            ContractTransaction contractTransaction = invokeResult.getContractTransaction();
+            if (contractTransaction != null) {
+                contractTransactionList.add(contractTransaction);
+            }
+            totalGas = executionResult.getGasUsed().multiply(tx.getGasPrice());
+            String contractStateHash = blockService.calculateExecutionHash(executionResult);
+            validResult.put("contractStateHash", contractStateHash);
+        } else {
+            totalGas = BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice());
         }
-        return true;
+        Money fee = BalanceUtil.convertGasToMoney(totalGas, SystemCurrencyEnum.CAS.getCurrency());
+        fee = fee.add(surplus);
+        validResult.put("fee", fee);
+        return validResult;
     }
 
 
@@ -322,9 +365,19 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("transaction is null");
             return false;
         }
-        if (!tx.valid()) {
-            LOGGER.info("transaction is valid error");
-            return false;
+        if (block != null) {
+            if (!tx.valid()) {
+                LOGGER.info("transaction is valid error");
+                return false;
+            }
+            if (!tx.sizeAllowed()) {
+                LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
+                return false;
+            }
+            if (!tx.validContractPart()) {
+                LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+                return false;
+            }
         }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
@@ -376,6 +429,11 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        // for contract, currency must be cas or of ico.
+        if (tx.isContractTrasaction()
+                && !icoService.getContractCurrencies().contains(outputs.get(0).getMoney().getCurrency())) {
+            return false;
+        }
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);

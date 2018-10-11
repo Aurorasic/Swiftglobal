@@ -105,13 +105,12 @@ public class ContractService implements IContractService {
 
                 invokePO.setContractTransaction(refundTx);
             }
-
         } else {
             boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
                 List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                        transactionRepository.getAccountState(transaction.calculateContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
+                        transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
                         transactionRepository.getAccountDetails());
                 invokePO.setContractTransaction(contractTx);
             }
