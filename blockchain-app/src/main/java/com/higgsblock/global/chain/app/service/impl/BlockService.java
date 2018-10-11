@@ -12,48 +12,37 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.*;
 import com.higgsblock.global.chain.app.blockchain.exception.BlockInvalidException;
 import com.higgsblock.global.chain.app.blockchain.exception.NotExistPreBlockException;
-import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionCacheManager;
 import com.higgsblock.global.chain.app.common.SystemStatusManager;
 import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
-import com.higgsblock.global.chain.app.contract.ContractTransaction;
-import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import com.higgsblock.global.chain.vm.api.ExecutionEnvironment;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
-import com.higgsblock.global.chain.vm.api.Executor;
-import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
 import com.higgsblock.global.chain.vm.core.Repository;
-import com.higgsblock.global.chain.vm.core.SystemProperties;
-import com.higgsblock.global.chain.vm.fee.CurrencyUnitEnum;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -123,6 +112,9 @@ public class BlockService implements IBlockService {
 
 
     private Cache<String, Block> blockCache = Caffeine.newBuilder().maximumSize(LRU_CACHE_SIZE).build();
+
+    @Autowired
+    private IContractService contractService;
 
 
     /**
@@ -429,59 +421,23 @@ public class BlockService implements IBlockService {
                 totalUsedSize += transaction.getSize();
                 transactionRepository = blockRepository.startTracking();
 
+                ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
+                updateBlockHash(block, invoke.getExecutionResult());
 
-                ExecutionResult executionResult = executeContract(transaction, block, transactionRepository);
-                updateBlockHash(block, executionResult);
-
-                //TODO tangKun refund gas 2018-09-29
-                boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
+                boolean success = StringUtils.isEmpty(invoke.getExecutionResult().getErrorMessage());
                 if (!success) {
-                    Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
-                            new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
-
-                    if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-
-                        ContractTransaction refundTx = new ContractTransaction();
-                        TransactionInput input = new TransactionInput();
-                        TransactionOutPoint top = new TransactionOutPoint();
-                        top.setTransactionHash(transaction.getHash());
-                        top.setIndex((short) 0);
-
-                        input.setPrevOut(top);
-                        refundTx.getInputs().add(input);
-
-                        TransactionOutput out = new TransactionOutput();
-                        out.setMoney(transferMoney);
-                        LockScript lockScript = new LockScript();
-
-                        lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, block)));
-                        lockScript.setType(ScriptTypeEnum.P2PK.getType());
-                        out.setLockScript(lockScript);
-                        refundTx.getOutputs().add(out);
-
-                        refundTx.setVersion(transaction.getVersion());
-                        refundTx.setLockTime(transaction.getLockTime());
-                        refundTx.setTransactionTime(System.currentTimeMillis());
-
-                        packagedTransactionList.add(refundTx);
-                        totalUsedSize += transaction.getSize();
-                    }
                     totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit()).multiply(transaction.getGasPrice())
                             , SystemCurrencyEnum.CAS.getCurrency()));
                     totalUsedGas += transaction.getGasLimit();
 
                 } else {
-                    boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+                    boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || invoke.getExecutionResult().getGasRefund().compareTo(BigInteger.ZERO) > 0;
                     if (transferFlag) {
-                        List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
-                        ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                                transactionRepository.getAccountState(transaction.calculateContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                                transactionRepository.getAccountDetails());
-                        packagedTransactionList.add(contractTx);
+                        packagedTransactionList.add(invoke.getContractTransaction());
                         totalUsedSize += transaction.getSize();
-                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(executionResult.getGasUsed().multiply(transaction.getGasPrice())
+                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(invoke.getExecutionResult().getGasUsed().multiply(transaction.getGasPrice())
                                 , SystemCurrencyEnum.CAS.getCurrency()));
-                        totalUsedGas += executionResult.getGasUsed().longValue();
+                        totalUsedGas += invoke.getExecutionResult().getGasUsed().longValue();
                     }
 
                 }
@@ -490,13 +446,9 @@ public class BlockService implements IBlockService {
         }
 
         //append state hash
-        if (StringUtils.isNotEmpty(block.getContractStateHash())) {
-            HashFunction function = Hashing.sha256();
-            String stateHash = blockRepository.getStateHash();
-            if (StringUtils.isNotEmpty(stateHash)) {
-                block.setContractStateHash(function.hashString(String.join(block.getContractStateHash(),
-                        stateHash), Charsets.UTF_8).toString());
-            }
+        if (StringUtils.isNotEmpty(block.getContractStateHash()) &&
+                StringUtils.isNotEmpty(blockRepository.getStateHash())) {
+            contractService.appendStorageHash(block.getContractStateHash(), blockRepository.getStateHash());
         }
 
         block.setTransactionsFee(totalFee);
@@ -526,99 +478,6 @@ public class BlockService implements IBlockService {
     private String calculateExecutionHash(ExecutionResult executionResult) {
         HashFunction function = Hashing.sha256();
         return function.hashString(executionResult.toString(), Charsets.UTF_8).toString();
-    }
-
-    /**
-     * Executes contract.
-     *
-     * @param transaction  original transaction containing the contract.
-     * @param block        current block.
-     * @param txRepository snapshot of db before the transaction is executed.
-     * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
-     */
-    private ExecutionResult executeContract(Transaction transaction,
-                                            Block block, Repository txRepository) {
-        ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
-        Executor executor = new Executor(txRepository, executionEnvironment);
-        ExecutionResult executionResult = executor.execute();
-
-        LOGGER.info(executionResult.toString());
-        return executionResult;
-    }
-
-    /**
-     * Creates an environment in which the contract can be executed.
-     *
-     * @param transaction      original transaction containing a contract.
-     * @param block            block original transaction is to be packaged into.
-     * @param systemProperties configuration of system behaviour.
-     * @param blockchainConfig configuration of current block.
-     * @return environment for contract execution.
-     */
-    private ExecutionEnvironment createExecutionEnvironment(
-            Transaction transaction, Block block, SystemProperties systemProperties, BlockchainConfig blockchainConfig) {
-        ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
-
-        // sets transaction context.
-        executionEnvironment.setTransactionHash(transaction.getHash());
-        executionEnvironment.setContractCreation(transaction.isContractCreation());
-        executionEnvironment.setContractAddress(transaction.getContractAddress());
-        executionEnvironment.setSenderAddress(getSender(transaction, block));
-        executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
-        executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
-        executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue())
-                .multiply(new BigDecimal(CurrencyUnitEnum.CAS.getWeight())).toBigInteger().toByteArray());
-        executionEnvironment.setData(transaction.getContractParameters().getBytecode());
-        executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
-
-        // sets block context.
-        // difficulty is meaningless in the case of dpos consensus. we can set it zero to indicates that there is no random calculation.
-        executionEnvironment.setParentHash(Hex.decode(block.getPrevBlockHash()));
-        executionEnvironment.setCoinbase(AddrUtil.toContractAddr(block.getMinerSigPair().getAddress()));
-        executionEnvironment.setTimestamp(block.getBlockTime());
-        executionEnvironment.setNumber(block.getHeight());
-        executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
-        executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
-        executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress(), block)).toByteArray());
-
-        // sets system behaviour.
-        executionEnvironment.setSystemProperties(systemProperties);
-
-        // sets configuration of current block.
-        executionEnvironment.setBlockchainConfig(blockchainConfig);
-
-        return executionEnvironment;
-    }
-
-    /**
-     * Gets sender of the contract in specific transaction.
-     *
-     * @param transaction transaction containing the target contract.
-     * @param block       current block.
-     * @return sender of contract.
-     */
-    private byte[] getSender(Transaction transaction, Block block) {
-        return AddrUtil.toContractAddr(
-                transactionService.getPreOutput(block.getPrevBlockHash(), transaction.getInputs().get(0)).getLockScript().getAddress());
-    }
-
-    /**
-     * Gets balance of specific address.
-     *
-     * @param address target address.
-     * @param block   current block.
-     * @return balance of the address.
-     */
-    private long getBalance(byte[] address, Block block) {
-        List<UTXO> utxoList = utxoServiceProxy.getUnionUTXO(
-                block.getPrevBlockHash(), AddrUtil.toTransactionAddr(address), SystemCurrencyEnum.CAS.getCurrency());
-
-        Money balance = new Money(0L);
-        for (UTXO utxo : utxoList) {
-            balance.add(utxo.getOutput().getMoney());
-        }
-
-        return new BigDecimal(balance.getValue()).multiply(new BigDecimal(CurrencyUnitEnum.CAS.getWeight())).longValue();
     }
 
     /**
