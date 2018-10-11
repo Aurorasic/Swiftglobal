@@ -3,6 +3,7 @@ package com.higgsblock.global.chain.app.service;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
+import com.higgsblock.global.chain.common.utils.Money;
 
 import java.util.Set;
 
@@ -64,4 +65,12 @@ public interface ITransactionService {
      * @return the added miners
      */
     Set<String> getAddedMiners(Transaction tx);
+
+    /**
+     * calculation ordinary transaction fee
+     *
+     * @param tx Ordinary Transaction
+     * @return cas fee
+     */
+    Money calculationOrdinaryTransactionFee(Transaction tx);
 }
