@@ -111,13 +111,13 @@ public class TransactionService implements ITransactionService {
             if (contractTransactionList.size() > 0) {
                 Transaction contractTransaction = contractTransactionList.remove(0);
                 if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
-
+                    Money fee = calculationOrdinaryTransactionFee(contractTransaction);
+                    blockFee = blockFee.add(fee);
                     continue;
                 }
                 return false;
             }
             //step2 verify tx business info
-
             try {
                 Map<String, Object> validResult = verifyTransactionForVoting(transaction, block, contractTransactionList, blockRepository);
                 Money fee = (Money) validResult.get("fee");
@@ -132,12 +132,14 @@ public class TransactionService implements ITransactionService {
             }
         }
         Money transactionsFee = block.getTransactionsFee();
+        LOGGER.info("the blockFee is {} with block hash {}", blockFee, block.getHash());
         if (!transactionsFee.equals(blockFee)) {
             LOGGER.info("the transactionsFee is not wright {}", block.getHash());
             return false;
         }
         String contractStateHash = block.getContractStateHash();
         contractStateHash = contractStateHash == null ? StringUtils.EMPTY : contractStateHash;
+        LOGGER.info("the stateHash is {} with block hash {}", stateHash, block.getHash());
         if (!StringUtils.equals(contractStateHash, stateHash)) {
             LOGGER.info("the contractStateHash is not wright {}", block.getHash());
             return false;
