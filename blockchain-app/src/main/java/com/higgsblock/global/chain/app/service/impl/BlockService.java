@@ -407,11 +407,24 @@ public class BlockService implements IBlockService {
             }
 
             if (!transaction.isContractTrasaction()) {
+
                 packagedTransactionList.add(transaction);
+
                 totalUsedSize += transaction.getSize();
-                totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()),
-                        SystemCurrencyEnum.CAS.getCurrency()));
+
+                HashMap<String, Money> feeMap = new HashMap<>(1);
+                transaction.getInputs().stream().filter(ti -> ti.getPrevOut().getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
+                    Money txFee = feeMap.getOrDefault("txFee", new Money());
+                    txFee = txFee.add(ti.getPrevOut().getMoney());
+                    feeMap.put("txFee", txFee);
+                });
+                transaction.getOutputs().stream().filter(ti -> ti.getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
+                    Money txFee = feeMap.getOrDefault("txFee", new Money());
+                    txFee = txFee.add(ti.getMoney());
+                    feeMap.put("txFee", txFee);
+                });
+                totalFee = totalFee.add(feeMap.get("txFee"));
+
                 totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
             } else {
 
