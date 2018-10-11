@@ -282,13 +282,7 @@ public class BlockService implements IBlockService {
 
             pkSet.add(pair.getPubKey());
         }
-
-        int trimSize = pkSet.size();
-        if (trimSize < MIN_WITNESS) {
-            LOGGER.warn("The witness's valid signature number is not enough : current size={}", trimSize);
-            return false;
-        }
-
+        
         return true;
     }
 
