@@ -144,7 +144,10 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("the contractStateHash is not wright {}", block.getHash());
             return false;
         }
-        verifyCoinBaseTx(transactions.get(0), block);
+        boolean verifyCoinBaseTx = verifyCoinBaseTx(transactions.get(0), block);
+        if (!verifyCoinBaseTx) {
+            return false;
+        }
         LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }
