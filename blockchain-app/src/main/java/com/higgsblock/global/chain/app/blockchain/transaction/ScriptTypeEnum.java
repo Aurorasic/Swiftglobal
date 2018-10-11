@@ -22,7 +22,22 @@ public enum ScriptTypeEnum {
     /**
      * pay to script hash
      */
-    P2SH((short) 2);
+    P2SH((short) 2),
+
+    /**
+     * contract creation
+     */
+    CREATE((short) 11),
+
+    /**
+     * contract invoking
+     */
+    CALL((short) 12),
+
+    /**
+     * pay to contract
+     */
+    CONTRACT((short) 13);
 
     /**
      * lock script type such as P2PKH or P2SH

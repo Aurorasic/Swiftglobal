@@ -42,8 +42,6 @@ public class Transaction extends BaseSerializer {
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
     private static final int EXTRA_LIMITED_SIZE_UNIT = 1024 * 10;
     private static final int INIT_VERSION = 0;
-    private static final int CREATE_TYPE = 11;
-    private static final int CALL_TYPE = 12;
 
     private int version;
 
@@ -334,11 +332,11 @@ public class Transaction extends BaseSerializer {
     }
 
     public boolean isContractCreation() {
-        return outputs.get(0).getLockScript().getType() == CREATE_TYPE;
+        return outputs.get(0).getLockScript().getType() == ScriptTypeEnum.CREATE.getType();
     }
 
     public boolean isContractCall() {
-        return outputs.get(0).getLockScript().getType() == CALL_TYPE;
+        return outputs.get(0).getLockScript().getType() == ScriptTypeEnum.CALL.getType();
     }
 
     public boolean isContractTrasaction() {
