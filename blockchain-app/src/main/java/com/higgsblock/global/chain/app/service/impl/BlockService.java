@@ -403,17 +403,18 @@ public class BlockService implements IBlockService {
         String contractStateHash = Strings.EMPTY;
 
         for (Transaction transaction : sortedTransactionList) {
-            if (totalUsedSize + transaction.getSize() > blockchainConfig.getLimitedSize()) {
-                break;
+            if (transaction.getSize() > blockchainConfig.getLimitedSize() - totalUsedSize) {
+                continue;
             }
 
             if (!transaction.isContractTrasaction()) {
                 packagedTransactionList.add(transaction);
                 totalUsedSize += transaction.getSize();
-                totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()),
-                        SystemCurrencyEnum.CAS.getCurrency()));
                 totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
+                //TODO: chenjiawei fee=inputs-outputs.
+                totalFee = totalFee.add(
+                        BalanceUtil.convertGasToMoney(FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()),
+                        SystemCurrencyEnum.CAS.getCurrency()));
             } else {
 
                 if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize()
