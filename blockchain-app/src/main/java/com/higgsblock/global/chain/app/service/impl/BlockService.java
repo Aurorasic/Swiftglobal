@@ -282,7 +282,7 @@ public class BlockService implements IBlockService {
 
             pkSet.add(pair.getPubKey());
         }
-        
+
         return true;
     }
 
