@@ -49,9 +49,6 @@ public class TransactionService implements ITransactionService {
     private BlockService blockService;
 
     @Autowired
-    private BestUTXOService bestUtxoService;
-
-    @Autowired
     private UTXOServiceProxy utxoServiceProxy;
 
     @Autowired
@@ -390,12 +387,6 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("Validate witness reward failed");
             return false;
         }
-        //verify reward count
-        if (!validateRewards(outputs, rewards)) {
-            LOGGER.info("Validate witness reward failed");
-            return false;
-        }
-
         return true;
     }
 
@@ -532,26 +523,6 @@ public class TransactionService implements ITransactionService {
      */
     private boolean validateProducerReward(TransactionOutput output, Money totalReward) {
         return output.getMoney().compareTo(totalReward) == 0;
-    }
-
-
-    /**
-     * validate witness rewards
-     *
-     * @param outputs witness reward  outputs
-     * @param rewards
-     * @return if count outputs money == （topTenSingleWitnessMoney*10+lastWitnessMoney） return true else false
-     */
-    private boolean validateRewards(List<TransactionOutput> outputs, Rewards rewards) {
-        Money outputsTotalMoney = new Money("0");
-        outputs.forEach(output -> {
-            outputsTotalMoney.add(output.getMoney());
-        });
-        Money minerAndWitnessTotalMoney = new Money("0");
-        Money countWitnessMoney = new Money(rewards.getTopTenSingleWitnessMoney().getValue()).multiply(witnessService.getWitnessSize() - 1).add(rewards.getLastWitnessMoney());
-        minerAndWitnessTotalMoney = countWitnessMoney.add(rewards.getMinerTotal());
-
-        return minerAndWitnessTotalMoney.compareTo(outputsTotalMoney) == 0;
     }
 
     /**
