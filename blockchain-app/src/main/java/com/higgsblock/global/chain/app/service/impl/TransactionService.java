@@ -131,17 +131,6 @@ public class TransactionService implements ITransactionService {
         broadcastTransaction(tx);
     }
 
-    private boolean validContractAddress(Transaction tx) {
-        if (!tx.isContractCreation()) {
-            return true;
-        }
-
-        String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
-        byte[] calculateAddress = tx.calculateContractAddress();
-
-        return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
-    }
-
     @Override
     public boolean hasStakeOnBest(String address, SystemCurrencyEnum currency) {
         Money balanceMoney = balanceService.getBalanceOnBest(address, currency.getCurrency());

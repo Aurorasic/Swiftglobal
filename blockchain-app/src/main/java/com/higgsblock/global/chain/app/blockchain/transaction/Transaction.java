@@ -92,17 +92,14 @@ public class Transaction extends BaseSerializer {
 
     private byte[] contractAddress;
 
-    public byte[] calculateContractAddress() {
-        if (contractAddress != null) {
-            return contractAddress;
-        }
+    private byte[] calculateContractAddress() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(transactionTime));
         builder.append(function.hashBytes(contractParameters.getBytecode()));
         builder.append(function.hashString(getInputsHash(), Charsets.UTF_8));
-        contractAddress = CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
-        return contractAddress;
+
+        return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
     }
 
     public byte[] getContractAddress() {
@@ -110,7 +107,12 @@ public class Transaction extends BaseSerializer {
             throw new IllegalArgumentException("There is no contract address because transaction does not contain a contract.");
         }
 
-        return AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress());
+        if (contractAddress != null) {
+            return contractAddress;
+        }
+        contractAddress = AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress());
+
+        return contractAddress;
     }
 
     public boolean valid() {
@@ -180,7 +182,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (!Arrays.equals(AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress()), calculateContractAddress())) {
+        if (!Arrays.equals(getContractAddress(), calculateContractAddress())) {
             return false;
         }
 
