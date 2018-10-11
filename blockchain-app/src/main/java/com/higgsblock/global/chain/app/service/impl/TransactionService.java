@@ -17,6 +17,7 @@ import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.service.IBalanceService;
 import com.higgsblock.global.chain.app.service.IContractService;
+import com.higgsblock.global.chain.app.service.IIcoService;
 import com.higgsblock.global.chain.app.service.ITransactionService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
@@ -87,6 +88,8 @@ public class TransactionService implements ITransactionService {
 
     @Autowired
     private IContractRepository contractRepository;
+    @Autowired
+    private IIcoService icoService;
 
     @Override
     public boolean validTransactions(Block block) {
@@ -170,17 +173,6 @@ public class TransactionService implements ITransactionService {
 
         txCacheManager.addTransaction(tx);
         broadcastTransaction(tx);
-    }
-
-    private boolean validContractAddress(Transaction tx) {
-        if (!tx.isContractCreation()) {
-            return true;
-        }
-
-        String transferAddress = tx.getOutputs().get(0).getLockScript().getAddress();
-        byte[] calculateAddress = tx.calculateContractAddress();
-
-        return AddrUtil.toTransactionAddr(calculateAddress).equals(transferAddress);
     }
 
     @Override
@@ -381,9 +373,19 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("transaction is null");
             return false;
         }
-        if (!tx.valid()) {
-            LOGGER.info("transaction is valid error");
-            return false;
+        if (block != null) {
+            if (!tx.valid()) {
+                LOGGER.info("transaction is valid error");
+                return false;
+            }
+            if (!tx.sizeAllowed()) {
+                LOGGER.info("Size of the transaction is illegal: {}", tx.getHash());
+                return false;
+            }
+            if (!tx.validContractPart()) {
+                LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+                return false;
+            }
         }
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
@@ -435,6 +437,11 @@ public class TransactionService implements ITransactionService {
             }
         }
 
+        // for contract, currency must be cas or of ico.
+        if (tx.isContractTrasaction()
+                && !icoService.getContractCurrencies().contains(outputs.get(0).getMoney().getCurrency())) {
+            return false;
+        }
 
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);

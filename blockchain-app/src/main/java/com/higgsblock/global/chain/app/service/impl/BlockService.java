@@ -32,7 +32,7 @@ import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
 import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
-import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -395,8 +395,8 @@ public class BlockService implements IBlockService {
 
     public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
         List<Transaction> packagedTransactionList = new ArrayList<>();
-        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash());
-        Repository transactionRepository;
+        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(),
+                utxoServiceProxy, SystemProperties.getDefault());
         int totalUsedSize = 0;
         long totalUsedGas = 0;
         Money totalFee = new Money();
@@ -410,45 +410,49 @@ public class BlockService implements IBlockService {
                 packagedTransactionList.add(transaction);
                 totalUsedSize += transaction.getSize();
                 totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                        FeeUtil.getSizeGas(transaction.getSize()).multiply(transaction.getGasPrice()),
+                        SystemCurrencyEnum.CAS.getCurrency()));
                 totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
             } else {
 
-                if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize() > blockchainConfig.getLimitedSize()) {
+                if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize()
+                        > blockchainConfig.getLimitedSize()) {
                     break;
                 }
                 packagedTransactionList.add(transaction);
                 totalUsedSize += transaction.getSize();
-                transactionRepository = blockRepository.startTracking();
 
                 ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
                 updateBlockHash(block, invoke.getExecutionResult());
 
                 boolean success = StringUtils.isEmpty(invoke.getExecutionResult().getErrorMessage());
                 if (!success) {
-                    totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit()).multiply(transaction.getGasPrice())
+                    totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit())
+                                    .multiply(transaction.getGasPrice())
                             , SystemCurrencyEnum.CAS.getCurrency()));
                     totalUsedGas += transaction.getGasLimit();
 
                 } else {
-                    boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || invoke.getExecutionResult().getGasRefund().compareTo(BigInteger.ZERO) > 0;
+                    boolean transferFlag = invoke.getContractTransaction() != null ||
+                            invoke.getExecutionResult().getGasRefund().compareTo(BigInteger.ZERO) > 0;
                     if (transferFlag) {
                         packagedTransactionList.add(invoke.getContractTransaction());
                         totalUsedSize += transaction.getSize();
-                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(invoke.getExecutionResult().getGasUsed().multiply(transaction.getGasPrice())
+                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(invoke.getExecutionResult().getGasUsed()
+                                        .multiply(transaction.getGasPrice())
                                 , SystemCurrencyEnum.CAS.getCurrency()));
                         totalUsedGas += invoke.getExecutionResult().getGasUsed().longValue();
                     }
 
                 }
-                transactionRepository.commit();
             }
         }
 
         //append state hash
         if (StringUtils.isNotEmpty(block.getContractStateHash()) &&
                 StringUtils.isNotEmpty(blockRepository.getStateHash())) {
-            contractService.appendStorageHash(block.getContractStateHash(), blockRepository.getStateHash());
+            block.setContractStateHash(contractService.appendStorageHash(block.getContractStateHash(),
+                    blockRepository.getStateHash()));
         }
 
         block.setTransactionsFee(totalFee);

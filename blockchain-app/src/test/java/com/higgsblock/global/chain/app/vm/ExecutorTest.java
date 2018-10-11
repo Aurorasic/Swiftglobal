@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.app.vm;
 
 import com.higgsblock.global.chain.app.BaseTest;
-import com.higgsblock.global.chain.app.contract.RepositoryImpl;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.vm.DataWord;
@@ -12,25 +11,20 @@ import com.higgsblock.global.chain.vm.api.ExecutionResult;
 import com.higgsblock.global.chain.vm.api.Executor;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.config.Constants;
-import com.higgsblock.global.chain.vm.core.*;
+import com.higgsblock.global.chain.vm.core.AccountState;
+import com.higgsblock.global.chain.vm.core.Repository;
+import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.program.Program;
-import com.higgsblock.global.chain.vm.solidity.CallTransaction;
 import com.higgsblock.global.chain.vm.solidity.SolidityCallResult;
 import com.higgsblock.global.chain.vm.solidity.SolidityContractImpl;
-import com.higgsblock.global.chain.vm.solidity.SolidityType;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Chen Jiawei
@@ -174,11 +168,10 @@ public class ExecutorTest extends BaseTest {
                 contractAddress, senderAddress, gasPrice, gasLimit, value, data, systemProperties,
                 blockchainConfig, parentHash, coinbase, timestamp, number, difficulty, gasLimitBlock, balance);
 
-        blockRepository  = new RepositoryRoot(contractRepository, "");
-         transactionRepository = blockRepository.startTracking();
+        blockRepository = new RepositoryRoot(contractRepository, "", null, SystemProperties.getDefault());
+        transactionRepository = blockRepository.startTracking();
 
         executor = new Executor(transactionRepository, executionEnvironment);
-
 
 
     }
@@ -191,10 +184,10 @@ public class ExecutorTest extends BaseTest {
         // 45 is used for ops fee.
         //Assert.assertEquals(45, executionResult.getGasUsed().intValue());
         //constructor has no payable modifier, check fails.
-      //  Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
-    //    Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
+        //  Assert.assertEquals("REVERT opcode executed.", executionResult.getErrorMessage());
+        //    Assert.assertEquals(124955, executionResult.getRemainGas().intValue());
 
-        String abi= "[" +
+        String abi = "[" +
                 "{" +
                 "\"constant\": true," +
                 "\"inputs\": []," +
@@ -272,15 +265,15 @@ public class ExecutorTest extends BaseTest {
         SolidityCallResult result = new SolidityContractImpl(abi).callFunction("get");
         result.setExecutionResult(executionResult.getResult());
         //System.out.println("执行结果: "+ result.getReturnValue());
-        LOGGER.info("执行结果: "+ Hex.toHexString(executionResult.getResult()));
+        LOGGER.info("执行结果: " + Hex.toHexString(executionResult.getResult()));
 
-        LOGGER.info("部署合约代码"+Hex.toHexString(blockRepository.getCode(contractAddress)));
+        LOGGER.info("部署合约代码" + Hex.toHexString(blockRepository.getCode(contractAddress)));
 
         AccountState accountState = blockRepository.getAccountState(contractAddress);
 
-        LOGGER.info("accountState: "+accountState);
+        LOGGER.info("accountState: " + accountState);
 
-        LOGGER.info("all : "+ contractRepository.findAll());
+        LOGGER.info("all : " + contractRepository.findAll());
 
 
     }
