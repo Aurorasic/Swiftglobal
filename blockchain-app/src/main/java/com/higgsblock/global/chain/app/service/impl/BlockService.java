@@ -400,6 +400,7 @@ public class BlockService implements IBlockService {
         int totalUsedSize = 0;
         long totalUsedGas = 0;
         Money totalFee = new Money();
+        String contractStateHash = Strings.EMPTY;
 
         for (Transaction transaction : sortedTransactionList) {
             if (totalUsedSize + transaction.getSize() > blockchainConfig.getLimitedSize()) {
@@ -423,7 +424,7 @@ public class BlockService implements IBlockService {
                 totalUsedSize += transaction.getSize();
 
                 ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
-                updateBlockHash(block, invoke.getExecutionResult());
+                contractStateHash = calculateExecutionHash(contractStateHash, invoke.getExecutionResult());
 
                 boolean success = StringUtils.isEmpty(invoke.getExecutionResult().getErrorMessage());
                 if (!success) {
@@ -449,10 +450,8 @@ public class BlockService implements IBlockService {
         }
 
         //append state hash
-        if (StringUtils.isNotEmpty(block.getContractStateHash()) &&
-                StringUtils.isNotEmpty(blockRepository.getStateHash())) {
-            block.setContractStateHash(contractService.appendStorageHash(block.getContractStateHash(),
-                    blockRepository.getStateHash()));
+        if (StringUtils.isNotEmpty(contractStateHash) && StringUtils.isNotEmpty(blockRepository.getStateHash())) {
+            block.setContractStateHash(contractService.appendStorageHash(contractStateHash, blockRepository.getStateHash()));
         }
 
         block.setTransactionsFee(totalFee);
@@ -461,16 +460,17 @@ public class BlockService implements IBlockService {
     }
 
     /**
-     * Updates block hash.
+     * Calculates latest execution result hash.
      *
-     * @param block           target block.
+     * @param currentHash execution result hash for previous transactions.
      * @param executionResult result related to contract execution procedure.
+     * @return latest execution result hash.
      */
-    private void updateBlockHash(Block block, ExecutionResult executionResult) {
+    private String calculateExecutionHash(String currentHash, ExecutionResult executionResult) {
         HashFunction function = Hashing.sha256();
-        String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
-        block.setContractStateHash(function.hashString(
-                String.join(preHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString());
+
+        return function.hashString(
+                String.join(currentHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString();
     }
 
     /**
