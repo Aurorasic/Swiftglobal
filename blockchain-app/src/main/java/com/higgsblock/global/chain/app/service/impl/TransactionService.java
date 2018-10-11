@@ -306,7 +306,7 @@ public class TransactionService implements ITransactionService {
         }
 
         Money surplus = new Money(0);
-
+        boolean hasCas = false;
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
             Money curMoney = curMoneyMap.get(key);
@@ -323,11 +323,17 @@ public class TransactionService implements ITransactionService {
                 BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
                 curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
                 surplus = preMoney.subtract(curMoney);
+                hasCas = true;
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
                 throw new RuntimeException();
             }
+        }
+
+        if (!hasCas) {
+            LOGGER.info("there haven't input which the currency is cas,blockHash:", block.getHash());
+            throw new RuntimeException();
         }
 
         boolean verifyInputs = verifyInputs(inputs, hash, preBlockHash);
@@ -438,6 +444,7 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
+        boolean hasCas = false;
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
             Money curMoney = curMoneyMap.get(key);
@@ -453,11 +460,16 @@ public class TransactionService implements ITransactionService {
                 //input >= out + gas*gasLimit
                 BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
                 curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
+                hasCas = true;
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
                 return false;
             }
+        }
+        if (!hasCas) {
+            LOGGER.info("there haven't input which the currency is cas,blockHash:", block.getHash());
+            throw new RuntimeException();
         }
 
         return verifyInputs(inputs, hash, preBlockHash);
