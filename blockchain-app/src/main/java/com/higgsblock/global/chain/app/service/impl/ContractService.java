@@ -70,41 +70,21 @@ public class ContractService implements IContractService {
     public InvokePO invoke(Block block, Transaction transaction, Repository blockRepository) {
 
         Repository transactionRepository = blockRepository.startTracking();
-        ExecutionResult executionResult = executeContract(transaction, block, transactionRepository);
+        Repository conRepository = transactionRepository.startTracking();
+        ExecutionResult executionResult = executeContract(transaction, block, transactionRepository, conRepository);
         InvokePO invokePO = new InvokePO();
 
         //TODO tangKun refund gas 2018-09-29
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
+        Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
+                new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
+
         if (!success) {
-            Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
-                    new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
 
             if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-
-                ContractTransaction refundTx = new ContractTransaction();
-                TransactionInput input = new TransactionInput();
-                TransactionOutPoint top = new TransactionOutPoint();
-                top.setTransactionHash(transaction.getHash());
-                top.setIndex((short) 0);
-
-                input.setPrevOut(top);
-                refundTx.getInputs().add(input);
-
-                TransactionOutput out = new TransactionOutput();
-                out.setMoney(transferMoney);
-                LockScript lockScript = new LockScript();
-
-                lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, block)));
-                lockScript.setType(ScriptTypeEnum.P2PK.getType());
-                out.setLockScript(lockScript);
-                refundTx.getOutputs().add(out);
-
-                refundTx.setVersion(transaction.getVersion());
-                refundTx.setLockTime(transaction.getLockTime());
-                refundTx.setTransactionTime(System.currentTimeMillis());
-
-                invokePO.setContractTransaction(refundTx);
+                invokePO.setContractTransaction(buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney));
             }
+
         } else {
             boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
@@ -112,29 +92,39 @@ public class ContractService implements IContractService {
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
                         transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
                         transactionRepository.getAccountDetails());
-                invokePO.setContractTransaction(contractTx);
+                //if success subContractTransaction size bigger than or fee is not enough,
+                // so create fail refund transaction
+                long size = contractTx.getSize();
+                if (size > blockchainConfig.getContractLimitedSize() ||
+                        FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
+                    ContractTransaction failedTransaction = buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney);
+                    invokePO.setContractTransaction(failedTransaction);
+                    executionResult.setRemainGas(BigInteger.ZERO);
+                    executionResult.setErrorMessage("contract size bigger than limit");
+                }
             }
 
         }
         invokePO.setExecutionResult(executionResult);
         invokePO.setStateHash(calculateExecutionHash(executionResult));
-        transactionRepository.commit();
-
+        if (StringUtils.isEmpty(executionResult.getErrorMessage())) {
+            transactionRepository.commit();
+        }
         return invokePO;
     }
 
     /**
      * Executes contract.
      *
-     * @param transaction  original transaction containing the contract.
-     * @param block        current block.
-     * @param txRepository snapshot of db before the transaction is executed.
+     * @param transaction   original transaction containing the contract.
+     * @param block         current block.
+     * @param conRepository snapshot of db before the  contract is executed.
      * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
      */
     private ExecutionResult executeContract(Transaction transaction,
-                                            Block block, Repository txRepository) {
+                                            Block block, Repository conRepository, Repository txRepository) {
         ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
-        Executor executor = new Executor(txRepository, executionEnvironment);
+        Executor executor = new Executor(conRepository, txRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();
 
         LOGGER.info(executionResult.toString());
@@ -158,7 +148,7 @@ public class ContractService implements IContractService {
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.isContractCreation());
         executionEnvironment.setContractAddress(transaction.getContractAddress());
-        executionEnvironment.setSenderAddress(getSender(transaction, block));
+        executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue())
@@ -188,12 +178,12 @@ public class ContractService implements IContractService {
     /**
      * Gets sender of the contract in specific transaction.
      *
-     * @param transaction transaction containing the target contract.
-     * @param block       current block.
+     * @param transaction        transaction containing the target contract.
+     * @param blockPrevBlockHash block PrevBlockHash.
      * @return sender of contract.
      */
-    private byte[] getSender(Transaction transaction, Block block) {
-        return AddrUtil.toContractAddr(getPreOutput(block.getPrevBlockHash(),
+    private byte[] getSender(Transaction transaction, String blockPrevBlockHash) {
+        return AddrUtil.toContractAddr(getPreOutput(blockPrevBlockHash,
                 transaction.getInputs().get(0)).getLockScript().getAddress());
     }
 
@@ -255,6 +245,40 @@ public class ContractService implements IContractService {
     public String appendStorageHash(String blockContractStateHash, String storageHash) {
         HashFunction function = Hashing.sha256();
         return function.hashString(String.join(blockContractStateHash, storageHash), Charsets.UTF_8).toString();
+    }
+
+    /**
+     * build failed transaction
+     *
+     * @param transaction   original transaction
+     * @param prevBlockHash block prev hash
+     * @param transferMoney refund money
+     * @return
+     */
+    public ContractTransaction buildFiledTransaction(Transaction transaction, String prevBlockHash, Money transferMoney) {
+        ContractTransaction refundTx = new ContractTransaction();
+        TransactionInput input = new TransactionInput();
+        TransactionOutPoint top = new TransactionOutPoint();
+        top.setTransactionHash(transaction.getHash());
+        top.setIndex((short) 0);
+
+        input.setPrevOut(top);
+        refundTx.getInputs().add(input);
+
+        TransactionOutput out = new TransactionOutput();
+        out.setMoney(transferMoney);
+        LockScript lockScript = new LockScript();
+
+        lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));
+        lockScript.setType(ScriptTypeEnum.P2PK.getType());
+        out.setLockScript(lockScript);
+        refundTx.getOutputs().add(out);
+
+        refundTx.setVersion(transaction.getVersion());
+        refundTx.setLockTime(transaction.getLockTime());
+        refundTx.setTransactionTime(System.currentTimeMillis());
+
+        return refundTx;
     }
 }
 

@@ -171,7 +171,7 @@ public class ExecutorTest extends BaseTest {
         blockRepository = new RepositoryRoot(contractRepository, "", null, SystemProperties.getDefault());
         transactionRepository = blockRepository.startTracking();
 
-        executor = new Executor(transactionRepository, executionEnvironment);
+        executor = new Executor(transactionRepository.startTracking(), transactionRepository, executionEnvironment);
 
 
     }

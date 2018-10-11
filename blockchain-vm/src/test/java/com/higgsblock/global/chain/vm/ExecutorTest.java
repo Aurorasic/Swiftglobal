@@ -367,7 +367,7 @@ public class ExecutorTest {
 
         Repository transactionRepository = new RepositoryImplTest();
 
-        executor = new Executor(transactionRepository, executionEnvironment);
+        executor = new Executor(transactionRepository.startTracking(), transactionRepository, executionEnvironment);
     }
 
     @Test

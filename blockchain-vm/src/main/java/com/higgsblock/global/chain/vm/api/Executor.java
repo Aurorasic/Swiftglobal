@@ -44,14 +44,14 @@ public class Executor {
     private List<TransferInfo> transferInfoList;
     private long sizeGas;
 
-    public Executor(Repository transactionRepository, ExecutionEnvironment executionEnvironment) {
+    public Executor(Repository contractRepository, Repository transactionRepository, ExecutionEnvironment executionEnvironment) {
         this.transactionRepository = transactionRepository;
         this.executionEnvironment = executionEnvironment;
         gasLimit = executionEnvironment.getGasLimit();
         executionResult = new ExecutionResult();
         executionResult.setTransactionHash(executionEnvironment.getTransactionHash());
         executionResult.setRemainGas(convertToBigInteger(gasLimit));
-        contractRepository = transactionRepository.startTracking();
+        this.contractRepository = contractRepository;
         executionType = executionEnvironment.getExecutionType();
         contractAddress = executionEnvironment.getContractAddress();
         systemProperties = executionEnvironment.getSystemProperties();
