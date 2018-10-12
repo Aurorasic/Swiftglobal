@@ -283,7 +283,7 @@ public class TransactionService implements ITransactionService {
             }
             TransactionOutput preOutput = getPreOutput(preBlockHash, input);
             if (preOutput == null) {
-                LOGGER.info("pre-output is empty,input={},preOutput={},tx hash={},block hash={}", input, preOutput, tx.getHash(), blockHash);
+                LOGGER.info("pre-output is empty,input={},tx txHash={},block hash={}", input, tx.getHash(), blockHash);
                 throw new RuntimeException();
             }
 
