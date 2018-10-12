@@ -17,7 +17,6 @@ import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -25,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.internal.mockcreation.RuntimeExceptionProxy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.*;
@@ -35,7 +35,6 @@ import static org.mockito.ArgumentMatchers.*;
  * @author yangshenghong
  * @date 2018-09-26
  */
-@Slf4j
 @PrepareForTest(value = {BlockService.class, ECKey.class})
 public class BlockServiceTest extends BaseMockTest {
     @InjectMocks
@@ -243,8 +242,10 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(spyBlockService.getBlockByHash(block.getPrevBlockHash())).thenReturn(null);
         try {
             blockService.getToBeBestBlock(block);
-        } catch (IllegalStateException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IllegalStateException);
+            Assert.assertTrue(e.getMessage().contains("can not find block,blockhash"));
+            //LOGGER.error(e.toString());
         }
 
         String preBlockHash = "preBlockHash";
@@ -263,18 +264,14 @@ public class BlockServiceTest extends BaseMockTest {
         block.setPrevBlockHash("preBlockHash2");
         preBlock.setPrevBlockHash("preBlockHash3");
         Mockito.doReturn(preBlock).when(spyBlockService).getBlockByHash(block.getPrevBlockHash());
-        try {
-            spyBlockService.getToBeBestBlock(block);
-        } catch (Exception e) {
-            LOGGER.error(e.toString());
-        }
 
         //get preBestBlock return null
         Mockito.doReturn(preBlock).doReturn(preBlock).doReturn(null).when(spyBlockService).getBlockByHash(preBlock.getPrevBlockHash());
         try {
             spyBlockService.getToBeBestBlock(block);
-        } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeExceptionProxy);
+            Assert.assertTrue(e.getMessage().contains("block not found"));
         }
 
         //check preBestBlock failure
@@ -283,8 +280,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(spyBlockService.getBestBlockByHeight(preBestBlock.getHeight())).thenReturn(null);
         try {
             spyBlockService.getToBeBestBlock(block);
-        } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeExceptionProxy);
+            Assert.assertTrue(e.getMessage().contains("have not been confirmed best chain"));
         }
 
         Block bestBlockOfHeight = new Block();
@@ -293,8 +291,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(spyBlockService.getBestBlockByHeight(preBestBlock.getHeight())).thenReturn(bestBlockOfHeight);
         try {
             spyBlockService.getToBeBestBlock(block);
-        } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeExceptionProxy);
+            Assert.assertTrue(e.getMessage().contains("is not match"));
         }
 
         //getToBeBestBlock
@@ -409,7 +408,8 @@ public class BlockServiceTest extends BaseMockTest {
         try {
             blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
         } catch (IllegalStateException e) {
-            LOGGER.error(e.toString());
+            Assert.assertTrue(e instanceof IllegalStateException);
+            Assert.assertTrue(e.getMessage().contains("The best block index can not be null"));
         }
 
         //There are no enough transactions
@@ -421,28 +421,28 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(transactionIndexService.getTxOfUnSpentUtxo(anyString(), anyList())).thenReturn(txOfUnSpentUtxos);
         Assert.assertNull(blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair));
 
-        //
+        //sortResult.isOverrun() is false and lastBlockIndex.getHeight()==0
         SortResult sortResult = new SortResult(false, new HashMap<>());
         PowerMockito.when(transactionFeeService.orderTransaction(preBlockHash, txOfUnSpentUtxos)).thenReturn(sortResult);
         txOfUnSpentUtxos.add(new Transaction());
         txOfUnSpentUtxos.add(new Transaction());
         PowerMockito.mockStatic(ECKey.class);
-        String sig = "";
+        String sig = "sig";
         PowerMockito.when(ECKey.class, "signMessage", anyString(), anyString()).thenReturn(sig);
-        blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
+        Assert.assertEquals(blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair).getHeight(), lastBlockIndex.getHeight() + 1);
 
-        //
+        //sortResult.isOverrun() is true
         sortResult.setOverrun(true);
         List<Transaction> canPackageTransactionsOfBlock = Arrays.asList(new Transaction(), new Transaction());
         PowerMockito.when(transactionFeeService.getCanPackageTransactionsOfBlock(txOfUnSpentUtxos)).thenReturn(canPackageTransactionsOfBlock);
-        blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
+        Assert.assertEquals(blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair).getHeight(), lastBlockIndex.getHeight() + 1);
 
-        //
+        //lastBlockIndex.getHeight()==2
         lastBlockIndex.setHeight(2L);
         Transaction coinBaseTx = new Transaction();
         coinBaseTx.setHash("coinBaseTx");
         PowerMockito.when(transactionFeeService.buildCoinBaseTx(anyLong(), anyShort(), anyMap(), anyLong())).thenReturn(coinBaseTx);
-        blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair);
+        Assert.assertEquals(blockService.packageNewBlockForPreBlockHash(preBlockHash, peerKeyPair).getHeight(), lastBlockIndex.getHeight() + 1);
     }
 
     @Test
@@ -453,8 +453,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(blockChainService.isExistBlock(block.getHash())).thenReturn(true);
         try {
             blockService.persistBlockAndIndex(block);
-        } catch (BlockInvalidException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BlockInvalidException);
+            Assert.assertTrue(e.getMessage().contains("the block is not valid"));
         }
 
         //orphan block
@@ -463,8 +464,10 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(blockChainService.isExistBlock(block.getPrevBlockHash())).thenReturn(false);
         try {
             blockService.persistBlockAndIndex(block);
-        } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            System.out.println(e.toString());
+            Assert.assertTrue(e instanceof BlockInvalidException);
+            Assert.assertTrue(e.getMessage().contains("pre block does not exist"));
         }
 
         //check witness signatures failure
@@ -472,8 +475,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(blockChainService.checkWitnessSignature(block)).thenReturn(false);
         try {
             blockService.persistBlockAndIndex(block);
-        } catch (BlockInvalidException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BlockInvalidException);
+            Assert.assertTrue(e.getMessage().contains("the block is not valid"));
         }
 
         //check block producer failure
@@ -481,8 +485,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(blockChainService.checkBlockProducer(block)).thenReturn(false);
         try {
             blockService.persistBlockAndIndex(block);
-        } catch (BlockInvalidException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BlockInvalidException);
+            Assert.assertTrue(e.getMessage().contains("the block is not valid"));
         }
 
         //check transaction failure
@@ -490,10 +495,12 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(blockChainService.checkTransactions(block)).thenReturn(false);
         try {
             blockService.persistBlockAndIndex(block);
-        } catch (BlockInvalidException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BlockInvalidException);
+            Assert.assertTrue(e.getMessage().contains("the block is not valid"));
         }
 
+        //success
         PowerMockito.when(blockChainService.checkTransactions(block)).thenReturn(true);
         Block newBestBlock = new Block();
         Mockito.doReturn(newBestBlock).when(spyBlockService).saveBlockCompletely(block);
@@ -530,19 +537,25 @@ public class BlockServiceTest extends BaseMockTest {
         try {
             spyBlockService.saveBlockCompletely(block);
         } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeException);
         }
 
+        //isFirstBlockByHeight return false
         Mockito.doNothing().when(spyBlockService).saveBlock(block);
         Mockito.doReturn(false).when(spyBlockService).isFirstBlockByHeight(block);
         Mockito.doReturn(null).when(spyBlockService).getToBeBestBlock(block);
         Assert.assertNull(spyBlockService.saveBlockCompletely(block));
 
+
+        ////isFirstBlockByHeight return true
         Mockito.doReturn(true).when(spyBlockService).isFirstBlockByHeight(block);
         Assert.assertNull(spyBlockService.saveBlockCompletely(block));
 
+        //block.isGenesisBlock()
         block.setHeight(1L);
         Assert.assertNull(spyBlockService.saveBlockCompletely(block));
 
+        //block not GenesisBlock
         block.setHeight(2L);
         Block newBestBlock = new Block();
         Mockito.doReturn(newBestBlock).when(spyBlockService).getToBeBestBlock(block);
@@ -564,8 +577,9 @@ public class BlockServiceTest extends BaseMockTest {
         PowerMockito.when(spyBlockService, "checkBlockNumbers").thenReturn(false);
         try {
             spyBlockService.loadAllBlockData();
-        } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeException);
+            Assert.assertTrue(e.getMessage().contains("blockMap size is not equal blockIndexMap count number"));
         }
 
         //genesis block is incorrect
@@ -574,7 +588,8 @@ public class BlockServiceTest extends BaseMockTest {
         try {
             spyBlockService.loadAllBlockData();
         } catch (RuntimeException e) {
-            LOGGER.error(e.toString());
+            Assert.assertTrue(e instanceof RuntimeException);
+            Assert.assertTrue(e.getMessage().contains("genesis block is incorrect"));
         }
 
         //loadAllBlockData success
