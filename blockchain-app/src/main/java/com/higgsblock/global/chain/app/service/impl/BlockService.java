@@ -392,17 +392,6 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    public static void main(String[] args) {
-        Integer i = 4;
-        System.out.println(i);
-        ss(i);
-        System.out.println(i);
-
-    }
-    private static void ss(Integer ssd) {
-        ssd = 9;
-    }
-
     public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
         List<Transaction> packagedTransactionList = new ArrayList<>();
         RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(),
@@ -444,7 +433,7 @@ public class BlockService implements IBlockService {
                     totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
                     totalFee = totalFee.add(transactionService.gasFee(transaction));
                     totalFee = totalFee.subtract(BalanceUtil.convertGasToMoney(
-                                    executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                            executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
                     if (invoke.getContractTransaction() != null) {
                         packagedTransactionList.add(invoke.getContractTransaction());
                         totalUsedSize += invoke.getContractTransaction().getSize();
@@ -501,7 +490,7 @@ public class BlockService implements IBlockService {
     /**
      * Calculates latest execution result hash.
      *
-     * @param currentHash execution result hash for previous transactions.
+     * @param currentHash     execution result hash for previous transactions.
      * @param executionResult result related to contract execution procedure.
      * @return latest execution result hash.
      */
