@@ -792,21 +792,35 @@ public class TransactionService implements ITransactionService {
             throw new RuntimeException("tx is Contract Transaction");
         }
 
+        return initialTransactionFee(tx).add(gasFee(tx));
+    }
+
+    public Money initialTransactionFee(Transaction transaction) {
         final HashMap<String, Money> feeMap = new HashMap<>(1);
-        tx.getInputs().stream().filter(ti -> ti.getPrevOut().getMoney().getCurrency().
+        transaction.getInputs().stream().filter(ti -> ti.getPrevOut().getMoney().getCurrency().
                 equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
             Money txFee = feeMap.getOrDefault("txFee", new Money());
             txFee = txFee.add(ti.getPrevOut().getMoney());
             feeMap.put("txFee", txFee);
         });
 
-        tx.getOutputs().stream().filter(ti -> ti.getMoney().getCurrency().
+        transaction.getOutputs().stream().filter(ti -> ti.getMoney().getCurrency().
                 equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
             Money txFee = feeMap.getOrDefault("txFee", new Money());
-            txFee = txFee.add(ti.getMoney());
+            txFee = txFee.subtract(ti.getMoney());
             feeMap.put("txFee", txFee);
         });
 
+        Money txFee = feeMap.getOrDefault("txFee", new Money());
+        txFee = txFee.subtract(gasFee(transaction));
+        feeMap.put("txFee", txFee);
+
         return feeMap.get("txFee");
+    }
+
+    public Money gasFee(Transaction transaction) {
+        return BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit())
+                        .multiply(transaction.getGasPrice())
+                , SystemCurrencyEnum.CAS.getCurrency());
     }
 }
