@@ -421,8 +421,8 @@ public class BlockService implements IBlockService {
                 boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 if (!success) {
                     totalUsedGas += transaction.getGasLimit();
-                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction))
-                            .add(transactionService.gasFee(transaction));
+                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
+                    totalFee = totalFee.add(transactionService.gasFee(transaction));
                     //TODO: chenjiawei how is sub tx handled, if size beyond the limitation.
                     if (invoke.getContractTransaction() != null) {
                         packagedTransactionList.add(invoke.getContractTransaction());
@@ -430,10 +430,10 @@ public class BlockService implements IBlockService {
                     }
                 } else {
                     totalUsedGas += executionResult.getGasUsed().longValue();
-                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction))
-                            .add(transactionService.gasFee(transaction))
-                            .subtract(BalanceUtil.convertGasToMoney(
-                                    executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
+                    totalFee = totalFee.add(transactionService.gasFee(transaction));
+                    totalFee = totalFee.subtract(BalanceUtil.convertGasToMoney(
+                            executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
                     if (invoke.getContractTransaction() != null) {
                         packagedTransactionList.add(invoke.getContractTransaction());
                         totalUsedSize += invoke.getContractTransaction().getSize();
@@ -490,7 +490,7 @@ public class BlockService implements IBlockService {
     /**
      * Calculates latest execution result hash.
      *
-     * @param currentHash execution result hash for previous transactions.
+     * @param currentHash     execution result hash for previous transactions.
      * @param executionResult result related to contract execution procedure.
      * @return latest execution result hash.
      */

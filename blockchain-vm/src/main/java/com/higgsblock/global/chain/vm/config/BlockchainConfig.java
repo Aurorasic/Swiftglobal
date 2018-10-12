@@ -5,6 +5,12 @@ import com.higgsblock.global.chain.vm.GasCost;
 import com.higgsblock.global.chain.vm.OpCode;
 import com.higgsblock.global.chain.vm.program.Program;
 
+/**
+ * The interface Contract repository.
+ *
+ * @author zhao xiaogang
+ * @date 2018-09-08
+ */
 public interface BlockchainConfig {
     /**
      * EVM operations costs

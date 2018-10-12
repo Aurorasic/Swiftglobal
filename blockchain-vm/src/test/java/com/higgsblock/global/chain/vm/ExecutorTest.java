@@ -20,6 +20,7 @@ import java.util.Set;
  * @author Chen Jiawei
  * @date 2018-09-18
  */
+@Ignore
 public class ExecutorTest {
     private Executor executor;
 
