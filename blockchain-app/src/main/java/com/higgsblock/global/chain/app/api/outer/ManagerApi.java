@@ -24,7 +24,12 @@ public class ManagerApi {
 
     @RequestMapping("/reimportData")
     public ResponseData<Boolean> reimportData() {
-        dataErrorService.handleError();
+        try {
+            dataErrorService.handleError();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            return ResponseData.success(false);
+        }
         return ResponseData.success(true);
     }
 }
