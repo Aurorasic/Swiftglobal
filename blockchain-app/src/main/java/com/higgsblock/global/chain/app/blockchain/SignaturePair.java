@@ -1,10 +1,7 @@
 package com.higgsblock.global.chain.app.blockchain;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONType;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
-import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
