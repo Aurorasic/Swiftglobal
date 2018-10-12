@@ -21,6 +21,11 @@ public class ByzantiumConfig implements BlockchainConfig {
      */
     private static final int CONTRACT_LIMITED_SIZE = 1024 * 10 * 1;
 
+    /**
+     * limited used gas in a block.
+     */
+    private static final long BLOCK_GAS_LIMIT = 10_000_000L;
+
     @Override
     public GasCost getGasCost() {
         return GAS_COST;
@@ -98,5 +103,10 @@ public class ByzantiumConfig implements BlockchainConfig {
     @Override
     public int getContractLimitedSize() {
         return CONTRACT_LIMITED_SIZE;
+    }
+
+    @Override
+    public long getBlockGasLimit() {
+        return BLOCK_GAS_LIMIT;
     }
 }
