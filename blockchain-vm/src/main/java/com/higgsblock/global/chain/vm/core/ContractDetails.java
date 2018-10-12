@@ -4,6 +4,12 @@ import com.higgsblock.global.chain.vm.DataWord;
 
 import java.util.Map;
 
+/**
+ * The interface Contract repository.
+ *
+ * @author zhao xiaogang
+ * @date 2018-09-08
+ */
 public interface ContractDetails {
 
     void put(DataWord key, DataWord value);

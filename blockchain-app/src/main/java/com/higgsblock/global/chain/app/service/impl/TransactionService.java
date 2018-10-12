@@ -22,6 +22,7 @@ import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
+import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
@@ -307,6 +308,8 @@ public class TransactionService implements ITransactionService {
 
         Money surplus = new Money(0);
         boolean hasCas = false;
+        BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
+        Money gasToMoney = BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency());
         for (String key : curMoneyMap.keySet()) {
             Money preMoney = preMoneyMap.get(key);
             Money curMoney = curMoneyMap.get(key);
@@ -318,16 +321,17 @@ public class TransactionService implements ITransactionService {
             LOGGER.debug("input money :{}, output money:{}", preMoney.getValue(), curMoney.getValue());
 
             //if verify receivedTransaction, block is null so curMoney add tx fee
-            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key) && block == null) {
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
                 //input >= out + gas*gasLimit
-                BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
-                curMoney.add(BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency()));
-                surplus = preMoney.subtract(curMoney);
+                curMoney.add(gasToMoney);
                 hasCas = true;
             }
             if (preMoney.compareTo(curMoney) < 0) {
                 LOGGER.info("Not enough fees, currency type:{}", key);
                 throw new RuntimeException();
+            }
+            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
+                surplus = preMoney.subtract(curMoney);
             }
         }
 
@@ -341,22 +345,29 @@ public class TransactionService implements ITransactionService {
             throw new RuntimeException();
         }
         BigInteger totalGas;
+        Money fee = new Money(0);
         if (tx.isContractTrasaction()) {
             ContractService.InvokePO invokeResult = contractService.invoke(block, tx, blockRepository);
             ExecutionResult executionResult = invokeResult.getExecutionResult();
             ContractTransaction contractTransaction = invokeResult.getContractTransaction();
             if (contractTransaction != null) {
                 contractTransactionList.add(contractTransaction);
+                Money contractTransactionFee = BalanceUtil.convertGasToMoney(
+                        FeeUtil.getSizeGas(contractTransaction.getSize())
+                                .multiply(tx.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
+                fee.add(contractTransactionFee);
             }
-            totalGas = executionResult.getGasUsed().multiply(tx.getGasPrice());
+            BigInteger payGas = BigInteger.valueOf(tx.getGasLimit()).subtract(executionResult.getRemainGas());
+            totalGas = payGas.multiply(tx.getGasPrice());
             String contractStateHash = blockService.calculateExecutionHash(executionResult);
             validResult.put("contractStateHash", contractStateHash);
         } else {
             totalGas = BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice());
         }
-        Money fee = BalanceUtil.convertGasToMoney(totalGas, SystemCurrencyEnum.CAS.getCurrency());
+        fee.add(BalanceUtil.convertGasToMoney(totalGas, SystemCurrencyEnum.CAS.getCurrency()));
         fee = fee.add(surplus);
         validResult.put("fee", fee);
+
         return validResult;
     }
 

@@ -20,6 +20,7 @@ import java.util.Set;
  * @author Chen Jiawei
  * @date 2018-09-18
  */
+@Ignore
 public class ExecutorTest {
     private Executor executor;
 
@@ -148,6 +149,11 @@ public class ExecutorTest {
              */
             @Override
             public int getContractLimitedSize() {
+                return 0;
+            }
+
+            @Override
+            public long getBlockGasLimit() {
                 return 0;
             }
         };
