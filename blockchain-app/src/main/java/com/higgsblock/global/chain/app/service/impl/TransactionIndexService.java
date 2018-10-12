@@ -102,6 +102,7 @@ public class TransactionIndexService implements ITransactionIndexService {
         }
 
         HashMap<String, String> spentUTXOMap = new HashMap<>(8);
+        boolean unspentUtxoTx;
         int size = cacheTransactions.size();
         for (int i = size - 1; i >= 0; i--) {
             Transaction tx = cacheTransactions.get(i);
@@ -109,7 +110,7 @@ public class TransactionIndexService implements ITransactionIndexService {
             if (CollectionUtils.isEmpty(inputs)) {
                 continue;
             }
-            boolean unspentUtxoTx = true;
+            unspentUtxoTx = true;
             for (TransactionInput input : inputs) {
                 String preUTXOKey = input.getPreUTXOKey();
                 if (spentUTXOMap.containsKey(preUTXOKey)) {
@@ -129,9 +130,11 @@ public class TransactionIndexService implements ITransactionIndexService {
 
                 spentUTXOMap.put(preUTXOKey, tx.getHash());
             }
+
             if (unspentUtxoTx) {
                 result.add(tx);
             }
+
         }
         return result;
     }
