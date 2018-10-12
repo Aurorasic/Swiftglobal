@@ -81,21 +81,24 @@ public class BalanceServiceTest extends BaseMockTest {
     public void plusBalance() {
         //the money in the result of single query is empty
         UTXO utxo = new UTXO();
+        TransactionOutput output = new TransactionOutput();
+        output.setMoney(new Money(3, "miner"));
+        utxo.setOutput(output);
         Map<String, Money> balanceMap = new HashMap<>();
         Mockito.doReturn(balanceMap).when(spyBalanceService).getBalanceByAddress(utxo.getAddress());
         spyBalanceService.plusBalance(utxo);
 
+        //the money in the result of single query is not empty and the specified currency is not included in the map
+        balanceMap.put("cas", new Money(2, "cas"));
+        spyBalanceService.plusBalance(utxo);
+
         //the money in the result of single query is not empty
-        TransactionOutput output = new TransactionOutput();
-        output.setMoney(new Money(3, "cas"));
-        utxo.setOutput(output);
-        balanceMap.put("cas", new Money(1, "cas"));
-        balanceMap.put("miner", new Money(2, "miner"));
+        balanceMap.put("miner", new Money(1, "miner"));
         Mockito.doReturn(balanceMap).when(spyBalanceService).getBalanceByAddress(utxo.getAddress());
         spyBalanceService.plusBalance(utxo);
 
-        //the money in the result of single query is not null
-        balanceMap.put("cas", null);
+        //the money in the result of single query is null
+        balanceMap.put("miner", null);
         spyBalanceService.plusBalance(utxo);
     }
 
@@ -124,6 +127,15 @@ public class BalanceServiceTest extends BaseMockTest {
         } catch (Exception e) {
             Assert.assertTrue(e instanceof RuntimeExceptionProxy);
             Assert.assertTrue(e.getMessage().contains("can't find currency balance"));
+        }
+
+        //the result of the query is null
+        balanceMap.put("guarder", null);
+        try {
+            spyBalanceService.minusBalance(utxo);
+        }catch (Exception e){
+            Assert.assertTrue(e instanceof  RuntimeException);
+            Assert.assertTrue(e.getMessage().contains("error balance address"));
         }
 
         //the result of the query is not null and contains currency
