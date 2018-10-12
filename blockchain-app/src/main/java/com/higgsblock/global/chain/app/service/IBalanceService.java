@@ -28,7 +28,7 @@ public interface IBalanceService {
      * @param address the address
      * @return the map
      */
-    Map<String, Money> get(String address);
+    Map<String, Money> getBalanceByAddress(String address);
 
     /**
      * Plus balance.

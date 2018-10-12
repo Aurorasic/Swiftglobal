@@ -102,13 +102,18 @@ public class BlockIndexService implements IBlockIndexService {
     @Override
     public BlockIndex getLastBlockIndex() {
         long maxHeight = blockChainInfoService.getMaxHeight();
-        return getBlockIndexByHeight(maxHeight);
+        BlockIndex blockIndex = getBlockIndexByHeight(maxHeight);
+        if (null == blockIndex) {
+            throw new RuntimeException("error getBlockIndexByHeight, the maxHeight" + maxHeight);
+        }
+        return blockIndex;
     }
 
     public List<String> getLastHeightBlockHashs() {
-        List<String> result = getLastBlockIndex().getBlockHashs();
+        BlockIndex blockIndex = getLastBlockIndex();
+        List<String> result = blockIndex.getBlockHashs();
         if (CollectionUtils.isEmpty(result)) {
-            throw new RuntimeException("error getLastHeightBlockHashs" + getLastBlockIndex());
+            throw new RuntimeException("error getLastHeightBlockHashs" + blockIndex.toString());
         }
         return result;
     }

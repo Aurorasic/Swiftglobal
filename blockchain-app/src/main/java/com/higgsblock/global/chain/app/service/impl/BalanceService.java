@@ -57,7 +57,7 @@ public class BalanceService implements IBalanceService {
      */
     @Override
     public Money getBalanceOnBest(String address, String currency) {
-        Map<String, Money> map = get(address);
+        Map<String, Money> map = getBalanceByAddress(address);
         Money result = map.get(currency);
         if (result == null) {
             return new Money(0, currency);
@@ -73,7 +73,7 @@ public class BalanceService implements IBalanceService {
      * @return the map
      */
     @Override
-    public Map<String, Money> get(String address) {
+    public Map<String, Money> getBalanceByAddress(String address) {
         BalanceEntity entity = balanceRepository.findOne(address);
         if (null == entity || CollectionUtils.isEmpty(entity.getBalances())) {
             return Maps.newHashMap();
@@ -91,7 +91,13 @@ public class BalanceService implements IBalanceService {
      */
     @Override
     public void plusBalance(UTXO utxo) {
-        Map<String, Money> balanceMap = get(utxo.getAddress());
+        Map<String, Money> balanceMap = getBalanceByAddress(utxo.getAddress());
+        if (MapUtils.isEmpty(balanceMap) || !balanceMap.containsKey(utxo.getCurrency())) {
+            balanceMap.put(utxo.getAddress(), utxo.getOutput().getMoney());
+            save(utxo.getAddress(), balanceMap);
+            return;
+        }
+
         balanceMap.compute(utxo.getCurrency(), (currency, money) -> {
             if (null == money) {
                 money = new Money(0, utxo.getCurrency());
@@ -100,6 +106,7 @@ public class BalanceService implements IBalanceService {
             money.add(utxo.getOutput().getMoney());
             return money;
         });
+
         save(utxo.getAddress(), balanceMap);
     }
 
@@ -110,7 +117,7 @@ public class BalanceService implements IBalanceService {
      */
     @Override
     public void minusBalance(UTXO utxo) {
-        Map<String, Money> balanceMap = get(utxo.getAddress());
+        Map<String, Money> balanceMap = getBalanceByAddress(utxo.getAddress());
         if (MapUtils.isEmpty(balanceMap)) {
             throw new IllegalStateException("can't find address balance:" + utxo.getAddress());
         }
@@ -119,7 +126,12 @@ public class BalanceService implements IBalanceService {
             throw new IllegalStateException("can't find currency balance:" + utxo.getCurrency());
         }
 
-        balanceMap.compute(utxo.getCurrency(), (currency, money) -> money.subtract(utxo.getOutput().getMoney()));
+        balanceMap.compute(utxo.getCurrency(), (currency, money) -> {
+            if (null == money) {
+                throw new RuntimeException("error balance address" + utxo.getAddress());
+            }
+            return money.subtract(utxo.getOutput().getMoney());
+        });
         save(utxo.getAddress(), balanceMap);
     }
 
