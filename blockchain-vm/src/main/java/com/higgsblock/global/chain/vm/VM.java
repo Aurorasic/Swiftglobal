@@ -1320,13 +1320,18 @@ public class VM {
 
             vmCounter++;
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            logger.warn("VM halted: [{}]", e);
+            logger.warn("VM halted 1: [{}]", e);
             program.spendAllGas();
             program.resetFutureRefund();
             program.stop();
             throw e;
-        } finally {
+        } catch (Throwable throwable) {
+            logger.warn("VM halted 2: [{}]", throwable);
+            program.spendAllGas();
+            program.resetFutureRefund();
+            program.stop();
+            throw throwable;
+        }finally {
             program.fullTrace();
         }
     }
@@ -1345,9 +1350,12 @@ public class VM {
 
         } catch (RuntimeException e) {
             program.setRuntimeFailure(e);
-        } catch (StackOverflowError soe){
-            logger.error("\n !!! StackOverflowError: update your java run command with -Xss2M !!!\n", soe);
-            System.exit(-1);
+        } catch (StackOverflowError soe) {
+            program.setRuntimeFailure(new RuntimeException(soe.getCause()));
+            logger.error("\n !!! StackOverflowError: update your java run command with -Xss2M (-Xss8M for tests) !!!\n", soe);
+            //System.exit(-1);
+        } catch (Throwable throwable) {
+            program.setRuntimeFailure(new RuntimeException(throwable));
         } finally {
             if (vmHook != null) {
                 vmHook.stopPlay(program);

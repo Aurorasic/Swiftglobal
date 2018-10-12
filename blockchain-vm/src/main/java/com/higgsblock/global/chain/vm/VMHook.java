@@ -21,7 +21,10 @@ package com.higgsblock.global.chain.vm;
 import com.higgsblock.global.chain.vm.program.Program;
 
 /**
- * Created by Anton Nashatyrev on 15.02.2016.
+ * The interface Contract repository.
+ *
+ * @author zhao xiaogang
+ * @date 2018-09-08
  */
 public interface VMHook {
     void startPlay(Program program);
