@@ -108,8 +108,9 @@ public class ContractService implements IContractService {
         invokePO.setExecutionResult(executionResult);
         invokePO.setStateHash(calculateExecutionHash(executionResult));
         if (StringUtils.isEmpty(executionResult.getErrorMessage())) {
-            transactionRepository.commit();
+            conRepository.commit();
         }
+        transactionRepository.commit();
         return invokePO;
     }
 
