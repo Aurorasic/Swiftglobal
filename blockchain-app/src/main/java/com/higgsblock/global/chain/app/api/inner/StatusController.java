@@ -150,7 +150,7 @@ public class StatusController {
 
     @RequestMapping("/balanceOnBest")
     public Map<String, Money> getBalanceOnBest(String address) {
-        return balanceService.get(address);
+        return balanceService.getBalanceByAddress(address);
     }
 
     @RequestMapping("/balance")

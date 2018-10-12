@@ -93,7 +93,7 @@ public class BalanceService implements IBalanceService {
     public void plusBalance(UTXO utxo) {
         Map<String, Money> balanceMap = getBalanceByAddress(utxo.getAddress());
         if (MapUtils.isEmpty(balanceMap) || !balanceMap.containsKey(utxo.getCurrency())) {
-            balanceMap.put(utxo.getAddress(), utxo.getOutput().getMoney());
+            balanceMap.put(utxo.getCurrency(), utxo.getOutput().getMoney());
             save(utxo.getAddress(), balanceMap);
             return;
         }

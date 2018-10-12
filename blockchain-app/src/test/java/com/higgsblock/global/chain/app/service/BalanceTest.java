@@ -30,11 +30,11 @@ public class BalanceTest extends BaseTest {
 
         //Money money = balanceService.getBalanceOnBest("AAAA", "miner");
         balanceRepository.deleteAll();
-        Map<String,Money> maps = balanceService.get("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
+        Map<String,Money> maps = balanceService.getBalanceByAddress("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
 
         List<Block> blocks = blockService.getBlocksByHeight(1);
 
-        Map<String,Money> maps2 = balanceService.get("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
+        Map<String,Money> maps2 = balanceService.getBalanceByAddress("1CYx4DTTFLRGMNKLM3CNynbCamhUgcomRf");
 
         int a = 0;
     }
