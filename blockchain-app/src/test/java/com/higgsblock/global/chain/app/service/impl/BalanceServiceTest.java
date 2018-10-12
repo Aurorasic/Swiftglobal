@@ -2,6 +2,7 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.collect.Maps;
 import com.higgsblock.global.chain.app.BaseMockTest;
+import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IBalanceRepository;
@@ -19,9 +20,12 @@ import org.powermock.api.mockito.internal.mockcreation.RuntimeExceptionProxy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.anyString;
 
 /**
  * @author yangshenghong
@@ -127,7 +131,33 @@ public class BalanceServiceTest extends BaseMockTest {
 
     @Test
     public void getUnionBalance() throws Exception {
+        String preBlockHash = null,
+                address = "address",
+                currency = "currency";
+        //when preBlockHash empty and lastBlockIndex firstBlockHash is empty
+        BlockIndex lastBlockIndex = new BlockIndex();
+        PowerMockito.when(blockIndexService.getLastBlockIndex()).thenReturn(lastBlockIndex);
+        try {
+            spyBalanceService.getUnionBalance(preBlockHash, address, currency);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof RuntimeException);
+            Assert.assertTrue(e.getMessage().contains("error lastBlockIndex"));
+        }
 
+        //when preBlockHash empty and lastBlockIndex firstBlockHash is not empty
+        lastBlockIndex.setBlockHashs(new ArrayList<>(Arrays.asList("firstBlockHash1", "firstBlockHash2")));
+        Money balanceMoney = new Money(0, currency),
+                unconfirmedBalanceMoney = new Money(0, currency);
+        Mockito.doReturn(balanceMoney).when(spyBalanceService).getBalanceOnBest(address, currency);
+        PowerMockito.when(utxoServiceProxy.getUnconfirmedBalance(anyString(), anyString(), anyString())).thenReturn(unconfirmedBalanceMoney);
+        Assert.assertEquals(spyBalanceService.getUnionBalance(preBlockHash, address, currency).getCurrency(), currency);
+
+        //when preBlockHash not empty and unconfirmedBalanceMoney not contain currency
+        preBlockHash = "preBlockHash";
+        unconfirmedBalanceMoney.setCurrency("currency2");
+        Assert.assertEquals(spyBalanceService.getUnionBalance(preBlockHash, address, currency).getCurrency(), currency);
+
+        //when preBlockHash not empty
+        Assert.assertEquals(spyBalanceService.getUnionBalance(preBlockHash, address, currency).getCurrency(), currency);
     }
-
 }
