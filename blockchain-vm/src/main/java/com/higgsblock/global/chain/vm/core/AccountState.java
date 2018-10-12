@@ -1,5 +1,6 @@
 package com.higgsblock.global.chain.vm.core;
 
+import com.higgsblock.global.chain.vm.util.ByteArrayWrapper;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
 
 import java.io.Serializable;
@@ -29,9 +30,9 @@ public class AccountState implements Serializable {
 
     private String currency;
 
-    private Set<byte[]> keys;
+    private Set<ByteArrayWrapper> keys;
 
-    public AccountState(long nonce, BigInteger balance, byte[] codeHash, String currency, Set<byte[]> keys) {
+    public AccountState(long nonce, BigInteger balance, byte[] codeHash, String currency, Set<ByteArrayWrapper> keys) {
         this.nonce = nonce;
         this.balance = balance;
         this.codeHash = codeHash;
@@ -70,7 +71,7 @@ public class AccountState implements Serializable {
         return codeHash;
     }
 
-    public Set<byte[]> getKeys() {
+    public Set<ByteArrayWrapper> getKeys() {
         return keys;
     }
 
@@ -84,7 +85,7 @@ public class AccountState implements Serializable {
         return new AccountState(nonce, balance.add(value), codeHash, currency, keys);
     }
 
-    public AccountState withStorageKey(byte[] value) {
+    public AccountState withStorageKey(ByteArrayWrapper value) {
         this.keys.add(value);
         return new AccountState(nonce, balance, codeHash, currency, keys);
     }
@@ -138,7 +139,7 @@ public class AccountState implements Serializable {
                 ", balance=" + balance +
                 ", codeHash=" + Arrays.toString(codeHash) +
                 ", currency='" + currency + '\'' +
-                ", keys=" + keys.stream().map(item->Arrays.toString(item)).collect(Collectors.joining(" ")) +
+                ", keys=" + keys.stream().map(item -> item.toString()).collect(Collectors.joining(" ")) +
                 '}';
     }
 }

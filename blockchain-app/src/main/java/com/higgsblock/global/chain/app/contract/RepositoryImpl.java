@@ -8,10 +8,7 @@ import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
-import com.higgsblock.global.chain.vm.util.ByteUtil;
-import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import com.higgsblock.global.chain.vm.util.HashUtil;
-import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
+import com.higgsblock.global.chain.vm.util.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.util.StringUtils;
@@ -112,10 +109,10 @@ public class RepositoryImpl implements Repository<UTXO> {
     public synchronized void delete(byte[] addr) {
         AccountState ret = accountStateCache.get(addr);
         if (ret != null) {
-            Set<byte[]> keys = ret.getKeys();
+            Set<ByteArrayWrapper> keys = ret.getKeys();
             Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
 
-            for (byte[] key : keys) {
+            for (ByteArrayWrapper key : keys) {
                 contractStorage.put(new DataWord(key), null);
             }
 
@@ -167,7 +164,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         AccountState accountState = getOrCreateAccountState(addr);
-        accountStateCache.put(addr, accountState.withStorageKey(key.getData()));
+
+        accountStateCache.put(addr, accountState.withStorageKey(new ByteArrayWrapper(key.getData())));
 
         Source<DataWord, DataWord> contractStorage = storageCache.get(addr);
         contractStorage.put(key, value.isZero() ? null : value);
