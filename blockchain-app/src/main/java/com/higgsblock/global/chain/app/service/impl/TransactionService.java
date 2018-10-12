@@ -367,6 +367,7 @@ public class TransactionService implements ITransactionService {
         fee.add(BalanceUtil.convertGasToMoney(totalGas, SystemCurrencyEnum.CAS.getCurrency()));
         fee = fee.add(surplus);
         validResult.put("fee", fee);
+
         return validResult;
     }
 
