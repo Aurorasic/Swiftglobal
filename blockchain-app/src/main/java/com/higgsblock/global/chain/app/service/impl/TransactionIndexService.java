@@ -63,11 +63,11 @@ public class TransactionIndexService implements ITransactionIndexService {
                     TransactionOutPoint outPoint = input.getPrevOut();
                     String spentTxHash = outPoint.getTransactionHash();
                     short spentTxOutIndex = outPoint.getIndex();
-
-                    TransactionIndex txIndex = getTransactionIndex(spentTxHash);
-                    if (txIndex == null) {
-                        throw new IllegalStateException("Spent tx not exits: " + spentTxHash + toBeBestBlock.getSimpleInfoSuffix());
-                    }
+                    //TODO remove validate tangKun 2018-10-11
+//                    TransactionIndex txIndex = getTransactionIndex(spentTxHash);
+//                    if (txIndex == null) {
+//                        throw new IllegalStateException("Spent tx not exits: " + spentTxHash + toBeBestBlock.getSimpleInfoSuffix());
+//                    }
                     //remove spent utxo
                     String utxoKey = UTXO.buildKey(spentTxHash, spentTxOutIndex);
                     if (utxoServiceProxy.getUTXOOnBestChain(utxoKey) == null) {

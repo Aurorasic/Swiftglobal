@@ -42,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -400,90 +399,105 @@ public class BlockService implements IBlockService {
         int totalUsedSize = 0;
         long totalUsedGas = 0;
         Money totalFee = new Money();
+        String contractStateHash = Strings.EMPTY;
 
         for (Transaction transaction : sortedTransactionList) {
-            if (totalUsedSize + transaction.getSize() > blockchainConfig.getLimitedSize()) {
-                break;
+            if (!transactionIsPackable(transaction, totalUsedSize, totalUsedGas)) {
+                continue;
             }
 
             if (!transaction.isContractTrasaction()) {
-
                 packagedTransactionList.add(transaction);
-
                 totalUsedSize += transaction.getSize();
-
-                HashMap<String, Money> feeMap = new HashMap<>(1);
-                transaction.getInputs().stream().filter(ti -> ti.getPrevOut().getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
-                    Money txFee = feeMap.getOrDefault("txFee", new Money());
-                    txFee = txFee.add(ti.getPrevOut().getMoney());
-                    feeMap.put("txFee", txFee);
-                });
-                transaction.getOutputs().stream().filter(ti -> ti.getMoney().getCurrency().equals(SystemCurrencyEnum.CAS.getCurrency())).forEach(ti -> {
-                    Money txFee = feeMap.getOrDefault("txFee", new Money());
-                    txFee = txFee.add(ti.getMoney());
-                    feeMap.put("txFee", txFee);
-                });
-                totalFee = totalFee.add(feeMap.get("txFee"));
-
                 totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
+                totalFee = totalFee.add(transactionService.calculationOrdinaryTransactionFee(transaction));
             } else {
-
-                if (totalUsedSize + transaction.getSize() + blockchainConfig.getContractLimitedSize()
-                        > blockchainConfig.getLimitedSize()) {
-                    break;
-                }
                 packagedTransactionList.add(transaction);
                 totalUsedSize += transaction.getSize();
 
                 ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
-                updateBlockHash(block, invoke.getExecutionResult());
+                ExecutionResult executionResult = invoke.getExecutionResult();
 
-                boolean success = StringUtils.isEmpty(invoke.getExecutionResult().getErrorMessage());
+                boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
                 if (!success) {
-                    totalFee = totalFee.add(BalanceUtil.convertGasToMoney(BigInteger.valueOf(transaction.getGasLimit())
-                                    .multiply(transaction.getGasPrice())
-                            , SystemCurrencyEnum.CAS.getCurrency()));
                     totalUsedGas += transaction.getGasLimit();
-
-                } else {
-                    boolean transferFlag = invoke.getContractTransaction() != null ||
-                            invoke.getExecutionResult().getGasRefund().compareTo(BigInteger.ZERO) > 0;
-                    if (transferFlag) {
+                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
+                    totalFee = totalFee.add(transactionService.gasFee(transaction));
+                    //TODO: chenjiawei how is sub tx handled, if size beyond the limitation.
+                    if (invoke.getContractTransaction() != null) {
                         packagedTransactionList.add(invoke.getContractTransaction());
-                        totalUsedSize += transaction.getSize();
-                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(invoke.getExecutionResult().getGasUsed()
-                                        .multiply(transaction.getGasPrice())
-                                , SystemCurrencyEnum.CAS.getCurrency()));
-                        totalUsedGas += invoke.getExecutionResult().getGasUsed().longValue();
+                        totalUsedSize += invoke.getContractTransaction().getSize();
                     }
-
+                } else {
+                    totalUsedGas += executionResult.getGasUsed().longValue();
+                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
+                    totalFee = totalFee.add(transactionService.gasFee(transaction));
+                    totalFee = totalFee.subtract(BalanceUtil.convertGasToMoney(
+                            executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                    if (invoke.getContractTransaction() != null) {
+                        packagedTransactionList.add(invoke.getContractTransaction());
+                        totalUsedSize += invoke.getContractTransaction().getSize();
+                        totalUsedGas += FeeUtil.getSizeGas(invoke.getContractTransaction().getSize()).longValue();
+                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
+                                FeeUtil.getSizeGas(invoke.getContractTransaction().getSize())
+                                        .multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                    }
                 }
+                contractStateHash = calculateExecutionHash(contractStateHash, executionResult);
             }
         }
 
         //append state hash
-        if (StringUtils.isNotEmpty(block.getContractStateHash()) &&
-                StringUtils.isNotEmpty(blockRepository.getStateHash())) {
-            block.setContractStateHash(contractService.appendStorageHash(block.getContractStateHash(),
-                    blockRepository.getStateHash()));
+        if (StringUtils.isNotEmpty(contractStateHash) && StringUtils.isNotEmpty(blockRepository.getStateHash())) {
+            block.setContractStateHash(contractService.appendStorageHash(contractStateHash, blockRepository.getStateHash()));
         }
-
         block.setTransactionsFee(totalFee);
         block.setGasUsed(totalUsedGas);
         return packagedTransactionList;
     }
 
     /**
-     * Updates block hash.
+     * Checks if specific transaction is packable into a block.
      *
-     * @param block           target block.
-     * @param executionResult result related to contract execution procedure.
+     * @param transaction   target transaction to be packaged.
+     * @param totalUsedSize total size of transactions packaged into the block.
+     * @param totalUsedGas  total gas used by transactions packaged into the block.
+     * @return if specific transaction is packable into a block.
      */
-    private void updateBlockHash(Block block, ExecutionResult executionResult) {
+    private boolean transactionIsPackable(Transaction transaction, int totalUsedSize, long totalUsedGas) {
+        if (transaction.getSize() > blockchainConfig.getLimitedSize() - totalUsedSize) {
+            return false;
+        }
+
+        if (transaction.getGasLimit() > blockchainConfig.getBlockGasLimit() - totalUsedGas) {
+            return false;
+        }
+
+        // gasLimit of transaction must be enough for size at least.
+        if (transaction.getGasLimit() < FeeUtil.getSizeGas(transaction.getSize()).longValue()) {
+            return false;
+        }
+
+        // for contract transaction, subTransaction may be generated, with a size limitation.
+        if (transaction.isContractTrasaction() &&
+                transaction.getSize() > blockchainConfig.getLimitedSize() - blockchainConfig.getContractLimitedSize() - totalUsedSize) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Calculates latest execution result hash.
+     *
+     * @param currentHash     execution result hash for previous transactions.
+     * @param executionResult result related to contract execution procedure.
+     * @return latest execution result hash.
+     */
+    private String calculateExecutionHash(String currentHash, ExecutionResult executionResult) {
         HashFunction function = Hashing.sha256();
-        String preHash = block.getContractStateHash() == null ? Strings.EMPTY : block.getContractStateHash();
-        block.setContractStateHash(function.hashString(
-                String.join(preHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString());
+        return function.hashString(
+                String.join(currentHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString();
     }
 
     /**

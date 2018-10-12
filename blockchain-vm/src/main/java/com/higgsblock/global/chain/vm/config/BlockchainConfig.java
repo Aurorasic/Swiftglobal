@@ -85,5 +85,10 @@ public interface BlockchainConfig {
      */
     int getContractLimitedSize();
 
-
+    /**
+     * Gets limited used gas in a block.
+     *
+     * @return amount of limited used gas.
+     */
+    long getBlockGasLimit();
 }
