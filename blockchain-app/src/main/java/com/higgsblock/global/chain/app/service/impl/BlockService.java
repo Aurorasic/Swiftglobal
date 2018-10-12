@@ -392,6 +392,17 @@ public class BlockService implements IBlockService {
         return block;
     }
 
+    public static void main(String[] args) {
+        Integer i = 4;
+        System.out.println(i);
+        ss(i);
+        System.out.println(i);
+
+    }
+    private static void ss(Integer ssd) {
+        ssd = 9;
+    }
+
     public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
         List<Transaction> packagedTransactionList = new ArrayList<>();
         RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(),
