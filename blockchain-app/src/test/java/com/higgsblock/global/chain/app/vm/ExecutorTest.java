@@ -154,6 +154,11 @@ public class ExecutorTest extends BaseTest {
             public int getContractLimitedSize() {
                 return 0;
             }
+
+            @Override
+            public long getBlockGasLimit() {
+                return 0;
+            }
         };
 
         byte[] parentHash = Hex.decode("34801561001057600080fd5b5060bf8061001f6000396000f300608060405260");
