@@ -151,6 +151,7 @@ public class TransactionService implements ITransactionService {
         if (!verifyCoinBaseTx) {
             return false;
         }
+
         LOGGER.info("check the transactions success of block {}", block.getHeight());
         return true;
     }

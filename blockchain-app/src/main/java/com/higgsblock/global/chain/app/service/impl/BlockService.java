@@ -668,6 +668,10 @@ public class BlockService implements IBlockService {
         //for get jdbc connect this mast be in this commit/connection
         utxoServiceProxy.addNewBlock(newBestBlock, block);
 
+        //flush storage
+        if (RepositoryRoot.getLastRepositoryRoot() != null) {
+            RepositoryRoot.getLastRepositoryRoot().flush();
+        }
         return newBestBlock;
     }
 
