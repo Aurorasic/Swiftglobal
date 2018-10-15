@@ -19,6 +19,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
+import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
@@ -34,6 +35,8 @@ import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -376,6 +379,10 @@ public class BlockService implements IBlockService {
         transactionFeeService.sortByGasPrice(txOfUnSpentUtxos);
         Money fee = new Money();
         List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos, block);
+        if (packTransaction.isEmpty()) {
+            LOGGER.warn("There are no transactions for packaging a block base on={}", preBlockHash);
+            return null;
+        }
         block.setTransactions(packTransaction);
         if (lastBlockIndex.getHeight() >= 1) {
             Transaction coinBaseTx = transactionFeeService.buildCoinBaseTx(0L, (short) 1, block.getTransactionsFee(),
@@ -392,99 +399,219 @@ public class BlockService implements IBlockService {
         return block;
     }
 
-    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
+    /**
+     * Constantly modifies block state in the process of packing transactions.
+     */
+    @NoArgsConstructor
+    @Data
+    private class StateManager {
+        /**
+         * size of packaged transactions in a specific block.
+         */
+        private long totalUsedSize = 0;
+        /**
+         * amount of gas used by packaged transactions.
+         */
+        private long totalUsedGas = 0;
+        /**
+         * fee used by packaged transactions.
+         */
+        private Money totalFee = new Money();
+        /**
+         * hash of global state.
+         */
+        private String globalStateHash = Strings.EMPTY;
+
+        void addUsedSize(long size) {
+            totalUsedSize += size;
+        }
+
+        void addUsedGas(long gas) {
+            totalUsedGas += gas;
+        }
+
+        void addFee(Money fee) {
+            totalFee = totalFee.add(fee);
+        }
+
+        void subtractFee(Money fee) {
+            totalFee = totalFee.subtract(fee);
+        }
+
+        void updateGlobalStateHash(ExecutionResult executionResult) {
+            globalStateHash = calculateExecutionHash(globalStateHash, executionResult);
+        }
+
+        void updateGlobalStateHash(RepositoryRoot blockRepository) {
+            if (StringUtils.isNotEmpty(globalStateHash)) {
+                globalStateHash = Strings.EMPTY;
+            }
+
+            String dbStateHash = blockRepository.getStateHash();
+            if (StringUtils.isNotEmpty(dbStateHash)) {
+                dbStateHash = Strings.EMPTY;
+            }
+
+            globalStateHash = contractService.appendStorageHash(globalStateHash, dbStateHash);
+        }
+    }
+
+    private List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
         List<Transaction> packagedTransactionList = new ArrayList<>();
-        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(),
-                utxoServiceProxy, SystemProperties.getDefault());
-        int totalUsedSize = 0;
-        long totalUsedGas = 0;
-        Money totalFee = new Money();
-        String contractStateHash = Strings.EMPTY;
+        RepositoryRoot blockRepository = new RepositoryRoot(
+                contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
+        StateManager stateManager = new StateManager();
 
         for (Transaction transaction : sortedTransactionList) {
-            if (!transactionIsPackable(transaction, totalUsedSize, totalUsedGas)) {
+            if (!transactionIsPackable(transaction, stateManager)) {
                 continue;
             }
-
-            if (!transaction.isContractTrasaction()) {
-                packagedTransactionList.add(transaction);
-                totalUsedSize += transaction.getSize();
-                totalUsedGas += FeeUtil.getSizeGas(transaction.getSize()).longValue();
-                totalFee = totalFee.add(transactionService.calculationOrdinaryTransactionFee(transaction));
-            } else {
-                packagedTransactionList.add(transaction);
-                totalUsedSize += transaction.getSize();
-
-                ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
-                ExecutionResult executionResult = invoke.getExecutionResult();
-
-                boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-                if (!success) {
-                    totalUsedGas += transaction.getGasLimit();
-                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
-                    totalFee = totalFee.add(transactionService.gasFee(transaction));
-                    //TODO: chenjiawei how is sub tx handled, if size beyond the limitation.
-                    if (invoke.getContractTransaction() != null) {
-                        packagedTransactionList.add(invoke.getContractTransaction());
-                        totalUsedSize += invoke.getContractTransaction().getSize();
-                    }
-                } else {
-                    totalUsedGas += executionResult.getGasUsed().longValue();
-                    totalFee = totalFee.add(transactionService.initialTransactionFee(transaction));
-                    totalFee = totalFee.add(transactionService.gasFee(transaction));
-                    totalFee = totalFee.subtract(BalanceUtil.convertGasToMoney(
-                            executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
-                    if (invoke.getContractTransaction() != null) {
-                        packagedTransactionList.add(invoke.getContractTransaction());
-                        totalUsedSize += invoke.getContractTransaction().getSize();
-                        totalUsedGas += FeeUtil.getSizeGas(invoke.getContractTransaction().getSize()).longValue();
-                        totalFee = totalFee.add(BalanceUtil.convertGasToMoney(
-                                FeeUtil.getSizeGas(invoke.getContractTransaction().getSize())
-                                        .multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
-                    }
-                }
-                contractStateHash = calculateExecutionHash(contractStateHash, executionResult);
-            }
+            packageTransaction(transaction, block, stateManager, blockRepository, packagedTransactionList);
         }
+        stateManager.updateGlobalStateHash(blockRepository);
 
-        //append state hash
-        if (StringUtils.isNotEmpty(contractStateHash) && StringUtils.isNotEmpty(blockRepository.getStateHash())) {
-            block.setContractStateHash(contractService.appendStorageHash(contractStateHash, blockRepository.getStateHash()));
-        }
-        block.setTransactionsFee(totalFee);
-        block.setGasUsed(totalUsedGas);
+        block.setContractStateHash(stateManager.getGlobalStateHash());
+        block.setTransactionsFee(stateManager.getTotalFee());
+        block.setGasUsed(stateManager.getTotalUsedGas());
         return packagedTransactionList;
     }
 
     /**
-     * Checks if specific transaction is packable into a block.
+     * Checks if a specific transaction is packable in a block.
      *
-     * @param transaction   target transaction to be packaged.
-     * @param totalUsedSize total size of transactions packaged into the block.
-     * @param totalUsedGas  total gas used by transactions packaged into the block.
-     * @return if specific transaction is packable into a block.
+     * @param transaction  target transaction to be packaged.
+     * @param stateManager block state manager.
+     * @return true if transaction is packable.
      */
-    private boolean transactionIsPackable(Transaction transaction, int totalUsedSize, long totalUsedGas) {
-        if (transaction.getSize() > blockchainConfig.getLimitedSize() - totalUsedSize) {
+    private boolean transactionIsPackable(Transaction transaction, StateManager stateManager) {
+        long blockSizeLimit = blockchainConfig.getLimitedSize();
+        long subTransactionSizeLimit = blockchainConfig.getContractLimitedSize();
+        long blockGasLimit = blockchainConfig.getBlockGasLimit();
+
+        long blockUsedSize = stateManager.getTotalUsedSize();
+        long blockUsedGas = stateManager.getTotalUsedGas();
+
+        long transactionSize = transaction.getSize();
+        long transactionGasLimit = transaction.getGasLimit();
+
+
+        if (transactionSize > blockSizeLimit - blockUsedSize) {
             return false;
         }
 
-        if (transaction.getGasLimit() > blockchainConfig.getBlockGasLimit() - totalUsedGas) {
+        if (transactionGasLimit > blockGasLimit - blockUsedGas) {
             return false;
         }
 
-        // gasLimit of transaction must be enough for size at least.
-        if (transaction.getGasLimit() < FeeUtil.getSizeGas(transaction.getSize()).longValue()) {
+        // gasLimit of transaction must be enough for sizeFee at least.
+        if (transactionGasLimit < FeeUtil.getSizeGas(transactionSize).longValue()) {
             return false;
         }
 
         // for contract transaction, subTransaction may be generated, with a size limitation.
         if (transaction.isContractTrasaction() &&
-                transaction.getSize() > blockchainConfig.getLimitedSize() - blockchainConfig.getContractLimitedSize() - totalUsedSize) {
+                transactionSize + subTransactionSizeLimit > blockSizeLimit - blockUsedSize) {
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Packages specific transaction and update block state.
+     *
+     * @param transaction             target transaction.
+     * @param block                   block holds the transaction.
+     * @param stateManager            block state manager.
+     * @param blockRepository         block-level snapshot of db.
+     * @param packagedTransactionList list of transactions packaged into block.
+     */
+    private void packageTransaction(Transaction transaction, Block block, StateManager stateManager,
+                                    RepositoryRoot blockRepository, List<Transaction> packagedTransactionList) {
+        if (!transaction.isContractTrasaction()) {
+            packagedTransactionList.add(transaction);
+            updateStateNoContract(stateManager, transaction);
+            return;
+        }
+
+        ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
+        Transaction subTransaction = invoke.getContractTransaction();
+        packagedTransactionList.add(transaction);
+        if (subTransaction != null) {
+            packagedTransactionList.add(subTransaction);
+        }
+
+        ExecutionResult executionResult = invoke.getExecutionResult();
+        boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
+        updateStateContract(stateManager, transaction, success, executionResult, subTransaction);
+
+        updateTransaction(transaction, subTransaction, executionResult);
+    }
+
+    /**
+     * Records execution result in original transaction.
+     *
+     * @param transaction     original transaction.
+     * @param subTransaction  sub transaction.
+     * @param executionResult execution result.
+     */
+    private void updateTransaction(Transaction transaction,
+                                   Transaction subTransaction, ExecutionResult executionResult) {
+        ContractExecutionResult contractExecutionResult = transaction.getContractExecutionResult();
+        contractExecutionResult.setResultHash(calculateExecutionHash(executionResult));
+
+        String subTransactionHash = subTransaction == null ? Strings.EMPTY : subTransaction.getHash();
+        contractExecutionResult.getSubTransactionList().add(subTransactionHash);
+
+        String signature = ECKey.signMessage(subTransactionHash, peerKeyPair.getPriKey());
+        contractExecutionResult.setMinerSignature(signature);
+    }
+
+    /**
+     * Updates block state, transaction does not contains contract.
+     *
+     * @param stateManager block state manager.
+     * @param transaction  transaction selected.
+     */
+    private void updateStateNoContract(StateManager stateManager, Transaction transaction) {
+        stateManager.addUsedSize(transaction.getSize());
+        stateManager.addUsedGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
+        stateManager.addFee(transactionService.calculationOrdinaryTransactionFee(transaction));
+    }
+
+    /**
+     * Updates block state, transaction contains contract.
+     *
+     * @param stateManager    block state manager.
+     * @param transaction     transaction selected.
+     * @param executeSuccess  if contract is executed successfully.
+     * @param executionResult result of contract execution.
+     * @param subTransaction  sub transaction.
+     */
+    private void updateStateContract(StateManager stateManager, Transaction transaction,
+                                     boolean executeSuccess, ExecutionResult executionResult, Transaction subTransaction) {
+        stateManager.addUsedSize(transaction.getSize());
+        if (!executeSuccess) {
+            stateManager.addUsedGas(transaction.getGasLimit());
+            stateManager.addFee(transactionService.initialTransactionFee(transaction));
+            stateManager.addFee(transactionService.gasFee(transaction));
+            if (subTransaction != null) {
+                stateManager.addUsedSize(subTransaction.getSize());
+            }
+        } else {
+            stateManager.addUsedGas(executionResult.getGasUsed().longValue());
+            stateManager.addFee(transactionService.initialTransactionFee(transaction));
+            stateManager.addFee((transactionService.gasFee(transaction)));
+            stateManager.subtractFee(BalanceUtil.convertGasToMoney(
+                    executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+            if (subTransaction != null) {
+                stateManager.addUsedSize(subTransaction.getSize());
+                stateManager.addUsedGas(FeeUtil.getSizeGas(subTransaction.getSize()).longValue());
+                stateManager.addFee(BalanceUtil.convertGasToMoney(
+                        FeeUtil.getSizeGas(subTransaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+            }
+        }
+        stateManager.updateGlobalStateHash(executionResult);
     }
 
     /**
@@ -579,6 +706,10 @@ public class BlockService implements IBlockService {
         //for get jdbc connect this mast be in this commit/connection
         utxoServiceProxy.addNewBlock(newBestBlock, block);
 
+        //flush storage
+        if (RepositoryRoot.getLastRepositoryRoot() != null) {
+            RepositoryRoot.getLastRepositoryRoot().flush();
+        }
         return newBestBlock;
     }
 

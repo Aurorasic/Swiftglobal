@@ -20,16 +20,20 @@ package com.higgsblock.global.chain.vm.datasource;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import lombok.extern.slf4j.Slf4j;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.util.SerializationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Clue class between Source and BatchSource
  * <p>
  * Created by Anton Nashatyrev on 29.11.2016.
  */
+@Slf4j
 public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Value, Key, Value> {
 
     Map<Key, Value> buf = new HashMap<>();
@@ -77,11 +81,24 @@ public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Va
     @Override
     public String getStateHash() {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Key, Value> entry : buf.entrySet()) {
-            sb.append(Hex.toHexString((byte[]) entry.getKey())).append("=")
-                    .append(Hex.toHexString((byte[]) entry.getValue())).append("&");
+        LOGGER.info("value size" + buf.entrySet().size());
+
+        Map<String, byte[]> keyMap = new TreeMap<>();
+        for (Key key : buf.keySet()) {
+            keyMap.put(Hex.toHexString((byte[]) key), (byte[]) key);
         }
+
+        for (String key : keyMap.keySet()) {
+            LOGGER.info("bufKey:{}， bufValue:{}", key, Hex.toHexString((byte[]) buf.get(keyMap.get(key))));
+            sb.append(key).append("=").append(Hex.toHexString((byte[]) buf.get(keyMap.get(key)))).append("&");
+
+            if (Hex.toHexString((byte[]) buf.get(keyMap.get(key))).startsWith("aced")) {
+                LOGGER.info("####value:{}", SerializationUtils.deserialize((byte[]) buf.get(keyMap.get(key))));
+            }
+        }
+
         HashFunction function = Hashing.sha256();
+        LOGGER.info("hash:{}", sb.toString());
         return function.hashString(sb.toString(), Charsets.UTF_8).toString();
     }
 

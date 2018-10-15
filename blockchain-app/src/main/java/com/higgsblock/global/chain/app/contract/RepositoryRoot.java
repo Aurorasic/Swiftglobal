@@ -26,6 +26,11 @@ public class RepositoryRoot extends RepositoryImpl {
 
     private DbSource<byte[]> dbSource;
 
+    /**
+     * last time used RepositoryRoot；
+     */
+    private static RepositoryRoot lastRepositoryRoot;
+
 
     public RepositoryRoot(IContractRepository repository, String preBlockHash, UTXOServiceProxy utxoServiceProxy, SystemProperties config) {
         super.setPreBlockHash(preBlockHash);
@@ -60,6 +65,8 @@ public class RepositoryRoot extends RepositoryImpl {
         };
 
         init(accountStateCache, codeCache, tempStorageCache);
+
+        lastRepositoryRoot = this;
     }
 
     @Override
@@ -68,6 +75,7 @@ public class RepositoryRoot extends RepositoryImpl {
 
         storageCache.flush();
         sourceWriter.flush();
+        lastRepositoryRoot = null;
     }
 
     @Override
@@ -80,5 +88,9 @@ public class RepositoryRoot extends RepositoryImpl {
         super.commit();
         storageCache.flush();
         return sourceWriter.getStateHash();
+    }
+
+    public static RepositoryRoot getLastRepositoryRoot() {
+        return lastRepositoryRoot;
     }
 }
