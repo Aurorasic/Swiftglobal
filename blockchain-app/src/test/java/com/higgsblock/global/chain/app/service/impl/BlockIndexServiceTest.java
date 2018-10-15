@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.List;
  * @author yangshenghong
  * @date 2018-10-10
  */
-@PrepareForTest
 public class BlockIndexServiceTest extends BaseMockTest {
     @InjectMocks
     private BlockIndexService blockIndexService;
