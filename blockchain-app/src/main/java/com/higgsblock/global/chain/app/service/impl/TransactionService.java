@@ -104,7 +104,7 @@ public class TransactionService implements ITransactionService {
 
         //step3 verify info
         List<Transaction> contractTransactionList = new LinkedList<>();
-        Repository blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
+        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
         Money blockFee = new Money(0);
         String stateHash = StringUtils.EMPTY;
         for (int index = 1; index < txNumber; index++) {
@@ -129,6 +129,10 @@ public class TransactionService implements ITransactionService {
             } catch (Exception e) {
                 return false;
             }
+        }
+        String dbStateHash = blockRepository.getStateHash();
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(stateHash) && org.apache.commons.lang.StringUtils.isNotEmpty(dbStateHash)) {
+            stateHash = contractService.appendStorageHash(stateHash, dbStateHash);
         }
         Money transactionsFee = block.getTransactionsFee();
         LOGGER.info("the blockFee is {} with block hash {}", blockFee, block.getHash());

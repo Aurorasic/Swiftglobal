@@ -89,7 +89,7 @@ public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Va
         }
 
         for (String key : keyMap.keySet()) {
-            LOGGER.info("key:{}， value:{}", key, Hex.toHexString((byte[]) buf.get(keyMap.get(key))));
+            LOGGER.info("bufKey:{}， bufValue:{}", key, Hex.toHexString((byte[]) buf.get(keyMap.get(key))));
             sb.append(key).append("=").append(Hex.toHexString((byte[]) buf.get(keyMap.get(key)))).append("&");
 
             if (Hex.toHexString((byte[]) buf.get(keyMap.get(key))).startsWith("aced")) {
