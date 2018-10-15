@@ -53,7 +53,7 @@ public class BalanceServiceTest extends BaseMockTest {
                 currency = "currency";
         //There is no specified currency in the result of the query
         Map<String, Money> map = Maps.newHashMap();
-        Mockito.doReturn(map).when(spyBalanceService).get(address);
+        Mockito.doReturn(map).when(spyBalanceService).getBalanceByAddress(address);
         Assert.assertEquals(spyBalanceService.getBalanceOnBest(address, currency).getCurrency(), currency);
 
         //The result of the query contains the specified currency
@@ -67,16 +67,16 @@ public class BalanceServiceTest extends BaseMockTest {
         String address = "address";
         //find balance by address return null
         PowerMockito.when(balanceRepository.findOne(address)).thenReturn(null);
-        Assert.assertTrue(CollectionUtils.isEmpty(balanceService.get(address)));
+        Assert.assertTrue(CollectionUtils.isEmpty(balanceService.getBalanceByAddress(address)));
 
         //find balance by address return balanceEntity but balances list is empty
         BalanceEntity balanceEntity = new BalanceEntity();
         PowerMockito.when(balanceRepository.findOne(address)).thenReturn(balanceEntity);
-        Assert.assertTrue(CollectionUtils.isEmpty(balanceService.get(address)));
+        Assert.assertTrue(CollectionUtils.isEmpty(balanceService.getBalanceByAddress(address)));
 
         //query to the result and complete the processing return
         balanceEntity.setBalances(Arrays.asList(new Money(0, "cas"), new Money(0, "miner")));
-        Assert.assertTrue(balanceService.get(address).containsKey("cas"));
+        Assert.assertTrue(balanceService.getBalanceByAddress(address).containsKey("cas"));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class BalanceServiceTest extends BaseMockTest {
         Map<String, Money> balanceMap = new HashMap<>();
         balanceMap.put("cas", new Money(1, "cas"));
         balanceMap.put("miner", new Money(2, "miner"));
-        Mockito.doReturn(balanceMap).when(spyBalanceService).get(utxo.getAddress());
+        Mockito.doReturn(balanceMap).when(spyBalanceService).getBalanceByAddress(utxo.getAddress());
         spyBalanceService.plusBalance(utxo);
 
         //the money in the result of single query is not null
@@ -101,7 +101,7 @@ public class BalanceServiceTest extends BaseMockTest {
     public void minusBalance() {
         //when get balance by address return null or empty
         UTXO utxo = new UTXO();
-        Mockito.doReturn(null).when(spyBalanceService).get(utxo.getAddress());
+        Mockito.doReturn(null).when(spyBalanceService).getBalanceByAddress(utxo.getAddress());
         try {
             balanceService.minusBalance(utxo);
         } catch (Exception e) {
@@ -116,7 +116,7 @@ public class BalanceServiceTest extends BaseMockTest {
         Map<String, Money> balanceMap = new HashMap<>();
         balanceMap.put("cas", new Money(1, "cas"));
         balanceMap.put("miner", new Money(2, "miner"));
-        Mockito.doReturn(balanceMap).when(spyBalanceService).get(utxo.getAddress());
+        Mockito.doReturn(balanceMap).when(spyBalanceService).getBalanceByAddress(utxo.getAddress());
         try {
             spyBalanceService.minusBalance(utxo);
         } catch (Exception e) {
