@@ -426,7 +426,7 @@ public class BlockService implements IBlockService {
         }
 
         void addUsedGas(long gas) {
-            totalUsedSize += gas;
+            totalUsedGas += gas;
         }
 
         void addFee(Money fee) {
