@@ -252,8 +252,21 @@ public class Transaction extends BaseSerializer {
      * @return size of this transaction.
      */
     public long getSize() {
+        // extract state of transaction counted for size.
+        Transaction origin = new Transaction();
+        origin.version = this.version;
+        origin.hash = this.hash;
+        origin.lockTime = this.lockTime;
+        origin.extra = this.extra;
+        origin.inputs = this.inputs;
+        origin.outputs = this.outputs;
+        origin.transactionTime = this.transactionTime;
+        origin.gasPrice = this.gasPrice;
+        origin.gasLimit = this.gasLimit;
+        origin.contractParameters = this.contractParameters;
+
         ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
-        return sizeCounter.calculateSize(this);
+        return sizeCounter.calculateSize(origin);
     }
 
     public boolean sizeAllowed() {
