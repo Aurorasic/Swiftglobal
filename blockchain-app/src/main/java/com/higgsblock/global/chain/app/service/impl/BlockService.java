@@ -19,6 +19,7 @@ import com.higgsblock.global.chain.app.common.SystemStepEnum;
 import com.higgsblock.global.chain.app.common.event.BlockPersistedEvent;
 import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
+import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
@@ -534,14 +535,36 @@ public class BlockService implements IBlockService {
         }
 
         ContractService.InvokePO invoke = contractService.invoke(block, transaction, blockRepository);
+        Transaction subTransaction = invoke.getContractTransaction();
         packagedTransactionList.add(transaction);
-        if (invoke.getContractTransaction() != null) {
-            packagedTransactionList.add(invoke.getContractTransaction());
+        if (subTransaction != null) {
+            packagedTransactionList.add(subTransaction);
         }
 
         ExecutionResult executionResult = invoke.getExecutionResult();
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-        updateStateContract(stateManager, transaction, success, executionResult, invoke.getContractTransaction());
+        updateStateContract(stateManager, transaction, success, executionResult, subTransaction);
+
+        updateTransaction(transaction, subTransaction, executionResult);
+    }
+
+    /**
+     * Records execution result in original transaction.
+     *
+     * @param transaction     original transaction.
+     * @param subTransaction  sub transaction.
+     * @param executionResult execution result.
+     */
+    private void updateTransaction(Transaction transaction,
+                                   Transaction subTransaction, ExecutionResult executionResult) {
+        ContractExecutionResult contractExecutionResult = transaction.getContractExecutionResult();
+        contractExecutionResult.setResultHash(calculateExecutionHash(executionResult));
+
+        String subTransactionHash = subTransaction == null ? Strings.EMPTY : subTransaction.getHash();
+        contractExecutionResult.getSubTransactionList().add(subTransactionHash);
+
+        String signature = ECKey.signMessage(subTransactionHash, peerKeyPair.getPriKey());
+        contractExecutionResult.setMinerSignature(signature);
     }
 
     /**
