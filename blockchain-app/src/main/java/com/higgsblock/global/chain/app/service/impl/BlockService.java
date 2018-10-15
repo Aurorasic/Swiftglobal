@@ -436,6 +436,23 @@ public class BlockService implements IBlockService {
         void subtractFee(Money fee) {
             totalFee = totalFee.subtract(fee);
         }
+
+        void updateGlobalStateHash(ExecutionResult executionResult) {
+            globalStateHash = calculateExecutionHash(globalStateHash, executionResult);
+        }
+
+        void updateGlobalStateHash(RepositoryRoot blockRepository) {
+            if (StringUtils.isNotEmpty(globalStateHash)) {
+                globalStateHash = Strings.EMPTY;
+            }
+
+            String dbStateHash = blockRepository.getStateHash();
+            if (StringUtils.isNotEmpty(dbStateHash)) {
+                dbStateHash = Strings.EMPTY;
+            }
+
+            globalStateHash = contractService.appendStorageHash(globalStateHash, dbStateHash);
+        }
     }
 
     private List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
@@ -450,18 +467,16 @@ public class BlockService implements IBlockService {
             }
             packageTransaction(transaction, block, stateManager, blockRepository, packagedTransactionList);
         }
+        stateManager.updateGlobalStateHash(blockRepository);
 
-        String dbStateHash = blockRepository.getStateHash();
-        if (StringUtils.isNotEmpty(stateManager.getGlobalStateHash()) && StringUtils.isNotEmpty(dbStateHash)) {
-            block.setContractStateHash(contractService.appendStorageHash(stateManager.getGlobalStateHash(), dbStateHash));
-        }
+        block.setContractStateHash(stateManager.getGlobalStateHash());
         block.setTransactionsFee(stateManager.getTotalFee());
         block.setGasUsed(stateManager.getTotalUsedGas());
         return packagedTransactionList;
     }
 
     /**
-     * Checks if a specific transaction is packable into a block.
+     * Checks if a specific transaction is packable in a block.
      *
      * @param transaction  target transaction to be packaged.
      * @param stateManager block state manager.
@@ -573,7 +588,7 @@ public class BlockService implements IBlockService {
                         FeeUtil.getSizeGas(subTransaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
             }
         }
-        stateManager.setGlobalStateHash(calculateExecutionHash(stateManager.getGlobalStateHash(), executionResult));
+        stateManager.updateGlobalStateHash(executionResult);
     }
 
     /**
