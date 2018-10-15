@@ -21,9 +21,9 @@ public class AccountState implements Serializable {
     /* A value equal to the number of transactions sent
      * from this address, or, in the case of contract accounts,
      * the number of contract-creations made by this account */
-    private long nonce;
+    private long nonce = 0;
 
-    private BigInteger balance;
+    private BigInteger balance = BigInteger.ZERO;
 
     private byte[] codeHash;
 
