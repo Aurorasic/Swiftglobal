@@ -146,6 +146,8 @@ public class AppContext implements IEventBusListener {
         LOGGER.info("6 Step: SyncBlocks is completed ==>>");
 
         LOGGER.info("Application service started successfully.");
+
+        systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
     }
 
     private void checkAndRecoveryBlockData() {

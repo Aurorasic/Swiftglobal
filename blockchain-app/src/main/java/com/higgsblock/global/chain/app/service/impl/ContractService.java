@@ -125,7 +125,7 @@ public class ContractService implements IContractService {
     private ExecutionResult executeContract(Transaction transaction,
                                             Block block, Repository txRepository, Repository conRepository) {
         ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
-        Executor executor = new Executor(conRepository, txRepository, executionEnvironment);
+        Executor executor = new Executor(txRepository, conRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();
 
         LOGGER.info(executionResult.toString());
