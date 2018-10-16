@@ -35,8 +35,9 @@ public class AddrUtil {
         BigInteger num = BigInteger.ZERO;
         for (char t : input.toCharArray()) {
             int p = ALPHABET.indexOf(t);
-            if (p == -1)
+            if (p == -1) {
                 return null;
+            }
             num = num.multiply(BigInteger.valueOf(58)).add(BigInteger.valueOf(p));
         }
 
@@ -68,10 +69,11 @@ public class AddrUtil {
         s.insert(0, ALPHABET.charAt(bi.intValue()));
         // Convert leading zeros too.
         for (byte anInput : input) {
-            if (anInput == 0)
+            if (anInput == 0) {
                 s.insert(0, ALPHABET.charAt(0));
-            else
+            } else {
                 break;
+            }
         }
         return s.toString();
     }

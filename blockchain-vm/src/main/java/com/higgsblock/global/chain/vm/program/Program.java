@@ -39,18 +39,14 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import static com.higgsblock.global.chain.vm.util.BIUtil.*;
+import static com.higgsblock.global.chain.vm.util.BIUtil.isNotCovers;
+import static com.higgsblock.global.chain.vm.util.BIUtil.transfer;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
 import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
 
-//import com.higgsblock.global.chain.vm.core.AccountState;
-//import com.higgsblock.global.chain.crypto.HashUtil;
-//import com.higgsblock.global.chain.db.ContractDetails;
-
-//import static com.higgsblock.global.chain.util.BIUtil.*;
 
 /**
  * @author Roman Mandeleil
@@ -119,7 +115,7 @@ public class Program {
         this(null, ops, programInvoke, transaction, config);
     }
 
-    public Program () {
+    public Program() {
         this.config = null;
 //        this.invoke = programInvoke;
 //        this.transaction = transaction;
@@ -513,7 +509,7 @@ public class Program {
         } else if (getLength(code) > blockchainConfig.getConstants().getMAX_CONTRACT_SZIE()) {
             result.setException(Program.Exception.notEnoughSpendingGas("Contract size too large: " + getLength(result.getHReturn()),
                     storageCost, this));
-        } else if (!result.isRevert()){
+        } else if (!result.isRevert()) {
             result.spendGas(storageCost);
             track.saveCode(newAddress, code);
         }
@@ -558,7 +554,7 @@ public class Program {
 
     /**
      * That method is for internal code invocations
-     * <p/>
+     * <p>
      * - Normal calls invoke a specified contract which updates itself
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
@@ -607,9 +603,9 @@ public class Program {
                     msg.getGas().getNoLeadZeroesData(),
                     msg.getEndowment().getNoLeadZeroesData());
         } else {
-          //  track.addBalance(senderAddress, endowment.negate());
-           // contextBalance = track.addBalance(contextAddress, endowment);
-            track.transfer(senderAddress,codeAddress,endowment,null);
+            //  track.addBalance(senderAddress, endowment.negate());
+            // contextBalance = track.addBalance(contextAddress, endowment);
+            track.transfer(senderAddress, codeAddress, endowment, null);
             transferInfoList.add(new TransferInfo(senderAddress, contextAddress, endowment));
         }
 

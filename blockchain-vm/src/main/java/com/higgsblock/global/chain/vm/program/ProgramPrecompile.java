@@ -18,9 +18,6 @@
 package com.higgsblock.global.chain.vm.program;
 
 import com.higgsblock.global.chain.vm.OpCode;
-//import com.higgsblock.global.chain.util.ByteUtil;
-//import com.higgsblock.global.chain.util.RLP;
-//import com.higgsblock.global.chain.util.RLPList;
 
 import java.util.HashSet;
 import java.util.Set;

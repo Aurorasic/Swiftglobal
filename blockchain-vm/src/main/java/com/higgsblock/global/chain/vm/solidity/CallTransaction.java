@@ -21,14 +21,9 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import org.ethereum.solidity.SolidityType;
-//import org.ethereum.util.ByteUtil;
-//import org.ethereum.util.FastByteComparisons;
-//import org.ethereum.vm.LogInfo;
 import com.higgsblock.global.chain.vm.LogInfo;
 import com.higgsblock.global.chain.vm.util.ByteUtil;
 import com.higgsblock.global.chain.vm.util.FastByteComparisons;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +34,11 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.subarray;
 import static org.apache.commons.lang3.StringUtils.stripEnd;
-//import static org.ethereum.crypto.HashUtil.sha3;
-//import static org.ethereum.solidity.SolidityType.IntType;
-//import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
 
 /**
  * Creates a contract function call transaction.
  * Serializes arguments according to the function ABI .
- *
+ * <p>
  * Created by Anton Nashatyrev on 25.08.2015.
  */
 public class CallTransaction {
@@ -113,13 +105,16 @@ public class CallTransaction {
         public FunctionType type;
         public StateMutabilityType stateMutability;
 
-        private Function() {}
+        private Function() {
+        }
 
-        public byte[] encode(Object ... args) {
+        public byte[] encode(Object... args) {
             return ByteUtil.merge(encodeSignature(), encodeArguments(args));
         }
-        public byte[] encodeArguments(Object ... args) {
-            if (args.length > inputs.length) throw new RuntimeException("Too many arguments: " + args.length + " > " + inputs.length);
+
+        public byte[] encodeArguments(Object... args) {
+            if (args.length > inputs.length)
+                throw new RuntimeException("Too many arguments: " + args.length + " > " + inputs.length);
 
             int staticSize = 0;
             int dynamicCnt = 0;
@@ -205,7 +200,7 @@ public class CallTransaction {
             }
         }
 
-        public static Function fromSignature(String funcName, String ... paramTypes) {
+        public static Function fromSignature(String funcName, String... paramTypes) {
             return fromSignature(funcName, paramTypes, new String[0]);
         }
 
@@ -260,13 +255,13 @@ public class CallTransaction {
         }
 
         private Function getBySignatureHash(byte[] hash) {
-            if (hash.length == 4 ) {
+            if (hash.length == 4) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equal(function.encodeSignature(), hash)) {
                         return function;
                     }
                 }
-            } else if (hash.length == 32 ) {
+            } else if (hash.length == 32) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equal(function.encodeSignatureLong(), hash)) {
                         return function;
