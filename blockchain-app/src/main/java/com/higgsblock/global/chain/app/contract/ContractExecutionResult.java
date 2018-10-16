@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,4 +31,11 @@ public class ContractExecutionResult {
      * signature signed by miner after contract being executed.
      */
     private String minerSignature;
+
+    public List<String> getSubTransactionList() {
+        if (subTransactionList == null) {
+            subTransactionList = new ArrayList<>();
+        }
+        return subTransactionList;
+    }
 }
