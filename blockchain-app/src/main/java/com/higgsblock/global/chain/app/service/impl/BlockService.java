@@ -443,12 +443,12 @@ public class BlockService implements IBlockService {
         }
 
         void updateGlobalStateHash(RepositoryRoot blockRepository) {
-            if (StringUtils.isNotEmpty(globalStateHash)) {
+            if (StringUtils.isEmpty(globalStateHash)) {
                 globalStateHash = Strings.EMPTY;
             }
 
             String dbStateHash = blockRepository.getStateHash();
-            if (StringUtils.isNotEmpty(dbStateHash)) {
+            if (StringUtils.isEmpty(dbStateHash)) {
                 dbStateHash = Strings.EMPTY;
             }
 
