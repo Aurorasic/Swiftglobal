@@ -92,6 +92,13 @@ public class Transaction extends BaseSerializer {
 
     private byte[] contractAddress;
 
+    public ContractExecutionResult getContractExecutionResult() {
+        if (contractExecutionResult == null) {
+            contractExecutionResult = new ContractExecutionResult();
+        }
+        return contractExecutionResult;
+    }
+
     private byte[] calculateContractAddress() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();

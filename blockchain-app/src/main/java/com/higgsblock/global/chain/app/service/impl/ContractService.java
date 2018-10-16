@@ -92,7 +92,7 @@ public class ContractService implements IContractService {
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
                         transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
                         transactionRepository.getAccountDetails());
-                //if success subContractTransaction size bigger than or fee is not enough,
+                // if success subContractTransaction size bigger than or fee is not enough,
                 // so create fail refund transaction
                 long size = contractTx.getSize();
                 if (size > blockchainConfig.getContractLimitedSize() ||
