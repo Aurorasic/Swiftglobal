@@ -123,7 +123,7 @@ public class ContractService implements IContractService {
      * @return a result recorder of the contract execution. null indicates that this transaction cannot be packaged into the block.
      */
     private ExecutionResult executeContract(Transaction transaction,
-                                            Block block, Repository conRepository, Repository txRepository) {
+                                            Block block, Repository txRepository, Repository conRepository) {
         ExecutionEnvironment executionEnvironment = createExecutionEnvironment(transaction, block, systemProperties, blockchainConfig);
         Executor executor = new Executor(conRepository, txRepository, executionEnvironment);
         ExecutionResult executionResult = executor.execute();

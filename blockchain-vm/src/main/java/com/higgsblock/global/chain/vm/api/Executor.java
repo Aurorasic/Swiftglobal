@@ -44,7 +44,7 @@ public class Executor {
     private List<TransferInfo> transferInfoList;
     private long sizeGas;
 
-    public Executor(Repository contractRepository, Repository transactionRepository, ExecutionEnvironment executionEnvironment) {
+    public Executor(Repository transactionRepository, Repository contractRepository, ExecutionEnvironment executionEnvironment) {
         this.transactionRepository = transactionRepository;
         this.executionEnvironment = executionEnvironment;
         gasLimit = executionEnvironment.getGasLimit();
