@@ -229,7 +229,14 @@ public class RepositoryMockImpl implements Repository {
         return ret;
     }
 
-    // composing a key as there can be several contracts with the same code
+    /**
+     * composing a key as there can be several contracts with the same code
+     * /
+     *
+     * @param codeHash
+     * @param addr
+     * @return
+     */
     private byte[] codeKey(byte[] codeHash, byte[] addr) {
         return NodeKeyCompositor.compose(codeHash, addr);
     }
@@ -381,7 +388,7 @@ public class RepositoryMockImpl implements Repository {
         throw new RuntimeException("Not supported");
     }
 
-    //@Override
+
     public boolean flushImpl(RepositoryMockImpl childRepository) {
 
         //if parent utxo include child utxo and child's utxo is spent

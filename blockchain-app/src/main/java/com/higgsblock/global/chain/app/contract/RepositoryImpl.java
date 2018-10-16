@@ -238,7 +238,11 @@ public class RepositoryImpl implements Repository<UTXO> {
         return ret;
     }
 
-    // composing a key as there can be several contracts with the same code
+    /**
+     * @param codeHash
+     * @param addr
+     * @return
+     */
     private byte[] codeKey(byte[] codeHash, byte[] addr) {
         return NodeKeyCompositor.compose(codeHash, addr);
     }

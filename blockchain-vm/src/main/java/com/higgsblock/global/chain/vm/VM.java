@@ -20,8 +20,6 @@ package com.higgsblock.global.chain.vm;
 import com.higgsblock.global.chain.vm.config.BlockchainConfig;
 import com.higgsblock.global.chain.vm.core.ContractDetails;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
-//import org.ethereum.db.ContractDetails;
-import com.higgsblock.global.chain.vm.datasource.Source;
 import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
 import org.slf4j.Logger;
@@ -32,43 +30,44 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.higgsblock.global.chain.vm.OpCode.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
 
+//import org.ethereum.db.ContractDetails;
+
 /**
  * The Ethereum Virtual Machine (EVM) is responsible for initialization
  * and executing a transaction on a contract.
- *
+ * <p>
  * It is a quasi-Turing-complete machine; the quasi qualification
  * comes from the fact that the computation is intrinsically bounded
  * through a parameter, gas, which limits the total amount of computation done.
- *
+ * <p>
  * The EVM is a simple stack-based architecture. The word size of the machine
  * (and thus size of stack item) is 256-bit. This was chosen to facilitate
  * the SHA3-256 hash scheme and  elliptic-curve computations. The memory model
  * is a simple word-addressed byte array. The stack has an unlimited size.
  * The machine also has an independent storage model; this is similar in concept
  * to the memory but rather than a byte array, it is a word-addressable word array.
- *
+ * <p>
  * Unlike memory, which is volatile, storage is non volatile and is
  * maintained as part of the system state. All locations in both storage
  * and memory are well-defined initially as zero.
- *
+ * <p>
  * The machine does not follow the standard von Neumann architecture.
  * Rather than storing program code in generally-accessible memory or storage,
  * it is stored separately in a virtual ROM interactable only though
  * a specialised instruction.
- *
+ * <p>
  * The machine can have exceptional execution for several reasons,
  * including stack underflows and invalid instructions. These unambiguously
  * and validly result in immediate halting of the machine with all state changes
  * left intact. The one piece of exceptional execution that does not leave
  * state changes intact is the out-of-gas (OOG) exception.
- *
+ * <p>
  * Here, the machine halts immediately and reports the issue to
  * the execution agent (either the transaction processor or, recursively,
  * the spawning execution environment) and which will deal with it separately.
@@ -94,10 +93,6 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  * program.getBlockchainConfig().eip206()
  * program.getBlockchainConfig().eip211()
  * program.getBlockchainConfig().eip214()
- *
- *
- *
- *
  */
 public class VM {
 
@@ -106,12 +101,16 @@ public class VM {
     private static BigInteger _32_ = BigInteger.valueOf(32);
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
 
-    // max mem size which couldn't be paid for ever
-    // used to reduce expensive BigInt arithmetic
+    /**
+     * max mem size which couldn't be paid for ever
+     * used to reduce expensive BigInt arithmetic
+     */
     private static BigInteger MAX_MEM_SIZE = BigInteger.valueOf(Integer.MAX_VALUE);
 
 
-    /* Keeps track of the number of steps performed in this VM */
+    /**
+     * Keeps track of the number of steps performed in this VM
+     */
     private int vmCounter = 0;
 
     private static VMHook vmHook;
@@ -145,7 +144,7 @@ public class VM {
             long memWords = (memoryUsage / 32);
             long memWordsOld = (oldMemSize / 32);
             //TODO #POC9 c_quadCoeffDiv = 512, this should be a constant, not magic number
-            long memGas = ( gasCosts.getMEMORY() * memWords + memWords * memWords / 512)
+            long memGas = (gasCosts.getMEMORY() * memWords + memWords * memWords / 512)
                     - (gasCosts.getMEMORY() * memWordsOld + memWordsOld * memWordsOld / 512);
             gasCost += memGas;
         }
@@ -334,7 +333,7 @@ public class VM {
                     }
 
                     //TODO #POC9 Make sure this is converted to BigInteger (256num support)
-                    if (!value.isZero() )
+                    if (!value.isZero())
                         gasCost += gasCosts.getVT_CALL();
 
                     int opOff = op.callHasValue() ? 4 : 3;
@@ -980,22 +979,48 @@ public class VM {
                 case POP: {
                     program.stackPop();
                     program.step();
-                }   break;
-                case DUP1: case DUP2: case DUP3: case DUP4:
-                case DUP5: case DUP6: case DUP7: case DUP8:
-                case DUP9: case DUP10: case DUP11: case DUP12:
-                case DUP13: case DUP14: case DUP15: case DUP16:{
+                }
+                break;
+                case DUP1:
+                case DUP2:
+                case DUP3:
+                case DUP4:
+                case DUP5:
+                case DUP6:
+                case DUP7:
+                case DUP8:
+                case DUP9:
+                case DUP10:
+                case DUP11:
+                case DUP12:
+                case DUP13:
+                case DUP14:
+                case DUP15:
+                case DUP16: {
 
                     int n = op.val() - OpCode.DUP1.val() + 1;
                     DataWord word_1 = stack.get(stack.size() - n);
                     program.stackPush(word_1.clone());
                     program.step();
 
-                }   break;
-                case SWAP1: case SWAP2: case SWAP3: case SWAP4:
-                case SWAP5: case SWAP6: case SWAP7: case SWAP8:
-                case SWAP9: case SWAP10: case SWAP11: case SWAP12:
-                case SWAP13: case SWAP14: case SWAP15: case SWAP16:{
+                }
+                break;
+                case SWAP1:
+                case SWAP2:
+                case SWAP3:
+                case SWAP4:
+                case SWAP5:
+                case SWAP6:
+                case SWAP7:
+                case SWAP8:
+                case SWAP9:
+                case SWAP10:
+                case SWAP11:
+                case SWAP12:
+                case SWAP13:
+                case SWAP14:
+                case SWAP15:
+                case SWAP16: {
 
                     int n = op.val() - OpCode.SWAP1.val() + 2;
                     stack.swap(stack.size() - 1, stack.size() - n);
@@ -1229,7 +1254,7 @@ public class VM {
                     if (program.isStaticCall() && op == CALL && !value.isZero())
                         throw new Program.StaticCallModificationException();
 
-                    if( !value.isZero()) {
+                    if (!value.isZero()) {
                         adjustedCallGas.add(new DataWord(gasCosts.getSTIPEND_CALL()));
                     }
 
@@ -1331,7 +1356,7 @@ public class VM {
             program.resetFutureRefund();
             program.stop();
             throw throwable;
-        }finally {
+        } finally {
             program.fullTrace();
         }
     }
@@ -1372,20 +1397,27 @@ public class VM {
      * <br/> Basically just offset + size, unless size is 0, in which case the result is also 0.
      *
      * @param offset starting position of the memory
-     * @param size number of bytes needed
+     * @param size   number of bytes needed
      * @return offset + size, unless size is 0. In that case memNeeded is also 0.
      */
     private static BigInteger memNeeded(DataWord offset, DataWord size) {
         return size.isZero() ? BigInteger.ZERO : offset.value().add(size.value());
     }
 
-    /*
+
+    /**
      * Dumping the VM state at the current operation in various styles
-     *  - standard  Not Yet Implemented
-     *  - standard+ (owner address, program counter, operation, gas left)
-     *  - pretty (stack, memory, storage, level, contract,
-     *              vmCounter, internalSteps, operation
-                    gasBefore, gasCost, memWords)
+     * - standard  Not Yet Implemented
+     * - standard+ (owner address, program counter, operation, gas left)
+     * - pretty (stack, memory, storage, level, contract,
+     * vmCounter, internalSteps, operation
+     * gasBefore, gasCost, memWords)
+     *
+     * @param op
+     * @param gasBefore
+     * @param gasCost
+     * @param memWords
+     * @param program
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
         if (config.dumpStyle().equals("standard+")) {

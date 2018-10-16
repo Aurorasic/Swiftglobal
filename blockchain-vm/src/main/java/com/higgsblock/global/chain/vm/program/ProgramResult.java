@@ -18,7 +18,6 @@
 package com.higgsblock.global.chain.vm.program;
 
 
-
 import com.higgsblock.global.chain.vm.CallCreate;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.LogInfo;
@@ -50,7 +49,7 @@ public class ProgramResult {
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;
 
-    /*
+    /**
      * for testing runs ,
      * call/create is not executed
      * but dummy recorded
@@ -198,7 +197,7 @@ public class ProgramResult {
             addTouchAccounts(another.getTouchedAccounts());
         }
     }
-    
+
     public static ProgramResult createEmpty() {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);

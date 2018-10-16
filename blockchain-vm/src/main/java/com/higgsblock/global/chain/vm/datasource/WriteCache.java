@@ -64,8 +64,10 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
     }
 
     private static abstract class CacheEntry<V> implements Entry<V> {
-        // dedicated value instance which indicates that the entry was deleted
-        // (ref counter decremented) but we don't know actual value behind it
+        /**
+         * dedicated value instance which indicates that the entry was deleted
+         * (ref counter decremented) but we don't know actual value behind it
+         */
         static final Object UNKNOWN_VALUE = new Object();
 
         V value;
@@ -279,9 +281,14 @@ public class WriteCache<Key, Value> extends AbstractCachedSource<Key, Value> {
         }
     }
 
-    // Guard against wrong cache Map
-    // if a regular Map is accidentally used for byte[] type keys
-    // the situation might be tricky to debug
+
+    /**
+     * Guard against wrong cache Map
+     * if a regular Map is accidentally used for byte[] type keys
+     * the situation might be tricky to debug
+     *
+     * @param key
+     */
     private void checkByteArrKey(Key key) {
         if (checked) return;
 
