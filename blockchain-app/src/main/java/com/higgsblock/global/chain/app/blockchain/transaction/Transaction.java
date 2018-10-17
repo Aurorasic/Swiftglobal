@@ -99,7 +99,7 @@ public class Transaction extends BaseSerializer {
         return contractExecutionResult;
     }
 
-    private byte[] calculateContractAddress() {
+    public byte[] calculateContractAddress() {
         HashFunction function = Hashing.sha256();
         StringBuilder builder = new StringBuilder();
         builder.append(function.hashLong(transactionTime));
