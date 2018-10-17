@@ -77,8 +77,12 @@ public class DposService implements IDposService {
         }
         dposAddresses = calculateDposAddresses(toBeBestBlock, maxHeight);
         //persist selected nodes address although  it is empty
-        if (dposAddresses == null) {
-            dposAddresses = Lists.newLinkedList();
+        if (CollectionUtils.isEmpty(dposAddresses)) {
+            LOGGER.error("there is not dpos nodes, toBestBlock height = {}, toBestBlock hash = {}, the maxHeight = {}"
+                    ,toBeBestBlock.getHeight()
+                    ,toBeBestBlock.getHash()
+                    ,maxHeight);
+            throw new RuntimeException("there is not dpos nodes");
         }
         persistDposNodes(sn, dposAddresses);
         LOGGER.info("persisted new dpos addresses for height={}", maxHeight);
@@ -174,7 +178,7 @@ public class DposService implements IDposService {
         boolean canPackBlock = dposNodes.contains(address);
         LOGGER.info("canPackBlock?={},height={},address={}, the dposNodes={}", canPackBlock, height, address, dposNodes);
 
-        if (!dposNodes.contains(address)) {
+        if (!canPackBlock) {
             return false;
         }
         return true;

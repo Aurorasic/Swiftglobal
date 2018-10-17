@@ -85,6 +85,9 @@ public class ScoreService implements IScoreService {
         while (iterator.hasNext()) {
             String key = iterator.next();
             String oldScoreStr = allScores.get(key);
+            if (null == oldScoreStr){
+                oldScoreStr = "0";
+            }
             Integer oldScore = Integer.valueOf(oldScoreStr);
             allScores.put(key, String.valueOf(oldScore + plusScore));
         }
@@ -204,13 +207,15 @@ public class ScoreService implements IScoreService {
         Map<String, String> allScores = blockChainInfoService.getAllScores();
         //if the block is only mined by  miner, set score
         if (transactionService.hasStakeOnBest(minerPKSig.getAddress(), SystemCurrencyEnum.MINER)) {
-            put(minerPKSig.getAddress(), MINED_BLOCK_SET_SCORE, allScores);
+            allScores.put(minerPKSig.getAddress(), String.valueOf(MINED_BLOCK_SET_SCORE));
         } else {
             //mined by backup peer node
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
             List<String> dposAddressList = dposService.getRestDposMinersByPreHash(prevBlockHash);
             if (CollectionUtils.isNotEmpty(dposAddressList)) {
-                updateBatch(dposAddressList, OFFLINE_MINER_SET_SCORE, allScores);
+                for (String dposAddress : dposAddressList) {
+                    allScores.put(dposAddress, String.valueOf(OFFLINE_MINER_SET_SCORE));
+                }
             }
         }
         plusAll(ONE_BLOCK_ADD_SCORE, allScores);
