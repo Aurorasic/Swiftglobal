@@ -85,7 +85,7 @@ public class ScoreService implements IScoreService {
         while (iterator.hasNext()) {
             String key = iterator.next();
             String oldScoreStr = allScores.get(key);
-            if (null == oldScoreStr){
+            if (null == oldScoreStr) {
                 oldScoreStr = "0";
             }
             Integer oldScore = Integer.valueOf(oldScoreStr);
@@ -213,8 +213,9 @@ public class ScoreService implements IScoreService {
             String prevBlockHash = toBeBestBlock.getPrevBlockHash();
             List<String> dposAddressList = dposService.getRestDposMinersByPreHash(prevBlockHash);
             if (CollectionUtils.isNotEmpty(dposAddressList)) {
+                String offlineMinerSetScore = String.valueOf(OFFLINE_MINER_SET_SCORE);
                 for (String dposAddress : dposAddressList) {
-                    allScores.put(dposAddress, String.valueOf(OFFLINE_MINER_SET_SCORE));
+                    allScores.put(dposAddress, offlineMinerSetScore);
                 }
             }
         }
