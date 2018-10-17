@@ -4,6 +4,7 @@ import com.higgsblock.global.chain.app.BaseMockTest;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.SignaturePair;
 import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.common.ScoreRangeEnum;
 import com.higgsblock.global.chain.app.service.IBlockChainInfoService;
 import com.higgsblock.global.chain.app.service.IDposService;
 import com.higgsblock.global.chain.app.service.IScoreService;
@@ -15,7 +16,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.util.*;
@@ -30,10 +30,6 @@ public class ScoreServiceTest extends BaseMockTest {
     @InjectMocks
     private IScoreService scoreService = new ScoreService();
 
-    @InjectMocks
-    @Spy
-    private IScoreService spyScoreService = new ScoreService();
-
     @Mock
     private IBlockChainInfoService blockChainInfoService;
 
@@ -45,18 +41,42 @@ public class ScoreServiceTest extends BaseMockTest {
 
     @Test
     public void get() {
+        Map<String, String> scoreMap = getTestScoreMap(3, 800);
+        PowerMockito.when(blockChainInfoService.getAllScores()).thenReturn(scoreMap);
+        String address = "address";
+        Assert.assertTrue(scoreService.get(address) == null);
+        address = "minerAddress1";
+        Assert.assertEquals("800", scoreService.get(address).toString());
     }
 
     @Test
     public void put() {
+        Map<String, String> scoreMap = getTestScoreMap(3, 800);
+        PowerMockito.when(blockChainInfoService.getAllScores()).thenReturn(scoreMap);
+        String address = "address";
+        Integer score = 1000;
+        scoreService.put(address, score);
+        Assert.assertTrue(scoreMap.size() == 4);
+        Assert.assertTrue(scoreMap.get(address).equals(score.toString()));
     }
 
     @Test
     public void put1() {
+        Map<String, String> scoreMap = getTestScoreMap(3, 800);
+        String address = "address";
+        Integer score = 1000;
+        scoreService.put(address, score, scoreMap);
+        Assert.assertTrue(scoreMap.size() == 4);
+        Assert.assertTrue(scoreMap.get(address).equals(score.toString()));
     }
 
     @Test
     public void updateBatch() {
+        List<String> addAddressList = DposServiceTest.getTestAddresses("addAddress", 3);
+        Map<String, String> scoreMap = getTestScoreMap(3, 800);
+        scoreService.updateBatch(addAddressList, 200, scoreMap);
+        Assert.assertTrue(scoreMap.size() == 6);
+        Assert.assertTrue(scoreMap.get("addAddress_2").equals("200"));
     }
 
     @Test
@@ -103,19 +123,32 @@ public class ScoreServiceTest extends BaseMockTest {
         int baseScore = 600;
         Map<String, String> scoreMap = getTestScoreMap(3, baseScore);
         PowerMockito.when(blockChainInfoService.getAllScores()).thenReturn(scoreMap);
-        //value is not null
-        String minerAddress = "minerAddress1";
-        scoreService.remove(minerAddress);
-        Assert.assertTrue(scoreMap.size() == 2);
-
         //value is null
-        minerAddress = "address";
+        String minerAddress = "address";
         scoreService.remove(minerAddress);
         Assert.assertTrue(scoreMap.size() == 3);
+
+        //value is not null
+        minerAddress = "minerAddress1";
+        scoreService.remove(minerAddress);
+        Assert.assertTrue(scoreMap.size() == 2);
     }
 
     @Test
     public void setSelectedDposScore() {
+        //addAddressList is not empty
+        List<String> addAddressList = DposServiceTest.getTestAddresses("addAddress", 3);
+        Map<String, String> scoreMap = getTestScoreMap(3, 800);
+        PowerMockito.when(blockChainInfoService.getAllScores()).thenReturn(scoreMap);
+        scoreService.setSelectedDposScore(addAddressList);
+        Assert.assertTrue(scoreMap.size() == 6);
+        Assert.assertTrue(scoreMap.get("addAddress_2").equals("600"));
+
+        //addAddressList is empty or null
+        addAddressList = null;
+        scoreService.setSelectedDposScore(addAddressList);
+        addAddressList = Collections.emptyList();
+        scoreService.setSelectedDposScore(addAddressList);
     }
 
     @Test
@@ -156,6 +189,37 @@ public class ScoreServiceTest extends BaseMockTest {
 
     @Test
     public void queryAddresses() {
+        int baseScore = 900;
+        int size = 1099;
+        Map<String, String> scoreMap = getTestScoreMap(size, baseScore);
+        ScoreRangeEnum level3Score = ScoreRangeEnum.LEVEL3_SCORE;
+        int maxScore = level3Score.getMaxScore();
+        int minScore = level3Score.getMinScore();
+        //[minScore,maxScore)
+        String minScoreStr = "minScore";
+        String maxScoreStr = "maxScore";
+        scoreMap.put(minScoreStr, String.valueOf(minScore));
+        scoreMap.put(maxScoreStr, String.valueOf(maxScore));
+        PowerMockito.when(blockChainInfoService.getAllScores()).thenReturn(scoreMap);
+
+        Random random = new Random();
+        int min = 700;
+        int max = 1100;
+        int range = max - min;
+        List<String> exculdeAddresses = DposServiceTest.getTestAddresses("exculdeAddresses", 99);
+        //[700,1200)
+        exculdeAddresses.forEach(address -> {
+            scoreMap.put(address, String.valueOf(min + random.nextInt(range)));
+        });
+
+        Assert.assertEquals(1200, scoreMap.size());
+        List<String> list = scoreService.queryAddresses(level3Score, exculdeAddresses);
+        Assert.assertEquals(1000, list.size());
+
+        list.parallelStream().forEach(resutl -> {
+            Integer value = Integer.valueOf(scoreMap.get(resutl));
+            Assert.assertTrue(value >= minScore && value < maxScore);
+        });
     }
 
     private void mockMinerPKSig(Block block) {
@@ -168,8 +232,11 @@ public class ScoreServiceTest extends BaseMockTest {
     private Map<String, String> getTestScoreMap(int size, int baseScore) {
         Map<String, String> allScores = new HashMap<>(size);
         String address = "minerAddress";
+        int baseLength = address.length();
+        StringBuilder builder = new StringBuilder(address);
         for (int i = 0; i < size; i++) {
-            allScores.put(address + i, String.valueOf(baseScore));
+            allScores.put(builder.append(i).toString(), String.valueOf(baseScore));
+            builder.delete(baseLength, builder.length());
         }
         return allScores;
     }
