@@ -157,11 +157,6 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.flush();
     }
 
-    @Override
-    public void flushNoReconnect() {
-        throw new UnsupportedOperationException();
-    }
-
 
     @Override
     public void commit() {
@@ -191,11 +186,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void reset() {
         repository.reset();
-    }
-
-    @Override
-    public byte[] getRoot() {
-        return new byte[0];
     }
 
 
@@ -262,32 +252,12 @@ public class Storage implements Repository, ProgramListenerAware {
         return false;
     }
 
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
-    @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-        return null;
-    }
 
     @Override
     public List<AccountDetail> getAccountDetails() {
         return null;
     }
 
-    /**
-     * add utxo into first cache and build Account
-     *
-     * @param o
-     * @return
-     */
-    @Override
-    public boolean addUTXO(Object o) {
-        return false;
-    }
 
     /**
      * get hash

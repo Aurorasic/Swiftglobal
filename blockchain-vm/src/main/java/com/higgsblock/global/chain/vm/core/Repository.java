@@ -170,8 +170,6 @@ public interface Repository {
      */
     void flush();
 
-    void flushNoReconnect();
-
 
     /**
      * Store all the temporary changes made
@@ -209,9 +207,6 @@ public interface Repository {
      * Reset
      */
     void reset();
-
-
-    byte[] getRoot();
 
 
     Repository getSnapshotTo(byte[] root);
@@ -254,24 +249,22 @@ public interface Repository {
      */
     boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO);
 
+    /**
+     * merge utxo to parent cache
+     *
+     * @param unSpendUTXO unspent utxo
+     * @return true
+     */
     boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO);
 
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
-    AccountState createAccountState(byte[] address, BigInteger balance, String currency);
 
+    /**
+     * get cache transfer log
+     *
+     * @return transfer log
+     */
     List<AccountDetail> getAccountDetails();
 
-    /**
-     * add utxo into first cache and build Account
-     *
-     * @return
-     */
-    boolean addUTXO(Object asset);
 
     /**
      * get hash

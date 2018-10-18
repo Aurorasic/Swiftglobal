@@ -213,11 +213,6 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public void flushNoReconnect() {
-
-    }
-
-    @Override
     public synchronized RepositoryImpl startTracking() {
 
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache, WriteCache.CacheType.SIMPLE);
@@ -307,11 +302,6 @@ public class RepositoryImpl implements Repository {
 
     }
 
-    @Override
-    public byte[] getRoot() {
-        throw new RuntimeException("Not supported");
-    }
-
     public synchronized String getTrieDump() {
         return dumpStateTrie();
     }
@@ -366,25 +356,6 @@ public class RepositoryImpl implements Repository {
         return spentUTXOCache.get(address);
     }
 
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
-    @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-
-        AccountState ret = accountStateCache.get(address);
-        if (ret == null) {
-            AccountState accountState = new AccountState(0, balance, address, currency, new HashSet<>());
-            accountStateCache.put(address, accountState);
-            return accountState;
-        }
-
-        return ret;
-    }
-
     @Override
     public List<AccountDetail> getAccountDetails() {
         return accountDetails;
@@ -421,19 +392,6 @@ public class RepositoryImpl implements Repository {
     }
 
     /**
-     * add utxo into first cache and build Account
-     *
-     * @return
-     */
-    @Override
-    public boolean addUTXO(Object utxo) {
-
-        // unspentUTXOCache.get(utxo.getAddress()).add(utxo);
-
-        return true;
-    }
-
-    /**
      * get hash
      *
      * @return hash
@@ -452,23 +410,8 @@ public class RepositoryImpl implements Repository {
     @Override
     public AccountState getAccountState(byte[] address, String currency) {
 
-        if (StringUtils.isEmpty(currency)) {
-            currency = SystemCurrencyEnum.CAS.getCurrency();
-        }
         return accountStateCache.get(address);
 
-//        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO(preBlockHash, AddrUtil.toTransactionAddr(address), currency);
-//        if (chainUTXO != null && chainUTXO.size() != 0) {
-//            unspentUTXOCache.addAll(chainUTXO);
-//        }
-//
-//        for (UTXO utxo : unspentUTXOCache) {
-//            if (utxo.getAddress().equals(AddrUtil.toTransactionAddr(address))) {
-//                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-//            }
-//        }
-//        accountStates.put(address, accountState);
-//        return accountState;
     }
 
     class ContractDetailsImpl implements ContractDetails {

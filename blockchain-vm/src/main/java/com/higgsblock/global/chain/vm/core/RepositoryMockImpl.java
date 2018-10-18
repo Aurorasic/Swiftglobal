@@ -207,10 +207,6 @@ public class RepositoryMockImpl implements Repository {
 
     }
 
-    @Override
-    public void flushNoReconnect() {
-
-    }
 
     @Override
     public synchronized RepositoryMockImpl startTracking() {
@@ -304,32 +300,12 @@ public class RepositoryMockImpl implements Repository {
         return false;
     }
 
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
-    @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-        return null;
-    }
 
     @Override
     public List<AccountDetail> getAccountDetails() {
         return null;
     }
 
-    /**
-     * add utxo into first cache and build Account
-     *
-     * @param o
-     * @return
-     */
-    @Override
-    public boolean addUTXO(Object o) {
-        return false;
-    }
 
     /**
      * get hash
@@ -380,10 +356,6 @@ public class RepositoryMockImpl implements Repository {
 
     }
 
-    @Override
-    public byte[] getRoot() {
-        throw new RuntimeException("Not supported");
-    }
 
     public synchronized String getTrieDump() {
         return dumpStateTrie();

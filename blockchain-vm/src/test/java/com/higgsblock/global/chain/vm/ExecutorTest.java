@@ -277,10 +277,6 @@ public class ExecutorTest {
 
             }
 
-            @Override
-            public void flushNoReconnect() {
-
-            }
 
             @Override
             public void commit() {
@@ -312,10 +308,6 @@ public class ExecutorTest {
 
             }
 
-            @Override
-            public byte[] getRoot() {
-                return new byte[0];
-            }
 
             @Override
             public Repository getSnapshotTo(byte[] root) {
@@ -352,20 +344,12 @@ public class ExecutorTest {
                 return false;
             }
 
-            @Override
-            public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-                return null;
-            }
 
             @Override
             public List<AccountDetail> getAccountDetails() {
                 return null;
             }
 
-            @Override
-            public boolean addUTXO(Object o) {
-                return false;
-            }
 
             /**
              * get hash

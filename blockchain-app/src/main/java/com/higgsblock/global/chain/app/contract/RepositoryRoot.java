@@ -104,12 +104,7 @@ public class RepositoryRoot extends RepositoryImpl {
     @Override
     public Set getUnSpendAsset(String address) {
 
-
-        if (unspentUTXOCache == null) {
-            unspentUTXOCache = new HashMap<>(16);
-        }
-        boolean cacheIsNullAndNotLoadedDd = unspentUTXOCache.get(address) == null
-                && loadDBRecodes.get(address) == null;
+        boolean cacheIsNullAndNotLoadedDd = unspentUTXOCache.get(address) == null && loadDBRecodes.get(address) == null;
         boolean notLoadedDd = loadDBRecodes.get(address) == null;
 
         if (cacheIsNullAndNotLoadedDd || notLoadedDd) {
@@ -125,6 +120,5 @@ public class RepositoryRoot extends RepositoryImpl {
 
         return unspentUTXOCache.get(address);
     }
-
 
 }

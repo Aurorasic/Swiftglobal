@@ -73,16 +73,19 @@ public class ContractService implements IContractService {
 
         Repository conRepository = transactionRepository.startTracking();
         //merge utxo to first cache
-        Set<UTXO> set = new HashSet<UTXO>();
-        set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
-        Map<String, Set> transferUTXO = new HashMap<String, Set>() {{
-            put(transaction.getOutputs().get(0).getLockScript().getAddress(), set);
-        }};
-        transactionRepository.mergeUTXO2Parent(transferUTXO);
+        if (transaction.getOutputs().get(0).getMoney().compareTo(new Money("0")) > 0) {
+            Set<UTXO> set = new HashSet<>();
+            set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
+            Map<String, Set> transferUTXO = new HashMap<String, Set>() {{
+                put(transaction.getOutputs().get(0).getLockScript().getAddress(), set);
+            }};
+            transactionRepository.mergeUTXO2Parent(transferUTXO);
+        }
         ExecutionResult executionResult = executeContract(transaction, block, transactionRepository, conRepository);
         InvokePO invokePO = new InvokePO();
 
         //TODO tangKun refund gas 2018-09-29
+        //TODO tangKun if sub transaction is refund have to remove unspent utxo in first cache
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
         Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
                 new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
@@ -90,23 +93,27 @@ public class ContractService implements IContractService {
         if (!success) {
 
             if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-                invokePO.setContractTransaction(buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney));
+                invokePO.setContractTransaction(buildFailedTransaction(transaction, block.getPrevBlockHash(), transferMoney));
             }
 
         } else {
-            boolean transferFlag = conRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+            boolean transferFlag = conRepository.getAccountDetails().size() > 0
+                    || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
-                Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(AddrUtil.toTransactionAddr(transaction.getContractAddress()));
+                Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(
+                        AddrUtil.toTransactionAddr(transaction.getContractAddress()));
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
                         conRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
                         conRepository.getAccountDetails());
-                // if success subContractTransaction size bigger than or fee is not enough,
-                // so create fail refund transaction
+                /**
+                 * if success subContractTransaction size bigger than or fee is not enough,
+                 * so create fail refund transaction
+                 */
                 long size = contractTx.getSize();
                 invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
-                    ContractTransaction failedTransaction = buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney);
+                    ContractTransaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash(), transferMoney);
                     invokePO.setContractTransaction(failedTransaction);
                     executionResult.setRemainGas(BigInteger.ZERO);
                     executionResult.setErrorMessage("contract size bigger than limit");
@@ -265,7 +272,7 @@ public class ContractService implements IContractService {
      * @param transferMoney refund money
      * @return
      */
-    public ContractTransaction buildFiledTransaction(Transaction transaction, String prevBlockHash, Money transferMoney) {
+    public ContractTransaction buildFailedTransaction(Transaction transaction, String prevBlockHash, Money transferMoney) {
         ContractTransaction refundTx = new ContractTransaction();
         TransactionInput input = new TransactionInput();
         TransactionOutPoint top = new TransactionOutPoint();
