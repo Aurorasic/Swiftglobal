@@ -1,9 +1,7 @@
 package com.higgsblock.global.chain.app.dao;
 
 import com.higgsblock.global.chain.app.BaseTest;
-import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
-import com.higgsblock.global.chain.vm.core.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +48,11 @@ public class IBlockRepositoryTest extends BaseTest {
 
 
         //String preBlockHash, UTXOServiceProxy utxoServiceProxy, SystemProperties config
-        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, "ea68f559a9cd7d11117b2faccb7a7fd3ff83ffcf96b9f888947aec51dbb51291", utxoServiceProxy, SystemProperties.getDefault());
-        LOGGER.info("utxos:{}", blockRepository.getUnSpendAsset("1DqLTPwmJXzdKT3nSi3vwQ4VuivrKcfjoE"));
+//        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, "ea68f559a9cd7d11117b2faccb7a7fd3ff83ffcf96b9f888947aec51dbb51291", utxoServiceProxy, SystemProperties.getDefault());
+//        LOGGER.info("utxos:{}", blockRepository.getUnSpendAsset("1DqLTPwmJXzdKT3nSi3vwQ4VuivrKcfjoE"));
+        String account = contractRepository.findOne("d844bb55167ab332117049e240166fc521d67c478ef6cb56ffb4bda2787ff5e7").getValue();
+        LOGGER.info("account:{}", account);
+        ;
     }
 
     @Test

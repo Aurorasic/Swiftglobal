@@ -3,7 +3,6 @@ package com.higgsblock.global.chain.app.contract;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
-import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
@@ -338,14 +337,12 @@ public class RepositoryImpl implements Repository {
         if (StringUtils.isEmpty(currency)) {
             currency = SystemCurrencyEnum.CAS.getCurrency();
         }
-        BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(String.valueOf(amount), currency));
-        if (contractAccount.getBalance().compareTo(gasAmount) < 0) {
+        if (contractAccount.getBalance().compareTo(amount) < 0) {
             LOGGER.warn("not enough balance");
-            //余额不足
             throw new RuntimeException("not enough balance ");
         }
-        contractAccount.withBalanceDecrement(gasAmount);
-        AccountDetail accountDetail = new AccountDetail(from, address, gasAmount, contractAccount.getBalance(), currency);
+        contractAccount.withBalanceDecrement(amount);
+        AccountDetail accountDetail = new AccountDetail(from, address, amount, contractAccount.getBalance(), currency);
         accountDetails.add(accountDetail);
     }
 
