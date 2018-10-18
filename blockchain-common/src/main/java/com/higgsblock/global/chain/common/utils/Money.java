@@ -37,7 +37,7 @@ public class Money extends BaseSerializer implements Comparable {
     /**
      * Precise digits
      */
-    private int decimalDigits = 8;
+    private int decimalDigits = 18;
 
     public Money() {
         this(0);
