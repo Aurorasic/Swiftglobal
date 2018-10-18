@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author tangkun
@@ -70,7 +70,15 @@ public class ContractService implements IContractService {
     public InvokePO invoke(Block block, Transaction transaction, Repository blockRepository) {
 
         Repository transactionRepository = blockRepository.startTracking();
+
         Repository conRepository = transactionRepository.startTracking();
+        //merge utxo to first cache
+        Set<UTXO> set = new HashSet<UTXO>();
+        set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
+        Map<String, Set> transferUTXO = new HashMap<String, Set>() {{
+            put(transaction.getOutputs().get(0).getLockScript().getAddress(), set);
+        }};
+        transactionRepository.mergeUTXO2Parent(transferUTXO);
         ExecutionResult executionResult = executeContract(transaction, block, transactionRepository, conRepository);
         InvokePO invokePO = new InvokePO();
 
@@ -86,15 +94,16 @@ public class ContractService implements IContractService {
             }
 
         } else {
-            boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+            boolean transferFlag = conRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
-                List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
+                Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(AddrUtil.toTransactionAddr(transaction.getContractAddress()));
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                        transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                        transactionRepository.getAccountDetails());
+                        conRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
+                        conRepository.getAccountDetails());
                 // if success subContractTransaction size bigger than or fee is not enough,
                 // so create fail refund transaction
                 long size = contractTx.getSize();
+                invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
                     ContractTransaction failedTransaction = buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney);

@@ -272,7 +272,7 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public List getUnSpendAsset(byte[] address) {
+    public Set getUnSpendAsset(String address) {
         return null;
     }
 
@@ -283,7 +283,7 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public List getSpendAsset(byte[] address) {
+    public Set getSpendAsset(String address) {
         return null;
     }
 
@@ -295,7 +295,12 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+    public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
+        return false;
+    }
+
+    @Override
+    public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
         return false;
     }
 

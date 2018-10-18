@@ -48,7 +48,7 @@ public class AccountState implements Serializable {
 //    }
 
     public AccountState(long nonce, BigInteger balance) {
-        this(nonce, balance, EMPTY_DATA_HASH, "", new HashSet<>());
+        this(nonce, balance, EMPTY_DATA_HASH, "cas", new HashSet<>());
     }
 
     public AccountState withIncrementedNonce() {
@@ -77,12 +77,12 @@ public class AccountState implements Serializable {
 
     public AccountState withBalanceIncrement(BigInteger value) {
         this.balance = balance.add(value);
-        return new AccountState(nonce, balance.add(value), codeHash, currency, keys);
+        return new AccountState(nonce, this.balance, codeHash, currency, keys);
     }
 
     public AccountState withBalanceDecrement(BigInteger value) {
         this.balance = balance.subtract(value);
-        return new AccountState(nonce, balance.add(value), codeHash, currency, keys);
+        return new AccountState(nonce, this.balance, codeHash, currency, keys);
     }
 
     public AccountState withStorageKey(ByteArrayWrapper value) {

@@ -1,7 +1,6 @@
 package com.higgsblock.global.chain.vm.core;
 
 import com.higgsblock.global.chain.vm.DataWord;
-import com.higgsblock.global.chain.vm.datasource.Source;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.Set;
  * @author tangkun
  * @date 2018-09-06
  */
-public interface Repository<ASSET> {
+public interface Repository {
     /**
      * Create a new account in the database
      *
@@ -25,7 +24,7 @@ public interface Repository<ASSET> {
     /**
      * @param addr - account to check
      * @return - true if account exist,
-     *           false otherwise
+     * false otherwise
      */
     boolean isExist(byte[] addr);
 
@@ -39,10 +38,11 @@ public interface Repository<ASSET> {
 
     /**
      * get account local cache if not find , and find in parent cache and put local cache
+     *
      * @param addr account address
      * @return
      */
-    AccountState getAccountState(byte[] addr,String currency);
+    AccountState getAccountState(byte[] addr, String currency);
 
     /**
      * Deletes the account
@@ -77,7 +77,6 @@ public interface Repository<ASSET> {
     ContractDetails getContractDetails(byte[] addr);
 
 
-
     boolean hasContractDetails(byte[] addr);
 
     /**
@@ -107,8 +106,8 @@ public interface Repository<ASSET> {
     /**
      * Put a value in storage of an account at a given key
      *
-     * @param addr of the account
-     * @param key of the data to store
+     * @param addr  of the account
+     * @param key   of the data to store
      * @param value is the data to store
      */
     void addStorageRow(byte[] addr, DataWord key, DataWord value);
@@ -118,7 +117,7 @@ public interface Repository<ASSET> {
      * Retrieve storage value from an account for a given key
      *
      * @param addr of the account
-     * @param key associated with this value
+     * @param key  associated with this value
      * @return data in the form of a <code>DataWord</code>
      */
     DataWord getStorageValue(byte[] addr, DataWord key);
@@ -135,7 +134,7 @@ public interface Repository<ASSET> {
     /**
      * Add value to the balance of an account
      *
-     * @param addr of the account
+     * @param addr  of the account
      * @param value to be added
      * @return new balance of the account
      */
@@ -151,11 +150,11 @@ public interface Repository<ASSET> {
      * Dump the full state of the current repository into a file with JSON format
      * It contains all the contracts/account, their attributes and
      *
-     * @param block of the current state
-     * @param gasUsed the amount of gas used in the block until that point
+     * @param block    of the current state
+     * @param gasUsed  the amount of gas used in the block until that point
      * @param txNumber is the number of the transaction for which the dump has to be made
-     * @param txHash is the hash of the given transaction.
-     * If null, the block state post coinbase reward is dumped.
+     * @param txHash   is the hash of the given transaction.
+     *                 If null, the block state post coinbase reward is dumped.
      */
     void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash);
 
@@ -212,10 +211,7 @@ public interface Repository<ASSET> {
     void reset();
 
 
-
-
     byte[] getRoot();
-
 
 
     Repository getSnapshotTo(byte[] root);
@@ -225,54 +221,61 @@ public interface Repository<ASSET> {
 
     /**
      * transfer assert from to address
-     * @param from balance must glt amount
+     *
+     * @param from     balance must glt amount
      * @param address  receive address
-     * @param amount transfer amount
+     * @param amount   transfer amount
      * @param currency assert type
      */
-    void transfer(byte[] from,byte[] address ,BigInteger amount,String currency);
+    void transfer(byte[] from, byte[] address, BigInteger amount, String currency);
 
     /**
      * get unSpend asset
+     *
      * @param address
      * @return
      */
-    List<ASSET> getUnSpendAsset(byte[] address);
+    Set getUnSpendAsset(String address);
 
     /**
      * get spend asset
+     *
      * @param address
      * @return
      */
-    List<ASSET> getSpendAsset(byte[] address);
+    Set getSpendAsset(String address);
 
     /**
      * merge utxo
+     *
      * @param spendUTXO
      * @param unSpendUTXO
      * @return
      */
-    boolean mergeUTXO(List<ASSET> spendUTXO,List<ASSET> unSpendUTXO);
+    boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO);
+
+    boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO);
 
     /**
-     *
      * @param address
      * @param balance
      * @param currency
      * @return
      */
-    AccountState createAccountState(byte[] address,BigInteger balance,String currency);
+    AccountState createAccountState(byte[] address, BigInteger balance, String currency);
 
     List<AccountDetail> getAccountDetails();
 
     /**
      * add utxo into first cache and build Account
+     *
      * @return
      */
-    boolean addUTXO(ASSET asset);
+    boolean addUTXO(Object asset);
 
     /**
      * get hash
+     *
      * @return hash
      */
     String getHash();

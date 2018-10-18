@@ -51,7 +51,7 @@ public class SnapshotTest {
             unSpendUTXO.add(utxo);
         }
 
-        conR.mergeUTXO(Helpers.buildTestUTXO("" + from), unSpendUTXO);
+        //  conR.mergeUTXO(Helpers.buildTestUTXO("" + from), unSpendUTXO);
 
         conR.flush();
         txR.flush();

@@ -267,7 +267,9 @@ public class ExecutorTest {
 
             @Override
             public Repository startTracking() {
-                return new RepositoryMockImpl();
+                //  return new RepositoryMockImpl();
+                return null;
+
             }
 
             @Override
@@ -331,17 +333,22 @@ public class ExecutorTest {
             }
 
             @Override
-            public List getUnSpendAsset(byte[] address) {
+            public Set getUnSpendAsset(String address) {
                 return null;
             }
 
             @Override
-            public List getSpendAsset(byte[] address) {
+            public Set getSpendAsset(String address) {
                 return null;
             }
 
             @Override
-            public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+            public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
+                return false;
+            }
+
+            @Override
+            public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
                 return false;
             }
 
