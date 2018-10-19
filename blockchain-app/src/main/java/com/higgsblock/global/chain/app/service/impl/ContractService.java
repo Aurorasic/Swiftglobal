@@ -6,6 +6,7 @@ import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.service.IContractService;
@@ -73,38 +74,41 @@ public class ContractService implements IContractService {
 
         Repository conRepository = transactionRepository.startTracking();
         //merge utxo to first cache
-        if (transaction.getOutputs().get(0).getMoney().compareTo(new Money("0")) > 0) {
+        Map<String, Set> transferUTXO = null;
+        if (transaction.getFirstOutMoney().compareToZero()) {
             Set<UTXO> set = new HashSet<>();
             set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
-            Map<String, Set> transferUTXO = new HashMap<String, Set>() {{
+            transferUTXO = new HashMap<String, Set>() {{
                 put(transaction.getOutputs().get(0).getLockScript().getAddress(), set);
             }};
             transactionRepository.mergeUTXO2Parent(transferUTXO);
         }
+
         ExecutionResult executionResult = executeContract(transaction, block, transactionRepository, conRepository);
         InvokePO invokePO = new InvokePO();
 
-        //TODO tangKun refund gas 2018-09-29
-        //TODO tangKun if sub transaction is refund have to remove unspent utxo in first cache
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-        Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
-                new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
-
         if (!success) {
-
-            if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-                invokePO.setContractTransaction(buildFailedTransaction(transaction, block.getPrevBlockHash(), transferMoney));
+            if (transaction.getFirstOutMoney().compareToZero()) {
+                invokePO.setContractTransaction(buildFailedTransaction(transaction, block.getPrevBlockHash()));
+                if (transferUTXO != null) {
+                    transactionRepository.removeUTXOInParent(transferUTXO);
+                }
             }
-
         } else {
             boolean transferFlag = conRepository.getAccountDetails().size() > 0
-                    || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+                    || executionResult.getRemainGas().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
+                Money refundCas = BalanceUtil.convertGasToMoney(executionResult.getRemainGas().
+                        multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
+
                 Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(
                         AddrUtil.toTransactionAddr(transaction.getContractAddress()));
+
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                        conRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                        conRepository.getAccountDetails());
+                        conRepository.getAccountState(transaction.getContractAddress(),
+                                SystemCurrencyEnum.CAS.getCurrency()),
+                        conRepository.getAccountDetails(), refundCas, transaction);
                 /**
                  * if success subContractTransaction size bigger than or fee is not enough,
                  * so create fail refund transaction
@@ -113,10 +117,13 @@ public class ContractService implements IContractService {
                 invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
-                    ContractTransaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash(), transferMoney);
+                    ContractTransaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash());
                     invokePO.setContractTransaction(failedTransaction);
                     executionResult.setRemainGas(BigInteger.ZERO);
                     executionResult.setErrorMessage("contract size bigger than limit");
+                    if (transferUTXO != null) {
+                        transactionRepository.removeUTXOInParent(transferUTXO);
+                    }
                 }
             }
 
@@ -269,10 +276,9 @@ public class ContractService implements IContractService {
      *
      * @param transaction   original transaction
      * @param prevBlockHash block prev hash
-     * @param transferMoney refund money
      * @return
      */
-    public ContractTransaction buildFailedTransaction(Transaction transaction, String prevBlockHash, Money transferMoney) {
+    public ContractTransaction buildFailedTransaction(Transaction transaction, String prevBlockHash) {
         ContractTransaction refundTx = new ContractTransaction();
         TransactionInput input = new TransactionInput();
         TransactionOutPoint top = new TransactionOutPoint();
@@ -283,17 +289,17 @@ public class ContractService implements IContractService {
         refundTx.getInputs().add(input);
 
         TransactionOutput out = new TransactionOutput();
-        out.setMoney(transferMoney);
+        out.setMoney(transaction.getFirstOutMoney());
         LockScript lockScript = new LockScript();
 
         lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));
-        lockScript.setType(ScriptTypeEnum.P2PK.getType());
+        lockScript.setType(ScriptTypeEnum.P2PKH.getType());
         out.setLockScript(lockScript);
         refundTx.getOutputs().add(out);
 
         refundTx.setVersion(transaction.getVersion());
         refundTx.setLockTime(transaction.getLockTime());
-        refundTx.setTransactionTime(System.currentTimeMillis());
+        refundTx.setTransactionTime(transaction.getTransactionTime());
 
         return refundTx;
     }

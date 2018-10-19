@@ -40,7 +40,7 @@ public class SnapshotTest {
 
 //        List<UTXO>
         ContractTransaction internalTx = Helpers.buildContractTransaction(Helpers.buildTestUTXO("" + from),
-                conR.getAccountState(from, currency), conR.getAccountDetails());
+                conR.getAccountState(from, currency), conR.getAccountDetails(), null, null);
 
 
         int outputSize = internalTx.getOutputs().size();

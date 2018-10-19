@@ -249,9 +249,21 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
+        repository.mergeUTXO2Parent(unSpendUTXO);
         return false;
     }
 
+    /**
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
+     */
+    @Override
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        repository.removeUTXOInParent(unSpendUTXO);
+        return true;
+    }
 
     @Override
     public List<AccountDetail> getAccountDetails() {

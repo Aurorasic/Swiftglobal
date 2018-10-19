@@ -257,6 +257,14 @@ public interface Repository {
      */
     boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO);
 
+    /**
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
+     */
+    boolean removeUTXOInParent(Map<String, Set> unSpendUTXO);
+
 
     /**
      * get cache transfer log

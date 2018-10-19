@@ -27,13 +27,16 @@ public class Helpers {
      * @return
      */
     public static ContractTransaction buildContractTransaction(Set<UTXO> chainUTXO, AccountState accountState,
-                                                               List<AccountDetail> accountDetails) {
-        //余额模型转交易input和output，合约utxo需要压缩，所以utxo都需要作为输入
+                                                               List<AccountDetail> accountDetails,
+                                                               Money refundCas,
+                                                               Transaction transaction) {
+
         ContractTransaction ctx = new ContractTransaction();
         List<TransactionInput> inputs = new ArrayList<>();
+
+        //merge contract all utxo
         for (UTXO utxo : chainUTXO) {
             TransactionInput input = new TransactionInput();
-
             TransactionOutPoint preOut = new TransactionOutPoint();
             preOut.setTransactionHash(utxo.getHash());
             preOut.setIndex(utxo.getIndex());
@@ -42,31 +45,43 @@ public class Helpers {
             inputs.add(input);
         }
 
+        //transfer log convert transaction outputs
         List<TransactionOutput> outputs = new ArrayList<>();
         for (AccountDetail ad : accountDetails) {
             TransactionOutput txOut = new TransactionOutput();
-
             txOut.setMoney(BalanceUtil.convertGasToMoney(ad.getValue(), ad.getCurrency()));
             LockScript lockScript = new LockScript();
             lockScript.setAddress(AddrUtil.toTransactionAddr(ad.getTo()));
             txOut.setLockScript(lockScript);
             lockScript.setType(ScriptTypeEnum.P2PKH.getType());
-
             outputs.add(txOut);
         }
 
-        //合约地址找零
-        TransactionOutput giveChangeOut = new TransactionOutput();
-        giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
-        LockScript lockScript = new LockScript();
-        lockScript.setAddress(AddrUtil.toTransactionAddr(accountState.getCodeHash()));
-        giveChangeOut.setLockScript(lockScript);
-        outputs.add(giveChangeOut);
+        //contract balance convert outputs
+        if (accountState.getBalance().compareTo(BigInteger.ZERO) > 0) {
+            TransactionOutput giveChangeOut = new TransactionOutput();
+            giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
+            LockScript lockScript = new LockScript();
+            lockScript.setAddress(AddrUtil.toTransactionAddr(accountState.getCodeHash()));
+            giveChangeOut.setLockScript(lockScript);
+            outputs.add(giveChangeOut);
+        }
+
+        //refund gas convert outputs
+        if (refundCas.compareTo(new Money("0")) > 0) {
+            LockScript refundLockScript = new LockScript();
+            refundLockScript.setAddress(transaction.getInputs().get(0).getPrevOut().getAddress());
+            refundLockScript.setType(ScriptTypeEnum.P2PKH.getType());
+            TransactionOutput refundCasOut = new TransactionOutput();
+            refundCasOut.setMoney(refundCas);
+            refundCasOut.setLockScript(refundLockScript);
+            outputs.add(refundCasOut);
+        }
 
         ctx.setInputs(inputs);
         ctx.setOutputs(outputs);
         ctx.setLockTime(0L);
-        ctx.setTransactionTime(System.currentTimeMillis());
+        ctx.setTransactionTime(transaction.getTransactionTime());
         ctx.setVersion((short) 1);
 
         return ctx;

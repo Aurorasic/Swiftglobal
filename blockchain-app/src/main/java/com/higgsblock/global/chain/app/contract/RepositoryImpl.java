@@ -392,6 +392,20 @@ public class RepositoryImpl implements Repository {
     }
 
     /**
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
+     */
+    @Override
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
+            parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>()).remove(account.getValue());
+        }
+        return true;
+    }
+
+    /**
      * get hash
      *
      * @return hash

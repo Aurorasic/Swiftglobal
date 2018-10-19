@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.entity.BaseSerializer;
+import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.utils.CryptoUtils;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.Data;
@@ -350,5 +351,9 @@ public class Transaction extends BaseSerializer {
 
     public boolean isContractTrasaction() {
         return isContractCreation() || isContractCall();
+    }
+
+    public Money getFirstOutMoney() {
+        return this.getOutputs().get(0).getMoney();
     }
 }

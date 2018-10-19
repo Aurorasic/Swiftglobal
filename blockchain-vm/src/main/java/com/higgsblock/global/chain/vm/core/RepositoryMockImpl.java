@@ -429,4 +429,15 @@ public class RepositoryMockImpl implements Repository {
             return storage;
         }
     }
+
+    /**
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
+     */
+    @Override
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        return false;
+    }
 }
