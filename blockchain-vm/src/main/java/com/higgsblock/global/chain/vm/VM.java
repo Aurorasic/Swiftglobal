@@ -75,25 +75,6 @@ import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-
-
-/**
- * TODO: chenjiawei 外部参数：
- * SystemProperties config
- * boolean config.vmTrace();
- * long config.dumpBlock();
- * Program program
- * setVmHook(VMHook vmHook)
- * program.byTestingSuite()
- * program.isStopped()
- * program.setRuntimeFailure(e);
- * program.saveOpTrace();
- * program.getCurrentOp()
- * program.getBlockchainConfig().getConstants().hasDelegateCallOpcode()
- * program.getBlockchainConfig().eip206()
- * program.getBlockchainConfig().eip211()
- * program.getBlockchainConfig().eip214()
- */
 public class VM {
 
     private static final Logger logger = LoggerFactory.getLogger("VM");
