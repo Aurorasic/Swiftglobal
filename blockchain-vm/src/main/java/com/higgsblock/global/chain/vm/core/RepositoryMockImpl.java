@@ -207,10 +207,6 @@ public class RepositoryMockImpl implements Repository {
 
     }
 
-    @Override
-    public void flushNoReconnect() {
-
-    }
 
     @Override
     public synchronized RepositoryMockImpl startTracking() {
@@ -272,7 +268,7 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public List getUnSpendAsset(byte[] address) {
+    public Set getUnSpendAsset(String address) {
         return null;
     }
 
@@ -283,7 +279,7 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public List getSpendAsset(byte[] address) {
+    public Set getSpendAsset(String address) {
         return null;
     }
 
@@ -295,36 +291,21 @@ public class RepositoryMockImpl implements Repository {
      * @return
      */
     @Override
-    public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+    public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
         return false;
     }
 
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
     @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-        return null;
+    public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
+        return false;
     }
+
 
     @Override
     public List<AccountDetail> getAccountDetails() {
         return null;
     }
 
-    /**
-     * add utxo into first cache and build Account
-     *
-     * @param o
-     * @return
-     */
-    @Override
-    public boolean addUTXO(Object o) {
-        return false;
-    }
 
     /**
      * get hash
@@ -375,10 +356,6 @@ public class RepositoryMockImpl implements Repository {
 
     }
 
-    @Override
-    public byte[] getRoot() {
-        throw new RuntimeException("Not supported");
-    }
 
     public synchronized String getTrieDump() {
         return dumpStateTrie();
@@ -451,5 +428,16 @@ public class RepositoryMockImpl implements Repository {
 
             return storage;
         }
+    }
+
+    /**
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
+     */
+    @Override
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        return false;
     }
 }

@@ -85,7 +85,9 @@ public class Executor {
 
     private ExecutionResult createContract() {
         contractRepository.createAccount(contractAddress);
-        //contractRepository.addBalance(contractAddress, convertToBigInteger(value));
+        if (value != null) {
+            contractRepository.addBalance(contractAddress, convertToBigInteger(value));
+        }
         //transferInfoList.add(new TransferInfo(senderAddress, contractAddress, convertToBigInteger(value)));
         touchedAccountAddresses.add(contractAddress);
 
@@ -169,6 +171,9 @@ public class Executor {
     private ExecutionResult callContract() {
         //contractRepository.addBalance(contractAddress, convertToBigInteger(value));
         touchedAccountAddresses.add(contractAddress);
+        if (value != null && new BigInteger(value).compareTo(BigInteger.ZERO) > 0) {
+            contractRepository.addBalance(contractAddress, convertToBigInteger(value));
+        }
 
         VM vm = new VM(systemProperties);
         Program program = new Program(transactionRepository.getCodeHash(contractAddress),
@@ -197,7 +202,6 @@ public class Executor {
                 }
             } else {
                 touchedAccountAddresses.addAll(programResult.getTouchedAccounts());
-                contractRepository.commit();
             }
         } catch (Throwable e) {
             rollback();

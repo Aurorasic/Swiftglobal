@@ -2,20 +2,18 @@ package com.higgsblock.global.chain.app.contract;
 
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
-import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
-import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.*;
 import com.higgsblock.global.chain.vm.datasource.*;
 import com.higgsblock.global.chain.vm.util.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 /**
@@ -24,7 +22,8 @@ import java.util.stream.Collectors;
  */
 @Setter
 @Getter
-public class RepositoryImpl implements Repository<UTXO> {
+@Slf4j
+public class RepositoryImpl implements Repository {
 
     protected RepositoryImpl parent;
 
@@ -44,9 +43,9 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     List<AccountDetail> accountDetails = new ArrayList<>();
 
-    List<UTXO> unspentUTXOCache = new ArrayList<>();
+    Map<String, Set> unspentUTXOCache = new HashMap<>(16);
 
-    List<UTXO> spentUTXOCache = new ArrayList<>();
+    Map<String, Set> spentUTXOCache = new HashMap<>(16);
 
     private String preBlockHash;
 
@@ -214,11 +213,6 @@ public class RepositoryImpl implements Repository<UTXO> {
     }
 
     @Override
-    public void flushNoReconnect() {
-
-    }
-
-    @Override
     public synchronized RepositoryImpl startTracking() {
 
         Source<byte[], AccountState> trackAccountStateCache = new WriteCache.BytesKey<>(accountStateCache, WriteCache.CacheType.SIMPLE);
@@ -272,10 +266,12 @@ public class RepositoryImpl implements Repository<UTXO> {
             //flush UTXO into parent cache
             if (parent != null) {
                 parent.mergeUTXO(this.spentUTXOCache, this.unspentUTXOCache);
+                parent.accountDetails.addAll(this.accountDetails);
             }
             this.spentUTXOCache.clear();
             this.unspentUTXOCache.clear();
-            this.accountStates.clear();
+
+            // parent.accountStates.;
         }
 
 
@@ -306,11 +302,6 @@ public class RepositoryImpl implements Repository<UTXO> {
 
     }
 
-    @Override
-    public byte[] getRoot() {
-        throw new RuntimeException("Not supported");
-    }
-
     public synchronized String getTrieDump() {
         return dumpStateTrie();
     }
@@ -336,19 +327,22 @@ public class RepositoryImpl implements Repository<UTXO> {
         if (StringUtils.isEmpty(currency)) {
             currency = SystemCurrencyEnum.CAS.getCurrency();
         }
-        BigInteger gasAmount = BalanceUtil.convertMoneyToGas(new Money(String.valueOf(amount), currency));
-        if (contractAccount.getBalance().compareTo(gasAmount) < 0) {
-            //余额不足
+        if (contractAccount.getBalance().compareTo(amount) < 0) {
+            LOGGER.warn("not enough balance");
             throw new RuntimeException("not enough balance ");
         }
-        contractAccount.withBalanceDecrement(gasAmount);
-        AccountDetail accountDetail = new AccountDetail(from, address, gasAmount, contractAccount.getBalance(), currency);
+        contractAccount.withBalanceDecrement(amount);
+        AccountDetail accountDetail = new AccountDetail(from, address, amount, contractAccount.getBalance(), currency);
         accountDetails.add(accountDetail);
     }
 
     @Override
-    public List<UTXO> getUnSpendAsset(byte[] address) {
-        return unspentUTXOCache.stream().filter(item -> item.getAddress().equals(address)).collect(Collectors.toList());
+    public Set<UTXO> getUnSpendAsset(String address) {
+        if (unspentUTXOCache.get(address) == null) {
+            Set<UTXO> set = parent.getUnSpendAsset(address);
+            unspentUTXOCache.put(address, set);
+        }
+        return parent.unspentUTXOCache.get(address);
     }
 
     /**
@@ -358,27 +352,8 @@ public class RepositoryImpl implements Repository<UTXO> {
      * @return
      */
     @Override
-    public List<UTXO> getSpendAsset(byte[] address) {
-        return spentUTXOCache.stream().filter(item -> item.getAddress().equals(address)).collect(Collectors.toList());
-    }
-
-    /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
-     */
-    @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-
-        AccountState ret = accountStateCache.get(address);
-        if (ret == null) {
-            AccountState accountState = new AccountState(0, balance, address, currency, new HashSet<>());
-            accountStateCache.put(address, accountState);
-            return accountState;
-        }
-
-        return ret;
+    public Set<UTXO> getSpendAsset(String address) {
+        return spentUTXOCache.get(address);
     }
 
     @Override
@@ -394,25 +369,39 @@ public class RepositoryImpl implements Repository<UTXO> {
      * @return
      */
     @Override
-    public boolean mergeUTXO(List<UTXO> spendUTXO, List<UTXO> unSpendUTXO) {
+    public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
 
-        unspentUTXOCache.removeAll(spendUTXO);
-        unspentUTXOCache.addAll(unSpendUTXO);
-        spentUTXOCache.addAll(spendUTXO);
+        for (Map.Entry<String, Set> account : spendUTXO.entrySet()) {
+            unspentUTXOCache.get(account.getKey()).removeAll(account.getValue());
+        }
+        for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
+            unspentUTXOCache.get(account.getKey()).addAll(account.getValue());
+        }
+        for (Map.Entry<String, Set> account : spendUTXO.entrySet()) {
+            spentUTXOCache.get(account.getKey()).addAll(account.getValue());
+        }
+        return true;
+    }
 
+    @Override
+    public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
+        for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
+            parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>()).add(account.getValue());
+        }
         return true;
     }
 
     /**
-     * add utxo into first cache and build Account
+     * remove utxo to parent cache
      *
-     * @return
+     * @param unSpendUTXO
+     * @return true
      */
     @Override
-    public boolean addUTXO(UTXO utxo) {
-
-        unspentUTXOCache.add(utxo);
-
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
+            parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>()).remove(account.getValue());
+        }
         return true;
     }
 
@@ -435,35 +424,8 @@ public class RepositoryImpl implements Repository<UTXO> {
     @Override
     public AccountState getAccountState(byte[] address, String currency) {
 
-        if (StringUtils.isEmpty(currency)) {
-            currency = SystemCurrencyEnum.CAS.getCurrency();
-        }
-        AccountState accountState = accountStateCache.get(address);
-        if (accountState != null) {
-            return accountState;
-        }
+        return accountStateCache.get(address);
 
-        if (accountState == null && parent != null) {
-            accountState = parent.getAccountState(address, currency);
-            accountStates.put(address, accountState);
-            return accountState;
-        }
-
-        // first cache
-        accountState = createAccountState(address, BigInteger.ZERO, currency);
-
-        List<UTXO> chainUTXO = utxoServiceProxy.getUnionUTXO(preBlockHash, AddrUtil.toTransactionAddr(address), currency);
-        if (chainUTXO != null && chainUTXO.size() != 0) {
-            unspentUTXOCache.addAll(chainUTXO);
-        }
-
-        for (UTXO utxo : unspentUTXOCache) {
-            if (utxo.getAddress().equals(AddrUtil.toTransactionAddr(address))) {
-                accountState.withBalanceIncrement(BalanceUtil.convertMoneyToGas(utxo.getOutput().getMoney()));
-            }
-        }
-        accountStates.put(address, accountState);
-        return accountState;
     }
 
     class ContractDetailsImpl implements ContractDetails {

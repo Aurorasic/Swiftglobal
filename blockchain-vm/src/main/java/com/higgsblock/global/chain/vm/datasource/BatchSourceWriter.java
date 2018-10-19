@@ -58,6 +58,7 @@ public class BatchSourceWriter<Key, Value> extends AbstractChainedSource<Key, Va
 
     @Override
     public Value get(Key key) {
+        LOGGER.info("get key:{}", Hex.toHexString((byte[]) key));
         return getSource().get(key);
     }
 

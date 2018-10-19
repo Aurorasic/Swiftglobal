@@ -9,7 +9,9 @@ import com.higgsblock.global.chain.vm.core.AccountState;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author tangkun
@@ -24,47 +26,62 @@ public class Helpers {
      * @param accountState
      * @return
      */
-    public static ContractTransaction buildContractTransaction(List<UTXO> chainUTXO, AccountState accountState,
-                                                               List<AccountDetail> accountDetails) {
-        //余额模型转交易input和output，合约utxo需要压缩，所以utxo都需要作为输入
+    public static ContractTransaction buildContractTransaction(Set<UTXO> chainUTXO, AccountState accountState,
+                                                               List<AccountDetail> accountDetails,
+                                                               Money refundCas,
+                                                               Transaction transaction) {
+
         ContractTransaction ctx = new ContractTransaction();
         List<TransactionInput> inputs = new ArrayList<>();
+
+        //merge contract all utxo
         for (UTXO utxo : chainUTXO) {
             TransactionInput input = new TransactionInput();
-
             TransactionOutPoint preOut = new TransactionOutPoint();
             preOut.setTransactionHash(utxo.getHash());
             preOut.setIndex(utxo.getIndex());
+            preOut.setOutput(utxo.getOutput());
             input.setPrevOut(preOut);
-
             inputs.add(input);
         }
 
+        //transfer log convert transaction outputs
         List<TransactionOutput> outputs = new ArrayList<>();
         for (AccountDetail ad : accountDetails) {
             TransactionOutput txOut = new TransactionOutput();
-
             txOut.setMoney(BalanceUtil.convertGasToMoney(ad.getValue(), ad.getCurrency()));
             LockScript lockScript = new LockScript();
             lockScript.setAddress(AddrUtil.toTransactionAddr(ad.getTo()));
             txOut.setLockScript(lockScript);
             lockScript.setType(ScriptTypeEnum.P2PKH.getType());
-
             outputs.add(txOut);
         }
 
-        //合约地址找零
-        TransactionOutput giveChangeOut = new TransactionOutput();
-        giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
-        LockScript lockScript = new LockScript();
-        lockScript.setAddress(AddrUtil.toTransactionAddr(accountState.getCodeHash()));
-        giveChangeOut.setLockScript(lockScript);
-        outputs.add(giveChangeOut);
+        //contract balance convert outputs
+        if (accountState.getBalance().compareTo(BigInteger.ZERO) > 0) {
+            TransactionOutput giveChangeOut = new TransactionOutput();
+            giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
+            LockScript lockScript = new LockScript();
+            lockScript.setAddress(AddrUtil.toTransactionAddr(accountState.getCodeHash()));
+            giveChangeOut.setLockScript(lockScript);
+            outputs.add(giveChangeOut);
+        }
+
+        //refund gas convert outputs
+        if (refundCas.compareTo(new Money("0")) > 0) {
+            LockScript refundLockScript = new LockScript();
+            refundLockScript.setAddress(transaction.getInputs().get(0).getPrevOut().getAddress());
+            refundLockScript.setType(ScriptTypeEnum.P2PKH.getType());
+            TransactionOutput refundCasOut = new TransactionOutput();
+            refundCasOut.setMoney(refundCas);
+            refundCasOut.setLockScript(refundLockScript);
+            outputs.add(refundCasOut);
+        }
 
         ctx.setInputs(inputs);
         ctx.setOutputs(outputs);
         ctx.setLockTime(0L);
-        ctx.setTransactionTime(System.currentTimeMillis());
+        ctx.setTransactionTime(transaction.getTransactionTime());
         ctx.setVersion((short) 1);
 
         return ctx;
@@ -84,9 +101,9 @@ public class Helpers {
         return BalanceUtil.convertMoneyToGas(balance);
     }
 
-    public static List<UTXO> buildTestUTXO(String address) {
+    public static Set<UTXO> buildTestUTXO(String address) {
 
-        return new ArrayList() {{
+        return new HashSet() {{
             add(buildUTXO(address, "534b428a1277652677b6adff2d1f3381bbc4115c", "100", "cas"));
             add(buildUTXO(address, "26004361060485763ffffffff7c0100000000000", "10", "cas"));
         }};

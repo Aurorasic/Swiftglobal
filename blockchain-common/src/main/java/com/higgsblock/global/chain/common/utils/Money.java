@@ -28,6 +28,11 @@ public class Money extends BaseSerializer implements Comparable {
     private BigDecimal value;
 
     /**
+     * zero money
+     */
+    public final static Money ZERO_MONEY = new Money(BigDecimal.ZERO.toPlainString());
+
+    /**
      * currency
      */
     @Getter
@@ -37,7 +42,7 @@ public class Money extends BaseSerializer implements Comparable {
     /**
      * Precise digits
      */
-    private int decimalDigits = 8;
+    private int decimalDigits = 18;
 
     public Money() {
         this(0);
@@ -241,6 +246,10 @@ public class Money extends BaseSerializer implements Comparable {
 
     private BigDecimal newBigDecimal(long val) {
         return new BigDecimal(val).setScale(decimalDigits, RoundingMode.HALF_UP);
+    }
+
+    public boolean compareToZero() {
+        return compareTo(ZERO_MONEY) > 0;
     }
 
 }

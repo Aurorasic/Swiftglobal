@@ -84,6 +84,7 @@ public class TransactionIndexService implements ITransactionIndexService {
                 final int outputSize = outputs.size();
                 for (int i = 0; i < outputSize; i++) {
                     TransactionOutput output = outputs.get(i);
+                    //TODO if utxo money == 0 not save tangKun 2018-10-17
                     UTXO utxo = new UTXO(tx, (short) i, output);
                     bestUtxoService.saveUTXO(utxo);
                     balanceService.plusBalance(utxo);

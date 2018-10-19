@@ -377,7 +377,6 @@ public class BlockService implements IBlockService {
         block.setMinerPubKey(keyPair.getPubKey());
 
         transactionFeeService.sortByGasPrice(txOfUnSpentUtxos);
-        Money fee = new Money();
         List<Transaction> packTransaction = chooseAndInvokedTransaction(txOfUnSpentUtxos, block);
         if (packTransaction.isEmpty()) {
             LOGGER.warn("There are no transactions for packaging a block base on={}", preBlockHash);

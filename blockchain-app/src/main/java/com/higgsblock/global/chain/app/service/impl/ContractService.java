@@ -1,15 +1,14 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
-import com.higgsblock.global.chain.app.service.IContractSenderService;
 import com.higgsblock.global.chain.app.service.IContractService;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -36,8 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * @author tangkun
@@ -56,9 +54,6 @@ public class ContractService implements IContractService {
     @Autowired
     private DefaultSystemProperties systemProperties;
 
-    @Autowired
-    private IContractSenderService contractSenderService;
-
     @Setter
     @Getter
     @NoArgsConstructor
@@ -76,37 +71,59 @@ public class ContractService implements IContractService {
     public InvokePO invoke(Block block, Transaction transaction, Repository blockRepository) {
 
         Repository transactionRepository = blockRepository.startTracking();
+
         Repository conRepository = transactionRepository.startTracking();
+        //merge utxo to first cache
+        Map<String, Set> transferUTXO = null;
+        if (transaction.getFirstOutMoney().compareToZero()) {
+            Set<UTXO> set = new HashSet<>();
+            set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
+            transferUTXO = new HashMap<String, Set>() {{
+                put(transaction.getOutputs().get(0).getLockScript().getAddress(), set);
+            }};
+            transactionRepository.mergeUTXO2Parent(transferUTXO);
+        }
+
         ExecutionResult executionResult = executeContract(transaction, block, transactionRepository, conRepository);
         InvokePO invokePO = new InvokePO();
 
-        //TODO tangKun refund gas 2018-09-29
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
-        Money transferMoney = transaction.getOutputs().get(0).getMoney() == null ?
-                new Money(BigDecimal.ZERO.toPlainString()) : transaction.getOutputs().get(0).getMoney();
-
         if (!success) {
-
-            if (transferMoney.compareTo(new Money(BigDecimal.ZERO.toPlainString())) > 0) {
-                invokePO.setContractTransaction(buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney));
+            if (transaction.getFirstOutMoney().compareToZero()) {
+                invokePO.setContractTransaction(buildFailedTransaction(transaction, block.getPrevBlockHash()));
+                if (transferUTXO != null) {
+                    transactionRepository.removeUTXOInParent(transferUTXO);
+                }
             }
-
         } else {
-            boolean transferFlag = transactionRepository.getAccountDetails().size() > 0 || executionResult.getGasRefund().compareTo(BigInteger.ZERO) > 0;
+            boolean transferFlag = conRepository.getAccountDetails().size() > 0
+                    || executionResult.getRemainGas().compareTo(BigInteger.ZERO) > 0;
             if (transferFlag) {
-                List<UTXO> unSpendAsset = transactionRepository.getUnSpendAsset(transaction.getContractAddress());
+                Money refundCas = BalanceUtil.convertGasToMoney(executionResult.getRemainGas().
+                        multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
+
+                Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(
+                        AddrUtil.toTransactionAddr(transaction.getContractAddress()));
+
                 ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                        transactionRepository.getAccountState(transaction.getContractAddress(), SystemCurrencyEnum.CAS.getCurrency()),
-                        transactionRepository.getAccountDetails());
-                // if success subContractTransaction size bigger than or fee is not enough,
-                // so create fail refund transaction
+                        conRepository.getAccountState(transaction.getContractAddress(),
+                                SystemCurrencyEnum.CAS.getCurrency()),
+                        conRepository.getAccountDetails(), refundCas, transaction);
+                /**
+                 * if success subContractTransaction size bigger than or fee is not enough,
+                 * so create fail refund transaction
+                 */
                 long size = contractTx.getSize();
+                invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
-                    ContractTransaction failedTransaction = buildFiledTransaction(transaction, block.getPrevBlockHash(), transferMoney);
+                    ContractTransaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash());
                     invokePO.setContractTransaction(failedTransaction);
                     executionResult.setRemainGas(BigInteger.ZERO);
                     executionResult.setErrorMessage("contract size bigger than limit");
+                    if (transferUTXO != null) {
+                        transactionRepository.removeUTXOInParent(transferUTXO);
+                    }
                 }
             }
 
@@ -190,11 +207,8 @@ public class ContractService implements IContractService {
      * @return sender of contract.
      */
     private byte[] getSender(Transaction transaction, String blockPrevBlockHash) {
-        List<byte[]> inputSenders = transaction.getInputs().stream().map(
-                input -> AddrUtil.toContractAddr(getPreOutput(blockPrevBlockHash, input).getLockScript().getAddress())
-        ).collect(Collectors.toList());
-
-        return contractSenderService.calculateContractSenderSimply(inputSenders);
+        return AddrUtil.toContractAddr(
+                getPreOutput(blockPrevBlockHash, transaction.getInputs().get(0)).getLockScript().getAddress());
     }
 
     /**
@@ -262,10 +276,9 @@ public class ContractService implements IContractService {
      *
      * @param transaction   original transaction
      * @param prevBlockHash block prev hash
-     * @param transferMoney refund money
      * @return
      */
-    public ContractTransaction buildFiledTransaction(Transaction transaction, String prevBlockHash, Money transferMoney) {
+    public ContractTransaction buildFailedTransaction(Transaction transaction, String prevBlockHash) {
         ContractTransaction refundTx = new ContractTransaction();
         TransactionInput input = new TransactionInput();
         TransactionOutPoint top = new TransactionOutPoint();
@@ -276,17 +289,17 @@ public class ContractService implements IContractService {
         refundTx.getInputs().add(input);
 
         TransactionOutput out = new TransactionOutput();
-        out.setMoney(transferMoney);
+        out.setMoney(transaction.getFirstOutMoney());
         LockScript lockScript = new LockScript();
 
         lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));
-        lockScript.setType(ScriptTypeEnum.P2PK.getType());
+        lockScript.setType(ScriptTypeEnum.P2PKH.getType());
         out.setLockScript(lockScript);
         refundTx.getOutputs().add(out);
 
         refundTx.setVersion(transaction.getVersion());
         refundTx.setLockTime(transaction.getLockTime());
-        refundTx.setTransactionTime(System.currentTimeMillis());
+        refundTx.setTransactionTime(transaction.getTransactionTime());
 
         return refundTx;
     }

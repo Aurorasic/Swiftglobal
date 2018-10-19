@@ -25,6 +25,7 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class Storage implements Repository, ProgramListenerAware {
@@ -156,11 +157,6 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.flush();
     }
 
-    @Override
-    public void flushNoReconnect() {
-        throw new UnsupportedOperationException();
-    }
-
 
     @Override
     public void commit() {
@@ -190,11 +186,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void reset() {
         repository.reset();
-    }
-
-    @Override
-    public byte[] getRoot() {
-        return new byte[0];
     }
 
 
@@ -229,7 +220,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public List getUnSpendAsset(byte[] address) {
+    public Set getUnSpendAsset(String address) {
         return null;
     }
 
@@ -240,7 +231,7 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public List getSpendAsset(byte[] address) {
+    public Set getSpendAsset(String address) {
         return null;
     }
 
@@ -252,19 +243,26 @@ public class Storage implements Repository, ProgramListenerAware {
      * @return
      */
     @Override
-    public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+    public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
+        return false;
+    }
+
+    @Override
+    public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
+        repository.mergeUTXO2Parent(unSpendUTXO);
         return false;
     }
 
     /**
-     * @param address
-     * @param balance
-     * @param currency
-     * @return
+     * remove utxo to parent cache
+     *
+     * @param unSpendUTXO
+     * @return true
      */
     @Override
-    public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-        return null;
+    public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+        repository.removeUTXOInParent(unSpendUTXO);
+        return true;
     }
 
     @Override
@@ -272,16 +270,6 @@ public class Storage implements Repository, ProgramListenerAware {
         return null;
     }
 
-    /**
-     * add utxo into first cache and build Account
-     *
-     * @param o
-     * @return
-     */
-    @Override
-    public boolean addUTXO(Object o) {
-        return false;
-    }
 
     /**
      * get hash

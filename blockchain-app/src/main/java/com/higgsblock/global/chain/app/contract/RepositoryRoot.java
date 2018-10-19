@@ -1,7 +1,9 @@
 package com.higgsblock.global.chain.app.contract;
 
+import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.service.impl.UTXOServiceProxy;
+import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.vm.DataWord;
 import com.higgsblock.global.chain.vm.core.AccountState;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
@@ -11,6 +13,8 @@ import com.higgsblock.global.chain.vm.util.NodeKeyCompositor;
 import com.higgsblock.global.chain.vm.util.Serializer;
 import com.higgsblock.global.chain.vm.util.Serializers;
 import lombok.Setter;
+
+import java.util.*;
 
 /**
  * @author zhao xiaogang
@@ -25,6 +29,9 @@ public class RepositoryRoot extends RepositoryImpl {
     private Source<byte[], byte[]> storageCache;
 
     private DbSource<byte[]> dbSource;
+
+    private Map<String, Boolean> loadDBRecodes = new HashMap<>();
+
 
     /**
      * last time used RepositoryRoot；
@@ -93,4 +100,25 @@ public class RepositoryRoot extends RepositoryImpl {
     public static RepositoryRoot getLastRepositoryRoot() {
         return lastRepositoryRoot;
     }
+
+    @Override
+    public Set getUnSpendAsset(String address) {
+
+        boolean cacheIsNullAndNotLoadedDd = unspentUTXOCache.get(address) == null && loadDBRecodes.get(address) == null;
+        boolean notLoadedDd = loadDBRecodes.get(address) == null;
+
+        if (cacheIsNullAndNotLoadedDd || notLoadedDd) {
+            List<UTXO> chainUTXO = getUtxoServiceProxy().getUnionUTXO(getPreBlockHash(), address
+                    , SystemCurrencyEnum.CAS.getCurrency());
+            loadDBRecodes.put(address, true);
+            if (chainUTXO != null && chainUTXO.size() != 0) {
+                Set set = unspentUTXOCache.getOrDefault(address, new HashSet<>());
+                set.addAll(chainUTXO);
+                unspentUTXOCache.put(address, set);
+            }
+        }
+
+        return unspentUTXOCache.get(address);
+    }
+
 }

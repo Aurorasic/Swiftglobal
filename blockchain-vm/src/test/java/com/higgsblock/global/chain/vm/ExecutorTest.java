@@ -267,7 +267,9 @@ public class ExecutorTest {
 
             @Override
             public Repository startTracking() {
-                return new RepositoryMockImpl();
+                //  return new RepositoryMockImpl();
+                return null;
+
             }
 
             @Override
@@ -275,10 +277,6 @@ public class ExecutorTest {
 
             }
 
-            @Override
-            public void flushNoReconnect() {
-
-            }
 
             @Override
             public void commit() {
@@ -310,10 +308,6 @@ public class ExecutorTest {
 
             }
 
-            @Override
-            public byte[] getRoot() {
-                return new byte[0];
-            }
 
             @Override
             public Repository getSnapshotTo(byte[] root) {
@@ -331,34 +325,42 @@ public class ExecutorTest {
             }
 
             @Override
-            public List getUnSpendAsset(byte[] address) {
+            public Set getUnSpendAsset(String address) {
                 return null;
             }
 
             @Override
-            public List getSpendAsset(byte[] address) {
+            public Set getSpendAsset(String address) {
                 return null;
             }
 
             @Override
-            public boolean mergeUTXO(List spendUTXO, List unSpendUTXO) {
+            public boolean mergeUTXO(Map<String, Set> spendUTXO, Map<String, Set> unSpendUTXO) {
                 return false;
             }
 
             @Override
-            public AccountState createAccountState(byte[] address, BigInteger balance, String currency) {
-                return null;
+            public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
+                return false;
             }
+
+            /**
+             * remove utxo to parent cache
+             *
+             * @param unSpendUTXO
+             * @return true
+             */
+            @Override
+            public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
+                return false;
+            }
+
 
             @Override
             public List<AccountDetail> getAccountDetails() {
                 return null;
             }
 
-            @Override
-            public boolean addUTXO(Object o) {
-                return false;
-            }
 
             /**
              * get hash
