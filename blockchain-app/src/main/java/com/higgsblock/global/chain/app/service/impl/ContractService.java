@@ -1,6 +1,7 @@
 package com.higgsblock.global.chain.app.service.impl;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
@@ -8,6 +9,7 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
+import com.higgsblock.global.chain.app.service.IContractSenderService;
 import com.higgsblock.global.chain.app.service.IContractService;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
@@ -35,6 +37,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author tangkun
@@ -52,6 +55,9 @@ public class ContractService implements IContractService {
 
     @Autowired
     private DefaultSystemProperties systemProperties;
+
+    @Autowired
+    private IContractSenderService contractSenderService;
 
     @Setter
     @Getter
@@ -184,8 +190,11 @@ public class ContractService implements IContractService {
      * @return sender of contract.
      */
     private byte[] getSender(Transaction transaction, String blockPrevBlockHash) {
-        return AddrUtil.toContractAddr(getPreOutput(blockPrevBlockHash,
-                transaction.getInputs().get(0)).getLockScript().getAddress());
+        List<byte[]> inputSenders = transaction.getInputs().stream().map(
+                input -> AddrUtil.toContractAddr(getPreOutput(blockPrevBlockHash, input).getLockScript().getAddress())
+        ).collect(Collectors.toList());
+
+        return contractSenderService.calculateContractSenderSimply(inputSenders);
     }
 
     /**

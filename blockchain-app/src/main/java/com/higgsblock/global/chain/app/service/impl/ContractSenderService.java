@@ -2,7 +2,6 @@ package com.higgsblock.global.chain.app.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.dao.IContractSenderRepository;
@@ -14,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Manages mappings between input senders and contract sender in contract transactions.
@@ -44,12 +44,12 @@ public class ContractSenderService implements IContractSenderService {
 
 
     @Override
-    public byte[] calculateContractSender(byte[]... inputSenders) {
-        if (inputSenders.length > SENDER_NUMBER_LIMITATION) {
+    public byte[] calculateContractSenderSimply(List<byte[]> inputSendersOrigin) {
+        if (inputSendersOrigin.size() > SENDER_NUMBER_LIMITATION) {
             throw new IllegalArgumentException("input senders of contract exceed the number limit.");
         }
 
-        for (byte[] inputSender : inputSenders) {
+        for (byte[] inputSender : inputSendersOrigin) {
             if (inputSender == null) {
                 throw new IllegalArgumentException("some input sender is null.");
             }
@@ -60,6 +60,46 @@ public class ContractSenderService implements IContractSenderService {
             }
         }
 
+        List<byte[]> inputSenders = inputSendersOrigin.stream().distinct().sorted().collect(Collectors.toList());
+
+        byte[] contractSenderBase = shuffle(inputSenders);
+
+        // Only support N-of-N multi sign.
+        // Hash conflict is not taken into consideration for now.
+        return extractContractSender(contractSenderBase);
+    }
+
+    /**
+     * Extracts contract sender from specific data.
+     *
+     * @param contractSenderBase data from which contract sender is extracted.
+     * @return contract sender, null if extracting fails.
+     */
+    private byte[] extractContractSender(byte[] contractSenderBase) {
+        byte[] contractSender = new byte[ADDRESS_BYTES_NUMBER];
+        System.arraycopy(contractSenderBase, 0, contractSender, 0, ADDRESS_BYTES_NUMBER);
+        return contractSender;
+    }
+
+    @Override
+    public byte[] calculateContractSender(List<byte[]> inputSendersOrigin) {
+        if (inputSendersOrigin.size() > SENDER_NUMBER_LIMITATION) {
+            throw new IllegalArgumentException("input senders of contract exceed the number limit.");
+        }
+
+        for (byte[] inputSender : inputSendersOrigin) {
+            if (inputSender == null) {
+                throw new IllegalArgumentException("some input sender is null.");
+            }
+
+            if (inputSender.length != ADDRESS_BYTES_NUMBER) {
+                throw new IllegalArgumentException(
+                        String.format("address of some sender is not of %d bytes.", ADDRESS_BYTES_NUMBER));
+            }
+        }
+
+        List<byte[]> inputSenders = inputSendersOrigin.stream().distinct().sorted().collect(Collectors.toList());
+
         byte[] contractSenderBase = shuffle(inputSenders);
         byte[] contractSender = extractUniqueContractSender(contractSenderBase);
         if (contractSender == null) {
@@ -68,7 +108,7 @@ public class ContractSenderService implements IContractSenderService {
         }
 
         contractSenderRepository.save(
-                DataConverter.convertToContractSenderEntity(contractSender, Lists.newArrayList(inputSenders)));
+                DataConverter.convertToContractSenderEntity(contractSender, inputSenders));
         return contractSender;
     }
 
@@ -78,7 +118,7 @@ public class ContractSenderService implements IContractSenderService {
      * @param items bytes list, each cannot be null, and must be 20-bytes.
      * @return shuffling output.
      */
-    private byte[] shuffle(byte[]... items) {
+    private byte[] shuffle(List<byte[]> items) {
         HashFunction function = Hashing.sha256();
 
         StringBuilder builder = new StringBuilder();

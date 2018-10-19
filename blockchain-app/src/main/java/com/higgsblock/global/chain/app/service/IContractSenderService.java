@@ -13,12 +13,20 @@ import java.util.List;
  */
 public interface IContractSenderService {
     /**
+     * Calculates contract sender using input senders. Mapping is not stored.
+     *
+     * @param inputSenders owners of UTXOs referenced by transaction inputs.
+     * @return contract sender.
+     */
+    byte[] calculateContractSenderSimply(List<byte[]> inputSenders);
+
+    /**
      * Calculates contract sender using input senders.
      *
      * @param inputSenders owners of UTXOs referenced by transaction inputs.
      * @return contract sender.
      */
-    byte[] calculateContractSender(byte[]... inputSenders);
+    byte[] calculateContractSender(List<byte[]> inputSenders);
 
     /**
      * Gets input senders according to contract sender.
