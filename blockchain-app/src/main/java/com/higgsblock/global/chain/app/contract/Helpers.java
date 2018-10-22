@@ -26,12 +26,12 @@ public class Helpers {
      * @param accountState
      * @return
      */
-    public static ContractTransaction buildContractTransaction(Set<UTXO> chainUTXO, AccountState accountState,
-                                                               List<AccountDetail> accountDetails,
-                                                               Money refundCas,
-                                                               Transaction transaction) {
+    public static Transaction buildContractTransaction(Set<UTXO> chainUTXO, AccountState accountState,
+                                                       List<AccountDetail> accountDetails,
+                                                       Money refundCas,
+                                                       Transaction transaction) {
 
-        ContractTransaction ctx = new ContractTransaction();
+        Transaction ctx = new Transaction();
         List<TransactionInput> inputs = new ArrayList<>();
 
         //merge contract all utxo
@@ -80,10 +80,10 @@ public class Helpers {
 
         ctx.setInputs(inputs);
         ctx.setOutputs(outputs);
-        ctx.setLockTime(0L);
+        ctx.setLockTime(transaction.getLockTime());
         ctx.setTransactionTime(transaction.getTransactionTime());
-        ctx.setVersion((short) 1);
-
+        ctx.setVersion(transaction.getVersion());
+        ctx.setSubTransaction(true);
         return ctx;
     }
 

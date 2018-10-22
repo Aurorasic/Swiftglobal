@@ -8,7 +8,6 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.ContractParameters;
-import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
@@ -37,7 +36,7 @@ import java.util.List;
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
 @JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "gasPrice", "gasLimit",
-        "contractParameters", "contractExecutionResult"})
+        "contractParameters", "contractExecutionResult", "isSubTransaction"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -91,6 +90,11 @@ public class Transaction extends BaseSerializer {
      */
     private ContractExecutionResult contractExecutionResult;
 
+    /**
+     * invoked contract result transaction is true other false;
+     */
+    private boolean isSubTransaction;
+
 
     public ContractExecutionResult getContractExecutionResult() {
         if (contractExecutionResult == null) {
@@ -132,12 +136,6 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (!(this instanceof ContractTransaction)) {
-            if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
-                return false;
-            }
-        }
-
         if (contractParameters != null && !contractParameters.valid()) {
             return false;
         }
@@ -146,7 +144,10 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isNotEmpty(inputs) && !(this instanceof ContractTransaction)) {
+        if (CollectionUtils.isNotEmpty(inputs) && !isSubTransaction) {
+            if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
+                return false;
+            }
             for (TransactionInput input : inputs) {
                 if (!input.valid()) {
                     return false;

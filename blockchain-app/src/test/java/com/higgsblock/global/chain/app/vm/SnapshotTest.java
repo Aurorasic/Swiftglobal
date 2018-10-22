@@ -1,8 +1,8 @@
 package com.higgsblock.global.chain.app.vm;
 
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
 import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.blockchain.transaction.UTXO;
-import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
@@ -39,7 +39,7 @@ public class SnapshotTest {
         //检查input>=outputs
 
 //        List<UTXO>
-        ContractTransaction internalTx = Helpers.buildContractTransaction(Helpers.buildTestUTXO("" + from),
+        Transaction internalTx = Helpers.buildContractTransaction(Helpers.buildTestUTXO("" + from),
                 conR.getAccountState(from, currency), conR.getAccountDetails(), null, null);
 
 

@@ -7,7 +7,6 @@ import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
-import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.Helpers;
 import com.higgsblock.global.chain.app.service.IContractService;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
@@ -64,7 +63,7 @@ public class ContractService implements IContractService {
 
         private String stateHash;
 
-        private ContractTransaction contractTransaction;
+        private Transaction contractTransaction;
     }
 
     @Override
@@ -105,7 +104,7 @@ public class ContractService implements IContractService {
                 Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(
                         AddrUtil.toTransactionAddr(transaction.getContractAddress()));
 
-                ContractTransaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
+                Transaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
                         conRepository.getAccountState(transaction.getContractAddress(),
                                 SystemCurrencyEnum.CAS.getCurrency()),
                         conRepository.getAccountDetails(), refundCas, transaction);
@@ -117,7 +116,7 @@ public class ContractService implements IContractService {
                 invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
-                    ContractTransaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash());
+                    Transaction failedTransaction = buildFailedTransaction(transaction, block.getPrevBlockHash());
                     invokePO.setContractTransaction(failedTransaction);
                     executionResult.setRemainGas(BigInteger.ZERO);
                     executionResult.setErrorMessage("contract size bigger than limit");
@@ -278,8 +277,8 @@ public class ContractService implements IContractService {
      * @param prevBlockHash block prev hash
      * @return
      */
-    public ContractTransaction buildFailedTransaction(Transaction transaction, String prevBlockHash) {
-        ContractTransaction refundTx = new ContractTransaction();
+    public Transaction buildFailedTransaction(Transaction transaction, String prevBlockHash) {
+        Transaction refundTx = new Transaction();
         TransactionInput input = new TransactionInput();
         TransactionOutPoint top = new TransactionOutPoint();
         top.setTransactionHash(transaction.getHash());
@@ -300,7 +299,7 @@ public class ContractService implements IContractService {
         refundTx.setVersion(transaction.getVersion());
         refundTx.setLockTime(transaction.getLockTime());
         refundTx.setTransactionTime(transaction.getTransactionTime());
-
+        refundTx.setSubTransaction(true);
         return refundTx;
     }
 }

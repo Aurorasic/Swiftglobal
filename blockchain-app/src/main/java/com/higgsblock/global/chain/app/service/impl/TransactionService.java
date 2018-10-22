@@ -11,7 +11,6 @@ import com.higgsblock.global.chain.app.blockchain.script.LockScript;
 import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
-import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
@@ -354,7 +353,7 @@ public class TransactionService implements ITransactionService {
         if (tx.isContractTrasaction()) {
             ContractService.InvokePO invokeResult = contractService.invoke(block, tx, blockRepository);
             ExecutionResult executionResult = invokeResult.getExecutionResult();
-            ContractTransaction contractTransaction = invokeResult.getContractTransaction();
+            Transaction contractTransaction = invokeResult.getContractTransaction();
             if (contractTransaction != null) {
                 contractTransactionList.add(contractTransaction);
                 Money contractTransactionFee = BalanceUtil.convertGasToMoney(
