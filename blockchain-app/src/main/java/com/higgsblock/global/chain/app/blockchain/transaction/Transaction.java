@@ -131,8 +131,10 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
-            return false;
+        if (!isContractTrasaction()) {
+            if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
+                return false;
+            }
         }
 
         if (contractParameters != null && !contractParameters.valid()) {
@@ -143,7 +145,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isNotEmpty(inputs)) {
+        if (CollectionUtils.isNotEmpty(inputs) && !isContractTrasaction()) {
             for (TransactionInput input : inputs) {
                 if (!input.valid()) {
                     return false;
