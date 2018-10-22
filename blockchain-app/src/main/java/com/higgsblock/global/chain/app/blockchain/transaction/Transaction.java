@@ -110,7 +110,8 @@ public class Transaction extends BaseSerializer {
 
     public byte[] getContractAddress() {
         if (!isContractTrasaction()) {
-            throw new IllegalArgumentException("There is no contract address because transaction does not contain a contract.");
+            return null;
+            //throw new IllegalArgumentException("There is no contract address because transaction does not contain a contract.");
         }
 
         return AddrUtil.toContractAddr(outputs.get(0).getLockScript().getAddress());
