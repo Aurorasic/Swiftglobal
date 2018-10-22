@@ -90,11 +90,11 @@ public class MiningListener implements IEventBusListener {
             LOGGER.info("cancel mining task, height={}", miningHeight);
         }
         // check if my turn now
-//        String address = peerManager.getSelf().getId();
-//        boolean isMyTurn = dposService.canPackBlock(expectHeight, address, persistBlockHash);
-//        if (!isMyTurn) {
-//            return;
-//        }
+        String address = peerManager.getSelf().getId();
+        boolean isMyTurn = dposService.canPackBlock(expectHeight, address, persistBlockHash);
+        if (!isMyTurn) {
+            return;
+        }
 
         miningHeight = expectHeight;
 

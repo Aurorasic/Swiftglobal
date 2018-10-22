@@ -147,7 +147,7 @@ public class AppContext implements IEventBusListener {
 
         LOGGER.info("Application service started successfully.");
 
-        systemStatusManager.setSysStep(SystemStepEnum.SYNCED_BLOCKS);
+
     }
 
     private void checkAndRecoveryBlockData() {
