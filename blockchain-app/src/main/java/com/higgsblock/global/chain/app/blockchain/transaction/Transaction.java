@@ -8,6 +8,7 @@ import com.higgsblock.global.chain.app.common.constants.MessageType;
 import com.higgsblock.global.chain.app.common.message.Message;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.ContractParameters;
+import com.higgsblock.global.chain.app.contract.ContractTransaction;
 import com.higgsblock.global.chain.app.utils.AddrUtil;
 import com.higgsblock.global.chain.app.utils.ISizeCounter;
 import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
@@ -131,7 +132,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (!isContractTrasaction()) {
+        if (!(this instanceof ContractTransaction)) {
             if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
                 return false;
             }
@@ -145,7 +146,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isNotEmpty(inputs) && !isContractTrasaction()) {
+        if (CollectionUtils.isNotEmpty(inputs) && !(this instanceof ContractTransaction)) {
             for (TransactionInput input : inputs) {
                 if (!input.valid()) {
                     return false;
