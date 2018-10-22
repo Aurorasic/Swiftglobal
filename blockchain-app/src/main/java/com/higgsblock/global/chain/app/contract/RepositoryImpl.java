@@ -386,7 +386,9 @@ public class RepositoryImpl implements Repository {
     @Override
     public boolean mergeUTXO2Parent(Map<String, Set> unSpendUTXO) {
         for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
-            parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>()).add(account.getValue());
+            Set set = parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>());
+            set.addAll(account.getValue());
+            parent.unspentUTXOCache.put(account.getKey(), set);
         }
         return true;
     }
@@ -400,7 +402,9 @@ public class RepositoryImpl implements Repository {
     @Override
     public boolean removeUTXOInParent(Map<String, Set> unSpendUTXO) {
         for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
-            parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>()).remove(account.getValue());
+            Set set = parent.unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>());
+            set.removeAll(account.getValue());
+            parent.unspentUTXOCache.put(account.getKey(), set);
         }
         return true;
     }

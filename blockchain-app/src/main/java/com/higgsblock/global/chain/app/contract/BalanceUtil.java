@@ -26,7 +26,7 @@ public class BalanceUtil {
      */
     public static Money convertGasToMoney(BigInteger gas, String currency) {
 
-        return new Money(gas.longValue(), currency).divide(GAS_TO_MONEY);
+        return new Money(gas.toString(), currency).divide(GAS_TO_MONEY);
 
     }
 
