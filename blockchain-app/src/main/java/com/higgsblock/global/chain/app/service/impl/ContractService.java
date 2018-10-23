@@ -74,7 +74,7 @@ public class ContractService implements IContractService {
         Repository conRepository = transactionRepository.startTracking();
         //merge utxo to first cache
         Map<String, Set> transferUTXO = null;
-        if (transaction.getFirstOutMoney().compareToZero()) {
+        if (transaction.firstOutMoney().compareToZero()) {
             Set<UTXO> set = new HashSet<>();
             set.add(new UTXO(transaction, (short) 0, transaction.getOutputs().get(0)));
             transferUTXO = new HashMap<String, Set>() {{
@@ -88,7 +88,7 @@ public class ContractService implements IContractService {
 
         boolean success = StringUtils.isEmpty(executionResult.getErrorMessage());
         if (!success) {
-            if (transaction.getFirstOutMoney().compareToZero()) {
+            if (transaction.firstOutMoney().compareToZero()) {
                 invokePO.setContractTransaction(buildFailedTransaction(transaction, block.getPrevBlockHash()));
                 if (transferUTXO != null) {
                     transactionRepository.removeUTXOInParent(transferUTXO);
@@ -102,17 +102,17 @@ public class ContractService implements IContractService {
                         multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
 
                 Set<UTXO> unSpendAsset = (Set<UTXO>) conRepository.getUnSpendAsset(
-                        AddrUtil.toTransactionAddr(transaction.getContractAddress()));
+                        AddrUtil.toTransactionAddr(transaction.contractAddress()));
 
                 Transaction contractTx = Helpers.buildContractTransaction(unSpendAsset,
-                        conRepository.getAccountState(transaction.getContractAddress(),
+                        conRepository.getAccountState(transaction.contractAddress(),
                                 SystemCurrencyEnum.CAS.getCurrency()),
                         conRepository.getAccountDetails(), refundCas, transaction);
                 /**
                  * if success subContractTransaction size bigger than or fee is not enough,
                  * so create fail refund transaction
                  */
-                long size = contractTx.getSize();
+                long size = contractTx.size();
                 invokePO.setContractTransaction(contractTx);
                 if (size > blockchainConfig.getContractLimitedSize() ||
                         FeeUtil.getSizeGas(size).longValue() > executionResult.getRemainGas().longValue()) {
@@ -169,15 +169,15 @@ public class ContractService implements IContractService {
 
         // sets transaction context.
         executionEnvironment.setTransactionHash(transaction.getHash());
-        executionEnvironment.setContractCreation(transaction.isContractCreation());
-        executionEnvironment.setContractAddress(transaction.getContractAddress());
+        executionEnvironment.setContractCreation(transaction.contractCreation());
+        executionEnvironment.setContractAddress(transaction.contractAddress());
         executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue())
                 .multiply(new BigDecimal(CurrencyUnitEnum.CAS.getWeight())).toBigInteger().toByteArray());
         executionEnvironment.setData(transaction.getContractParameters().getBytecode());
-        executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
+        executionEnvironment.setSizeGas(FeeUtil.getSizeGas(transaction.size()).longValue());
 
         // sets block context.
         // difficulty is meaningless in the case of dpos consensus. we can set it zero to indicates that there is no random calculation.
@@ -187,7 +187,7 @@ public class ContractService implements IContractService {
         executionEnvironment.setNumber(block.getHeight());
         executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
         executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
-        executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.getContractAddress(), block)).toByteArray());
+        executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.contractAddress(), block)).toByteArray());
 
         // sets system behaviour.
         executionEnvironment.setSystemProperties(systemProperties);
@@ -288,7 +288,7 @@ public class ContractService implements IContractService {
         refundTx.getInputs().add(input);
 
         TransactionOutput out = new TransactionOutput();
-        out.setMoney(transaction.getFirstOutMoney());
+        out.setMoney(transaction.firstOutMoney());
         LockScript lockScript = new LockScript();
 
         lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));

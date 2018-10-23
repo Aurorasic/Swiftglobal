@@ -204,7 +204,7 @@ public class Block extends BaseSerializer {
     public List<String> getSpendUTXOKeys() {
         List result = new LinkedList();
         for (Transaction tx : transactions) {
-            result.addAll(tx.getSpendUTXOKeys());
+            result.addAll(tx.spentUTXOKeys());
         }
 
         return result;
@@ -213,7 +213,7 @@ public class Block extends BaseSerializer {
     public List<UTXO> getSpendUTXOs() {
         List result = new LinkedList();
         for (Transaction tx : transactions) {
-            result.addAll(tx.getSpendUTXOs());
+            result.addAll(tx.spentUTXOs());
         }
 
         return result;
@@ -222,7 +222,7 @@ public class Block extends BaseSerializer {
     public List<UTXO> getAddedUTXOs() {
         List result = new LinkedList();
         for (Transaction tx : transactions) {
-            result.addAll(tx.getAddedUTXOs());
+            result.addAll(tx.addedUTXOs());
         }
 
         return result;

@@ -113,8 +113,8 @@ public class Transaction extends BaseSerializer {
         return CryptoUtils.sha256hash160(function.hashString(builder, Charsets.UTF_8).asBytes());
     }
 
-    public byte[] getContractAddress() {
-        if (!isContractTrasaction()) {
+    public byte[] contractAddress() {
+        if (!contractTrasaction()) {
             return null;
             //throw new IllegalArgumentException("There is no contract address because transaction does not contain a contract.");
         }
@@ -148,7 +148,7 @@ public class Transaction extends BaseSerializer {
             if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
                 return false;
             }
-            BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
+            BigInteger sizeGas = FeeUtil.getSizeGas(size());
             if (sizeGas.compareTo(BigInteger.valueOf(gasLimit)) > 0) {
                 return false;
             }
@@ -170,7 +170,7 @@ public class Transaction extends BaseSerializer {
 
     public boolean validContractPart() {
         try {
-            if (!isContractTrasaction()) {
+            if (!contractTrasaction()) {
                 return true;
             }
         } catch (Exception e) {
@@ -181,7 +181,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (isContractCreation() && !Arrays.equals(getContractAddress(), calculateContractAddress())) {
+        if (contractCreation() && !Arrays.equals(contractAddress(), calculateContractAddress())) {
             return false;
         }
 
@@ -257,7 +257,7 @@ public class Transaction extends BaseSerializer {
      *
      * @return size of this transaction.
      */
-    public long getSize() {
+    public long size() {
         // extract state of transaction counted for size.
         Transaction origin = new Transaction();
         origin.version = this.version;
@@ -286,16 +286,16 @@ public class Transaction extends BaseSerializer {
         return true;
     }
 
-    public boolean isEmptyInputs() {
+    public boolean inputsEmpty() {
         if (CollectionUtils.isEmpty(inputs)) {
             return true;
         }
         return false;
     }
 
-    public List<String> getSpendUTXOKeys() {
+    public List<String> spentUTXOKeys() {
         List result = new LinkedList();
-        if (!isEmptyInputs()) {
+        if (!inputsEmpty()) {
             for (TransactionInput input : inputs) {
                 result.add(input.getPreUTXOKey());
             }
@@ -304,9 +304,9 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
-    public List<UTXO> getSpendUTXOs() {
+    public List<UTXO> spentUTXOs() {
         List<UTXO> result = new LinkedList();
-        if (!isEmptyInputs()) {
+        if (!inputsEmpty()) {
             for (TransactionInput input : inputs) {
                 TransactionOutPoint prevOutPoint = input.getPrevOut();
                 TransactionOutput output = prevOutPoint.getOutput();
@@ -319,7 +319,7 @@ public class Transaction extends BaseSerializer {
         return result;
     }
 
-    public List<UTXO> getAddedUTXOs() {
+    public List<UTXO> addedUTXOs() {
         List result = new LinkedList();
         if (CollectionUtils.isNotEmpty(outputs)) {
             final int outputSize = outputs.size();
@@ -334,7 +334,7 @@ public class Transaction extends BaseSerializer {
     }
 
     public boolean containsSpendUTXO(String utxoKey) {
-        if (isEmptyInputs()) {
+        if (inputsEmpty()) {
             return false;
         }
         for (TransactionInput input : inputs) {
@@ -345,19 +345,19 @@ public class Transaction extends BaseSerializer {
         return false;
     }
 
-    public boolean isContractCreation() {
+    public boolean contractCreation() {
         return outputs.get(0).getLockScript().getType() == ScriptTypeEnum.CREATE.getType();
     }
 
-    public boolean isContractCall() {
+    private boolean contractCall() {
         return outputs.get(0).getLockScript().getType() == ScriptTypeEnum.CALL.getType();
     }
 
-    public boolean isContractTrasaction() {
-        return isContractCreation() || isContractCall();
+    public boolean contractTrasaction() {
+        return contractCreation() || contractCall();
     }
 
-    public Money getFirstOutMoney() {
+    public Money firstOutMoney() {
         return this.getOutputs().get(0).getMoney();
     }
 }

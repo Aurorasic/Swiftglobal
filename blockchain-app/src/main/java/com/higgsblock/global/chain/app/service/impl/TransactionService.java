@@ -350,14 +350,14 @@ public class TransactionService implements ITransactionService {
         }
         BigInteger totalGas;
         Money fee = new Money(0);
-        if (tx.isContractTrasaction()) {
+        if (tx.contractTrasaction()) {
             ContractService.InvokePO invokeResult = contractService.invoke(block, tx, blockRepository);
             ExecutionResult executionResult = invokeResult.getExecutionResult();
             Transaction contractTransaction = invokeResult.getContractTransaction();
             if (contractTransaction != null) {
                 contractTransactionList.add(contractTransaction);
                 Money contractTransactionFee = BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(contractTransaction.getSize())
+                        FeeUtil.getSizeGas(contractTransaction.size())
                                 .multiply(tx.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
                 fee.add(contractTransactionFee);
             }
@@ -454,7 +454,7 @@ public class TransactionService implements ITransactionService {
         }
 
         // for contract, currency must be cas or of ico.
-        if (tx.isContractTrasaction()
+        if (tx.contractTrasaction()
                 && !icoService.getContractCurrencies().contains(outputs.get(0).getMoney().getCurrency())) {
             return false;
         }
@@ -569,7 +569,7 @@ public class TransactionService implements ITransactionService {
      * @return validate success return true else false
      */
     public boolean verifyCoinBaseTx(Transaction tx, Block block) {
-        if (!tx.isEmptyInputs()) {
+        if (!tx.inputsEmpty()) {
             LOGGER.info("Invalidate Coinbase transaction");
             return false;
         }
@@ -802,7 +802,7 @@ public class TransactionService implements ITransactionService {
     @Override
     public Money calculationOrdinaryTransactionFee(Transaction tx) {
 
-        if (tx.isContractTrasaction()) {
+        if (tx.contractTrasaction()) {
             throw new RuntimeException("tx is Contract Transaction");
         }
 

@@ -490,7 +490,7 @@ public class BlockService implements IBlockService {
         long blockUsedSize = stateManager.getTotalUsedSize();
         long blockUsedGas = stateManager.getTotalUsedGas();
 
-        long transactionSize = transaction.getSize();
+        long transactionSize = transaction.size();
         long transactionGasLimit = transaction.getGasLimit();
 
 
@@ -508,7 +508,7 @@ public class BlockService implements IBlockService {
         }
 
         // for contract transaction, subTransaction may be generated, with a size limitation.
-        if (transaction.isContractTrasaction() &&
+        if (transaction.contractTrasaction() &&
                 transactionSize + subTransactionSizeLimit > blockSizeLimit - blockUsedSize) {
             return false;
         }
@@ -527,7 +527,7 @@ public class BlockService implements IBlockService {
      */
     private void packageTransaction(Transaction transaction, Block block, StateManager stateManager,
                                     RepositoryRoot blockRepository, List<Transaction> packagedTransactionList) {
-        if (!transaction.isContractTrasaction()) {
+        if (!transaction.contractTrasaction()) {
             packagedTransactionList.add(transaction);
             updateStateNoContract(stateManager, transaction);
             return;
@@ -573,8 +573,8 @@ public class BlockService implements IBlockService {
      * @param transaction  transaction selected.
      */
     private void updateStateNoContract(StateManager stateManager, Transaction transaction) {
-        stateManager.addUsedSize(transaction.getSize());
-        stateManager.addUsedGas(FeeUtil.getSizeGas(transaction.getSize()).longValue());
+        stateManager.addUsedSize(transaction.size());
+        stateManager.addUsedGas(FeeUtil.getSizeGas(transaction.size()).longValue());
         stateManager.addFee(transactionService.calculationOrdinaryTransactionFee(transaction));
     }
 
@@ -589,13 +589,13 @@ public class BlockService implements IBlockService {
      */
     private void updateStateContract(StateManager stateManager, Transaction transaction,
                                      boolean executeSuccess, ExecutionResult executionResult, Transaction subTransaction) {
-        stateManager.addUsedSize(transaction.getSize());
+        stateManager.addUsedSize(transaction.size());
         if (!executeSuccess) {
             stateManager.addUsedGas(transaction.getGasLimit());
             stateManager.addFee(transactionService.initialTransactionFee(transaction));
             stateManager.addFee(transactionService.gasFee(transaction));
             if (subTransaction != null) {
-                stateManager.addUsedSize(subTransaction.getSize());
+                stateManager.addUsedSize(subTransaction.size());
             }
         } else {
             stateManager.addUsedGas(executionResult.getGasUsed().longValue());
@@ -604,10 +604,10 @@ public class BlockService implements IBlockService {
             stateManager.subtractFee(BalanceUtil.convertGasToMoney(
                     executionResult.getRemainGas().multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
             if (subTransaction != null) {
-                stateManager.addUsedSize(subTransaction.getSize());
-                stateManager.addUsedGas(FeeUtil.getSizeGas(subTransaction.getSize()).longValue());
+                stateManager.addUsedSize(subTransaction.size());
+                stateManager.addUsedGas(FeeUtil.getSizeGas(subTransaction.size()).longValue());
                 stateManager.addFee(BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(subTransaction.getSize()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
+                        FeeUtil.getSizeGas(subTransaction.size()).multiply(transaction.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency()));
             }
         }
         stateManager.updateGlobalStateHash(executionResult);
