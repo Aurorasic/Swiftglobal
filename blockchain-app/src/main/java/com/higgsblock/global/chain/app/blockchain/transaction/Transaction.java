@@ -36,7 +36,7 @@ import java.util.List;
 @NoArgsConstructor
 @Message(MessageType.TRANSACTION)
 @JSONType(includes = {"version", "lockTime", "extra", "inputs", "outputs", "transactionTime", "gasPrice", "gasLimit",
-        "contractParameters", "contractExecutionResult", "isSubTransaction"})
+        "contractParameters", "contractExecutionResult", "subTransaction"})
 public class Transaction extends BaseSerializer {
 
     private static final int LIMITED_SIZE_UNIT = 1024 * 100;
@@ -93,7 +93,7 @@ public class Transaction extends BaseSerializer {
     /**
      * invoked contract result transaction is true other false;
      */
-    private boolean isSubTransaction;
+    private boolean subTransaction;
 
 
     public ContractExecutionResult getContractExecutionResult() {
@@ -144,7 +144,7 @@ public class Transaction extends BaseSerializer {
             return false;
         }
 
-        if (CollectionUtils.isNotEmpty(inputs) && !isSubTransaction) {
+        if (CollectionUtils.isNotEmpty(inputs) && !subTransaction) {
             if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
                 return false;
             }
