@@ -62,7 +62,7 @@ public class Helpers {
             TransactionOutput giveChangeOut = new TransactionOutput();
             giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
             LockScript lockScript = new LockScript();
-            lockScript.setAddress(AddrUtil.toTransactionAddr(accountState.getCodeHash()));
+            lockScript.setAddress(transaction.getOutputs().get(0).getLockScript().getAddress());
             giveChangeOut.setLockScript(lockScript);
             outputs.add(giveChangeOut);
         }
