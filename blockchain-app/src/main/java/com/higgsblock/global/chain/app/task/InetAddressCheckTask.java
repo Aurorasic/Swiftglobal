@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class InetAddressCheckTask extends BaseTask {
-
+    
     @Autowired
     private AppConfig appConfig;
     /**
@@ -59,7 +59,8 @@ public class InetAddressCheckTask extends BaseTask {
 
     @Override
     protected long getPeriodMs() {
-        return TimeUnit.HOURS.toMillis(1);
+        //TODO: chenjiawei change it back to HOURS after testing.
+        return TimeUnit.MINUTES.toMillis(1);
     }
 
     /**
