@@ -66,7 +66,7 @@ public class Helpers {
             giveChangeOut.setLockScript(lockScript);
             outputs.add(giveChangeOut);
         }
-
+        //TODO tangKun refunds have to sub transaction fee  2018-10-23
         //refund gas convert outputs
         if (refundCas.compareTo(new Money("0")) > 0) {
             LockScript refundLockScript = new LockScript();
