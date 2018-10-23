@@ -3,11 +3,10 @@ package com.higgsblock.global.chain.app.service.impl;
 import com.google.common.collect.Lists;
 import com.higgsblock.global.chain.app.blockchain.Rewards;
 import com.higgsblock.global.chain.app.blockchain.script.LockScript;
-import com.higgsblock.global.chain.app.blockchain.transaction.*;
+import com.higgsblock.global.chain.app.blockchain.transaction.Transaction;
+import com.higgsblock.global.chain.app.blockchain.transaction.TransactionOutput;
 import com.higgsblock.global.chain.app.service.ITransactionFeeService;
 import com.higgsblock.global.chain.app.service.IWitnessService;
-import com.higgsblock.global.chain.app.utils.ISizeCounter;
-import com.higgsblock.global.chain.app.utils.JsonSizeCounter;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
@@ -16,12 +15,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @description:
@@ -43,22 +37,8 @@ public class TransactionFeeService implements ITransactionFeeService {
 
     public static final long WITNESS_NUM = 11;
 
-    public static final Money FEE_OF_PEER_KB_CAS = new Money("0.02");
-
-    public static final BigDecimal ONE_KB_OF_BYTES = new BigDecimal("1024");
-
-    final ISizeCounter sizeCounter = JsonSizeCounter.getJsonSizeCounter();
-
-    /**
-     * block transactions limit exclude coinBase
-     */
-    private static final int LIMITED_SIZE = 1024 * 1000 * 1;
-
     @Autowired
     private KeyPair peerKeyPair;
-
-    @Autowired
-    private UTXOServiceProxy utxoServiceProxy;
 
     @Autowired
     private IWitnessService witnessService;
@@ -112,57 +92,9 @@ public class TransactionFeeService implements ITransactionFeeService {
     }
 
     /**
-     * computer fee by  transaction size
-     *
-     * @param size size of transaction bytes
-     * @return system fee
-     */
-    public Money computerFeeBySize(long size) {
-        BigDecimal sizeBD = new BigDecimal(size);
-        Money fee = new Money(FEE_OF_PEER_KB_CAS.getValue()).multiply(sizeBD.divide(ONE_KB_OF_BYTES, 0, RoundingMode.CEILING).toEngineeringString());
-        LOGGER.debug("count fee:{}", fee.getValue());
-        return fee;
-    }
-
-    /**
-     * get current block can be package transaction
-     *
-     * @param cacheTransactions cache transactions
-     * @return transaction order by fee weight desc
-     */
-    @Override
-    public List<Transaction> getCanPackageTransactionsOfBlock(List<Transaction> cacheTransactions) {
-
-        final List<Transaction> packageTransactionIng = new ArrayList<>();
-        Long sumTransactionSize = 0L;
-        for (Transaction tx : cacheTransactions) {
-            sumTransactionSize += sizeCounter.calculateSize(tx);
-            if (sumTransactionSize > LIMITED_SIZE) {
-                break;
-            }
-            packageTransactionIng.add(tx);
-        }
-
-        return packageTransactionIng;
-    }
-
-    /**
-     * system computer transaction fee
-     *
-     * @param tx tx
-     * @return fee
-     */
-    @Override
-    public Money getCurrencyFee(Transaction tx) {
-
-        return computerFeeBySize(sizeCounter.calculateSize(tx));
-
-    }
-
-    /**
      * @param lockTime lock time
      * @param version  transaction version
-     * @param fee   fee map
+     * @param fee      fee map
      * @return return coin base transaction
      */
     @Override
@@ -193,89 +125,6 @@ public class TransactionFeeService implements ITransactionFeeService {
         return transaction;
     }
 
-    /**
-     * order transaction by transaction fee weight
-     * if transactions size <= limit size don't order and return fee
-     *
-     * @param cacheTransactions cache transactions
-     * @return return key is hash and  value is fee
-     */
-    @Override
-    public SortResult orderTransaction(String preBlockHash, List<Transaction> cacheTransactions) {
-
-        final Map<String, Money> transactionFees = new HashMap<>(cacheTransactions.size());
-        long size = 0L;
-
-        for (Transaction tx : cacheTransactions) {
-            size += sizeCounter.calculateSize(tx);
-            if (size > LIMITED_SIZE) {
-                break;
-            }
-            Money txFee = getOneTransactionFee(preBlockHash, tx);
-
-            transactionFees.put(tx.getHash(), txFee);
-        }
-
-        if (size <= LIMITED_SIZE) {
-            return new SortResult(false, transactionFees);
-        }
-
-        //if size > limit size ,so order transaction by fee weight
-        cacheTransactions.sort((tx1, tx2) -> {
-
-            Money tx1Fee = transactionFees.get(tx1.getHash());
-            if (tx1Fee == null) {
-                tx1Fee = getOneTransactionFee(preBlockHash, tx1);
-            }
-            long tx1Size = sizeCounter.calculateSize(tx1);
-            Money tx1Weight = tx1Fee.divide(new Money(tx1Size).divide(new Money(ONE_KB_OF_BYTES.toEngineeringString())));
-
-            Money tx2Fee = transactionFees.get(tx2.getHash());
-            if (tx2Fee == null) {
-                tx2Fee = getOneTransactionFee(preBlockHash, tx2);
-            }
-            long tx2Size = sizeCounter.calculateSize(tx2);
-            Money tx2Weight = tx2Fee.divide(new Money(tx2Size).divide(ONE_KB_OF_BYTES.toEngineeringString()));
-
-            transactionFees.put(tx1.getHash(), tx1Fee);
-
-            return tx2Weight.compareTo(tx1Weight);
-        });
-
-        return new SortResult(true, transactionFees);
-    }
-
-
-    private Money getOneTransactionFee(String preBlockHash, Transaction transaction) {
-        List<TransactionInput> inputs = transaction.getInputs();
-        List<TransactionOutput> outputs = transaction.getOutputs();
-
-        Money preOutMoney = new Money("0");
-        for (TransactionInput input : inputs) {
-            String preOutKey = input.getPrevOut().getKey();
-
-            UTXO utxo = utxoServiceProxy.getUnionUTXO(preBlockHash, preOutKey);
-            if (null == utxo) {
-                LOGGER.warn("get utxo is null:{}", preOutKey);
-                throw new RuntimeException("uxto is null:" + preOutKey);
-            }
-            TransactionOutput output = utxo.getOutput();
-            if (output.isCASCurrency()) {
-                preOutMoney.add(output.getMoney());
-            }
-        }
-        LOGGER.debug("Transactions' pre-output amount : {}", preOutMoney.getValue());
-
-        Money outPutMoney = new Money("0");
-        for (TransactionOutput output : outputs) {
-            if (output.isCASCurrency()) {
-                outPutMoney.add(output.getMoney());
-            }
-        }
-        LOGGER.debug("Transactions' output amount : {}", outPutMoney.getValue());
-
-        return preOutMoney.subtract(outPutMoney);
-    }
 
     private TransactionOutput generateTransactionOutput(String address, Money money) {
         if (!ECKey.checkBase58Addr(address)) {
@@ -321,31 +170,6 @@ public class TransactionFeeService implements ITransactionFeeService {
             countMoney.add(item.getMoney());
         });
         return countMoney.compareTo(totalRewardsMoney) == 0;
-    }
-
-    @Override
-    public List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransaction){
-
-        List<Transaction> transactions = new ArrayList<>();
-        int subSize = 0;
-       for (Transaction tx:sortedTransaction){
-
-           if((subSize += tx.getSize()) > LIMITED_SIZE){
-                break;
-           }
-           //is contract transaction
-            if(tx.getOutputs().get(0).getLockScript().getType() == 1){
-                if((subSize += 1024*100) > LIMITED_SIZE){
-                    break;
-                }
-
-                //invoke contract transaction
-
-            }
-            transactions.add(tx);
-       }
-
-        return  transactions;
     }
 
     /**

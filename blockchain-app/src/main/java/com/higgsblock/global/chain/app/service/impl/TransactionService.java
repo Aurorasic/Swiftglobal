@@ -596,7 +596,6 @@ public class TransactionService implements ITransactionService {
             return false;
         }
 
-        SortResult sortResult = transactionFeeService.orderTransaction(preBlockHash, block.getTransactions().subList(1, block.getTransactions().size()));
         Rewards rewards = transactionFeeService.countMinerAndWitnessRewards(block.getTransactionsFee(), block.getHeight());
         //verify count coin base output
         if (!transactionFeeService.checkCoinBaseMoney(tx, rewards.getTotalMoney())) {
