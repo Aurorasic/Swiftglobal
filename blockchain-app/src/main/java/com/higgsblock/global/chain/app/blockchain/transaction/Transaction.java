@@ -148,6 +148,10 @@ public class Transaction extends BaseSerializer {
             if (gasPrice == null || gasPrice.compareTo(BigInteger.valueOf(0L)) < 0) {
                 return false;
             }
+            BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
+            if (sizeGas.compareTo(BigInteger.valueOf(gasLimit)) > 0) {
+                return false;
+            }
             for (TransactionInput input : inputs) {
                 if (!input.valid()) {
                     return false;
@@ -159,11 +163,6 @@ public class Transaction extends BaseSerializer {
             if (!out.valid()) {
                 return false;
             }
-        }
-
-        BigInteger sizeGas = FeeUtil.getSizeGas(getSize());
-        if (sizeGas.compareTo(BigInteger.valueOf(gasLimit)) > 0) {
-            return false;
         }
 
         return true;
