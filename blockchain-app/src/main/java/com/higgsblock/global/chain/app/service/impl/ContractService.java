@@ -165,13 +165,16 @@ public class ContractService implements IContractService {
      */
     private ExecutionEnvironment createExecutionEnvironment(
             Transaction transaction, Block block, SystemProperties systemProperties, BlockchainConfig blockchainConfig) {
+        long startTime = System.currentTimeMillis();
         ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
 
         // sets transaction context.
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.contractCreation());
         executionEnvironment.setContractAddress(transaction.contractAddress());
+        long startTime1 = System.currentTimeMillis();
         executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
+        LOGGER.info("TTTspent time1: {}", System.currentTimeMillis() - startTime1);
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue())
@@ -187,13 +190,16 @@ public class ContractService implements IContractService {
         executionEnvironment.setNumber(block.getHeight());
         executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
         executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
+        long startTime2 = System.currentTimeMillis();
         executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.contractAddress(), block)).toByteArray());
+        LOGGER.info("TTTspent time2: {}", System.currentTimeMillis() - startTime2);
 
         // sets system behaviour.
         executionEnvironment.setSystemProperties(systemProperties);
 
         // sets configuration of current block.
         executionEnvironment.setBlockchainConfig(blockchainConfig);
+        LOGGER.info("TTTspent time: {}", System.currentTimeMillis() - startTime);
 
         return executionEnvironment;
     }
@@ -279,21 +285,22 @@ public class ContractService implements IContractService {
      */
     public Transaction buildFailedTransaction(Transaction transaction, String prevBlockHash) {
         Transaction refundTx = new Transaction();
-        TransactionInput input = new TransactionInput();
-        TransactionOutPoint top = new TransactionOutPoint();
-        top.setTransactionHash(transaction.getHash());
-        top.setIndex((short) 0);
 
-        input.setPrevOut(top);
-        refundTx.getInputs().add(input);
+        if (refundTx.getInputs() == null) {
+            refundTx.setInputs(new ArrayList<>());
+        }
+        refundTx.getInputs().add(buildInput(transaction, prevBlockHash));
 
         TransactionOutput out = new TransactionOutput();
         out.setMoney(transaction.firstOutMoney());
         LockScript lockScript = new LockScript();
-
         lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));
         lockScript.setType(ScriptTypeEnum.P2PKH.getType());
         out.setLockScript(lockScript);
+        
+        if (refundTx.getOutputs() == null) {
+            refundTx.setOutputs(new ArrayList<>());
+        }
         refundTx.getOutputs().add(out);
 
         refundTx.setVersion(transaction.getVersion());
@@ -301,6 +308,23 @@ public class ContractService implements IContractService {
         refundTx.setTransactionTime(transaction.getTransactionTime());
         refundTx.setSubTransaction(true);
         return refundTx;
+    }
+
+    private TransactionInput buildInput(Transaction transaction, String prevBlockHash) {
+
+        TransactionInput input = new TransactionInput();
+        TransactionOutPoint top = new TransactionOutPoint();
+        top.setTransactionHash(transaction.getHash());
+
+        TransactionOutput output = new TransactionOutput();
+        output.setMoney(transaction.firstOutMoney());
+        output.setLockScript(transaction.getOutputs().get(0).getLockScript());
+
+        top.setOutput(output);
+        top.setIndex((short) 0);
+        input.setPrevOut(top);
+
+        return input;
     }
 }
 

@@ -30,6 +30,7 @@ import com.higgsblock.global.chain.vm.program.listener.ProgramStorageChangeListe
 import com.higgsblock.global.chain.vm.trace.ProgramTrace;
 import com.higgsblock.global.chain.vm.trace.ProgramTraceListener;
 import com.higgsblock.global.chain.vm.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,7 @@ import static org.apache.commons.lang3.ArrayUtils.*;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
+@Slf4j
 public class Program {
 
     private static final Logger logger = LoggerFactory.getLogger("VM");
@@ -588,6 +590,7 @@ public class Program {
         if (isNotCovers(senderBalance, endowment)) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
+            LOGGER.warn("balance not enough balance:{} amount:{}", senderBalance, endowment);
             return;
         }
 
