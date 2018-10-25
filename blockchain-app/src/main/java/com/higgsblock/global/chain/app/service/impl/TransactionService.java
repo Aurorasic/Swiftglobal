@@ -19,6 +19,7 @@ import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
+import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
@@ -82,6 +83,8 @@ public class TransactionService implements ITransactionService {
     private IIcoService icoService;
     @Autowired
     private UTXOServiceProxy utxoServiceProxy;
+    @Autowired
+    private ByzantiumConfig blockchainConfig;
 
     @Override
     public boolean validTransactions(Block block) {
@@ -378,7 +381,6 @@ public class TransactionService implements ITransactionService {
         return validResult;
     }
 
-
     /**
      * validate tx
      *
@@ -403,6 +405,10 @@ public class TransactionService implements ITransactionService {
             }
             if (!tx.validContractPart()) {
                 LOGGER.info("Contract format is incorrect: {}", tx.getHash());
+                return false;
+            }
+            if (!limitCheck(tx)) {
+                LOGGER.info("size or gas limit is incorrect: {}", tx.getHash());
                 return false;
             }
         }
@@ -491,6 +497,38 @@ public class TransactionService implements ITransactionService {
         }
 
         return verifyInputs(inputs, hash, preBlockHash);
+    }
+
+    private boolean limitCheck(Transaction transaction) {
+        long blockSizeLimit = blockchainConfig.getLimitedSize();
+        long subTransactionSizeLimit = blockchainConfig.getContractLimitedSize();
+        long blockGasLimit = blockchainConfig.getBlockGasLimit();
+
+
+        long transactionSize = transaction.size();
+        long transactionGasLimit = transaction.getGasLimit();
+
+
+        if (transactionSize > blockSizeLimit) {
+            return false;
+        }
+
+        // for contract transaction, subTransaction may be generated, with a size limitation.
+        if (transaction.contractTrasaction() &&
+                transactionSize + subTransactionSizeLimit > blockSizeLimit) {
+            return false;
+        }
+
+        if (transactionGasLimit > blockGasLimit) {
+            return false;
+        }
+
+        // gasLimit of transaction must be enough for sizeFee at least.
+        if (transactionGasLimit < FeeUtil.getSizeGas(transactionSize).longValue()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
