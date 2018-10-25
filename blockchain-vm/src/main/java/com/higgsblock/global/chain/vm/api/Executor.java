@@ -12,6 +12,7 @@ import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.ProgramResult;
 import com.higgsblock.global.chain.vm.program.invoke.ProgramInvoke;
 import com.higgsblock.global.chain.vm.util.ByteArraySet;
+import com.higgsblock.global.chain.vm.util.ByteUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.spongycastle.util.encoders.Hex;
@@ -176,8 +177,18 @@ public class Executor {
         }
 
         VM vm = new VM(systemProperties);
-        Program program = new Program(transactionRepository.getCodeHash(contractAddress),
-                transactionRepository.getCode(contractAddress), programInvoke, transaction, systemProperties);
+
+        byte[] codeHash = transactionRepository.getCodeHash(contractAddress);
+        byte[] ops = transactionRepository.getCode(contractAddress);
+        if (ByteUtil.isNullOrZeroArray(codeHash) || ByteUtil.isNullOrZeroArray(ops)) {
+            executionResult.spendGas(ByteUtil.bytesToBigInteger(gasLimit));
+            executionResult.setRemainGas(BigInteger.ZERO);
+            executionResult.setErrorMessage("account is null");
+            return executionResult;
+        }
+
+        Program program = new Program(codeHash,
+                ops, programInvoke, transaction, systemProperties);
         program.setTransferInfoList(transferInfoList);
         program.spendGas(sizeGas, "size gas");
         if (systemProperties.playVM()) {

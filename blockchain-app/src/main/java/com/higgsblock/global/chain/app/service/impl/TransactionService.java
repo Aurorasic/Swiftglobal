@@ -113,6 +113,8 @@ public class TransactionService implements ITransactionService {
                 if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
                     continue;
                 }
+                LOGGER.warn("transaction and contract hash not equals txHash:{},contractHash:{}",
+                        contractTransaction.getHash(), transaction.getHash());
                 return false;
             }
             //step2 verify tx business info
@@ -126,6 +128,7 @@ public class TransactionService implements ITransactionService {
                     stateHash = function.hashString(String.join(stateHash, contractStateHash.toString()), Charsets.UTF_8).toString();
                 }
             } catch (Exception e) {
+                LOGGER.error("verifyTransactionForVoting failed ex:{}", e);
                 return false;
             }
         }
