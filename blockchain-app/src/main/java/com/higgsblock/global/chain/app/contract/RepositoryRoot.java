@@ -118,7 +118,7 @@ public class RepositoryRoot extends RepositoryImpl {
             }
         }
 
-        return unspentUTXOCache.get(address);
+        return unspentUTXOCache.getOrDefault(address, new HashSet<>());
     }
 
 }
