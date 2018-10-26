@@ -362,10 +362,12 @@ public class TransactionService implements ITransactionService {
             Transaction contractTransaction = invokeResult.getContractTransaction();
             if (contractTransaction != null) {
                 contractTransactionList.add(contractTransaction);
-                Money contractTransactionFee = BalanceUtil.convertGasToMoney(
-                        FeeUtil.getSizeGas(contractTransaction.size())
-                                .multiply(tx.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
-                fee.add(contractTransactionFee);
+                if (StringUtils.isEmpty(executionResult.getErrorMessage())) {
+                    Money contractTransactionFee = BalanceUtil.convertGasToMoney(
+                            FeeUtil.getSizeGas(contractTransaction.size())
+                                    .multiply(tx.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
+                    fee.add(contractTransactionFee);
+                }
             }
             BigInteger payGas = BigInteger.valueOf(tx.getGasLimit()).subtract(executionResult.getRemainGas());
             totalGas = payGas.multiply(tx.getGasPrice());

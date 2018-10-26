@@ -24,7 +24,6 @@ import com.higgsblock.global.chain.vm.program.Program;
 import com.higgsblock.global.chain.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -35,8 +34,6 @@ import static com.higgsblock.global.chain.vm.OpCode.*;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static com.higgsblock.global.chain.vm.util.ByteUtil.toHexString;
 import static com.higgsblock.global.chain.vm.util.HashUtil.sha3;
-
-//import org.ethereum.db.ContractDetails;
 
 /**
  * The Ethereum Virtual Machine (EVM) is responsible for initialization
@@ -104,7 +101,6 @@ public class VM {
         this(SystemProperties.getDefault());
     }
 
-    @Autowired
     public VM(SystemProperties config) {
         this.config = config;
         vmTrace = config.vmTrace();
