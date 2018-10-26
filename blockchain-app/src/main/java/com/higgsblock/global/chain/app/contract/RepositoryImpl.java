@@ -375,10 +375,14 @@ public class RepositoryImpl implements Repository {
             unspentUTXOCache.get(account.getKey()).removeAll(account.getValue());
         }
         for (Map.Entry<String, Set> account : unSpendUTXO.entrySet()) {
-            unspentUTXOCache.get(account.getKey()).addAll(account.getValue());
+            Set set = unspentUTXOCache.getOrDefault(account.getKey(), new HashSet<>());
+            set.addAll(account.getValue());
+            unspentUTXOCache.put(account.getKey(), set);
         }
         for (Map.Entry<String, Set> account : spendUTXO.entrySet()) {
-            spentUTXOCache.get(account.getKey()).addAll(account.getValue());
+            Set set = spentUTXOCache.get(account.getKey());
+            set.addAll(account.getValue());
+            spentUTXOCache.put(account.getKey(), set);
         }
         return true;
     }
