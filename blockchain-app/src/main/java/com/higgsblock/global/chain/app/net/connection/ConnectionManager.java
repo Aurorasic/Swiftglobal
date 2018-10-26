@@ -90,6 +90,8 @@ public class ConnectionManager {
         if (!canConnect(peer)) {
             return;
         }
+
+        // peer will be inserted again if connected successfully, removed if fails.
         peerManager.removePeer(peer);
         client.connect(peer.getIp(), peer.getSocketServerPort());
     }

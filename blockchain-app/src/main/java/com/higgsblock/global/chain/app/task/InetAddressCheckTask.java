@@ -59,8 +59,7 @@ public class InetAddressCheckTask extends BaseTask {
 
     @Override
     protected long getPeriodMs() {
-        //TODO: chenjiawei change it back to HOURS after testing.
-        return TimeUnit.MINUTES.toMillis(1);
+        return TimeUnit.HOURS.toMillis(1);
     }
 
     /**

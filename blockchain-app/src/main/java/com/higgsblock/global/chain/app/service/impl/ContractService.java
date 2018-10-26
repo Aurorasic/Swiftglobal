@@ -165,16 +165,13 @@ public class ContractService implements IContractService {
      */
     private ExecutionEnvironment createExecutionEnvironment(
             Transaction transaction, Block block, SystemProperties systemProperties, BlockchainConfig blockchainConfig) {
-        long startTime = System.currentTimeMillis();
         ExecutionEnvironment executionEnvironment = new ExecutionEnvironment();
 
         // sets transaction context.
         executionEnvironment.setTransactionHash(transaction.getHash());
         executionEnvironment.setContractCreation(transaction.contractCreation());
         executionEnvironment.setContractAddress(transaction.contractAddress());
-        long startTime1 = System.currentTimeMillis();
         executionEnvironment.setSenderAddress(getSender(transaction, block.getPrevBlockHash()));
-        LOGGER.info("TTTspent time1: {}", System.currentTimeMillis() - startTime1);
         executionEnvironment.setGasPrice(transaction.getGasPrice().toByteArray());
         executionEnvironment.setGasLimit(BigInteger.valueOf(transaction.getGasLimit()).toByteArray());
         executionEnvironment.setValue(new BigDecimal(transaction.getOutputs().get(0).getMoney().getValue())
@@ -190,16 +187,13 @@ public class ContractService implements IContractService {
         executionEnvironment.setNumber(block.getHeight());
         executionEnvironment.setDifficulty(BigInteger.valueOf(0L).toByteArray());
         executionEnvironment.setGasLimitBlock(BigInteger.valueOf(Block.LIMITED_GAS).toByteArray());
-        long startTime2 = System.currentTimeMillis();
         executionEnvironment.setBalance(BigInteger.valueOf(getBalance(transaction.contractAddress(), block)).toByteArray());
-        LOGGER.info("TTTspent time2: {}", System.currentTimeMillis() - startTime2);
 
         // sets system behaviour.
         executionEnvironment.setSystemProperties(systemProperties);
 
         // sets configuration of current block.
         executionEnvironment.setBlockchainConfig(blockchainConfig);
-        LOGGER.info("TTTspent time: {}", System.currentTimeMillis() - startTime);
 
         return executionEnvironment;
     }
