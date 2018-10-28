@@ -1,8 +1,5 @@
 package com.higgsblock.global.chain.app.service.impl;
 
-import com.google.common.base.Charsets;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 import com.higgsblock.global.chain.app.blockchain.Block;
 import com.higgsblock.global.chain.app.blockchain.BlockIndex;
 import com.higgsblock.global.chain.app.blockchain.Rewards;
@@ -12,20 +9,18 @@ import com.higgsblock.global.chain.app.blockchain.script.UnLockScript;
 import com.higgsblock.global.chain.app.blockchain.transaction.*;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
+import com.higgsblock.global.chain.app.contract.StateManager;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.TransactionIndexEntity;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
 import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
-import com.higgsblock.global.chain.vm.api.ExecutionResult;
 import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
-import com.higgsblock.global.chain.vm.core.Repository;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -105,53 +100,50 @@ public class TransactionService implements ITransactionService {
         }
 
         //step3 verify info
-        List<Transaction> contractTransactionList = new LinkedList<>();
-        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(), utxoServiceProxy, SystemProperties.getDefault());
-        Money blockFee = new Money(0);
-        String stateHash = StringUtils.EMPTY;
+        RepositoryRoot blockRepository = new RepositoryRoot(contractRepository, block.getPrevBlockHash(),
+                utxoServiceProxy, SystemProperties.getDefault());
+        StateManager stateManager = new StateManager();
+        List<Transaction> packagedTransactionList = new ArrayList<>();
         for (int index = 1; index < txNumber; index++) {
-            Transaction transaction = transactions.get(index);
-            if (contractTransactionList.size() > 0) {
-                Transaction contractTransaction = contractTransactionList.remove(0);
-                if (StringUtils.equals(contractTransaction.getHash(), transaction.getHash())) {
-                    continue;
-                }
-                LOGGER.warn("transaction and contract hash not equals txHash:{},contractHash:{}",
-                        contractTransaction.getHash(), transaction.getHash());
+            Transaction tx = transactions.get(index);
+            if (tx.isSubTransaction()) {
+                continue;
+            }
+
+            if (!verifyTransactionForVoting(tx, block)) {
+                LOGGER.warn("original transaction verify false txHash:{}", tx.getHash());
                 return false;
             }
-            //step2 verify tx business info
-            try {
-                Map<String, Object> validResult = verifyTransactionForVoting(transaction, block, contractTransactionList, blockRepository);
-                Money fee = (Money) validResult.get("fee");
-                blockFee = blockFee.add(fee);
-                Object contractStateHash = validResult.get("contractStateHash");
-                if (contractStateHash != null) {
-                    HashFunction function = Hashing.sha256();
-                    stateHash = function.hashString(String.join(stateHash, contractStateHash.toString()), Charsets.UTF_8).toString();
-                }
-            } catch (Exception e) {
-                LOGGER.error("verifyTransactionForVoting failed ex:{}", e);
+
+            if (!blockService.transactionIsPackable(tx, stateManager)) {
+                LOGGER.warn("block can package this transaction hash:{}", tx.getHash());
                 return false;
             }
+            blockService.packageTransaction(tx, block, stateManager, blockRepository, packagedTransactionList);
+
+            //current is contract transaction and have subTransaction
+            if (index < txNumber - 1 && transactions.get(index + 1).isSubTransaction()) {
+                String subTransactionHash = packagedTransactionList.get(packagedTransactionList.size() - 1).getHash();
+                String originalSubTransactionHash = transactions.get(index + 1).getHash();
+                if (!originalSubTransactionHash.equals(subTransactionHash)) {
+                    LOGGER.warn("subTransactionHash is not equals originalSubTransactionHash  originalSubTransactionHash " +
+                            "subTransactionHash:{},", originalSubTransactionHash, subTransactionHash);
+                    return false;
+                }
+            }
         }
-        String dbStateHash = blockRepository.getStateHash();
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(stateHash) && org.apache.commons.lang.StringUtils.isNotEmpty(dbStateHash)) {
-            stateHash = contractService.appendStorageHash(stateHash, dbStateHash);
-        }
-        Money transactionsFee = block.getTransactionsFee();
-        LOGGER.info("the blockFee is {} with block hash {}", blockFee, block.getHash());
-        if (!transactionsFee.equals(blockFee)) {
-            LOGGER.info("the transactionsFee is not wright {}", block.getHash());
+        stateManager.updateGlobalStateHash(blockRepository);
+
+        if (!block.getTransactionsFee().equals(stateManager.getTotalFee())) {
+            LOGGER.warn("the transactionsFee is not right {}", block.getHash());
             return false;
         }
-        String contractStateHash = block.getContractStateHash();
-        contractStateHash = contractStateHash == null ? StringUtils.EMPTY : contractStateHash;
-        LOGGER.info("the stateHash is {} with block hash {}", stateHash, block.getHash());
-        if (!StringUtils.equals(contractStateHash, stateHash)) {
-            LOGGER.info("the contractStateHash is not wright {}", block.getHash());
+
+        if (!StringUtils.equals(block.getContractStateHash(), stateManager.getGlobalStateHash())) {
+            LOGGER.warn("the contractStateHash is not right {}", block.getHash());
             return false;
         }
+
         boolean verifyCoinBaseTx = verifyCoinBaseTx(transactions.get(0), block);
         if (!verifyCoinBaseTx) {
             return false;
@@ -264,8 +256,7 @@ public class TransactionService implements ITransactionService {
         return balanceMoney.compareTo(stakeMinMoney) >= 0;
     }
 
-    public Map<String, Object> verifyTransactionForVoting(Transaction tx, Block
-            block, List<Transaction> contractTransactionList, Repository blockRepository) {
+    public boolean verifyTransactionForVoting(Transaction tx, Block block) {
         if (null == tx) {
             LOGGER.info("transaction is null");
             throw new RuntimeException();
@@ -274,7 +265,6 @@ public class TransactionService implements ITransactionService {
             LOGGER.info("transaction is valid error");
             throw new RuntimeException();
         }
-        Map<String, Object> validResult = new HashedMap();
         List<TransactionInput> inputs = tx.getInputs();
         List<TransactionOutput> outputs = tx.getOutputs();
         String hash = tx.getHash();
@@ -316,7 +306,6 @@ public class TransactionService implements ITransactionService {
             }
         }
 
-        Money surplus = new Money(0);
         boolean hasCas = false;
         BigInteger gas = tx.getGasPrice().multiply(BigInteger.valueOf(tx.getGasLimit()));
         Money gasToMoney = BalanceUtil.convertGasToMoney(gas, SystemCurrencyEnum.CAS.getCurrency());
@@ -340,9 +329,6 @@ public class TransactionService implements ITransactionService {
                 LOGGER.info("Not enough fees, currency type:{}", key);
                 throw new RuntimeException();
             }
-            if (StringUtils.equals(SystemCurrencyEnum.CAS.getCurrency(), key)) {
-                surplus = preMoney.subtract(curMoney);
-            }
         }
 
         if (!hasCas) {
@@ -350,37 +336,8 @@ public class TransactionService implements ITransactionService {
             throw new RuntimeException();
         }
 
-        boolean verifyInputs = verifyInputs(inputs, hash, preBlockHash);
-        if (!verifyInputs) {
-            throw new RuntimeException();
-        }
-        BigInteger totalGas;
-        Money fee = new Money(0);
-        if (tx.contractTrasaction()) {
-            ContractService.InvokePO invokeResult = contractService.invoke(block, tx, blockRepository);
-            ExecutionResult executionResult = invokeResult.getExecutionResult();
-            Transaction contractTransaction = invokeResult.getContractTransaction();
-            if (contractTransaction != null) {
-                contractTransactionList.add(contractTransaction);
-                if (StringUtils.isEmpty(executionResult.getErrorMessage())) {
-                    Money contractTransactionFee = BalanceUtil.convertGasToMoney(
-                            FeeUtil.getSizeGas(contractTransaction.size())
-                                    .multiply(tx.getGasPrice()), SystemCurrencyEnum.CAS.getCurrency());
-                    fee.add(contractTransactionFee);
-                }
-            }
-            BigInteger payGas = BigInteger.valueOf(tx.getGasLimit()).subtract(executionResult.getRemainGas());
-            totalGas = payGas.multiply(tx.getGasPrice());
-            String contractStateHash = blockService.calculateExecutionHash(executionResult);
-            validResult.put("contractStateHash", contractStateHash);
-        } else {
-            totalGas = BigInteger.valueOf(tx.getGasLimit()).multiply(tx.getGasPrice());
-        }
-        fee.add(BalanceUtil.convertGasToMoney(totalGas, SystemCurrencyEnum.CAS.getCurrency()));
-        fee = fee.add(surplus);
-        validResult.put("fee", fee);
+        return verifyInputs(inputs, hash, preBlockHash);
 
-        return validResult;
     }
 
     /**

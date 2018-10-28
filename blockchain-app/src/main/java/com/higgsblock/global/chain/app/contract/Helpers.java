@@ -62,6 +62,7 @@ public class Helpers {
             TransactionOutput giveChangeOut = new TransactionOutput();
             giveChangeOut.setMoney(BalanceUtil.convertGasToMoney(accountState.getBalance(), accountState.getCurrency()));
             LockScript lockScript = new LockScript();
+            //TODO tangKun contract type 2018-10-28
             lockScript.setAddress(transaction.getOutputs().get(0).getLockScript().getAddress());
             giveChangeOut.setLockScript(lockScript);
             outputs.add(giveChangeOut);

@@ -21,13 +21,13 @@ import com.higgsblock.global.chain.app.config.AppConfig;
 import com.higgsblock.global.chain.app.contract.BalanceUtil;
 import com.higgsblock.global.chain.app.contract.ContractExecutionResult;
 import com.higgsblock.global.chain.app.contract.RepositoryRoot;
+import com.higgsblock.global.chain.app.contract.StateManager;
 import com.higgsblock.global.chain.app.dao.IBlockRepository;
 import com.higgsblock.global.chain.app.dao.IContractRepository;
 import com.higgsblock.global.chain.app.dao.entity.BlockEntity;
 import com.higgsblock.global.chain.app.net.peer.PeerManager;
 import com.higgsblock.global.chain.app.service.*;
 import com.higgsblock.global.chain.common.enums.SystemCurrencyEnum;
-import com.higgsblock.global.chain.common.utils.Money;
 import com.higgsblock.global.chain.crypto.ECKey;
 import com.higgsblock.global.chain.crypto.KeyPair;
 import com.higgsblock.global.chain.vm.api.ExecutionResult;
@@ -35,8 +35,6 @@ import com.higgsblock.global.chain.vm.config.ByzantiumConfig;
 import com.higgsblock.global.chain.vm.config.DefaultSystemProperties;
 import com.higgsblock.global.chain.vm.core.SystemProperties;
 import com.higgsblock.global.chain.vm.fee.FeeUtil;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -395,65 +393,11 @@ public class BlockService implements IBlockService {
         block.setMinerSignature(sig);
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
+
+        
         return block;
     }
 
-    /**
-     * Constantly modifies block state in the process of packing transactions.
-     */
-    @NoArgsConstructor
-    @Data
-    private class StateManager {
-        /**
-         * size of packaged transactions in a specific block.
-         */
-        private long totalUsedSize = 0;
-        /**
-         * amount of gas used by packaged transactions.
-         */
-        private long totalUsedGas = 0;
-        /**
-         * fee used by packaged transactions.
-         */
-        private Money totalFee = new Money();
-        /**
-         * hash of global state.
-         */
-        private String globalStateHash = Strings.EMPTY;
-
-        void addUsedSize(long size) {
-            totalUsedSize += size;
-        }
-
-        void addUsedGas(long gas) {
-            totalUsedGas += gas;
-        }
-
-        void addFee(Money fee) {
-            totalFee = totalFee.add(fee);
-        }
-
-        void subtractFee(Money fee) {
-            totalFee = totalFee.subtract(fee);
-        }
-
-        void updateGlobalStateHash(ExecutionResult executionResult) {
-            globalStateHash = calculateExecutionHash(globalStateHash, executionResult);
-        }
-
-        void updateGlobalStateHash(RepositoryRoot blockRepository) {
-            if (StringUtils.isEmpty(globalStateHash)) {
-                globalStateHash = Strings.EMPTY;
-            }
-
-            String dbStateHash = blockRepository.getStateHash();
-            if (StringUtils.isEmpty(dbStateHash)) {
-                dbStateHash = Strings.EMPTY;
-            }
-
-            globalStateHash = contractService.appendStorageHash(globalStateHash, dbStateHash);
-        }
-    }
 
     private List<Transaction> chooseAndInvokedTransaction(List<Transaction> sortedTransactionList, Block block) {
         List<Transaction> packagedTransactionList = new ArrayList<>();
@@ -482,7 +426,7 @@ public class BlockService implements IBlockService {
      * @param stateManager block state manager.
      * @return true if transaction is packable.
      */
-    private boolean transactionIsPackable(Transaction transaction, StateManager stateManager) {
+    public boolean transactionIsPackable(Transaction transaction, StateManager stateManager) {
         long blockSizeLimit = blockchainConfig.getLimitedSize();
         long subTransactionSizeLimit = blockchainConfig.getContractLimitedSize();
         long blockGasLimit = blockchainConfig.getBlockGasLimit();
@@ -525,8 +469,8 @@ public class BlockService implements IBlockService {
      * @param blockRepository         block-level snapshot of db.
      * @param packagedTransactionList list of transactions packaged into block.
      */
-    private void packageTransaction(Transaction transaction, Block block, StateManager stateManager,
-                                    RepositoryRoot blockRepository, List<Transaction> packagedTransactionList) {
+    public void packageTransaction(Transaction transaction, Block block, StateManager stateManager,
+                                   RepositoryRoot blockRepository, List<Transaction> packagedTransactionList) {
         if (!transaction.contractTrasaction()) {
             packagedTransactionList.add(transaction);
             updateStateNoContract(stateManager, transaction);
