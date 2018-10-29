@@ -260,11 +260,14 @@ public class UTXOServiceProxy {
         Map utxoMap = new HashMap<>(32);
         List<UTXO> spendUTXOs = block.getSpendUTXOs();
         List<UTXO> addedUTXOs = block.getAddedUTXOs();
-        for (UTXO spendUTXO : spendUTXOs) {
-            utxoMap.put(spendUTXO.getKey(), new SpendUTXO(spendUTXO));
-        }
+        //Smart contracts are traded, and the utxo key that has been spent
+        // is equal to the utxo key and deposited into the same block
+        //This order ensures that only utxo has been spent in the map if any of the above occurs
         for (UTXO newUTXO : addedUTXOs) {
             utxoMap.put(newUTXO.getKey(), newUTXO);
+        }
+        for (UTXO spendUTXO : spendUTXOs) {
+            utxoMap.put(spendUTXO.getKey(), new SpendUTXO(spendUTXO));
         }
         return utxoMap;
     }
