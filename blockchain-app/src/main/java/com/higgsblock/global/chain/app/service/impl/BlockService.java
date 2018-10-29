@@ -394,7 +394,6 @@ public class BlockService implements IBlockService {
         blockCache.put(block.getHash(), block);
         LOGGER.info("new block was packed successfully, block height={}, hash={}", block.getHeight(), block.getHash());
 
-        
         return block;
     }
 
@@ -556,20 +555,7 @@ public class BlockService implements IBlockService {
         }
         stateManager.updateGlobalStateHash(executionResult);
     }
-
-    /**
-     * Calculates latest execution result hash.
-     *
-     * @param currentHash     execution result hash for previous transactions.
-     * @param executionResult result related to contract execution procedure.
-     * @return latest execution result hash.
-     */
-    private String calculateExecutionHash(String currentHash, ExecutionResult executionResult) {
-        HashFunction function = Hashing.sha256();
-        return function.hashString(
-                String.join(currentHash, calculateExecutionHash(executionResult)), Charsets.UTF_8).toString();
-    }
-
+    
     /**
      * Calculates hash of result related to contract execution procedure.
      *

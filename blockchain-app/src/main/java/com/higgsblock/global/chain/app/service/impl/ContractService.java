@@ -263,13 +263,7 @@ public class ContractService implements IContractService {
         TransactionOutput output = utxo.getOutput();
         return output;
     }
-
-    @Override
-    public String appendStorageHash(String blockContractStateHash, String storageHash) {
-        HashFunction function = Hashing.sha256();
-        return function.hashString(String.join(blockContractStateHash, storageHash), Charsets.UTF_8).toString();
-    }
-
+    
     /**
      * build failed transaction
      *
@@ -291,7 +285,7 @@ public class ContractService implements IContractService {
         lockScript.setAddress(AddrUtil.toTransactionAddr(getSender(transaction, prevBlockHash)));
         lockScript.setType(ScriptTypeEnum.P2PKH.getType());
         out.setLockScript(lockScript);
-        
+
         if (refundTx.getOutputs() == null) {
             refundTx.setOutputs(new ArrayList<>());
         }

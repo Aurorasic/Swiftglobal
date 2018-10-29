@@ -13,5 +13,4 @@ public interface IContractService {
 
     ContractService.InvokePO invoke(Block block, Transaction transaction, Repository blockRepository);
 
-    String appendStorageHash(String blockContractStateHash, String storageHash);
 }
