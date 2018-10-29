@@ -20,7 +20,7 @@ public class DposRepositoryTest extends BaseTest {
     @Test
     @Transactional
     public void testSave() {
-        DposEntity result = dposRepository.save(new DposEntity( 13, "dpos address test"));
+        DposEntity result = dposRepository.save(new DposEntity(13, "dpos address test"));
         LOGGER.info("--->>save result: {}", result);
     }
 
