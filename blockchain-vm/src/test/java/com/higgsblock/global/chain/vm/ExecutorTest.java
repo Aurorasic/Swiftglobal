@@ -267,8 +267,8 @@ public class ExecutorTest {
 
             @Override
             public Repository startTracking() {
-                //  return new RepositoryMockImpl();
-                return null;
+                  return new RepositoryMockImpl();
+//                return null;
 
             }
 
