@@ -324,8 +324,8 @@ public class VM {
 
                     DataWord gasLeft = program.getGas().clone();
                     gasLeft.sub(new DataWord(gasCost));
-                    callGasWord.sub(new DataWord(gasCost));
-                    adjustedCallGas = blockchainConfig.getCallGas(op, callGasWord, gasLeft);
+//                    adjustedCallGas = blockchainConfig.getCallGas(op, callGasWord, gasLeft);
+                    adjustedCallGas = callGasWord.clone();
                     gasCost += adjustedCallGas.longValueSafe();
                     break;
                 case CREATE:
